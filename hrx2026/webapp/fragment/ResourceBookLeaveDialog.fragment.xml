@@ -2,8 +2,8 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 
-	<!-- A manager or admin books leave for the resource on screen. Approved straight
-	     away, as a booking from the team calendar is. -->
+	<!-- A manager or admin books leave for someone. Approved straight away, as a
+	     booking from the team calendar is. Driven by controller/BookLeave. -->
 	<Dialog
 		id="resourceBookLeaveDialog"
 		title="{i18n>mrBookLeaveTitle}"
@@ -11,8 +11,20 @@
 		class="sapUiContentPadding">
 		<content>
 			<VBox busy="{mrBook>/saving}" busyIndicatorDelay="0">
-				<Label text="{i18n>mrBookLeaveFor}" />
-				<Text text="{mrBook>/EmpName}" class="hrxResourceName sapUiSmallMarginBottom" />
+				<!-- Fixed from Manage Resources; chosen from a list in Leave management. -->
+				<Label text="{i18n>mrBookLeaveFor}" required="{mrBook>/pickEmployee}" labelFor="resourceBookLeaveEmployee" />
+				<Text text="{mrBook>/EmpName}" visible="{= !${mrBook>/pickEmployee} }" class="hrxResourceName sapUiSmallMarginBottom" />
+				<ComboBox
+					id="resourceBookLeaveEmployee"
+					width="100%"
+					visible="{mrBook>/pickEmployee}"
+					selectedKey="{mrBook>/EmpID}"
+					placeholder="{i18n>lmBookEmployeePlaceholder}"
+					items="{path: 'mrBook>/employees', templateShareable: false}"
+					selectionChange=".onBookLeaveEmployeeChange"
+					class="sapUiSmallMarginBottom">
+					<core:Item key="{mrBook>EmpID}" text="{mrBook>EmpName}" />
+				</ComboBox>
 
 				<Label text="{i18n>mrBookLeaveDates}" required="true" labelFor="resourceBookLeaveDates" />
 				<DateRangeSelection

@@ -1368,6 +1368,14 @@ sap.ui.define([
 		leaveStatus: leaveStatus,
 
 		/**
+		 * @returns {Promise<Array<object>>} the leave types: ID (the service's key),
+		 * code (HOLIL, SICKL, ...) and desc
+		 */
+		leaveTypes: function () {
+			return Data.leaveTypes();
+		},
+
+		/**
 		 * Answers an xsjs call from /hrx, when it is one answered here.
 		 * @param {string} sUrl the call's url
 		 * @param {object} [oInit] its fetch options

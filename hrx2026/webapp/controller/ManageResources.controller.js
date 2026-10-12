@@ -8,8 +8,10 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+	"../model/formatter",
+	"./BookLeave"
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
+	BookLeave) {
 	"use strict";
 
 	// Root path of the backend services. Both the local dev proxy (ui5.yaml) and the
@@ -33,7 +35,7 @@ sap.ui.define([
 
 	var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-	return Controller.extend("bsx.hrx.hrx2026.controller.ManageResources", {
+	return Controller.extend("bsx.hrx.hrx2026.controller.ManageResources", Object.assign({}, BookLeave, {
 
 		formatter: formatter,
 
@@ -350,164 +352,26 @@ sap.ui.define([
 		 * Opens the booking dialog for the resource on screen. Leave types are read
 		 * once, the first time it is needed.
 		 */
+		/**
+		 * Books leave for the resource on screen (see BookLeave).
+		 */
 		onOpenBookLeave: function () {
 			var oDetail = this.getModel("mrDetail").getData();
-
-			this.setModel(new JSONModel({
+			this.openBookLeave({
 				EmpID: oDetail.EmpID,
 				EmpName: oDetail.FullName,
 				EmpEmail: oDetail.Email,
-				SiteID: oDetail.BaseSiteKey,
-				LeaveCategoryId: "",
-				Comments: "",
-				leaveTypes: this._aLeaveTypes || [],
-				dates: [],
-				datesPicked: false,
-				NoOfDays: 0,
-				daysText: this.getText("mrBookLeavePickDates"),
-				saving: false
-			}), "mrBook");
-
-			if (!this._pLeaveTypes) {
-				this._pLeaveTypes = this._read("/LeaveTypes", {
-					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-				}).then(function (oData) {
-					this._aLeaveTypes = (oData.results || []).map(function (oType) {
-						return { LeaveCategoryId: oType.LeaveCategoryId, LeaveCategoryDesc: oType.LeaveCategoryDesc };
-					});
-				}.bind(this)).catch(function (oError) {
-					this._pLeaveTypes = null;
-					this._showError("mrErrorLeaveTypes", oError);
-				}.bind(this));
-			}
-
-			this._pLeaveTypes.then(function () {
-				var oBook = this.getModel("mrBook");
-				var aTypes = this._aLeaveTypes || [];
-				var oHoliday = aTypes.filter(function (oType) {
-					return oType.LeaveCategoryId === "HOLIL";
-				})[0] || aTypes[0];
-				oBook.setProperty("/leaveTypes", aTypes);
-				oBook.setProperty("/LeaveCategoryId", oHoliday ? oHoliday.LeaveCategoryId : "");
-			}.bind(this));
-
-			this._openDialog("_pBookLeaveDialog", "bsx.hrx.hrx2026.fragment.ResourceBookLeaveDialog").then(function () {
-				this.byId("resourceBookLeaveDates").setValue("");
-			}.bind(this));
+				SiteID: oDetail.BaseSiteKey
+			});
 		},
 
 		/**
-		 * Asks which of the chosen days can be booked: bank holidays, non-working days
-		 * and days already taken drop out, and a half-taken day offers its free half.
-		 * @param {sap.ui.base.Event} oEvent the date range change event
+		 * Called by BookLeave once the leave is saved.
+		 * @param {object} oForm what was booked
+		 * @returns {Promise} the resource's leave, read again
 		 */
-		onBookLeaveDatesChange: function (oEvent) {
-			var oBook = this.getModel("mrBook");
-			var oFrom = oEvent.getSource().getDateValue();
-			var oTo = oEvent.getSource().getSecondDateValue() || oFrom;
-
-			if (!oFrom) {
-				oBook.setProperty("/dates", []);
-				oBook.setProperty("/datesPicked", false);
-				this._updateBookDays();
-				return;
-			}
-
-			oBook.setProperty("/datesPicked", true);
-			this._getJson(LEAVE_SERVICE + "?cmd=getDates&" + new URLSearchParams({
-				FromDate: this._isoDate(oFrom),
-				ToDate: this._isoDate(oTo),
-				OrgID: this._sOrgId,
-				SiteID: oBook.getProperty("/SiteID") || "",
-				EmpID: oBook.getProperty("/EmpID")
-			}).toString()).then(function (oData) {
-				oBook.setProperty("/dates", (oData.dates || []).map(function (oDay) {
-					var sSlot = oDay.availableSlot;
-					return Object.assign({}, oDay, {
-						SelectedKey: sSlot === "AM" ? "A" : sSlot === "PM" ? "P" : "F",
-						FullDayEnabled: sSlot === "",
-						AMEnabled: sSlot === "" || sSlot === "AM",
-						PMEnabled: sSlot === "" || sSlot === "PM"
-					});
-				}));
-				this._updateBookDays();
-			}.bind(this)).catch(function (oError) {
-				oBook.setProperty("/dates", []);
-				this._updateBookDays();
-				this._showError("mrErrorLeaveDates", oError);
-			}.bind(this));
-		},
-
-		onBookLeaveDayChange: function () {
-			this._updateBookDays();
-		},
-
-		_updateBookDays: function () {
-			var oBook = this.getModel("mrBook");
-			var aDates = oBook.getProperty("/dates") || [];
-			var fDays = aDates.reduce(function (fTotal, oDay) {
-				return fTotal + (oDay.SelectedKey === "F" ? 1 : 0.5);
-			}, 0);
-
-			oBook.setProperty("/NoOfDays", fDays);
-			oBook.setProperty("/daysText", !oBook.getProperty("/datesPicked") ? this.getText("mrBookLeavePickDates") :
-				fDays ? this.getText(fDays === 1 ? "mrBookLeaveDay" : "mrBookLeaveDaysCount", [fDays]) :
-					this.getText("mrBookLeaveNoDays"));
-		},
-
-		/**
-		 * Books the leave on the resource's behalf, approved straight away - the same as a
-		 * booking from the team calendar.
-		 */
-		onConfirmBookLeave: function () {
-			var oBook = this.getModel("mrBook");
-			var oForm = oBook.getData();
-			var oProfile = CurrentUser.get() || {};
-			var sToday = this._isoDate(new Date());
-
-			oBook.setProperty("/saving", true);
-
-			this._postJson(LEAVE_SERVICE + "?cmd=requestLeave", {
-				LeaveReqSet: oForm.dates.map(function (oDay) {
-					return {
-						OrgID: this._sOrgId,
-						LeaveID: "",
-						EmpID: oForm.EmpID,
-						EmpName: oForm.EmpName,
-						EmpEmail: oForm.EmpEmail,
-						EmpSite: oForm.SiteID || "",
-						IsPaid: oForm.LeaveCategoryId === "UNPDL" ? "N" : "Y",
-						LeaveCategoryId: oForm.LeaveCategoryId,
-						NoOfDays: "1",
-						StartDate: oDay.date,
-						EndDate: oDay.date,
-						DayTime: oDay.SelectedKey === "A" ? "AM" : oDay.SelectedKey === "P" ? "PM" : "Full Day",
-						CreatedBy: oProfile.empID || "",
-						CreatedOn: sToday,
-						ApprovalRequired: "N",
-						ApproverID: oProfile.empID || "",
-						ApproverName: oProfile.name || "",
-						ApproverEmail: oProfile.email || "",
-						Status: "APR",
-						ApprovedOn: sToday,
-						ApprovedBy: oProfile.empID || "",
-						RequesterComments: oForm.Comments || "",
-						ApproverComments: ""
-					};
-				}, this)
-			}).then(function () {
-				oBook.setProperty("/saving", false);
-				this._closeDialog("_pBookLeaveDialog");
-				MessageToast.show(this.getText("mrLeaveBooked", [oForm.NoOfDays, oForm.EmpName]));
-				return this._loadLeaves(oForm.EmpEmail);
-			}.bind(this)).catch(function (oError) {
-				oBook.setProperty("/saving", false);
-				this._showError("mrErrorBookLeave", oError);
-			}.bind(this));
-		},
-
-		onCancelBookLeave: function () {
-			this._closeDialog("_pBookLeaveDialog");
+		_afterBookLeave: function (oForm) {
+			return this._loadLeaves(oForm.EmpEmail);
 		},
 
 		onApproveLeave: function (oEvent) {
@@ -1054,5 +918,5 @@ sap.ui.define([
 				details: this._errorText(oError)
 			});
 		}
-	});
+	}));
 });

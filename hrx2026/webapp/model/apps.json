@@ -61,6 +61,12 @@
       "route": "sickness"
     },
     {
+      "title": "Leave Management",
+      "subtitle": "Approve requests and book leave for your team",
+      "icon": "sap-icon://general-leave-request",
+      "route": "leavemanagement"
+    },
+    {
       "title": "Timesheet Reporting",
       "subtitle": "Billing, days booked, submissions and utilisation",
       "icon": "sap-icon://business-objects-experience",

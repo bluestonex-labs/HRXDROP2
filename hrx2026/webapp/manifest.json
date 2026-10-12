@@ -180,6 +180,11 @@
           "name": "documents",
           "pattern": "documents",
           "target": "documents"
+        },
+        {
+          "name": "leavemanagement",
+          "pattern": "leavemanagement",
+          "target": "leavemanagement"
         }
       ],
       "targets": {
@@ -252,6 +257,11 @@
           "viewName": "Documents",
           "viewLevel": 1,
           "viewId": "documents"
+        },
+        "leavemanagement": {
+          "viewName": "LeaveManagement",
+          "viewLevel": 1,
+          "viewId": "leavemanagement"
         },
         "notFound": {
           "viewName": "NotFound",

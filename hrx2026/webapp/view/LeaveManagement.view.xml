@@ -1,0 +1,127 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.LeaveManagement"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	class="hrxLeaveManagement">
+
+	<Page id="leaveManagementPage" showHeader="false" title="{i18n>lmTitle}" showNavButton="false" class="hrxPageContent">
+
+		<subHeader>
+			<OverflowToolbar id="leaveManagementToolbar" class="hrxFilterBar" visible="{app>/user/isManager}">
+				<Button
+					icon="sap-icon://navigation-left-arrow"
+					type="Transparent"
+					tooltip="{i18n>lmPreviousYear}"
+					press=".onStepYear">
+					<customData><core:CustomData key="step" value="previous" /></customData>
+				</Button>
+				<Text text="{lmView>/year/label}" class="hrxSkYearLabel" />
+				<Button
+					icon="sap-icon://navigation-right-arrow"
+					type="Transparent"
+					tooltip="{i18n>lmNextYear}"
+					enabled="{= !${lmView>/isLastYear} }"
+					press=".onStepYear">
+					<customData><core:CustomData key="step" value="next" /></customData>
+				</Button>
+				<ToolbarSpacer />
+				<Button
+					id="leaveManagementBook"
+					text="{i18n>mrBookLeave}"
+					icon="sap-icon://general-leave-request"
+					type="Emphasized"
+					press=".onOpenBook" />
+			</OverflowToolbar>
+		</subHeader>
+
+		<content>
+			<IllustratedMessage
+				visible="{= !${app>/user/isManager} }"
+				illustrationType="sapIllus-UnableToLoad"
+				title="{i18n>lmTitle}"
+				description="{i18n>adminRestricted}" />
+
+			<VBox visible="{app>/user/isManager}" class="hrxSkStack">
+
+				<!-- Pending approvals: every request still waiting, whatever its dates -->
+				<VBox class="hrxSkCard hrxTrCard" busy="{lmView>/pendingBusy}" busyIndicatorDelay="0">
+					<HBox alignItems="Center" class="hrxTrCardHead">
+						<VBox class="hrxTrCardHeadText">
+							<Title text="{i18n>mgrPendingTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+						</VBox>
+						<Text text="{lm>/pendingText}" class="hrxSkHint" />
+					</HBox>
+					<VBox visible="{= ${lm>/pending}.length === 0 }" class="hrxDocEmpty">
+						<Text text="{i18n>lmNothingPending}" class="hrxResourceMeta" />
+					</VBox>
+					<VBox items="{path: 'lm>/pending', templateShareable: false}">
+						<HBox alignItems="Center" class="hrxMgrApprRow">
+							<Avatar initials="{lm>initials}" displaySize="S" class="sapUiTinyMarginEnd" />
+							<VBox>
+								<Text text="{lm>Name}" class="hrxResourceName" />
+								<Text text="{lm>dates}" class="hrxResourceMeta" />
+								<Text text="{lm>typeText}" class="hrxResourceMeta" />
+							</VBox>
+							<Text text="{lm>daysText}" class="hrxMgrApprDays" />
+							<HBox class="hrxMgrApprActs">
+								<Button text="{i18n>btnApprove}" icon="sap-icon://accept" type="Accept"
+									press=".onApprove" class="sapUiTinyMarginEnd" />
+								<Button text="{i18n>btnReject}" icon="sap-icon://decline" type="Reject"
+									press=".onReject" />
+							</HBox>
+						</HBox>
+					</VBox>
+				</VBox>
+
+				<!-- Team leave: the financial year's requests, cancelled ones left out -->
+				<VBox class="hrxSkCard hrxTrCard" busy="{lmView>/busy}" busyIndicatorDelay="0">
+					<HBox alignItems="Center" wrap="Wrap" class="hrxTrCardHead">
+						<VBox class="hrxTrCardHeadText">
+							<Title text="{i18n>lmTeamLeave}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+							<Text text="{lm>/countText}" class="hrxSkHint" />
+						</VBox>
+						<SearchField
+							value="{lmView>/q}"
+							placeholder="{i18n>lmSearch}"
+							liveChange=".onSearch"
+							width="16rem" />
+					</HBox>
+					<Table
+						items="{path: 'lm>/rows', templateShareable: false}"
+						noDataText="{= ${lmView>/q} ? ${i18n>lmNoMatch} : ${i18n>lmNoLeave} }"
+						growing="true"
+						growingThreshold="50"
+						class="hrxSkTable">
+						<columns>
+							<Column width="26%"><Text text="{i18n>mgrColEmployee}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>lmColDates}" /></Column>
+							<Column hAlign="Center" width="6rem"><Text text="{i18n>lmColDays}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>lmColType}" /></Column>
+							<Column hAlign="End" width="9rem"><Text text="{i18n>mgrColStatus}" /></Column>
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<HBox alignItems="Center">
+										<Avatar initials="{lm>initials}" displaySize="XS" class="sapUiTinyMarginEnd" />
+										<Text text="{lm>Name}" class="hrxResourceName" />
+									</HBox>
+									<Text text="{lm>dates}" />
+									<Text text="{lm>daysNum}" />
+									<HBox alignItems="Center">
+										<core:HTML content="{lm>dotHtml}" />
+										<Text text="{lm>type}" />
+										<Text text="{lm>duration}" class="hrxLmDur" />
+									</HBox>
+									<ObjectStatus text="{lm>statusText}" state="{lm>statusState}" inverted="true" class="hrxSkPill" />
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</VBox>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>
