@@ -17,8 +17,6 @@
 .hrx .btn:disabled { opacity: .55; cursor: progress; }
 
 /* a strip saying a page runs on sample data */
-.hrx .hrx-preview { margin-top: 0; }
-.hrx .hrx-preview b { font-weight: 700; }
 .hrx .alerts:empty, .hrx .alerts > div:empty { display: none; }
 
 /* manager-only cards (App Explorer) */
@@ -80,3 +78,24 @@
 .hrx .a, .hrx .avatar-sm, .hrx .side-avatar, .hrx .logo-c { position: relative; overflow: hidden; }
 .hrx .hrx-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; background: var(--surface); }
 .hrx .logo-c .hrx-photo { object-fit: contain; padding: 3px; }
+
+/* "Service needed": where a feature has no HRX endpoint yet (ui/needed.js) */
+.hrx .need { padding: 22px 24px; }
+.hrx .need-head { display: flex; gap: 14px; align-items: flex-start; }
+.hrx .need-ico { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--amber-soft); color: #92400e; font-size: 20px; }
+.hrx .need-t { font-family: var(--disp); text-transform: uppercase; font-weight: 800; font-size: 14px; color: var(--ink); line-height: 1.3; }
+.hrx .need-s { font-size: 12.5px; color: var(--txt-3); line-height: 1.5; margin-top: 4px; max-width: 640px; }
+.hrx .need-list { list-style: none; margin: 14px 0 0 52px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hrx .need-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 12.5px; line-height: 1.45; }
+.hrx .need-kind { flex: none; min-width: 62px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--txt-3); }
+.hrx .need-list code, .hrx .strip code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 600; color: var(--ink); background: var(--frost-2); border-radius: 4px; padding: 1px 6px; }
+.hrx .need-d { color: var(--txt-2); flex-basis: 100%; padding-left: 70px; }
+.hrx .need-foot { margin: 16px 0 0 52px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--txt-3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hrx .need-foot .alert-link { margin: 0; }
+.hrx td .need-list { margin: 0; }
+.hrx td .need-d { padding-left: 70px; }
+@media (max-width: 640px) {
+	.hrx .need { padding: 18px 16px; }
+	.hrx .need-list, .hrx .need-foot { margin-left: 0; }
+	.hrx .need-d, .hrx td .need-d { padding-left: 0; }
+}

@@ -1,9 +1,10 @@
 /*
  * Manage Projects (managers): Projects and their commercials, and who is assigned at
  * which billing scheme and day rate (UserToProject, BillingScheme). Project areas,
- * client team and attachments have no HRX entity yet and show sample data.
+ * client team and attachments have no HRX entity yet: those parts say which services
+ * they need (../needed.js).
  */
-sap.ui.define(["../core", "../service", "../data", "../md", "../preview"], function (hrx, svc, data, md, preview) {
+sap.ui.define(["../core", "../service", "../data", "../md", "../needed"], function (hrx, svc, data, md, needed) {
 	"use strict";
 
 	var api, root, items = [], clients = [], people = [], schemes = [];
@@ -20,7 +21,7 @@ sap.ui.define(["../core", "../service", "../data", "../md", "../preview"], funct
 		items = r[0]; clients = r[1]; people = r[2]; schemes = r[3];
 		data.invalidate("projects");
 	}
-	var infoSpecs = function (p) { return [{ k: "ID", label: "Project key", type: "ro", val: p.ID }, { k: "ProjectDesc", label: "Project", req: true, val: p.ProjectDesc }, { k: "client", label: "Client", type: "ro", val: clientName(p) }, { k: "ProjectType", label: "Project type", type: "select", ph: "How will this project be charged?", opts: typeOpts(p), val: p.ProjectType }, { k: "Priority", label: "Priority", type: "select", ph: "How urgent is this project?", opts: ["Low", "Medium", "High"], val: p.Priority }, { k: "ProjectManagerID", label: "Project manager", type: "select", ph: "Who will manage this project?", opts: userOpts(), val: p.ProjectManagerID }, { k: "areas", label: "Project areas", type: "chips", opts: preview.AREAS, val: preview.projectAreas[p.ProjectDesc] || [], span2: true, dis: true, hint: "Project areas are not held by the HRX service yet" }]; };
+	var infoSpecs = function (p) { return [{ k: "ID", label: "Project key", type: "ro", val: p.ID }, { k: "ProjectDesc", label: "Project", req: true, val: p.ProjectDesc }, { k: "client", label: "Client", type: "ro", val: clientName(p) }, { k: "ProjectType", label: "Project type", type: "select", ph: "How will this project be charged?", opts: typeOpts(p), val: p.ProjectType }, { k: "Priority", label: "Priority", type: "select", ph: "How urgent is this project?", opts: ["Low", "Medium", "High"], val: p.Priority }, { k: "ProjectManagerID", label: "Project manager", type: "select", ph: "Who will manage this project?", opts: userOpts(), val: p.ProjectManagerID }]; };
 	var comSpecs = function (p) { return [{ k: "PONumber", label: "PO number", val: p.PONumber }, { k: "POValue", label: "PO value", type: "number", min: 0, val: p.POValue, suffix: "GBP" }, { k: "TotBillableDays", label: "Billable days", type: "number", min: 0, val: p.TotBillableDays }, { k: "StartDate", label: "Start date", type: "date", val: day(p.StartDate) }, { k: "EndDate", label: "End date", type: "date", val: day(p.EndDate) }, { k: "IsTimeBookingAllowed", label: "Time booking allowed", type: "toggle", val: p.IsTimeBookingAllowed !== false }, { k: "IsActive", label: "Active", type: "toggle", val: p.IsActive !== false }]; };
 
 	async function resTab(p) {
@@ -35,10 +36,10 @@ sap.ui.define(["../core", "../service", "../data", "../md", "../preview"], funct
 			}), "No resources assigned to this project");
 	}
 	var tabs = [
-		{ k: "info", label: "Info", render: function (p) { return "<div class=\"fsec\">Basic information</div>" + hrx.form(infoSpecs(p)) + "<div class=\"fsec\">Commercials</div>" + hrx.form(comSpecs(p)); } },
+		{ k: "info", label: "Info", render: function (p) { return "<div class=\"fsec\">Basic information</div>" + hrx.form(infoSpecs(p)) + "<div style=\"margin-top:var(--gap)\">" + needed.strip("projectAreas", "Project areas are not shown.") + "</div><div class=\"fsec\">Commercials</div>" + hrx.form(comSpecs(p)); } },
 		{ k: "res", label: "Resourcing", render: resTab },
-		{ k: "team", label: "Client Team", render: function (p) { var x = preview.projectOf(p.ID); return "<div style=\"margin-bottom:var(--gap)\">" + hrx.previewStrip("Client teams are sample data.") + "</div><div class=\"sect-head\"><div class=\"t\">Client support team</div><button class=\"btn ghost sm\" type=\"button\" data-act=\"add\">" + hrx.ICON.userplus + "Add client user</button></div>" + hrx.tbl([{ h: "User" }, { h: "Email" }, { h: "Status" }, { h: "" }], x.team.map(function (u, i) { return ["<b>" + hrx.esc(u.name) + "</b>", hrx.esc(u.email), hrx.pill(u.active !== false ? "ok" : "warn", u.active !== false ? "Active" : "Inactive"), "<div class=\"rowacts\"><button class=\"icon-btn sm del\" type=\"button\" data-act=\"del\" data-i=\"" + i + "\" title=\"Remove\">" + hrx.ICON.trash + "</button></div>"]; }), "No client users assigned to this project"); } },
-		{ k: "att", label: "Attachments", render: function (p) { var x = preview.projectOf(p.ID); return "<div style=\"margin-bottom:var(--gap)\">" + hrx.previewStrip("Project attachments stay in this browser session.") + "</div><div class=\"sect-head\"><div class=\"t\">Attachments</div><button class=\"btn ghost sm\" type=\"button\" data-act=\"upload\">" + hrx.ICON.upload + "Upload</button><input type=\"file\" id=\"projAtt\" hidden></div>" + hrx.tbl([{ h: "File" }, { h: "Uploaded" }, { h: "" }], x.att.map(function (a, i) { return ["<b>" + hrx.esc(a.name) + "</b><small class=\"tsub\">" + a.size + "</small>", hrx.fmt(a.date), "<div class=\"rowacts\"><button class=\"icon-btn sm\" type=\"button\" data-act=\"dl\" data-i=\"" + i + "\" title=\"Download\">" + hrx.ICON.download + "</button><button class=\"icon-btn sm del\" type=\"button\" data-act=\"del\" data-i=\"" + i + "\" title=\"Delete\">" + hrx.ICON.trash + "</button></div>"]; }), "No attachments"); } }
+		{ k: "team", label: "Client Team", render: function () { return needed.block("projectTeam"); } },
+		{ k: "att", label: "Attachments", render: function () { return needed.block("projectAttachments"); } }
 	];
 
 	function assignDialog(p, o, a) {
@@ -108,21 +109,6 @@ sap.ui.define(["../core", "../service", "../data", "../md", "../preview"], funct
 							catch (e) { hrx.toast(hrx.errText(e), "crit"); return false; }
 						}, rel);
 					}
-					return;
-				}
-				var x = preview.projectOf(p.ID);
-				if (tab === "team") {
-					if (act === "add") {
-						var cli = preview.clientOf(clientName(p)), users = cli.users;
-						if (!users.length) { hrx.toast("This client has no support users yet — add them under Manage Clients", "crit"); return; }
-						var specs = [{ k: "u", label: "User", type: "select", req: true, ph: "Select a client user", opts: users.map(function (u) { return [u.email, u.first + " " + u.last]; }), span2: true }];
-						hrx.modal({ title: "Assign client user", body: hrx.form(specs, 1), confirm: { text: "Save", cls: "primary" }, onConfirm: function (bd) { if (!hrx.validate(bd, specs)) { hrx.toast("This field is mandatory", "crit"); return false; } var u = users.find(function (y) { return y.email === hrx.read(bd).u; }); x.team.push({ name: u.first + " " + u.last, email: u.email, active: u.active }); hrx.toast("Client user assigned (preview)"); a.detail(); } });
-					} else if (act === "del") { x.team.splice(i, 1); hrx.toast("Client user removed (preview)"); a.detail(); }
-				} else if (tab === "att") {
-					var inp = root.querySelector("#projAtt");
-					if (act === "upload") { inp.onchange = function () { var f = inp.files[0]; if (!f) { return; } x.att.push({ name: f.name, size: (f.size / 1024).toFixed(0) + " KB", date: hrx.iso(hrx.today()), url: URL.createObjectURL(f) }); hrx.toast("Attachment added for this session"); a.detail(); }; inp.click(); }
-					else if (act === "dl") { var at = x.att[i]; if (at.url) { hrx.openUrl(at.url); } else { hrx.toast("This attachment has no content to download.", "crit"); } }
-					else if (act === "del") { var at2 = x.att[i]; hrx.confirm("Delete attachment", "Are you sure you want to delete " + hrx.esc(at2.name) + "?", "Delete", function () { x.att.splice(i, 1); hrx.toast("Attachment deleted"); a.detail(); }); }
 				}
 			}
 		});

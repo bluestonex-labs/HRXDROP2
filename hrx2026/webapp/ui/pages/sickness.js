@@ -5,12 +5,14 @@
  * Trigger follow-ups and the return-to-work checklist have no HRX entity yet, so they
  * are kept in this browser only.
  */
-sap.ui.define(["../core", "../service", "../data", "../picker", "../preview"], function (hrx, svc, data, picker, preview) {
+sap.ui.define(["../core", "../service", "../data", "../picker", "../needed"], function (hrx, svc, data, picker, needed) {
 	"use strict";
 
 	var root, $ = function (id) { return root.querySelector("#" + id); };
 	var expanded = {}, sick = [], rtw = null;
 	var REC = "Hold an informal wellbeing conversation and record the outcome. Consider a formal attendance review if a fourth instance occurs before the period ends.";
+	// the return-to-work process, step by step
+	var RTW_STEPS = ["Absence recorded and categorised", "Fit note received and filed", "Return-to-work conversation held", "Wellbeing support options discussed", "Outcome recorded and trigger reviewed"];
 	var dur = function (d) { return d + (d === 1 ? " day" : " days"); }, first = function (n) { return n.split(" ")[0]; };
 
 	function rtwState() { try { return JSON.parse(localStorage.getItem("hrxRtw") || "null"); } catch (e) { return null; } }
@@ -19,9 +21,9 @@ sap.ui.define(["../core", "../service", "../data", "../picker", "../preview"], f
 	function render(el) {
 		root = el;
 		el.innerHTML = "<div class=\"page-actions\"><button class=\"btn primary\" id=\"sickRecord\" type=\"button\">" + hrx.ICON.plus + "Record sickness</button></div>" +
-			"<div id=\"sickAlert\" class=\"alerts\"></div>" +
+			"<div class=\"alerts\">" + needed.strip("sickness") + "</div>" + "<div id=\"sickAlert\" class=\"alerts\"></div>" +
 			"<div class=\"section-head\"><div class=\"section-title\">Policy triggers — action required</div><div class=\"section-hint\">" + data.SICK_RULE + "</div></div><div id=\"trigList\" class=\"stack\"></div>" +
-			"<div class=\"section-head\"><div class=\"section-title\">Return-to-work in progress</div><div class=\"section-hint\">Checklist progress is kept in this browser — the HRX service has no return-to-work entity yet.</div></div><div id=\"rtwList\" class=\"rtw-grid\"></div>" +
+			"<div class=\"section-head\"><div class=\"section-title\">Return-to-work in progress</div><div class=\"section-hint\">Checklist progress is kept in this browser until the HRX service has ReturnToWork.</div></div><div id=\"rtwList\" class=\"rtw-grid\"></div>" +
 			"<div class=\"card\" id=\"sickAllCard\" style=\"margin-top:var(--gap)\"><div class=\"card-head toggle\" data-toggle=\"all\" role=\"button\" tabindex=\"0\"><div class=\"card-lead\"><span class=\"chev\">" + hrx.ICON.chr + "</span><div class=\"card-title\">All sickness — last 12 months</div></div><div class=\"card-hint\" id=\"sickCount\"></div></div><div id=\"sickTable\"></div></div>";
 		el.addEventListener("click", function (e) { var t = e.target.closest("[data-toggle]"); if (!t) { return; } expanded[t.dataset.toggle] = !expanded[t.dataset.toggle]; paint(); });
 		el.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".card-head.toggle")) { e.preventDefault(); e.target.click(); } });
@@ -58,7 +60,7 @@ sap.ui.define(["../core", "../service", "../data", "../picker", "../preview"], f
 		$("rtwList").innerHTML = list.length ? list.map(function (r) {
 			var p = data._byId.user[r.id] || {};
 			return "<div class=\"card rtw\" data-id=\"" + r.id + "\" data-grp=\"" + r.g.id + "\"><div class=\"card-head\"><div class=\"person\"><span class=\"avatar-sm grad-av\">" + data.face(r.id, r.g.name) + "</span><div><b>" + hrx.esc(r.g.name) + "</b><small>Off sick " + r.g.label + "</small></div></div>" + hrx.pill("warn", "In progress") + "</div>" +
-				"<div class=\"card-body--padded\"><div class=\"trig-lbl\" style=\"margin-top:0\">Process steps</div><div class=\"steps\">" + preview.RTW_STEPS.map(function (s, i) { var done = r.steps[i]; return "<div class=\"step" + (done ? " done" : "") + "\"><span class=\"step-i\">" + (done ? hrx.ICON.check : "") + "</span><span class=\"step-t\">" + s + "</span>" + (done ? "" : "<button class=\"btn ghost sm\" type=\"button\" data-act=\"step\" data-i=\"" + i + "\">Mark done</button>") + "</div>"; }).join("") + "</div>" +
+				"<div class=\"card-body--padded\"><div class=\"trig-lbl\" style=\"margin-top:0\">Process steps</div><div class=\"steps\">" + RTW_STEPS.map(function (s, i) { var done = r.steps[i]; return "<div class=\"step" + (done ? " done" : "") + "\"><span class=\"step-i\">" + (done ? hrx.ICON.check : "") + "</span><span class=\"step-t\">" + s + "</span>" + (done ? "" : "<button class=\"btn ghost sm\" type=\"button\" data-act=\"step\" data-i=\"" + i + "\">Mark done</button>") + "</div>"; }).join("") + "</div>" +
 				"<div class=\"rtw-foot\"><a class=\"btn ghost sm\" href=\"mailto:" + hrx.esc(p.WorkEmail || "") + "?subject=Return to work\">" + hrx.ICON.mail + "Email</a><button class=\"btn primary sm\" type=\"button\" data-act=\"complete\">Mark RTW complete</button></div></div></div>";
 		}).join("") : "<div class=\"card\" style=\"grid-column:1/-1\">" + hrx.empty("No return-to-work processes are open", "Anyone off sick in the last 30 days appears here.") + "</div>";
 

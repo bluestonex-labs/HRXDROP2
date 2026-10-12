@@ -9,7 +9,7 @@ The HRX Drop 2 design, built as a UI5 application on the HRX CAP service.
   - `service.js` — one named method per HRX endpoint (entities, functions, actions), CSRF handling, paging, errors.
   - `data.js` — sign-in, the manager check, cached reference data and shared calculations (leave grouping, weekly compliance, utilisation, sickness triggers).
   - `config.js` — `TEST_SHOW_ALL` (see below) and the manager exceptions.
-  - `preview.js` — sample data for the parts of the design the service has no endpoint for. Every page that uses it says so.
+  - `needed.js` — the services the HRX service still needs. Where the design has a feature with no endpoint, the page shows which service it needs instead of data; App Explorer → HRX services lists them all.
   - `pages/*.js` — one module per page.
 - `webapp/css/hrx-mobile.css` — tablets and phones: tiles go two-up below 1200px, cards stack below 1000px, the side rail becomes a drawer opened from the top bar below 900px, and below 640px forms go single-column while wide tables and the team calendar scroll sideways (names pinned).
 - `docs/screenshots/{desktop,tablet,phone}` — every page at 1440×900, 768×1024 (iPad) and 390×844 (iPhone 14).
@@ -52,13 +52,24 @@ HRX_TOKEN=<token> npm run start-hrx
 
 `App Explorer → HRX services` lists every endpoint, which page uses it, and a live check of each read.
 
-## What the service does not have yet
+## Services needed to complete the app
 
-| Missing | Where it shows | Shown as |
+The app shows no sample data. Where the design has a feature the HRX service has no endpoint for, that place says *Service needed* and names the endpoints (proposed names, in the style of the existing service). The list lives in `webapp/ui/needed.js` and is shown in full under App Explorer → HRX services.
+
+| Needed for | Where it shows | Endpoints needed |
 |---|---|---|
-| Policy documents and acknowledgements | Policies to read, Documents, Home KPI | Sample data, flagged |
-| Notifications / reminder sending | Bell, Remind buttons | Bell worked out from live data; reminders open the mail app |
-| Sickness trigger outcomes, return-to-work steps | Sickness | Kept in the browser |
-| Client support team, SLA, components, application services | Manage Clients | Sample data, flagged |
-| Project areas, client team, attachments | Manage Projects | Sample data, flagged |
-| Job title, contact name, day cost, bonus objectives / feedback | Several | Left out or marked |
+| Policies & acknowledgements | Policies to read, Documents, Home tile | `Policies`, `PolicyAcknowledgements`, `fetchMyPolicies()`, `acknowledgePolicy(PolicyID)`, `fetchPolicyAcknowledgements(PolicyID)`, Documents object type `Policy` |
+| Reminders & notifications | Remind buttons, the bell | `sendReminder(Type, EmployeeIDs, Message)`, optionally `Notifications` (until then reminders open the mail app; the bell is worked out from live data) |
+| Sickness follow-up | Sickness — outcomes, return-to-work checklist | `SicknessReviews`, `ReturnToWork` (until then kept in the browser only) |
+| Client support team | Manage Clients — Support Team; Manage Projects — Client Team | `ClientUsers` |
+| Client service levels | Manage Clients — SLA | `ClientSLAs` |
+| Licensed components | Manage Clients — Components | `ClientComponents` |
+| Application services | Manage Clients — Application Details | `ClientApplications` |
+| Project areas | Manage Projects — Info | `ProjectAreas` |
+| Project client team | Manage Projects — Client Team | `ProjectClientTeam` |
+| Project attachments | Manage Projects — Attachments | Documents object type `Project`, `fetchProjectDocuments(ProjectID)` |
+| Job title | Team Calendar, Manage Resources | `Users.JobTitle` |
+| Client contact name | Manage Clients — primary contact | `Contacts.FirstName`, `Contacts.LastName` |
+| Bonus objectives & feedback | My Bonus | `BonusObjectives` |
+| Day cost | Manage Projects — Assign resource | `UserToProject.DayCost` |
+| Expenses | Side rail (coming soon) | Out of scope — its own app |

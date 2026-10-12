@@ -3,7 +3,7 @@
  * check of each read endpoint. Writes are not probed (they would change data); the
  * counters show how each one has fared in this session.
  */
-sap.ui.define(["../core", "../service", "../data"], function (hrx, svc, data) {
+sap.ui.define(["../core", "../service", "../data", "../needed"], function (hrx, svc, data, needed) {
 	"use strict";
 
 	var root, results = {};
@@ -51,26 +51,16 @@ sap.ui.define(["../core", "../service", "../data"], function (hrx, svc, data) {
 			E("submitBonus", "Action", "Manage Bonus — submit", null)
 		];
 	}
-	var MISSING = [
-		["Policies & acknowledgements", "Policies to read; Documents; Home KPI “Docs awaiting acknowledgement”", "No entity for policy documents, versions, audiences or acknowledgements (Documents only stores pictures and logos)."],
-		["Notifications / reminders", "Bell; Timesheet reporting “Remind”; Documents “Remind outstanding”", "No notification store or send endpoint. The bell is worked out from live data; reminders open the user's mail app."],
-		["Sickness follow-up", "Sickness — trigger message / dismiss, return-to-work checklist", "No entity for trigger outcomes or RTW steps; kept in the browser only."],
-		["Client support team, SLA, components, application services", "Manage Clients — four tabs", "No entities in HRX (they lived in the old xsodata service)."],
-		["Project areas, client team, attachments", "Manage Projects", "No fields or entities; Documents does not accept object type Project."],
-		["Job title", "Team Calendar subtitle, Manage Resources", "Users has no job title; the user type (Staff / Contractor) is shown instead."],
-		["Contact name", "Manage Clients — primary contact", "Contacts has no name field."],
-		["Bonus objectives & annual feedback", "My Bonus", "Only the bonus paid per month is held."],
-		["Day cost", "Manage Projects — Assign resource", "UserToProject holds the day rate only."],
-		["Expenses", "Side rail (coming soon)", "Out of scope for HRX — its own app."]
-	];
-
 	function render(el) {
 		root = el;
 		el.innerHTML = "<button class=\"btn ghost\" type=\"button\" data-go=\"explorer\" style=\"margin-bottom:var(--gap)\"><i class=\"ti ti-arrow-left\" style=\"vertical-align:-2px;margin-right:6px\"></i>Back to App Explorer</button>" +
 			"<div class=\"kpis\" id=\"svKpis\"></div>" +
 			"<div class=\"card\"><div class=\"card-head\"><div><div class=\"card-title\">Endpoints</div><div class=\"card-hint\" id=\"svHint\" style=\"margin-top:3px\"></div></div><button class=\"btn primary sm\" id=\"svRun\" type=\"button\">" + hrx.ICON.refresh + "Check again</button></div><div id=\"svTable\"></div></div>" +
-			"<div class=\"section-head\"><div class=\"section-title\">Not in the HRX service yet</div><div class=\"section-hint\">These parts of the design have no endpoint; the app shows them on sample data and says so.</div></div>" +
-			"<div class=\"card\">" + hrx.tbl([{ h: "Missing" }, { h: "Where it shows" }, { h: "Why" }], MISSING.map(function (m) { return ["<b>" + m[0] + "</b>", hrx.esc(m[1]), "<span class=\"projs\">" + hrx.esc(m[2]) + "</span>"]; })) + "</div>";
+			"<div class=\"section-head\"><div class=\"section-title\">Services needed to complete the app</div><div class=\"section-hint\">Parts of the design the HRX service has no endpoint for. The app shows no sample data for them: each place says which service it needs.</div></div>" +
+			"<div class=\"card\">" + hrx.tbl([{ h: "Needed for" }, { h: "Where it shows" }, { h: "Today" }, { h: "Endpoints needed" }], Object.keys(needed.ALL).map(function (k) {
+				var n = needed.ALL[k];
+				return ["<b>" + hrx.esc(n.title) + "</b>", "<span class=\"projs\">" + hrx.esc(n.where) + "</span>", "<span class=\"projs\">" + hrx.esc(n.now) + "</span>", n.needs.length ? needed.list(k) : "<span class=\"projs\">—</span>"];
+			})) + "</div>";
 		el.querySelector("#svRun").addEventListener("click", run);
 	}
 	async function run() {

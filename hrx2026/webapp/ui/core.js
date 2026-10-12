@@ -179,10 +179,6 @@ sap.ui.define([], function () {
 			var m = hrx.errText(e), dms = /^Request failed with status code (\d+)/.exec(m);
 			return dms ? "The HRX service could not create the " + what + "'s folder in SAP Document Management (it answered " + dms[1] + "), so the " + what + " was not created. This needs fixing on the service." : m;
 		},
-		// a strip on pages whose data has no HRX endpoint yet: they show the prototype's sample data
-		previewStrip: function (what) {
-			return "<div class=\"strip warn hrx-preview\">" + ICON.tri + "<span><b>Preview data.</b> " + hrx.esc(what) + " The HRX service has no endpoint for this yet, so nothing here is saved.</span></div>";
-		},
 		confirm: function (title, msg, okText, onOk, danger) { hrx.modal({ title: title, body: "<p class=\"modal-p\">" + msg + "</p>", confirm: { text: okText, cls: danger === false ? "primary" : "danger" }, onConfirm: onOk }); },
 		tabsHtml: function (tabs, cur) { return "<div class=\"tabs\">" + tabs.map(function (t) { return "<button type=\"button\" class=\"tab" + (t.k === cur ? " on" : "") + "\" data-tab=\"" + t.k + "\">" + hrx.esc(t.label) + "</button>"; }).join("") + "</div>"; },
 		kpi: function (cls, icon, label, num, unit, sub) {

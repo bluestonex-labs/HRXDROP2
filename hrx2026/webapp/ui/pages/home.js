@@ -3,7 +3,7 @@
  * four KPI tiles) above the cards everyone has: Quick Leave, Quick Timesheet and this
  * week's timesheet rings.
  */
-sap.ui.define(["../core", "../service", "../data", "../picker", "../preview", "./leave", "./timesheet"], function (hrx, svc, data, picker, preview, leave, timesheet) {
+sap.ui.define(["../core", "../service", "../data", "../picker", "./leave", "./timesheet"], function (hrx, svc, data, picker, leave, timesheet) {
 	"use strict";
 
 	var root, ql, $ = function (id) { return root.querySelector("#" + id); };
@@ -81,13 +81,13 @@ sap.ui.define(["../core", "../service", "../data", "../picker", "../preview", ".
 	function renderKpis(people, week, trig, ix) {
 		var leaveN = people.filter(function (p) { return p.leave; }).length, work = people.length - leaveN;
 		var sites = Object.keys(ix.site).map(function (s) { return people.filter(function (p) { return p.site === s && !p.leave; }).length + " " + ix.site[s].SiteDesc; });
-		var pct = data.complianceOf(week), docs = preview.lowAckCount();
+		var pct = data.complianceOf(week);
 		var tile = function (cls, icon, label, num, unit, sub, link, go) { return "<div class=\"kpi " + cls + "\"><div class=\"glyph " + cls + "\"><i class=\"ti " + icon + "\"></i></div><div class=\"klab\">" + label + "</div><div class=\"knum\">" + num + (unit ? "<span class=\"kunit\">" + unit + "</span>" : "") + "</div><div class=\"ksub\">" + sub + "</div><button class=\"btn ghost sm klink\" type=\"button\" data-go=\"" + go + "\">" + link + hrx.ICON.arrow + "</button></div>"; };
 		$("mgrKpis").innerHTML =
 			tile("neu", "ti-users", "Team in / working today", work, "of " + people.length, sites.join(" · ") + " · " + leaveN + " on leave", "Full view", "teamcal") +
 			tile(pct >= 90 ? "ok" : "warn", "ti-clipboard-check", "Timesheet compliance", pct, "%", "This week, hours due so far", "View team", "tsreport") +
 			tile(trig > 0 ? "crit" : "ok", "ti-alert-triangle", "Policy triggers this period", trig, "", "Sickness policy", "Review", "sickness") +
-			tile(docs > 0 ? "warn" : "ok", "ti-file-text", "Docs awaiting acknowledgement", docs, "", "Across all policies (preview)", "Review", "documents");
+			tile("neu", "ti-file-text", "Docs awaiting acknowledgement", "—", "", "Service needed: Policies", "Details", "services");
 	}
 	function renderTeam(people) {
 		var last = function (n) { return n.split(" ").slice(-1)[0]; };

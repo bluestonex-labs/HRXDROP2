@@ -23,7 +23,7 @@ sap.ui.define(["../core", "../service", "../data"], function (hrx, svc, data) {
 			render: function (el) {
 				root = el;
 				el.innerHTML = back + "<div class=\"kpis\" id=\"mbKpis\"></div><div class=\"tablecard\"><div class=\"ttop\"><div class=\"ttop-title\">Bonus History</div><div class=\"ttop-meta\" id=\"mbMeta\"></div></div><div class=\"tscroll\"><table class=\"bonus-table asg\"><thead><tr><th class=\"c-chev\"></th><th>Year</th><th>GDP</th><th class=\"obj-head\">Personal objectives</th><th class=\"obj-head\">Company objectives</th><th>Annual Feedback</th></tr></thead><tbody id=\"bonusTableBody\"></tbody></table></div>" +
-					"<div class=\"cmt-note\"><i class=\"ti ti-info-circle\" style=\"color:var(--ice-deep)\"></i>Objectives and annual feedback are not held by the HRX service yet; the bonus paid each month is.</div></div>";
+					"<div class=\"cmt-note\"><i class=\"ti ti-info-circle\" style=\"color:var(--ice-deep)\"></i>Objectives and annual feedback need a service the HRX service doesn't have yet (BonusObjectives); the bonus paid each month is real.</div></div>";
 				el.querySelector("#bonusTableBody").addEventListener("click", function (e) { var r = e.target.closest("tr.asg-row"); if (!r) { return; } open[r.dataset.k] = !open[r.dataset.k]; explorer.myBonus.paint(); });
 			},
 			load: async function () {
