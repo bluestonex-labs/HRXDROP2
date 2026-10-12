@@ -105,7 +105,13 @@ sap.ui.define([
 				.attachPatternMatched(this._onRouteMatched, this);
 		},
 
-		_onRouteMatched: function () {
+		_onRouteMatched: function (oEvent) {
+			// The home dashboard links straight to a tab (?tab=sub / ?tab=util).
+			var oQuery = oEvent.getParameter("arguments")["?query"] || {};
+			if (oQuery.tab) {
+				this.getModel("trView").setProperty("/tab", oQuery.tab);
+			}
+
 			CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
 				this._oProfile = oProfile;
 				this._sOrgId = oProfile.orgId;

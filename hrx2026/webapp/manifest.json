@@ -168,7 +168,7 @@
         },
         {
           "name": "timesheetreport",
-          "pattern": "timesheetreporting",
+          "pattern": "timesheetreporting:?query:",
           "target": "timesheetreport"
         },
         {

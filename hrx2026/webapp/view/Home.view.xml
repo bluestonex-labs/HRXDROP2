@@ -10,6 +10,178 @@
 	displayBlock="true">
 	<Page id="homePage" showHeader="false" showNavButton="false" class="hrxPageContent hrxHomePage">
 
+		<!-- Manager dashboard: managers and admins only, above the employee's own cards.
+		     Keyed off the profile's isManager flag, so "View as (demo)" applies to it. -->
+		<VBox id="managerDash" visible="{app>/user/isManager}" class="hrxMgrDash">
+
+			<layout:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow hrxMgrKpis">
+				<VBox class="hrxKpi" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
+					<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+					<core:Icon src="sap-icon://group" class="hrxKpiGlyph" />
+					<Text text="{i18n>mgrKpiTeam}" class="hrxKpiLabel" />
+					<HBox alignItems="Baseline" class="hrxKpiFigure">
+						<Text text="{home>/dash/team/working}" class="hrxKpiNum" />
+						<Text text="{home>/dash/team/unit}" class="hrxKpiUnit" />
+					</HBox>
+					<Text text="{home>/dash/team/sub}" class="hrxKpiSub" />
+					<Button text="{i18n>mgrFullView}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
+						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+						<customData><core:CustomData key="go" value="teamcal" /></customData>
+					</Button>
+				</VBox>
+				<VBox class="hrxKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
+					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
+					<core:Icon src="sap-icon://activity-items" class="hrxKpiGlyph" />
+					<Text text="{i18n>mgrKpiCompliance}" class="hrxKpiLabel" />
+					<HBox alignItems="Baseline" class="hrxKpiFigure">
+						<Text text="{home>/dash/compliance/pct}" class="hrxKpiNum" />
+						<Text text="%" class="hrxKpiUnit" visible="{= ${home>/dash/compliance/pct} !== '—' }" />
+					</HBox>
+					<Text text="{home>/dash/compliance/sub}" class="hrxKpiSub" />
+					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
+						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+						<customData><core:CustomData key="go" value="timesheetreport:sub" /></customData>
+					</Button>
+				</VBox>
+				<VBox class="hrxKpi" busy="{home>/dash/loadingTriggers}" busyIndicatorDelay="0">
+					<customData><core:CustomData key="state" value="{home>/dash/triggers/state}" writeToDom="true" /></customData>
+					<core:Icon src="sap-icon://alert" class="hrxKpiGlyph" />
+					<Text text="{i18n>mgrKpiTriggers}" class="hrxKpiLabel" />
+					<Text text="{home>/dash/triggers/count}" class="hrxKpiNum" />
+					<Text text="{home>/dash/triggers/sub}" class="hrxKpiSub" />
+					<Button text="{i18n>mgrReview}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
+						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+						<customData><core:CustomData key="go" value="sickness" /></customData>
+					</Button>
+				</VBox>
+				<VBox class="hrxKpi" busy="{home>/dash/loadingDocs}" busyIndicatorDelay="0">
+					<customData><core:CustomData key="state" value="{home>/dash/docs/state}" writeToDom="true" /></customData>
+					<core:Icon src="sap-icon://document-text" class="hrxKpiGlyph" />
+					<Text text="{i18n>mgrKpiDocs}" class="hrxKpiLabel" />
+					<Text text="{home>/dash/docs/count}" class="hrxKpiNum" />
+					<Text text="{home>/dash/docs/sub}" class="hrxKpiSub" />
+					<Button text="{i18n>mgrReview}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
+						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+						<customData><core:CustomData key="go" value="documents" /></customData>
+					</Button>
+				</VBox>
+			</layout:Grid>
+
+			<layout:Grid defaultSpan="XL5 L5 M12 S12" hSpacing="1" vSpacing="1" class="hrxMgrGrid">
+
+				<!-- Team today -->
+				<VBox class="hrxSkCard hrxTrCard hrxMgrTeam" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
+					<layoutData><layout:GridData span="XL5 L5 M12 S12" /></layoutData>
+					<HBox alignItems="Center" class="hrxTrCardHead">
+						<VBox class="hrxTrCardHeadText">
+							<Title text="{i18n>mgrTeamToday}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+							<Text text="{home>/dash/todayLabel}" class="hrxSkHint" />
+						</VBox>
+						<Button text="{i18n>mgrFullView}" type="Transparent" press=".onDashGo">
+							<customData><core:CustomData key="go" value="teamcal" /></customData>
+						</Button>
+					</HBox>
+					<ScrollContainer vertical="true" horizontal="false" height="26rem" class="hrxMgrScroll">
+						<Table
+							items="{path: 'home>/dash/today', templateShareable: false}"
+							noDataText="{i18n>mgrNoTeam}"
+							class="hrxSkTable">
+							<columns>
+								<Column><Text text="{i18n>mgrColEmployee}" /></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mgrColSite}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>mgrColStatus}" /></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<HBox alignItems="Center">
+											<Avatar initials="{home>initials}" displaySize="XS" class="sapUiTinyMarginEnd" />
+											<Text text="{home>Name}" class="hrxResourceName" />
+										</HBox>
+										<Text text="{home>site}" />
+										<ObjectStatus text="{home>statusText}" state="{home>statusState}" inverted="true" class="hrxSkPill" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</ScrollContainer>
+				</VBox>
+
+				<VBox class="hrxMgrStack">
+					<layoutData><layout:GridData span="XL7 L7 M12 S12" /></layoutData>
+
+					<!-- Pending approvals -->
+					<VBox class="hrxSkCard hrxTrCard" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
+						<HBox alignItems="Center" class="hrxTrCardHead">
+							<VBox class="hrxTrCardHeadText">
+								<Title text="{i18n>mgrPendingTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+							</VBox>
+							<Text text="{path: 'home>/approvals', formatter: '.formatPendingCount'}" class="hrxSkHint" />
+						</HBox>
+						<VBox visible="{= ${home>/approvals}.length === 0 }" class="hrxDocEmpty">
+							<Text text="{i18n>homeNoApprovals}" class="hrxResourceMeta" />
+						</VBox>
+						<VBox items="{path: 'home>/approvals', templateShareable: false}">
+							<HBox alignItems="Center" class="hrxMgrApprRow">
+								<Avatar initials="{home>initials}" displaySize="S" class="sapUiTinyMarginEnd" />
+								<VBox class="hrxMgrApprMain">
+									<Text text="{home>RequesterName}" class="hrxResourceName" />
+									<Text text="{home>range}" class="hrxResourceMeta" />
+									<Text text="{home>LeaveType}" class="hrxResourceMeta" />
+								</VBox>
+								<Text text="{home>daysText}" class="hrxMgrApprDays" />
+								<HBox class="hrxMgrApprActs">
+									<Button text="{i18n>btnApprove}" icon="sap-icon://accept" type="Accept"
+										press=".onApproveLeave" class="sapUiTinyMarginEnd" />
+									<Button text="{i18n>btnReject}" icon="sap-icon://decline" type="Reject"
+										press=".onRejectLeave" />
+								</HBox>
+							</HBox>
+						</VBox>
+					</VBox>
+
+					<!-- Billable utilisation, financial year to date -->
+					<VBox class="hrxSkCard hrxTrCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+						<HBox alignItems="Center" class="hrxTrCardHead">
+							<VBox class="hrxTrCardHeadText">
+								<Title text="{i18n>mgrUtilTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+								<Text text="{i18n>mgrUtilHint}" class="hrxSkHint" />
+							</VBox>
+							<Button text="{i18n>mgrFullReport}" type="Transparent" press=".onDashGo">
+								<customData><core:CustomData key="go" value="timesheetreport:util" /></customData>
+							</Button>
+						</HBox>
+						<HBox alignItems="Baseline" class="hrxMgrUtilTop">
+							<Text text="{home>/dash/util/pctText}" class="hrxMgrUtilBig" />
+							<Text text="{home>/dash/util/cap}" class="hrxResourceMeta" />
+						</HBox>
+						<VBox visible="{= ${home>/dash/util/rows}.length === 0 }" class="hrxDocEmpty">
+							<Text text="{i18n>mgrNoUtil}" class="hrxResourceMeta" />
+						</VBox>
+						<ScrollContainer vertical="true" horizontal="false" height="{= ${home>/dash/util/rows}.length > 6 ? '17rem' : 'auto' }">
+							<VBox items="{path: 'home>/dash/util/rows', templateShareable: false}">
+								<HBox alignItems="Center" class="hrxMgrUtilRow">
+									<VBox class="hrxMgrUtilName">
+										<Text text="{home>Name}" class="hrxResourceName" />
+										<Text text="{home>sub}" class="hrxResourceMeta" />
+									</VBox>
+									<HBox alignItems="Center" class="hrxTrUtilBar hrxMgrUtilBar">
+										<core:HTML content="{home>barHtml}" />
+										<Text text="{home>pctText}" class="hrxTrStrong" />
+									</HBox>
+								</HBox>
+							</VBox>
+						</ScrollContainer>
+					</VBox>
+				</VBox>
+			</layout:Grid>
+
+			<VBox class="hrxMgrOwnHead">
+				<Text text="{i18n>mgrOwnEyebrow}" class="hrxEyebrow" />
+				<Title text="{i18n>mgrOwnTitle}" level="H2" class="hrxMgrOwnTitle" />
+			</VBox>
+		</VBox>
+
 		<!-- Action row. A responsive grid keeps the three cards in their own columns
 		     whatever their height, so they cannot overlap. -->
 		<!-- A flex row rather than a grid: when the approvals card is hidden for
@@ -20,10 +192,11 @@
 			<!-- Approvals: shown to whoever actually has something waiting on them.
 			     Keying this off the profile's isManager flag instead left the card
 			     hidden on the home page while the very same requests were listed in the
-			     team calendar. -->
+			     team calendar. A manager sees them in the dashboard above instead, so
+			     this one stays for anyone else who has requests waiting on them. -->
 			<f:Card
 				id="approvalsCard"
-				visible="{= ${home>/approvals}.length > 0 }"
+				visible="{= !${app>/user/isManager} &amp;&amp; ${home>/approvals}.length > 0 }"
 				class="hrxHomeCard">
 				<f:header>
 					<card:Header

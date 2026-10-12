@@ -2809,3 +2809,100 @@ body.hrxApp {
 	gap: 12px;
 	margin-bottom: 12px;
 }
+
+/* ── HOME: MANAGER DASHBOARD ──────────────────────────────────────────────── */
+
+.hrxApp .hrxMgrKpis {
+	margin-bottom: 4px;
+}
+
+.hrxApp .hrxMgrKpis .hrxKpi {
+	height: 100%;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+}
+
+/* The link sits at the foot of the tile however long the line above it runs. */
+.hrxApp .hrxKpiLink.sapMBtn {
+	margin-top: auto;
+	padding-top: 10px;
+	align-self: flex-start;
+}
+
+.hrxApp .hrxKpiLink .sapMBtnInner {
+	padding-left: 0;
+}
+
+.hrxApp .hrxMgrGrid {
+	margin-bottom: 20px;
+}
+
+.hrxApp .hrxMgrGrid > [class*="sapUiRespGridSpan"] > .hrxSkCard,
+.hrxApp .hrxMgrStack > .sapMFlexItem > .hrxSkCard {
+	height: 100%;
+}
+
+.hrxApp .hrxMgrStack > .sapMFlexItem:not(:last-child) {
+	margin-bottom: 16px;
+}
+
+.hrxApp .hrxMgrApprRow {
+	gap: 12px;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxMgrApprRow > .sapMFlexItem:nth-child(2) {
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+}
+
+.hrxApp .hrxMgrApprDays {
+	font-family: var(--disp);
+	font-weight: 800;
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.hrxApp .hrxMgrUtilTop {
+	gap: 10px;
+	padding: 14px 20px 6px;
+}
+
+.hrxApp .hrxMgrUtilBig {
+	font-family: var(--disp);
+	font-size: 32px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMgrUtilRow {
+	gap: 16px;
+	padding: 10px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxMgrUtilRow > .sapMFlexItem:first-child {
+	flex: 0 0 45% !important;
+	min-width: 0 !important;
+}
+
+.hrxApp .hrxMgrUtilRow > .sapMFlexItem:last-child {
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+}
+
+.hrxApp .hrxMgrOwnHead {
+	margin: 8px 0 14px;
+}
+
+.hrxApp .hrxMgrOwnTitle .sapMTitle,
+.hrxApp .hrxMgrOwnTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--ink);
+}

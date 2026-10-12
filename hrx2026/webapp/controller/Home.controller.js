@@ -7,9 +7,26 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/formatter",
-	"../model/CurrentUser"
+	"../model/CurrentUser",
+	"sap/m/Dialog",
+	"sap/m/Button",
+	"sap/m/Label",
+	"sap/m/Text",
+	"sap/m/TextArea",
+	"sap/m/VBox",
+	"../model/Hrx",
+	"../model/HrxTime",
+	"../model/HrxLegacy",
+	"../model/SicknessPolicy",
+	"../model/SicknessService",
+	"../model/Documents",
+	"../model/DocumentService",
+	"../model/TimesheetReport",
+	"../model/TimesheetReportService"
 ], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, MessageBox,
-	Backend, formatter, CurrentUser) {
+	Backend, formatter, CurrentUser, Dialog, Button, Label, Text, TextArea, VBox,
+	Hrx, HrxTime, HrxLegacy, SicknessPolicy, SicknessService, Documents, DocumentService,
+	TimesheetReport, TimesheetReportService) {
 	"use strict";
 
 	// RadialMicroChart only accepts its own colour enum (a raw CSS colour has been
@@ -107,6 +124,8 @@ sap.ui.define([
 				]).then(function () {
 					this._updateHealthStrip();
 				}.bind(this));
+
+				this._loadDashboard();
 			}.bind(this)).catch(function (oError) {
 				// Spell the reason out: the rejection is often a plain response object,
 				// which logs as an empty second argument and says nothing.
@@ -129,7 +148,8 @@ sap.ui.define([
 				this._loadWeek(),
 				this._loadDay(),
 				this._loadLeaveUser(),
-				this._loadApprovals()
+				this._loadApprovals(),
+				this._loadDashboard()
 			]).then(function () {
 				this._updateHealthStrip();
 			}.bind(this));
@@ -635,8 +655,9 @@ sap.ui.define([
 					}).sort();
 
 					oGroup.title = oGroup.RequesterName + " — " + oGroup.LeaveType;
-					oGroup.meta = formatter.dateRange(aDates[0], aDates[aDates.length - 1]) +
-						" · " + this.getText("homeDaysCount", [oGroup.LeaveList.length]);
+					oGroup.range = formatter.dateRange(aDates[0], aDates[aDates.length - 1]);
+					oGroup.daysText = this.getText("homeDaysCount", [this._leaveDays(oGroup.LeaveList)]);
+					oGroup.meta = oGroup.range + " · " + oGroup.daysText;
 					return oGroup;
 				}, this));
 
@@ -646,6 +667,345 @@ sap.ui.define([
 				oModel.setProperty("/loadingApprovals", false);
 				this._showError("homeErrorApprovals", oError);
 			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* manager dashboard                                           */
+		/* =========================================================== */
+
+		/**
+		 * Fills the manager dashboard. Each tile loads on its own, so one service
+		 * being down (or not bound yet) leaves the others standing.
+		 * @returns {Promise} resolved once every tile has settled
+		 */
+		_loadDashboard: function () {
+			if (!this._oProfile || !this._oProfile.isManager) {
+				return Promise.resolve();
+			}
+			var oToday = new Date();
+			this._oDashYear = SicknessPolicy.fiscalYearOf(oToday);
+			this._pDashPeople = HrxTime.people().then(function (aPeople) {
+				return aPeople.filter(function (oPerson) {
+					return oPerson.IsActive;
+				});
+			});
+			this._pDashPeople.catch(function () {});
+
+			return Promise.all([
+				this._loadTeamToday(),
+				this._loadCompliance(),
+				this._loadTriggers(),
+				this._loadDocsAwaiting(),
+				this._loadUtilisation()
+			]);
+		},
+
+		/**
+		 * Who is in today, and who is off: approved leave, their own non-working days
+		 * and bank holidays at their site.
+		 * @returns {Promise} resolved once the team card is filled
+		 */
+		_loadTeamToday: function () {
+			if (!this._pDashPeople) {
+				return Promise.resolve();
+			}
+			var oModel = this.getModel();
+			var oToday = new Date();
+			var sToday = Backend.isoDate(oToday);
+			var iWeekday = oToday.getDay();
+			var aFlags = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+			oModel.setProperty("/dash/loadingTeam", true);
+			oModel.setProperty("/dash/todayLabel", oToday.toLocaleDateString("en-GB",
+				{ weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+
+			return Promise.all([
+				this._pDashPeople,
+				HrxTime.leaves(sToday, sToday),
+				Hrx.list("LeaveType"),
+				Hrx.list("Sites"),
+				Hrx.list("WorkSchedule"),
+				Hrx.list("BankHolidays", { $filter: "Date eq " + sToday, $select: "Date,Site_ID" })
+			]).then(function (aResults) {
+				var mTypes = {};
+				var mSites = {};
+				var mSchedules = {};
+				var mHolidays = {};
+				var mLeave = {};
+
+				aResults[2].forEach(function (oType) {
+					mTypes[oType.ID] = oType.LeaveCategoryDesc || "";
+				});
+				aResults[3].forEach(function (oSite) {
+					mSites[oSite.ID] = oSite.SiteDesc || oSite.SiteLocation || oSite.ID;
+				});
+				aResults[4].forEach(function (oSchedule) {
+					mSchedules[oSchedule.EmployeeID_EmployeeID] = oSchedule;
+				});
+				aResults[5].forEach(function (oHoliday) {
+					mHolidays[oHoliday.Site_ID || "*"] = true;
+				});
+				aResults[1].filter(function (oLeave) {
+					return HrxLegacy.leaveStatus(oLeave) === "APR";
+				}).forEach(function (oLeave) {
+					var bHalf = /^(AM|PM)$/i.test(String(oLeave.DayTime || "").trim());
+					mLeave[oLeave.EmpID_EmployeeID] = (mTypes[oLeave.LeaveCategoryId_ID] || this.getText("mgrLeave")) +
+						(bHalf ? " (" + String(oLeave.DayTime).trim().toUpperCase() + ")" : "");
+				}, this);
+
+				var mBySite = {};
+				var iWorking = 0;
+				var iOnLeave = 0;
+
+				var aRows = aResults[0].map(function (oPerson) {
+					var oSchedule = mSchedules[oPerson.EmpID];
+					var bWorkDay = oSchedule ? oSchedule[aFlags[iWeekday]] === true : iWeekday >= 1 && iWeekday <= 5;
+					var sSite = mSites[oPerson.SiteID] || oPerson.SiteID || "—";
+					var oRow = {
+						EmpID: oPerson.EmpID,
+						Name: oPerson.Name,
+						LastName: oPerson.LastName,
+						initials: formatter.nameInitials(oPerson.Name),
+						site: sSite,
+						order: 2
+					};
+
+					if (mLeave[oPerson.EmpID]) {
+						oRow.statusText = this.getText("mgrOnLeave", [mLeave[oPerson.EmpID]]);
+						oRow.statusState = "Information";
+						oRow.order = 0;
+						iOnLeave++;
+					} else if (mHolidays[oPerson.SiteID] || mHolidays["*"]) {
+						oRow.statusText = this.getText("mgrBankHoliday");
+						oRow.statusState = "None";
+						oRow.order = 1;
+					} else if (!bWorkDay) {
+						oRow.statusText = this.getText("mgrNotWorking");
+						oRow.statusState = "None";
+						oRow.order = 1;
+					} else {
+						oRow.statusText = this.getText("mgrWorking");
+						oRow.statusState = "Success";
+						iWorking++;
+						mBySite[sSite] = (mBySite[sSite] || 0) + 1;
+					}
+					return oRow;
+				}, this).sort(function (a, b) {
+					return (a.order - b.order) || String(a.LastName).localeCompare(String(b.LastName)) ||
+						a.Name.localeCompare(b.Name);
+				});
+
+				var aParts = Object.keys(mBySite).sort().map(function (sSite) {
+					return mBySite[sSite] + " " + sSite;
+				});
+				aParts.push(this.getText("mgrOnLeaveCount", [iOnLeave]));
+
+				oModel.setProperty("/dash/today", aRows);
+				oModel.setProperty("/dash/team", {
+					working: String(iWorking),
+					unit: this.getText("mgrOf", [aRows.length]),
+					sub: aParts.join(" · ")
+				});
+			}.bind(this)).catch(function (oError) {
+				oModel.setProperty("/dash/today", []);
+				oModel.setProperty("/dash/team", this._dashUnavailable());
+				console.error("Home team today failed", oError);
+			}.bind(this)).then(function () {
+				oModel.setProperty("/dash/loadingTeam", false);
+			});
+		},
+
+		/**
+		 * This week's timesheet compliance, worked out as Timesheet Reporting's Who's
+		 * submitted tab does: the share of people with time due who have booked it all.
+		 * @returns {Promise} resolved once the tile is filled
+		 */
+		_loadCompliance: function () {
+			var oModel = this.getModel();
+			var oMonday = this._mondayOf(new Date());
+			var oSunday = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 6);
+
+			oModel.setProperty("/dash/loadingCompliance", true);
+			return TimesheetReportService.loadWeek(Backend.isoDate(oMonday), Backend.isoDate(oSunday)).then(function (aRows) {
+				var aDue = aRows.filter(function (oRow) {
+					return oRow.expectedMinutes > 0;
+				});
+				var iFull = aDue.filter(function (oRow) {
+					return oRow.bookedMinutes >= oRow.expectedMinutes;
+				}).length;
+				var iPct = aDue.length ? Math.round(iFull / aDue.length * 100) : 100;
+
+				oModel.setProperty("/dash/compliance", {
+					pct: String(iPct),
+					state: iPct >= 90 ? "Good" : "Warning",
+					sub: this.getText("mgrComplianceSub", [iFull, aDue.length])
+				});
+			}.bind(this)).catch(function (oError) {
+				oModel.setProperty("/dash/compliance", this._dashUnavailable());
+				console.error("Home compliance failed", oError);
+			}.bind(this)).then(function () {
+				oModel.setProperty("/dash/loadingCompliance", false);
+			});
+		},
+
+		/**
+		 * Open sickness policy triggers this financial year. Dismissals live in the
+		 * trigger review service, which is not bound yet - until it is, every trigger
+		 * counts as open, as it does on the Sickness page.
+		 * @returns {Promise} resolved once the tile is filled
+		 */
+		_loadTriggers: function () {
+			var oModel = this.getModel();
+			var oYear = this._oDashYear;
+
+			oModel.setProperty("/dash/loadingTriggers", true);
+			return Promise.all([
+				SicknessService.getAbsences(this._sOrgId, oYear.from, oYear.to),
+				SicknessService.getTriggerReviews(this._sOrgId, oYear.startYear).catch(function () {
+					return [];
+				})
+			]).then(function (aResults) {
+				var iOpen = SicknessPolicy.triggers(aResults[0], oYear, aResults[1]).filter(function (oTrigger) {
+					return oTrigger.status === "OPEN";
+				}).length;
+
+				oModel.setProperty("/dash/triggers", {
+					count: String(iOpen),
+					state: iOpen > 0 ? "Critical" : "Good",
+					sub: this.getText("mgrTriggersSub", [oYear.label])
+				});
+			}.bind(this)).catch(function (oError) {
+				oModel.setProperty("/dash/triggers", this._dashUnavailable());
+				console.error("Home triggers failed", oError);
+			}.bind(this)).then(function () {
+				oModel.setProperty("/dash/loadingTriggers", false);
+			});
+		},
+
+		/**
+		 * Acknowledgements still outstanding across every document that needs one.
+		 * Empty until the document service is bound.
+		 * @returns {Promise} resolved once the tile is filled
+		 */
+		_loadDocsAwaiting: function () {
+			var oModel = this.getModel();
+
+			if (!DocumentService.isBound()) {
+				oModel.setProperty("/dash/docs", {
+					count: "—",
+					state: "Neutral",
+					sub: this.getText("mgrNotConnected")
+				});
+				return Promise.resolve();
+			}
+
+			oModel.setProperty("/dash/loadingDocs", true);
+			return Promise.all([
+				DocumentService.getDocuments(this._sOrgId),
+				DocumentService.getAcknowledgements(this._sOrgId),
+				this._pDashPeople
+			]).then(function (aResults) {
+				var mAcks = Documents.ackIndex(aResults[1]);
+				var iOutstanding = (aResults[0] || []).filter(function (oDocument) {
+					return oDocument.AckRequired;
+				}).reduce(function (iTotal, oDocument) {
+					return iTotal + Documents.progress(oDocument, aResults[2], mAcks).outstanding.length;
+				}, 0);
+
+				oModel.setProperty("/dash/docs", {
+					count: String(iOutstanding),
+					state: iOutstanding > 0 ? "Warning" : "Good",
+					sub: this.getText("mgrDocsSub")
+				});
+			}.bind(this)).catch(function (oError) {
+				oModel.setProperty("/dash/docs", this._dashUnavailable());
+				console.error("Home documents failed", oError);
+			}.bind(this)).then(function () {
+				oModel.setProperty("/dash/loadingDocs", false);
+			});
+		},
+
+		/**
+		 * Billable utilisation for the financial year to date: the team figure, and a
+		 * bar per person, lowest first so the ones to look at come to the top.
+		 * @returns {Promise} resolved once the card is filled
+		 */
+		_loadUtilisation: function () {
+			var oModel = this.getModel();
+			var oPeriod = { from: this._oDashYear.from, to: Backend.isoDate(new Date()) };
+
+			oModel.setProperty("/dash/loadingUtil", true);
+			return this._pDashPeople.then(function (aPeople) {
+				return TimesheetReportService.loadBookings(aPeople, this._sOrgId, oPeriod.from, oPeriod.to);
+			}.bind(this)).then(function (oResult) {
+				var aPeople = TimesheetReport.utilisation(oResult.bookings, oPeriod);
+				var fBillable = 0;
+				var fTotal = 0;
+				var iBillers = 0;
+
+				var aRows = aPeople.map(function (oPerson) {
+					fBillable += oPerson.billable;
+					fTotal += oPerson.total;
+					if (oPerson.billable > 0) {
+						iBillers++;
+					}
+					var sState = TimesheetReport.utilState(oPerson.pct);
+					return {
+						Name: oPerson.Name,
+						pct: oPerson.pct,
+						pctText: oPerson.pct + "%",
+						sub: this.getText("mgrUtilRowSub", [this._days(oPerson.billable), this._days(oPerson.total)]),
+						barHtml: "<div class=\"hrxTrTrack hrxTrState" + sState + "\"><div class=\"hrxTrFill\" style=\"width:" +
+							Math.max(0, Math.min(100, oPerson.pct)) + "%\"></div></div>"
+					};
+				}, this).sort(function (a, b) {
+					return (a.pct - b.pct) || a.Name.localeCompare(b.Name);
+				});
+
+				oModel.setProperty("/dash/util", {
+					pctText: fTotal ? Math.round(fBillable / fTotal * 100) + "%" : "—",
+					cap: aRows.length ? this.getText("mgrUtilCap", [iBillers, aRows.length]) : "",
+					rows: aRows
+				});
+			}.bind(this)).catch(function (oError) {
+				oModel.setProperty("/dash/util", { pctText: "—", cap: this.getText("mgrUnavailable"), rows: [] });
+				console.error("Home utilisation failed", oError);
+			}.bind(this)).then(function () {
+				oModel.setProperty("/dash/loadingUtil", false);
+			});
+		},
+
+		_days: function (fDays) {
+			return (Math.round(fDays * 10) / 10).toFixed(1);
+		},
+
+		_dashUnavailable: function () {
+			return { working: "—", count: "—", pct: "—", unit: "", state: "Neutral", sub: this.getText("mgrUnavailable") };
+		},
+
+		/**
+		 * The dashboard's links. "route:tab" opens Timesheet Reporting on a tab.
+		 * @param {sap.ui.base.Event} oEvent the button press event
+		 */
+		onDashGo: function (oEvent) {
+			var aGo = String(oEvent.getSource().data("go")).split(":");
+			var oRouter = this.getOwnerComponent().getRouter();
+			if (aGo[1]) {
+				oRouter.navTo(aGo[0], { "?query": { tab: aGo[1] } });
+			} else {
+				oRouter.navTo(aGo[0]);
+			}
+		},
+
+		/**
+		 * Working days in a list of pending leave days, a half day counting as half.
+		 * @param {Array<object>} aLeaveList pendingApproval rows, one per day
+		 * @returns {number} the days
+		 */
+		_leaveDays: function (aLeaveList) {
+			return aLeaveList.reduce(function (fTotal, oLeave) {
+				return fTotal + (/^(AM|PM)$/i.test(String(oLeave.AbsenceType || "")) ? 0.5 : 1);
+			}, 0);
 		},
 
 		/* =========================================================== */
@@ -890,22 +1250,72 @@ sap.ui.define([
 			this._actionLeave(oEvent, "APR");
 		},
 
-		onRejectLeave: function (oEvent) {
-			this._actionLeave(oEvent, "REJ");
-		},
-
 		/**
-		 * Decides every pending day of one requester in a single call.
+		 * Asks for an optional note to the employee before turning the request down.
 		 * @param {sap.ui.base.Event} oEvent the button press event
-		 * @param {string} sStatus "APR" or "REJ"
 		 */
-		_actionLeave: function (oEvent, sStatus) {
+		onRejectLeave: function (oEvent) {
 			var oContext = oEvent.getSource().getBindingContext("home");
 			if (!oContext) {
 				return;
 			}
-
 			var oGroup = oContext.getObject();
+			var oNote = new TextArea({
+				width: "100%",
+				rows: 3,
+				maxLength: 500,
+				placeholder: this.getText("mgrDeclineNotePlaceholder")
+			});
+			var oDialog = new Dialog({
+				title: this.getText("mgrDeclineTitle"),
+				contentWidth: "28rem",
+				content: new VBox({
+					items: [
+						new Text({ text: oGroup.RequesterName + " · " + oGroup.range + " · " + oGroup.LeaveType })
+							.addStyleClass("hrxResourceMeta sapUiSmallMarginBottom"),
+						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }),
+						oNote
+					]
+				}).addStyleClass("sapUiSmallMargin"),
+				beginButton: new Button({
+					text: this.getText("btnReject"),
+					type: "Reject",
+					press: function () {
+						var sNote = oNote.getValue().trim();
+						oDialog.close();
+						this._actionLeave(oGroup, "REJ", sNote);
+					}.bind(this)
+				}),
+				endButton: new Button({
+					text: this.getText("dmCancel"),
+					press: function () {
+						oDialog.close();
+					}
+				}),
+				afterClose: function () {
+					oDialog.destroy();
+				}
+			});
+			this.getView().addDependent(oDialog);
+			oDialog.open();
+		},
+
+		/**
+		 * Decides every pending day of one requester in a single call.
+		 * @param {sap.ui.base.Event|object} vSource the button press event, or the
+		 * requester's group itself
+		 * @param {string} sStatus "APR" or "REJ"
+		 * @param {string} [sNote] the approver's note to the employee
+		 */
+		_actionLeave: function (vSource, sStatus, sNote) {
+			var oGroup = vSource;
+			if (vSource && typeof vSource.getSource === "function") {
+				var oContext = vSource.getSource().getBindingContext("home");
+				if (!oContext) {
+					return;
+				}
+				oGroup = oContext.getObject();
+			}
 			var sToday = Backend.isoDate(new Date());
 			var oModel = this.getModel();
 
@@ -920,16 +1330,18 @@ sap.ui.define([
 					ApprovedOn: sToday,
 					ApprovedBy: this._oProfile.empID,
 					ApproverName: this._oProfile.name,
-					ApproverEmail: this._sUserEmail
+					ApproverEmail: this._sUserEmail,
+					ApproverComments: sNote || ""
 				};
 			}, this);
 
 			oModel.setProperty("/loadingApprovals", true);
 
 			Backend.postJson(Backend.LEAVE_APPROVALS + "?cmd=action", { LeaveReqSet: aLeaveRequests })
-				.then(function (oResult) {
-					MessageToast.show(oResult.msg ||
-						this.getText(sStatus === "APR" ? "tcLeaveApproved" : "tcLeaveRejected"));
+				.then(function () {
+					MessageToast.show(this.getText(sStatus === "APR" ? "mgrApprovedToast" : "mgrDeclinedToast",
+						[oGroup.RequesterName]));
+					this._loadTeamToday();
 					return this._loadApprovals();
 				}.bind(this)).catch(function (oError) {
 					oModel.setProperty("/loadingApprovals", false);
@@ -1056,6 +1468,15 @@ sap.ui.define([
 				leaveTypes: [],
 				projectTypes: [],
 				approvals: [],
+				dash: {
+					today: [],
+					todayLabel: "",
+					team: { working: "", unit: "", sub: "" },
+					compliance: { pct: "", state: "Neutral", sub: "" },
+					triggers: { count: "", state: "Neutral", sub: "" },
+					docs: { count: "", state: "Neutral", sub: "" },
+					util: { pctText: "", cap: "", rows: [] }
+				},
 				quickLeave: this._emptyQuickLeave(),
 				quick: this._emptyQuickEntry(),
 				week: { label: "", status: { text: "", state: "None" } },
