@@ -69,6 +69,9 @@
 				</VBox>
 			</HBox>
 
+			<!-- The row has a fixed height on a wide screen (style.css), and each card's
+			     list scrolls inside it - more people, approvals or bookings never
+			     push the cards out of line with each other or with the tiles. -->
 			<HBox class="hrxMgrGrid">
 
 				<!-- Team today -->
@@ -82,11 +85,11 @@
 							<customData><core:CustomData key="go" value="teamcal" /></customData>
 						</Button>
 					</HBox>
-					<ScrollContainer vertical="true" horizontal="false" height="26rem" class="hrxMgrScroll">
-						<Table
+					<Table
 							items="{path: 'home>/dash/today', templateShareable: false}"
 							noDataText="{i18n>mgrNoTeam}"
 							class="hrxSkTable">
+							<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
 							<columns>
 								<Column><Text text="{i18n>mgrColEmployee}" /></Column>
 								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mgrColSite}" /></Column>
@@ -105,13 +108,14 @@
 								</ColumnListItem>
 							</items>
 						</Table>
-					</ScrollContainer>
 				</VBox>
 
 				<VBox class="hrxMgrStack">
 
 					<!-- Pending approvals -->
-					<VBox class="hrxSkCard hrxTrCard" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
+					<VBox class="hrxSkCard hrxTrCard hrxMgrApprCard" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
+						<!-- At most half the column; past that its list scrolls. -->
+						<layoutData><FlexItemData shrinkFactor="1" maxHeight="50%" minHeight="0" /></layoutData>
 						<HBox alignItems="Center" class="hrxTrCardHead">
 							<VBox class="hrxTrCardHeadText">
 								<Title text="{i18n>mgrPendingTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
@@ -122,6 +126,7 @@
 							<Text text="{i18n>homeNoApprovals}" class="hrxResourceMeta" />
 						</VBox>
 						<VBox items="{path: 'home>/approvals', templateShareable: false}">
+							<layoutData><FlexItemData shrinkFactor="1" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
 							<HBox alignItems="Center" class="hrxMgrApprRow">
 								<Avatar initials="{home>initials}" displaySize="S" class="sapUiTinyMarginEnd" />
 								<VBox class="hrxMgrApprMain">
@@ -142,6 +147,7 @@
 
 					<!-- Billable utilisation, financial year to date -->
 					<VBox class="hrxSkCard hrxTrCard hrxMgrUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+						<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" /></layoutData>
 						<HBox alignItems="Center" class="hrxTrCardHead">
 							<VBox class="hrxTrCardHeadText">
 								<Title text="{i18n>mgrUtilTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
@@ -158,8 +164,8 @@
 						<VBox visible="{= ${home>/dash/util/rows}.length === 0 }" class="hrxDocEmpty">
 							<Text text="{i18n>mgrNoUtil}" class="hrxResourceMeta" />
 						</VBox>
-						<ScrollContainer vertical="true" horizontal="false" height="{= ${home>/dash/util/rows}.length > 6 ? '17rem' : 'auto' }">
 							<VBox items="{path: 'home>/dash/util/rows', templateShareable: false}">
+								<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
 								<HBox alignItems="Center" class="hrxMgrUtilRow">
 									<VBox class="hrxMgrUtilName">
 										<Text text="{home>Name}" class="hrxResourceName" />
@@ -171,7 +177,6 @@
 									</HBox>
 								</HBox>
 							</VBox>
-						</ScrollContainer>
 					</VBox>
 				</VBox>
 			</HBox>

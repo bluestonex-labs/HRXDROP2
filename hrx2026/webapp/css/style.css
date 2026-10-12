@@ -2832,16 +2832,11 @@ body.hrxApp {
 	margin-bottom: 24px;
 }
 
-.hrxApp .hrxMgrKpis > .sapMFlexItem,
-.hrxApp .hrxMgrGrid > .sapMFlexItem {
+/* The boxes render their items bare (no wrapper divs), so the tiles and cards
+   are the grid cells themselves. */
+.hrxApp .hrxMgrKpis > .hrxKpi,
+.hrxApp .hrxMgrGrid > .sapMFlexBox {
 	min-width: 0;
-	display: flex;
-	flex-direction: column;
-}
-
-.hrxApp .hrxMgrKpis > .sapMFlexItem > .hrxKpi,
-.hrxApp .hrxMgrGrid > .sapMFlexItem > .sapMFlexBox {
-	flex: 1 1 auto;
 	box-sizing: border-box;
 }
 
@@ -2883,24 +2878,33 @@ body.hrxApp {
 	padding-left: 0;
 }
 
+/* A fixed row on a wide screen: the cards' lists scroll within it, so however
+   many approvals come in the two halves stay level with each other. Stacked in
+   one column on a narrow screen, the cards keep their own heights. */
+@media (min-width: 1101px) {
+	.hrxApp .hrxMgrGrid.sapMFlexBox {
+		grid-auto-rows: 30rem;
+	}
+
+	.hrxApp .hrxMgrGrid > .sapMFlexBox {
+		height: 100%;
+		min-height: 0;
+	}
+
+	.hrxApp .hrxMgrScrollItem {
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+}
+
 /* Approvals over utilisation, 16px apart; utilisation takes up the rest so the
    column ends level with Team today. */
 .hrxApp .hrxMgrStack {
 	gap: 16px;
 }
 
-.hrxApp .hrxMgrStack > .sapMFlexItem {
+.hrxApp .hrxMgrStack > .hrxSkCard {
 	margin: 0 !important;
-}
-
-.hrxApp .hrxMgrStack > .sapMFlexItem:last-child {
-	flex: 1 1 auto !important;
-	display: flex;
-	flex-direction: column;
-}
-
-.hrxApp .hrxMgrStack > .sapMFlexItem:last-child > .hrxMgrUtilCard {
-	flex: 1 1 auto;
 }
 
 .hrxApp .hrxMgrApprRow {
