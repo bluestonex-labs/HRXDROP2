@@ -3032,3 +3032,8 @@ body.hrxApp {
 .hrxApp .hrxLmReqLine > .sapMFlexItem:first-child {
 	flex: 0 0 9rem !important;
 }
+
+/* Breathing room between the year / Book leave bar and the first card. */
+.hrxApp .hrxLmBody {
+	margin-top: 20px;
+}

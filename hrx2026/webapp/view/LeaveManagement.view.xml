@@ -43,7 +43,7 @@
 				title="{i18n>lmTitle}"
 				description="{i18n>adminRestricted}" />
 
-			<VBox visible="{app>/user/isManager}" class="hrxSkStack">
+			<VBox visible="{app>/user/isManager}" class="hrxSkStack hrxLmBody">
 
 				<!-- Pending approvals: every request still waiting, whatever its dates -->
 				<VBox class="hrxSkCard hrxTrCard" busy="{lmView>/pendingBusy}" busyIndicatorDelay="0">
