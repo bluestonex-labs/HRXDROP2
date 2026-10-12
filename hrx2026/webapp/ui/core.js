@@ -173,6 +173,12 @@ sap.ui.define([], function () {
 		loading: function (t) { return "<div class=\"empty-state hrx-loading\"><div class=\"hrx-spin\"></div><div class=\"empty-s\">" + hrx.esc(t || "Loading from the HRX service…") + "</div></div>"; },
 		failed: function (e) { return hrx.empty("Could not load from the HRX service", hrx.errText(e)); },
 		errText: function (e) { return (e && (e.message || e.statusText)) || String(e || "Unknown error"); },
+		// creating a user or client: the service first makes its folder in SAP Document Management,
+		// and passes that call's own failure on as "Request failed with status code …"
+		createErrText: function (e, what) {
+			var m = hrx.errText(e), dms = /^Request failed with status code (\d+)/.exec(m);
+			return dms ? "The HRX service could not create the " + what + "'s folder in SAP Document Management (it answered " + dms[1] + "), so the " + what + " was not created. This needs fixing on the service." : m;
+		},
 		// a strip on pages whose data has no HRX endpoint yet: they show the prototype's sample data
 		previewStrip: function (what) {
 			return "<div class=\"strip warn hrx-preview\">" + ICON.tri + "<span><b>Preview data.</b> " + hrx.esc(what) + " The HRX service has no endpoint for this yet, so nothing here is saved.</span></div>";

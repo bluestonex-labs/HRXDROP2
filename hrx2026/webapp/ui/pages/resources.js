@@ -98,7 +98,7 @@ sap.ui.define(["../core", "../service", "../data", "../md"], function (hrx, svc,
 						var u = await svc.Users.create({ OrgID_ID: data.orgId(), FirstName: v.FirstName, LastName: v.LastName, WorkEmail: v.WorkEmail.toLowerCase(), MobileNo: v.MobileNo || null, BaseSite_ID: v.BaseSite_ID, UserType: v.UserType, IsActive: true, TargetUtilization: "80", TargetHrsPerWeek: "40",
 							WorkSchedule: { Mo: true, Tu: true, We: true, Th: true, Fr: true, Sa: false, Su: false, AnnualLeaveQuota: "25", TargetUtilization: "80", TargetHrsPerWeek: "40:00" } });
 						await reload(); a.select(u.EmployeeID); hrx.toast("Resource created");
-					} catch (e) { hrx.toast(hrx.errText(e), "crit"); return false; }
+					} catch (e) { hrx.toast(hrx.createErrText(e, "user"), "crit"); return false; }
 				} });
 			},
 			onFilter: function (st, a) {

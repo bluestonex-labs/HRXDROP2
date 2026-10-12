@@ -72,7 +72,7 @@ sap.ui.define(["../core", "../service", "../data", "../md", "../preview"], funct
 						var c = await svc.Clients.create({ OrgID_ID: data.orgId(), ClientName: v.ClientName, BaseSite: v.BaseSite || null, IsActive: true });
 						if (v.WorkEmail) { await svc.Contacts.create({ ObjectType: "C", ObjectID: c.ID, ContactType: "Primary", WorkEmail: v.WorkEmail, IsActive: true }); }
 						await reload(); a.select(c.ID); hrx.toast("Client created");
-					} catch (e) { hrx.toast(hrx.errText(e), "crit"); return false; }
+					} catch (e) { hrx.toast(hrx.createErrText(e, "client"), "crit"); return false; }
 				} });
 			},
 			act: function (act, c, btn, a, tab) {
