@@ -67,10 +67,20 @@ sap.ui.define(["../core", "../service", "../data", "../picker"], function (hrx, 
 		});
 	}
 
-	async function loadBalance() {
-		st.userLeave = await svc.fetchUserLeave();
+	async function loadBalance(aLeaves) {
+		st.userLeave = await data.userLeave(aLeaves);
 		st.balance = data.leaveBalance(st.userLeave);
 		return st.balance;
+	}
+	/** days taken per leave type this leave year, as fetchLeaveAnalytics returns them */
+	function analyticsFromLeaves(aLeaves) {
+		var b = data.leaveBalance(null), by = {};
+		aLeaves.forEach(function (l) {
+			if (l.Status_ID === svc.STATUS.rejected || l.StartDate < b.from || l.StartDate > b.to) { return; }
+			var t = (l.LeaveCategoryId && l.LeaveCategoryId.LeaveCategoryDesc) || "Leave";
+			by[t] = (by[t] || 0) + (l.DayTime === "Full Day" ? 1 : 0.5);
+		});
+		return Object.keys(by).map(function (k) { return { LeaveType: k, Days: by[k] }; });
 	}
 
 	/* ── the page ── */
@@ -113,24 +123,29 @@ sap.ui.define(["../core", "../service", "../data", "../picker"], function (hrx, 
 		var me = data.me;
 		$("nlrApprover").textContent = me.Manager ? (me.Manager.FirstName + " " + me.Manager.LastName) : "No manager assigned";
 		$("leaveReqBody").innerHTML = "<tr><td colspan=\"4\">" + hrx.loading() + "</td></tr>";
-		try {
-			var r = await Promise.all([
-				data.leaveTypes(),
-				loadBalance(),
-				svc.Leaves.list({ $filter: "EmpID_EmployeeID eq " + svc.q(me.EmployeeID), $expand: "LeaveCategoryId($select=ID,LeaveCategoryDesc,isAccountable),Status($select=ID,StatusDesc)", $orderby: "StartDate desc" }),
-				svc.fetchLeaveAnalytics()
-			]);
-			fillTypes($("nlrType"), r[0]);
-			st.types = r[0];
-			st.myLeave = r[2];
-			st.groups = data.groupLeaves(r[2]);
-			st.holidays = (st.userLeave && st.userLeave.bankHolidays) || [];
-			st.analytics = r[3] || [];
-			renderKpis(); renderCalendar(); renderRequests();
-		} catch (e) {
-			$("lvKpis").innerHTML = "<div class=\"card\" style=\"grid-column:1/-1\">" + hrx.failed(e) + "</div>";
-			$("leaveReqBody").innerHTML = "<tr><td colspan=\"4\">" + hrx.failed(e) + "</td></tr>";
-		}
+		// each call on its own, so one endpoint failing on the service does not blank the page
+		var named = function (name, p) { return p.catch(function (e) { var x = new Error(name + ": " + hrx.errText(e)); x.status = e && e.status; throw x; }); };
+		var leaves = named("Leaves", svc.Leaves.list({ $filter: "EmpID_EmployeeID eq " + svc.q(me.EmployeeID), $expand: "LeaveCategoryId($select=ID,LeaveCategoryDesc,isAccountable),Status($select=ID,StatusDesc)", $orderby: "StartDate desc" }));
+		var r = await Promise.allSettled([
+			named("LeaveType", data.leaveTypes()),
+			leaves,
+			named("Leave balance", leaves.catch(function () { return undefined; }).then(loadBalance)),
+			named("fetchLeaveAnalytics", svc.fetchLeaveAnalytics())
+		]);
+		var val = function (i) { return r[i].status === "fulfilled" ? r[i].value : undefined; };
+		var problems = r.filter(function (x) { return x.status === "rejected"; }).map(function (x) { return hrx.errText(x.reason); });
+		if (st.userLeave && st.userLeave.error) { problems.push(st.userLeave.error + " (balance worked out from WorkSchedule and Leaves instead)"); }
+		if (problems.length) { console.warn("[HRX] My Leave: " + problems.join(" | ")); }
+		st.types = val(0) || [];
+		fillTypes($("nlrType"), st.types);
+		st.myLeave = val(1) || [];
+		st.groups = data.groupLeaves(st.myLeave);
+		st.holidays = (st.userLeave && st.userLeave.bankHolidays) || [];
+		st.analytics = val(3) || analyticsFromLeaves(st.myLeave);
+		if (r[2].status === "fulfilled") { renderKpis(); } else { $("lvKpis").innerHTML = "<div class=\"card\" style=\"grid-column:1/-1\">" + hrx.failed(r[2].reason) + "</div>"; }
+		renderCalendar();
+		if (r[1].status === "fulfilled") { renderRequests(); } else { $("leaveReqBody").innerHTML = "<tr><td colspan=\"4\">" + hrx.failed(r[1].reason) + "</td></tr>"; }
+		if (r[0].status === "rejected") { hrx.toast("Leave types could not be loaded — " + hrx.errText(r[0].reason), "crit"); }
 	}
 	function fmtDays(n) { return String(Math.round(n * 2) / 2); }
 	function renderKpis() {

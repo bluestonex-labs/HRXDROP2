@@ -211,7 +211,7 @@ sap.ui.define([
 				var r = await Promise.all([
 					svc.fetchAssignments(sMon, sSun),
 					svc.fetchUserDetails(sMon, sSun),
-					svc.fetchUserLeave(),
+					data.userLeave(),
 					data.isManager() ? svc.leaveToApprove() : Promise.resolve([])
 				]);
 				var booked = 0;

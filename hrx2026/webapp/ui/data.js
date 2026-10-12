@@ -148,6 +148,35 @@ sap.ui.define(["./core", "./service", "./config"], function (hrx, svc, config) {
 			}).sort(function (a, b) { return b.start.localeCompare(a.start); });
 		},
 		/**
+		 * fetchUserLeave's answer (user with quota, days taken, bank holidays). If that function
+		 * fails on the service, the same answer is read from WorkSchedule, Leaves and
+		 * BankHolidays, and the failure is kept in .error.
+		 * @param {object[]} [aLeaves] the user's Leaves rows (with LeaveCategoryId and Status), if already read
+		 */
+		userLeave: async function (aLeaves) {
+			try {
+				return await svc.fetchUserLeave();
+			} catch (e) {
+				var me = data.me, b = data.leaveBalance(null), emp = svc.q(me.EmployeeID);
+				var r = await Promise.all([
+					svc.WorkSchedule.list({ $filter: "EmployeeID_EmployeeID eq " + emp }).catch(function () { return []; }),
+					aLeaves || svc.Leaves.list({ $filter: "EmpID_EmployeeID eq " + emp, $expand: "LeaveCategoryId($select=ID,LeaveCategoryDesc,isAccountable),Status($select=ID,StatusDesc)" }),
+					me.BaseSite_ID ? svc.BankHolidays.list({ $filter: "Site_ID eq " + me.BaseSite_ID + " and Date ge " + b.from + " and Date le " + b.to }).catch(function () { return []; }) : []
+				]);
+				console.warn("[HRX] fetchUserLeave failed (" + hrx.errText(e) + "); leave balance worked out from WorkSchedule and Leaves instead");
+				return {
+					error: "fetchUserLeave: " + hrx.errText(e),
+					user: { EmployeeID: me.EmployeeID, AnnualLeaveQuota: (r[0][0] || {}).AnnualLeaveQuota },
+					availedLeaves: r[1].map(function (l) {
+						var c = l.LeaveCategoryId || {};
+						return { LeaveTypeID: c.ID, LeaveCategoryDesc: c.LeaveCategoryDesc, IsAccountable: c.isAccountable, Absence: l.DayTime, Date: l.StartDate,
+							Status: l.Status_ID === svc.STATUS.rejected ? "Rejected" : ((l.Status && l.Status.StatusDesc) || "") };
+					}),
+					bankHolidays: r[2]
+				};
+			}
+		},
+		/**
 		 * Quota, booked and remaining days for this leave year (April to March, as the
 		 * service counts it), from fetchUserLeave. Booked counts requested and approved
 		 * leave of the types that come off the allowance; rejected requests do not count.
