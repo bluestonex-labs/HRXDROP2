@@ -1,0 +1,40 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<Dialog
+		id="dismissTriggerDialog"
+		title="{i18n>skDismissTitle}"
+		contentWidth="30rem"
+		class="sapUiContentPadding"
+		afterClose=".onDismissAfterClose">
+		<content>
+			<VBox busy="{skDismiss>/saving}" busyIndicatorDelay="0">
+				<MessageStrip
+					text="{i18n>skDismissAudit}"
+					type="Warning"
+					showIcon="true"
+					class="sapUiSmallMarginBottom" />
+				<Label text="{i18n>skFieldReason}" required="true" labelFor="skDismissReason" />
+				<TextArea
+					id="skDismissReason"
+					width="100%"
+					rows="4"
+					maxLength="1000"
+					valueLiveUpdate="true"
+					value="{skDismiss>/Note}"
+					liveChange=".onDismissInput"
+					placeholder="{i18n>skDismissPlaceholder}" />
+			</VBox>
+		</content>
+		<beginButton>
+			<Button
+				text="{i18n>skDismissConfirm}"
+				type="Emphasized"
+				enabled="{= ${skDismiss>/canSave} &amp;&amp; !${skDismiss>/saving} }"
+				press=".onConfirmDismiss" />
+		</beginButton>
+		<endButton>
+			<Button text="{i18n>skCancel}" press=".onCancelDismiss" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

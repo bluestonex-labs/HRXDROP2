@@ -392,7 +392,7 @@ function createService(today, sUser) {
 		actionOnLeave({ LeaveLog }) {
 			return LeaveLog.map((x) => {
 				const l = byId("Leaves", x.ID);
-				if (l) { l.Status_ID = x.WFFlag ? STATUS.approved : STATUS.rejected; l.ApproverComments = x.ApproverComments || null; l.WFFlag = true; l.modifiedAt = now(); }
+				if (l) { l.Status_ID = x.WFFlag ? STATUS.approved : STATUS.rejected; l.ApproverComments = x.ApproverComments || null; l.modifiedAt = now(); /* like the real handler: Status_ID only, WFFlag is left as it was */ }
 				return [x.ID, x.WFFlag ? "Your leave request is approved" : "Your leave request is rejected"];
 			});
 		},

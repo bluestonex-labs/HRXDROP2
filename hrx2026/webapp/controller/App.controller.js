@@ -1,20 +1,409 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
-	"bsx/hrx/hrx2026/ui/shell"
-], function (Controller, shell) {
+	"sap/ui/core/Fragment",
+	"sap/ui/Device",
+	"../model/Backend",
+	"../model/CurrentUser",
+	"../model/formatter",
+	"sap/ui/core/format/DateFormat",
+	"../model/Notifications",
+	"../model/NotificationService"
+], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService) {
 	"use strict";
 
+	// The bell re-reads its sources at most this often while the user moves around
+	// (opening it always reads them afresh), and on its own every few minutes.
+	var NOTIF_MIN_GAP_MS = 60 * 1000;
+	var NOTIF_POLL_MS = 5 * 60 * 1000;
+
+	var oNotifTime = DateFormat.getDateTimeInstance({ pattern: "d MMM yyyy, HH:mm" });
+
+	var mKeyToRoute = {
+		home: "home",
+		timesheet: "timesheet",
+		leave: "leave",
+		teamcal: "teamcal",
+		policies: "policies",
+		explorer: "explorer",
+		admin: "admin"
+	};
+
+	// Topbar title per route, so the page name appears once in the shell rather than
+	// again inside every page.
+	var mRouteToTitleKey = {
+		home: "navHome",
+		timesheet: "navTimesheet",
+		leave: "navLeave",
+		teamcal: "navTeamCalendar",
+		resources: "navManageResources",
+		clients: "navManageClients",
+		projects: "navManageProjects",
+		missingtimesheets: "navMissingTimesheets",
+		sickness: "navSickness",
+		timesheetreport: "navTimesheetReport",
+		policies: "navPolicies",
+		documents: "navDocuments",
+		leavemanagement: "navLeaveManagement",
+		explorer: "navAppExplorer",
+		admin: "navAdmin"
+	};
+
+	// Pages whose controller offers an onRefresh - the shell bar's reload button is
+	// theirs. Driven off the route rather than off whichever page the NavContainer
+	// reports, which during a transition is still the page being left behind.
+	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport", "policies", "documents", "leavemanagement"];
+
+	// Which nav row to light up for pages that have none of their own: the admin
+	// apps are opened from the Admin page, so Admin stays lit while one is open.
+	var mRouteToNavKey = {
+		resources: "admin",
+		clients: "admin",
+		projects: "admin",
+		missingtimesheets: "admin",
+		sickness: "admin",
+		timesheetreport: "admin",
+		documents: "admin",
+		leavemanagement: "admin"
+	};
+
 	return Controller.extend("bsx.hrx.hrx2026.controller.App", {
+
+		formatter: formatter,
+
+		onInit: function () {
+			var oToolPage = this.byId("toolPage");
+			// start expanded on desktop, collapsed on smaller screens
+			oToolPage.setSideExpanded(Device.resize.width > 1024);
+			this._updateNavToggleIcon(oToolPage.getSideExpanded());
+
+			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
+		},
+
 		/**
-		 * Mounts the HRX shell once its host element is in the page. The shell signs the
-		 * user in (getUserDetail) and then starts the router.
+		 * Fills in who is signed in. The health strip's own figures come from the home
+		 * page's own fetch instead - see setHealthStrip - rather than a second fetch of
+		 * the same week/leave/approvals data here.
 		 */
-		onHostRendered: function () {
-			if (this._bMounted) { return; }
-			var oHost = this.byId("hrxHost").getDomRef();
-			if (!oHost) { return; }
-			this._bMounted = true;
-			shell.mount(oHost, this.getOwnerComponent().getRouter());
+		_loadShell: function () {
+			var oComponent = this.getOwnerComponent();
+			var oModel = oComponent.getModel("app");
+
+			// Component.init() already seeded this before routing started, so this -
+			// and every routed page that needs the profile on its very first match,
+			// the home page above all - shares the same resolution instead of each
+			// racing to look the profile up on its own.
+			var pUser = oComponent._pProfile;
+
+			Promise.all([pUser, oModel.dataLoaded()]).then(function (aResult) {
+				var oProfile = aResult[0];
+
+				oModel.setProperty("/demoRole", CurrentUser.demoRole());
+				oModel.setProperty("/user", {
+					name: oProfile.name,
+					initials: oProfile.initials,
+					email: oProfile.email,
+					empID: oProfile.empID,
+					isManager: oProfile.isManager,
+					roleLabel: oProfile.empID
+				});
+
+				this._oNotifProfile = oProfile;
+				this._loadNotifications(true);
+				setInterval(this._loadNotifications.bind(this, true), NOTIF_POLL_MS);
+			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* notifications                                               */
+		/* =========================================================== */
+
+		/**
+		 * Works the signed-in user's notifications out again and keeps the unread
+		 * ones in app>/notif.
+		 * @param {boolean} [bForce] read even if the last read was moments ago
+		 * @returns {Promise} resolved once the bell is up to date
+		 */
+		_loadNotifications: function (bForce) {
+			var oProfile = this._oNotifProfile;
+			var oModel = this.getOwnerComponent().getModel("app");
+			var iNow = Date.now();
+
+			if (!oProfile || (!bForce && this._iNotifAt && iNow - this._iNotifAt < NOTIF_MIN_GAP_MS)) {
+				return Promise.resolve();
+			}
+			this._iNotifAt = iNow;
+			var iLoad = this._iNotifLoad = (this._iNotifLoad || 0) + 1;
+
+			oModel.setProperty("/notif/loading", true);
+			return NotificationService.load(oProfile).then(function (aItems) {
+				if (iLoad !== this._iNotifLoad) {
+					return;
+				}
+				this._aNotifs = aItems;
+				this._renderNotifications();
+			}.bind(this)).catch(function (oError) {
+				console.error("Notifications failed", oError);
+			}).then(function () {
+				oModel.setProperty("/notif/loading", false);
+			});
+		},
+
+		_renderNotifications: function () {
+			var oModel = this.getOwnerComponent().getModel("app");
+			var sEmpId = (this._oNotifProfile || {}).empID;
+			var aRead = NotificationService.readIds(sEmpId).concat(this._aNotifReadHere || []);
+			var aItems = Notifications.unread(this._aNotifs || [], aRead).map(this._toNotification, this);
+
+			oModel.setProperty("/notif/items", aItems);
+			oModel.setProperty("/notif/countText", aItems.length ? this.getText("notifUnread", [aItems.length]) : "");
+		},
+
+		/**
+		 * @param {object} oItem a notification from Notifications.js
+		 * @returns {object} it with the subject, detail and time to show
+		 */
+		_toNotification: function (oItem) {
+			var fnDates = function (sFrom, sTo) {
+				return sFrom === sTo ? formatter.date(sFrom) : formatter.dateRange(sFrom, sTo);
+			};
+			var sSubject;
+			var sDetail = "";
+
+			switch (oItem.kind) {
+				case "leaveApproved":
+					sSubject = this.getText("notifLeaveApproved", [fnDates(oItem.from, oItem.to)]);
+					sDetail = oItem.type;
+					break;
+				case "leaveRejected":
+					sSubject = this.getText("notifLeaveRejected", [fnDates(oItem.from, oItem.to)]);
+					sDetail = oItem.note ? this.getText("notifNote", [oItem.note]) : oItem.type;
+					break;
+				case "timesheet":
+					sSubject = this.getText("notifTimesheet", [Math.round(oItem.minutes / 60 * 10) / 10]);
+					break;
+				case "document":
+					sSubject = this.getText("notifDocument", [oItem.name]);
+					break;
+				case "approvals":
+					sSubject = this.getText(oItem.count === 1 ? "notifApprovalsOne" : "notifApprovals", [oItem.count]);
+					break;
+				default:
+					sSubject = oItem.subject || "";
+					sDetail = oItem.detail || "";
+			}
+
+			return Object.assign({}, oItem, {
+				subject: sSubject,
+				detail: sDetail,
+				when: oItem.at && !isNaN(oItem.at) ? oNotifTime.format(oItem.at) : ""
+			});
+		},
+
+		onBellPress: function (oEvent) {
+			var oBell = oEvent.getSource();
+
+			if (!this._pNotifPopover) {
+				this._pNotifPopover = Fragment.load({
+					id: this.getView().getId(),
+					name: "bsx.hrx.hrx2026.fragment.NotificationsPopover",
+					controller: this
+				}).then(function (oPopover) {
+					this.getView().addDependent(oPopover);
+					return oPopover;
+				}.bind(this));
+			}
+			this._pNotifPopover.then(function (oPopover) {
+				if (oPopover.isOpen()) {
+					oPopover.close();
+					return;
+				}
+				oPopover.openBy(oBell);
+				this._loadNotifications(true);
+			}.bind(this));
+		},
+
+		/**
+		 * Marks the notification read and opens the page it is about.
+		 * @param {sap.ui.base.Event} oEvent the list item press event
+		 */
+		onNotificationPress: function (oEvent) {
+			var oItem = oEvent.getSource().getBindingContext("app").getObject();
+			this._markNotificationsRead([oItem.id]);
+			this.onNotificationsClose();
+			if (oItem.route) {
+				this.getOwnerComponent().getRouter().navTo(oItem.route);
+			}
+		},
+
+		onNotificationsMarkAll: function () {
+			this._markNotificationsRead((this.getOwnerComponent().getModel("app").getProperty("/notif/items") || [])
+				.map(function (oItem) {
+					return oItem.id;
+				}));
+		},
+
+		onNotificationsClose: function () {
+			if (this._pNotifPopover) {
+				this._pNotifPopover.then(function (oPopover) {
+					oPopover.close();
+				});
+			}
+		},
+
+		_markNotificationsRead: function (aIds) {
+			// Kept here as well, so read holds for this page even where the browser
+			// will not store it.
+			this._aNotifReadHere = (this._aNotifReadHere || []).concat(aIds);
+			NotificationService.markRead((this._oNotifProfile || {}).empID, aIds);
+			this._renderNotifications();
+		},
+
+		/**
+		 * Called by the home page once it has loaded the week, leave and approvals data
+		 * the strip summarises, so the numbers come from that one fetch rather than the
+		 * shell fetching the same data again for itself.
+		 * @param {Array<object>} aStrip the strip entries
+		 */
+		setHealthStrip: function (aStrip) {
+			this.getOwnerComponent().getModel("app").setProperty("/healthStrip", aStrip);
+			this._refreshStripVisibility();
+		},
+
+		getResourceBundle: function () {
+			return this.getOwnerComponent().getModel("i18n").getResourceBundle();
+		},
+
+		getText: function (sKey, aArgs) {
+			return this.getResourceBundle().getText(sKey, aArgs);
+		},
+
+		/**
+		 * Reflects the route in the shell title and the side navigation selection.
+		 * @param {sap.ui.base.Event} oEvent the routeMatched event
+		 */
+		_onRouteMatched: function (oEvent) {
+			// Leaving a page is when its notifications may have changed (a timesheet
+			// booked, a policy acknowledged) - at most once a minute.
+			this._loadNotifications(false);
+
+			this._loadShell();
+			
+			var sRoute = oEvent.getParameter("name");
+			var sKey = mRouteToTitleKey[sRoute];
+			if (!sKey) {
+				return;
+			}
+
+			this._sRoute = sRoute;
+
+			// The app catalogue arrives asynchronously and replaces the whole model, so
+			// the title is written once that has landed. Setting it earlier leaves a
+			// deep link showing whatever title the catalogue was seeded with.
+			var oModel = this.getOwnerComponent().getModel("app");
+			oModel.dataLoaded().then(function () {
+				oModel.setProperty("/page", {
+					title: this.getText(sKey),
+					// A page that reported when its data was read keeps showing it on return.
+					stamp: oModel.getProperty("/stamps/" + sRoute) || ""
+				});
+				this._refreshStripVisibility();
+			}.bind(this));
+
+			var oNavList = this.byId("sideNavigation").getItem();
+			if (oNavList) {
+				oNavList.setSelectedKey(mRouteToNavKey[sRoute] || sRoute);
+			}
+		},
+
+		/**
+		 * The strip reports on the signed-in user's own week, so it is shown on the home
+		 * page and nowhere else.
+		 */
+		_refreshStripVisibility: function () {
+			var oModel = this.getOwnerComponent().getModel("app");
+			var aStrip = oModel.getProperty("/healthStrip") || [];
+
+			oModel.setProperty("/page/showStrip", this._sRoute === "home" && aStrip.length > 0);
+			oModel.setProperty("/page/showRefresh", aRefreshableRoutes.indexOf(this._sRoute) !== -1);
+		},
+
+		/**
+		 * Read at press time rather than on the route match: the NavContainer is still
+		 * transitioning when the route fires, so the page it reports then is the one
+		 * being left behind.
+		 * @returns {sap.ui.core.mvc.Controller|null} the controller of the page on
+		 * screen, when it offers a reload of its own
+		 */
+		_currentPageController: function () {
+			var oPage = this.byId("appNavContainer").getCurrentPage();
+			var oController = oPage && oPage.getController && oPage.getController();
+
+			return (oController && typeof oController.onRefresh === "function") ? oController : null;
+		},
+
+		/**
+		 * Reloads whatever page is on screen. The button lives on the shell bar now, so
+		 * it has to ask the page rather than the page owning a button of its own.
+		 */
+		onRefreshPage: function () {
+			var oController = this._currentPageController();
+			if (oController) {
+				oController.onRefresh();
+			}
+		},
+
+		/**
+		 * Shows who is signed in. The rail no longer repeats the name, so this is where
+		 * the details live.
+		 * @param {sap.ui.base.Event} oEvent the avatar press event
+		 */
+		onProfilePress: function (oEvent) {
+			var oAvatar = oEvent.getSource();
+
+			if (!this._pProfilePopover) {
+				this._pProfilePopover = Fragment.load({
+					id: this.getView().getId(),
+					name: "bsx.hrx.hrx2026.fragment.ProfilePopover",
+					controller: this
+				}).then(function (oPopover) {
+					this.getView().addDependent(oPopover);
+					return oPopover;
+				}.bind(this));
+			}
+
+			this._pProfilePopover.then(function (oPopover) {
+				oPopover.openBy(oAvatar);
+			});
+		},
+
+		/**
+		 * TESTING AID - switches the "View as (demo)" role; the page reloads under it.
+		 * @param {sap.ui.base.Event} oEvent the select's change event
+		 */
+		onDemoRoleChange: function (oEvent) {
+			CurrentUser.setDemoRole(oEvent.getParameter("selectedItem").getKey());
+		},
+
+		onMenuButtonPress: function () {
+			var oToolPage = this.byId("toolPage");
+			var bExpanded = !oToolPage.getSideExpanded();
+			oToolPage.setSideExpanded(bExpanded);
+			this._updateNavToggleIcon(bExpanded);
+		},
+
+		/**
+		 * Collapsed, the toggle sits alone at the top of the narrow rail with no room
+		 * for the wordmark, so it reads as the menu opener rather than a "back" arrow.
+		 * @param {boolean} bExpanded the side rail's new expanded state
+		 */
+		_updateNavToggleIcon: function (bExpanded) {
+			this.byId("navToggleButton").setIcon(bExpanded ? "sap-icon://navigation-left-arrow" : "sap-icon://menu2");
+			this.byId("toolPage").toggleStyleClass("hrxSideCollapsed", !bExpanded);
+		},
+
+		onItemSelect: function (oEvent) {
+			var sKey = oEvent.getParameter("item").getKey();
+			this.getOwnerComponent().getRouter().navTo(mKeyToRoute[sKey] || "home");
 		}
 	});
 });

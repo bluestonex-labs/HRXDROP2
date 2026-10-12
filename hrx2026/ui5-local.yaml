@@ -4,25 +4,21 @@ specVersion: "4.0"
 metadata:
   name: bsx.hrx.hrx2026
 type: application
+framework:
+  name: SAPUI5
+  version: 1.150.0
+  libraries:
+    - name: sap.m
+    - name: sap.ui.core
+    - name: sap.f
+    - name: sap.tnt
+    - name: sap.ui.layout
+    - name: sap.ui.unified
+    - name: sap.suite.ui.microchart
+    - name: sap.ushell
+    - name: themelib_sap_horizon
 server:
   customMiddleware:
-    # /hrx: the HRX CAP service (middleware: mock/, a local package - see mock/ui5.yaml). With HRX_TOKEN set (a bearer token for the deployed
-    # service) requests are proxied to it; otherwise mock/hrx-mock-middleware.js answers
-    # from an in-memory copy with the same entities, functions and actions.
-    - name: hrx-service
-      afterMiddleware: compression
-      configuration:
-        mountPath: /hrx
-        serviceUrl: https://bsx-tdd-tdd-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com
-    - name: fiori-tools-proxy
-      afterMiddleware: hrx-service
-      configuration:
-        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
-        ui5:
-          path:
-            - /resources
-            - /test-resources
-          url: https://ui5.sap.com
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
@@ -34,6 +30,28 @@ server:
       configuration:
         flp:
           theme: sap_horizon
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
+        backend:
+          - path: /services
+            url: https://bsx-tdd-tdd-bsx-org-apps-services-v2.cfapps.eu10.hana.ondemand.com
+            # destination: bsxorgappsservices
+            # Left out on purpose for local runs: fiori-tools-proxy sends the
+            # request to https://bsxorgappsservices.dest, which answers 502 here,
+            # while url: above reaches the service directly. The destination name
+            # still applies once deployed - xs-app.json carries it.
+    - name: sap-fe-mockserver
+      beforeMiddleware: csp
+      configuration:
+        mountPath: /
+        services:
+          - urlPath: /services/services.xsodata
+            metadataPath: ./webapp/localService/mainService/metadata.xml
+            mockdataPath: ./webapp/localService/mainService/data
+            generateMockData: true
+        annotations: []
 builder:
   resources:
     excludes:

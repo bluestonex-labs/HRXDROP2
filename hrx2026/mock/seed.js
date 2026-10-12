@@ -123,22 +123,22 @@ function build(oToday) {
 		db.Projects.push(p);
 		P[sName] = p.ID;
 	};
-	proj("Babcock Maextro Support", "Babcock International", "T&M", "2020-04-01", "2999-12-31", { PONumber: "PO 4500123", POValue: "48000", TotBillableDays: "80" });
-	proj("BAE Maextro Support", "BAE Applied Intelligence", "T&M", "2020-04-01", "2999-12-31");
+	proj("Babcock Maextro Support", "Babcock International", "TNM", "2020-04-01", "2999-12-31", { PONumber: "PO 4500123", POValue: "48000", TotBillableDays: "80" });
+	proj("BAE Maextro Support", "BAE Applied Intelligence", "TNM", "2020-04-01", "2999-12-31");
 	proj("Blueskyx Pre-Sales", "Bluestonex Consulting Ltd", "INT", "2020-04-01", "2999-12-31");
 	proj("Bluestonex - Maextro Plant Maintenance", "Bluestonex Consulting Ltd", "INT", "2021-02-05", "2022-02-04", { IsActive: false });
 	proj("BSX Graduate Training", "Bluestonex Consulting Ltd", "INT", "2022-11-01", "2023-11-01", { IsActive: false });
 	proj("BSX Internal Development", "Bluestonex Consulting Ltd", "INT", "2020-04-01", "2099-03-31");
 	proj("AWS Migration", "Bluestonex Consulting Ltd", "INT", year + "-03-02", year + "-12-18");
-	proj("Carlsberg UX Support", "Carlsberg Group", "T&M", (year - 1) + "-09-01", year + "-12-31", { PONumber: "PO 4500310", POValue: "61500", TotBillableDays: "130", Priority: "High", ProjectManagerID: U("Sam Evans") });
-	proj("CR5", "Carlsberg Group", "FP", year + "-01-05", year + "-12-30", { PONumber: "PO 4500311", POValue: "52000", TotBillableDays: "100" });
-	proj("CR6 Event Processing", "Carlsberg Group", "FP", year + "-02-02", year + "-11-27", { PONumber: "PO 4500312", POValue: "64000", TotBillableDays: "120" });
-	proj("Croda UX Support", "Croda", "T&M", (year - 1) + "-10-01", year + "-12-31", { PONumber: "PO 4500401", POValue: "60000", TotBillableDays: "125", ProjectManagerID: U("Sam Evans") });
-	proj("Maextro Croda - Material Extensions", "Croda", "T&M", year + "-01-12", year + "-12-30", { PONumber: "PO 4500402", POValue: "45000", TotBillableDays: "100" });
-	proj("Maextro PAD", "Croda", "T&M", year + "-01-12", year + "-12-30", { PONumber: "PO 4500403", POValue: "41000", TotBillableDays: "90" });
-	proj("NATS Timesheet Development", "NATS", "T&M", (year - 1) + "-11-03", year + "-12-18", { PONumber: "PO 4500377", POValue: "37050", TotBillableDays: "57", ProjectManagerID: U("Sam Evans") });
-	proj("Engineering CR3", "Princes Foods", "FP", year + "-01-19", year + "-12-28", { PONumber: "PO 4500501", POValue: "38000", TotBillableDays: "80" });
-	proj("Maextro Material Master", "XP Power", "T&M", year + "-02-09", year + "-12-04", { PONumber: "PO 4500601", POValue: "36000", TotBillableDays: "80" });
+	proj("Carlsberg UX Support", "Carlsberg Group", "TNM", (year - 1) + "-09-01", year + "-12-31", { PONumber: "PO 4500310", POValue: "61500", TotBillableDays: "130", Priority: "High", ProjectManagerID: U("Sam Evans") });
+	proj("CR5", "Carlsberg Group", "FXD", year + "-01-05", year + "-12-30", { PONumber: "PO 4500311", POValue: "52000", TotBillableDays: "100" });
+	proj("CR6 Event Processing", "Carlsberg Group", "FXD", year + "-02-02", year + "-11-27", { PONumber: "PO 4500312", POValue: "64000", TotBillableDays: "120" });
+	proj("Croda UX Support", "Croda", "TNM", (year - 1) + "-10-01", year + "-12-31", { PONumber: "PO 4500401", POValue: "60000", TotBillableDays: "125", ProjectManagerID: U("Sam Evans") });
+	proj("Maextro Croda - Material Extensions", "Croda", "TNM", year + "-01-12", year + "-12-30", { PONumber: "PO 4500402", POValue: "45000", TotBillableDays: "100" });
+	proj("Maextro PAD", "Croda", "TNM", year + "-01-12", year + "-12-30", { PONumber: "PO 4500403", POValue: "41000", TotBillableDays: "90" });
+	proj("NATS Timesheet Development", "NATS", "TNM", (year - 1) + "-11-03", year + "-12-18", { PONumber: "PO 4500377", POValue: "37050", TotBillableDays: "57", ProjectManagerID: U("Sam Evans") });
+	proj("Engineering CR3", "Princes Foods", "FXD", year + "-01-19", year + "-12-28", { PONumber: "PO 4500501", POValue: "38000", TotBillableDays: "80" });
+	proj("Maextro Material Master", "XP Power", "TNM", year + "-02-09", year + "-12-04", { PONumber: "PO 4500601", POValue: "36000", TotBillableDays: "80" });
 
 	// who works on what: [person, project, billing scheme, share of a working day]
 	const plan = [

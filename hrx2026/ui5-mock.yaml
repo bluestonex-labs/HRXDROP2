@@ -6,16 +6,8 @@ metadata:
 type: application
 server:
   customMiddleware:
-    # /hrx: always the in-memory mock of the HRX CAP service (mock/hrx-mock-middleware.js),
-    # even when HRX_TOKEN is set.
-    - name: hrx-service
-      afterMiddleware: compression
-      configuration:
-        mode: mock
-        mountPath: /hrx
-        serviceUrl: https://bsx-tdd-tdd-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com
     - name: fiori-tools-proxy
-      afterMiddleware: hrx-service
+      afterMiddleware: compression
       configuration:
         ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
         ui5:
@@ -23,6 +15,14 @@ server:
             - /resources
             - /test-resources
           url: https://ui5.sap.com
+        backend:
+          - path: /services
+            url: https://bsx-tdd-tdd-bsx-org-apps-services-v2.cfapps.eu10.hana.ondemand.com
+            # destination: bsxorgappsservices
+            # Left out on purpose for local runs: fiori-tools-proxy sends the
+            # request to https://bsxorgappsservices.dest, which answers 502 here,
+            # while url: above reaches the service directly. The destination name
+            # still applies once deployed - xs-app.json carries it.
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
@@ -34,6 +34,24 @@ server:
       configuration:
         flp:
           theme: sap_horizon
+        test:
+          - framework: OPA5
+            path: /test/integration/opaTests.qunit.html
+            pattern: /test/**/AllJourneys.*
+          - framework: Testsuite
+          - framework: QUnit
+            path: /test/unit/unitTests.qunit.html
+            pattern: /test/unit/controller/*.{js,ts}
+    - name: sap-fe-mockserver
+      beforeMiddleware: csp
+      configuration:
+        mountPath: /
+        services:
+          - urlPath: /services/services.xsodata
+            metadataPath: ./webapp/localService/mainService/metadata.xml
+            mockdataPath: ./webapp/localService/mainService/data
+            generateMockData: true
+        annotations: []
 builder:
   resources:
     excludes:

@@ -3,13 +3,7 @@
   "sap.app": {
     "id": "bsx.hrx.hrx2026",
     "type": "application",
-    "i18n": {
-      "bundleUrl": "i18n/i18n.properties",
-      "supportedLocales": [
-        ""
-      ],
-      "fallbackLocale": ""
-    },
+    "i18n": "i18n/i18n.properties",
     "applicationVersion": {
       "version": "0.0.1"
     },
@@ -22,13 +16,13 @@
       "toolsId": "66332a0b-a8e4-42c2-8280-b88db765ceb1"
     },
     "dataSources": {
-      "hrxService": {
-        "uri": "hrx/",
+      "mainService": {
+        "uri": "services/services.xsodata/",
         "type": "OData",
         "settings": {
           "annotations": [],
-          "localUri": "localService/hrx/metadata.xml",
-          "odataVersion": "4.0"
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "2.0"
         }
       }
     },
@@ -60,16 +54,20 @@
       "desktop": true,
       "tablet": true,
       "phone": true
-    },
-    "fullWidth": true
+    }
   },
   "sap.ui5": {
-    "flexEnabled": false,
+    "flexEnabled": true,
     "dependencies": {
       "minUI5Version": "1.150.0",
       "libs": {
         "sap.m": {},
-        "sap.ui.core": {}
+        "sap.ui.core": {},
+        "sap.f": {},
+        "sap.tnt": {},
+        "sap.ui.layout": {},
+        "sap.ui.unified": {},
+        "sap.suite.ui.microchart": {}
       }
     },
     "contentDensities": {
@@ -80,102 +78,196 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "settings": {
-          "bundleName": "bsx.hrx.hrx2026.i18n.i18n",
-          "supportedLocales": [
-            ""
-          ],
-          "fallbackLocale": ""
+          "bundleName": "bsx.hrx.hrx2026.i18n.i18n"
         }
+      },
+      "app": {
+        "type": "sap.ui.model.json.JSONModel",
+        "uri": "model/apps.json"
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {}
       }
     },
     "resources": {
       "css": [
         {
-          "uri": "css/hrx.css"
-        },
-        {
-          "uri": "css/hrx-ui5.css"
-        },
-        {
-          "uri": "css/hrx-mobile.css"
+          "uri": "css/style.css"
         }
       ]
     },
     "routing": {
       "config": {
         "routerClass": "sap.m.routing.Router",
-        "async": true
+        "controlAggregation": "pages",
+        "controlId": "appNavContainer",
+        "transition": "slide",
+        "type": "View",
+        "viewType": "XML",
+        "path": "bsx.hrx.hrx2026.view",
+        "async": true,
+        "viewPath": "bsx.hrx.hrx2026.view"
       },
       "routes": [
         {
           "name": "home",
-          "pattern": ""
+          "pattern": "",
+          "target": "home"
         },
         {
           "name": "timesheet",
-          "pattern": "timesheet"
+          "pattern": "timesheet",
+          "target": "timesheet"
         },
         {
           "name": "leave",
-          "pattern": "leave"
+          "pattern": "leave",
+          "target": "leave"
         },
         {
           "name": "teamcal",
-          "pattern": "teamcalendar"
-        },
-        {
-          "name": "mydocs",
-          "pattern": "policies"
+          "pattern": "teamcalendar",
+          "target": "teamcal"
         },
         {
           "name": "explorer",
-          "pattern": "explorer"
+          "pattern": "explorer",
+          "target": "explorer"
         },
         {
-          "name": "mybonus",
-          "pattern": "explorer/mybonus"
-        },
-        {
-          "name": "managebonus",
-          "pattern": "explorer/managebonus"
-        },
-        {
-          "name": "services",
-          "pattern": "explorer/services"
-        },
-        {
-          "name": "sickness",
-          "pattern": "sickness"
-        },
-        {
-          "name": "leaveadmin",
-          "pattern": "leavemanagement"
-        },
-        {
-          "name": "documents",
-          "pattern": "documents"
-        },
-        {
-          "name": "tsreport",
-          "pattern": "timesheetreporting"
-        },
-        {
-          "name": "utilisation",
-          "pattern": "utilisation"
+          "name": "admin",
+          "pattern": "admin",
+          "target": "admin"
         },
         {
           "name": "resources",
-          "pattern": "manageresources"
+          "pattern": "manageresources",
+          "target": "resources"
         },
         {
           "name": "clients",
-          "pattern": "manageclients"
+          "pattern": "manageclients",
+          "target": "clients"
         },
         {
           "name": "projects",
-          "pattern": "manageprojects"
+          "pattern": "manageprojects",
+          "target": "projects"
+        },
+        {
+          "name": "missingtimesheets",
+          "pattern": "missingtimesheets",
+          "target": "missingtimesheets"
+        },
+        {
+          "name": "sickness",
+          "pattern": "sickness",
+          "target": "sickness"
+        },
+        {
+          "name": "timesheetreport",
+          "pattern": "timesheetreporting:?query:",
+          "target": "timesheetreport"
+        },
+        {
+          "name": "policies",
+          "pattern": "policies",
+          "target": "policies"
+        },
+        {
+          "name": "documents",
+          "pattern": "documents",
+          "target": "documents"
+        },
+        {
+          "name": "leavemanagement",
+          "pattern": "leavemanagement",
+          "target": "leavemanagement"
         }
-      ]
+      ],
+      "targets": {
+        "home": {
+          "viewName": "Home",
+          "viewLevel": 1,
+          "viewId": "home"
+        },
+        "timesheet": {
+          "viewName": "Timesheet",
+          "viewLevel": 1,
+          "viewId": "timesheet"
+        },
+        "leave": {
+          "viewName": "Leave",
+          "viewLevel": 1,
+          "viewId": "leave"
+        },
+        "teamcal": {
+          "viewName": "TeamCalendar",
+          "viewLevel": 1,
+          "viewId": "teamcal"
+        },
+        "explorer": {
+          "viewName": "AppExplorer",
+          "viewLevel": 1,
+          "viewId": "explorer"
+        },
+        "admin": {
+          "viewName": "Admin",
+          "viewLevel": 1,
+          "viewId": "admin"
+        },
+        "resources": {
+          "viewName": "ManageResources",
+          "viewLevel": 1,
+          "viewId": "resources"
+        },
+        "clients": {
+          "viewName": "ManageClients",
+          "viewLevel": 1,
+          "viewId": "clients"
+        },
+        "projects": {
+          "viewName": "ManageProjects",
+          "viewLevel": 1,
+          "viewId": "projects"
+        },
+        "missingtimesheets": {
+          "viewName": "MissingTimesheets",
+          "viewLevel": 1,
+          "viewId": "missingtimesheets"
+        },
+        "sickness": {
+          "viewName": "Sickness",
+          "viewLevel": 1,
+          "viewId": "sickness"
+        },
+        "timesheetreport": {
+          "viewName": "TimesheetReport",
+          "viewLevel": 1,
+          "viewId": "timesheetreport"
+        },
+        "policies": {
+          "viewName": "Policies",
+          "viewLevel": 1,
+          "viewId": "policies"
+        },
+        "documents": {
+          "viewName": "Documents",
+          "viewLevel": 1,
+          "viewId": "documents"
+        },
+        "leavemanagement": {
+          "viewName": "LeaveManagement",
+          "viewLevel": 1,
+          "viewId": "leavemanagement"
+        },
+        "notFound": {
+          "viewName": "NotFound",
+          "viewId": "notFound"
+        }
+      }
     },
     "rootView": {
       "viewName": "bsx.hrx.hrx2026.view.App",

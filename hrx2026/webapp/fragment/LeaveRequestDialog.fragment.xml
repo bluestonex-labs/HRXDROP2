@@ -1,0 +1,66 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- One leave request from Leave management's Team leave table. A request that
+	     has not started yet - pending or approved - can be cancelled here. -->
+	<Dialog
+		id="leaveRequestDialog"
+		title="{i18n>lmRequestTitle}"
+		contentWidth="30rem"
+		class="sapUiContentPadding">
+		<content>
+			<VBox busy="{lmReq>/saving}" busyIndicatorDelay="0" class="hrxLmReq">
+				<HBox alignItems="Center" class="sapUiSmallMarginBottom">
+					<Avatar initials="{lmReq>/initials}" displaySize="S" class="sapUiSmallMarginEnd" />
+					<VBox>
+						<Text text="{lmReq>/Name}" class="hrxResourceName" />
+						<Text text="{lmReq>/dates}" class="hrxResourceMeta" />
+					</VBox>
+					<ObjectStatus
+						text="{lmReq>/statusText}"
+						state="{lmReq>/statusState}"
+						inverted="true"
+						class="hrxSkPill hrxLmReqStatus" />
+				</HBox>
+
+				<HBox class="hrxLmReqLine">
+					<Label text="{i18n>lmColType}" />
+					<HBox alignItems="Center">
+						<core:HTML content="{lmReq>/dotHtml}" />
+						<Text text="{lmReq>/typeText}" />
+					</HBox>
+				</HBox>
+				<HBox class="hrxLmReqLine">
+					<Label text="{i18n>lmColDays}" />
+					<Text text="{lmReq>/daysText}" />
+				</HBox>
+				<HBox class="hrxLmReqLine" visible="{= !!${lmReq>/comments} }">
+					<Label text="{i18n>lmRequesterComments}" />
+					<Text text="{lmReq>/comments}" />
+				</HBox>
+				<HBox class="hrxLmReqLine" visible="{= !!${lmReq>/approverComments} }">
+					<Label text="{i18n>lmApproverComments}" />
+					<Text text="{lmReq>/approverComments}" />
+				</HBox>
+
+				<MessageStrip
+					text="{lmReq>/cancelHint}"
+					type="Information"
+					showIcon="true"
+					visible="{= !${lmReq>/cancellable} }"
+					class="sapUiSmallMarginTop" />
+			</VBox>
+		</content>
+		<buttons>
+			<Button
+				text="{i18n>lmCancelLeave}"
+				icon="sap-icon://cancel"
+				type="Reject"
+				visible="{lmReq>/cancellable}"
+				enabled="{= !${lmReq>/saving} }"
+				press=".onCancelRequest" />
+			<Button text="{i18n>lmClose}" press=".onCloseRequest" />
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

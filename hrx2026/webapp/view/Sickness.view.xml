@@ -1,0 +1,249 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.Sickness"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	xmlns:layout="sap.ui.layout"
+	displayBlock="true"
+	class="hrxSickness">
+
+	<Page id="sicknessPage" showHeader="false" title="{i18n>skTitle}" showNavButton="false" class="hrxPageContent">
+
+		<subHeader>
+			<OverflowToolbar id="sicknessToolbar" class="hrxFilterBar" visible="{app>/user/isManager}">
+				<Button
+					id="sicknessPrevYear"
+					icon="sap-icon://navigation-left-arrow"
+					type="Transparent"
+					tooltip="{i18n>skPreviousYear}"
+					press=".onStepYear">
+					<customData>
+						<core:CustomData key="step" value="previous" />
+					</customData>
+				</Button>
+				<Text text="{skView>/year/label}" class="hrxSkYearLabel" />
+				<Button
+					id="sicknessNextYear"
+					icon="sap-icon://navigation-right-arrow"
+					type="Transparent"
+					tooltip="{i18n>skNextYear}"
+					enabled="{= !${skView>/isCurrentYear} }"
+					press=".onStepYear">
+					<customData>
+						<core:CustomData key="step" value="next" />
+					</customData>
+				</Button>
+				<ToolbarSpacer />
+				<Button
+					id="sicknessRecord"
+					text="{i18n>skRecord}"
+					icon="sap-icon://add"
+					type="Emphasized"
+					press=".onOpenRecord" />
+			</OverflowToolbar>
+		</subHeader>
+
+		<content>
+			<!-- Manager rights come from the signed-in profile, so a direct link to this
+			     page still lands on the notice rather than on anyone's sickness record. -->
+			<IllustratedMessage
+				visible="{= !${app>/user/isManager} }"
+				illustrationType="sapIllus-UnableToLoad"
+				title="{i18n>skTitle}"
+				description="{i18n>adminRestricted}" />
+
+			<VBox visible="{app>/user/isManager}" busy="{skView>/busy}" busyIndicatorDelay="0" class="hrxSkBody">
+
+				<MessageStrip
+					text="{skView>/alert/text}"
+					type="{skView>/alert/type}"
+					showIcon="true"
+					class="hrxSkAlert" />
+
+				<!-- policy triggers -->
+				<Title text="{i18n>skTriggersTitle}" level="H2" class="hrxSectionTitle hrxSkSectionTitle" />
+
+				<VBox class="hrxSkCard hrxSkEmpty" visible="{= ${sk>/triggers}.length === 0 }">
+					<Text text="{skView>/noTriggersText}" textAlign="Center" />
+				</VBox>
+
+				<VBox items="{path: 'sk>/triggers', templateShareable: false}" class="hrxSkStack">
+					<VBox class="hrxSkCard hrxSkTrigger">
+						<customData>
+							<core:CustomData key="status" value="{sk>status}" writeToDom="true" />
+						</customData>
+
+						<HBox alignItems="Center" class="hrxSkCardHead">
+							<f:Avatar initials="{sk>initials}" displaySize="S" backgroundColor="Accent6" class="hrxSkAvatar" />
+							<VBox class="hrxSkCardWho">
+								<Text text="{sk>Name}" class="hrxSkName" />
+								<Text text="{skView>/year/label}" class="hrxSkSub" />
+							</VBox>
+							<ObjectStatus
+								text="{i18n>skEmailSent}"
+								icon="sap-icon://email"
+								state="Information"
+								inverted="true"
+								visible="{= ${sk>emailed} &amp;&amp; ${sk>status} === 'OPEN' }"
+								class="hrxSkPill" />
+						</HBox>
+
+						<VBox class="hrxSkCardBody">
+							<Text text="{skView>/ruleText}" class="hrxSkRule" />
+							<Text text="{sk>summary}" class="hrxSkSummary" />
+
+							<Panel expandable="true" expanded="{sk>expanded}" class="hrxSkHistory">
+								<headerToolbar>
+									<Toolbar style="Clear" height="auto">
+										<Text text="{i18n>skHistory}" class="hrxSkLabel" />
+										<ToolbarSpacer />
+										<Text text="{sk>historyCount}" class="hrxSkCount" />
+									</Toolbar>
+								</headerToolbar>
+								<Table items="{path: 'sk>absences', templateShareable: false}" class="hrxSkTable">
+									<columns>
+										<Column width="40%"><Text text="{i18n>skColDate}" /></Column>
+										<Column width="20%" hAlign="Center"><Text text="{i18n>skColDuration}" /></Column>
+										<Column><Text text="{i18n>skColReason}" /></Column>
+									</columns>
+									<items>
+										<ColumnListItem>
+											<cells>
+												<Text text="{sk>dateText}" />
+												<Text text="{sk>durationText}" />
+												<Text text="{sk>Reason}" />
+											</cells>
+										</ColumnListItem>
+									</items>
+								</Table>
+							</Panel>
+
+							<Text text="{i18n>skRecommended}" class="hrxSkLabel" />
+							<Text text="{i18n>skRecommendation}" class="hrxSkRec" />
+
+							<Text
+								text="{sk>emailedText}"
+								visible="{= ${sk>emailed} &amp;&amp; ${sk>status} === 'OPEN' }"
+								class="hrxSkNote hrxSkNoteEmailed" />
+							<HBox wrap="Wrap" visible="{= ${sk>status} === 'OPEN' }" class="hrxSkActions">
+								<Button
+									text="{= ${sk>emailed} ? ${i18n>skSendAnother} : ${i18n>skSendFollowUp} }"
+									icon="sap-icon://email"
+									press=".onSendFollowUp" />
+								<Button
+									text="{sk>dismissText}"
+									press=".onOpenDismiss" />
+							</HBox>
+						</VBox>
+					</VBox>
+				</VBox>
+
+				<!-- return to work -->
+				<Title text="{i18n>skRtwTitle}" level="H2" class="hrxSectionTitle hrxSkSectionTitle" />
+
+				<VBox class="hrxSkCard hrxSkEmpty" visible="{= ${sk>/rtw}.length === 0 }">
+					<Text text="{i18n>skNoRtw}" />
+				</VBox>
+
+				<layout:Grid
+					content="{path: 'sk>/rtw', templateShareable: false}"
+					defaultSpan="XL6 L6 M12 S12"
+					hSpacing="1"
+					vSpacing="1"
+					class="hrxSkRtwGrid">
+					<VBox class="hrxSkCard hrxSkRtw">
+						<HBox alignItems="Center" class="hrxSkCardHead">
+							<f:Avatar initials="{sk>initials}" displaySize="XS" backgroundColor="Accent6" class="hrxSkAvatar" />
+							<VBox class="hrxSkCardWho">
+								<Text text="{sk>Name}" class="hrxResourceName" />
+								<Text text="{sk>Title}" class="hrxResourceMeta" />
+							</VBox>
+							<ObjectStatus text="{i18n>skInProgress}" state="Warning" inverted="true" class="hrxSkPill" />
+						</HBox>
+
+						<VBox class="hrxSkCardBody">
+							<Text text="{i18n>skSteps}" class="hrxSkLabel hrxSkLabelFirst" />
+							<VBox items="{path: 'sk>steps', templateShareable: false}" class="hrxSkSteps">
+								<HBox alignItems="Center" class="hrxSkStep">
+									<customData>
+										<core:CustomData key="done" value="{= ${sk>done} ? 'yes' : 'no' }" writeToDom="true" />
+									</customData>
+									<core:Icon src="{= ${sk>done} ? 'sap-icon://accept' : '' }" class="hrxSkStepIcon" />
+									<Text text="{sk>Text}" class="hrxSkStepText">
+										<layoutData>
+											<FlexItemData growFactor="1" />
+										</layoutData>
+									</Text>
+									<Button
+										text="{i18n>skMarkDone}"
+										visible="{= !${sk>done} }"
+										type="Transparent"
+										press=".onMarkStepDone" />
+								</HBox>
+							</VBox>
+
+							<HBox justifyContent="End" wrap="Wrap" class="hrxSkActions">
+								<Button
+									text="{i18n>skEmail}"
+									icon="sap-icon://email"
+									enabled="{= !!${sk>Email} }"
+									press=".onEmailRtw" />
+								<Button
+									text="{i18n>skCompleteRtw}"
+									type="Emphasized"
+									press=".onCompleteRtw" />
+							</HBox>
+						</VBox>
+					</VBox>
+				</layout:Grid>
+
+				<!-- every absence in the year, collapsed until asked for -->
+				<Panel expandable="true" expanded="{skView>/allExpanded}" class="hrxSkAll">
+					<headerToolbar>
+						<Toolbar style="Clear" class="hrxSkAllHead">
+							<Title text="{i18n>skAllTitle}" level="H3" class="hrxSkAllTitle" />
+							<ToolbarSpacer />
+							<Text text="{skView>/allCount}" class="hrxSkHint" />
+						</Toolbar>
+					</headerToolbar>
+					<Table
+						id="sicknessTable"
+						items="{sk>/absences}"
+						noDataText="{i18n>skNoAbsences}"
+						growing="true"
+						growingThreshold="50"
+						class="hrxSkTable">
+						<columns>
+							<Column width="28%"><Text text="{i18n>skColEmployee}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
+							<Column width="6rem" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<HBox alignItems="Center">
+										<f:Avatar initials="{sk>initials}" displaySize="XS" backgroundColor="Accent6" class="sapUiTinyMarginEnd" />
+										<VBox>
+											<Text text="{sk>Name}" class="hrxResourceName" />
+											<Text
+												text="{sk>dismissedNote}"
+												tooltip="{sk>dismissedTooltip}"
+												visible="{sk>dismissed}"
+												maxLines="2"
+												class="hrxResourceMeta hrxSkDismissedNote" />
+										</VBox>
+									</HBox>
+									<Text text="{sk>dateText}" />
+									<Text text="{sk>durationText}" />
+									<Text text="{sk>Reason}" />
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</Panel>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

@@ -1,75 +1,83 @@
-# HRX — HR Suite (Drop 2)
+# HRX2026
 
-The HRX Drop 2 design, built as a UI5 application on the HRX CAP service.
+## Backend
 
-## How it is put together
+The app's backend is the **HRX service** (`bsx-hrx-srv`, OData V4, CAP), reached at `/hrx`.
 
-- `webapp/Component.js`, `view/App.view.xml`, `controller/App.controller.js` — the UI5 shell. The router decides which page is on screen, so deep links and the launchpad's back button work.
-- `webapp/ui/` — the HRX frame and pages. They render the design's own markup and stylesheet (`css/hrx.css`, the prototype's CSS scoped under `.hrx`), so the app looks exactly like the prototype.
-  - `service.js` — one named method per HRX endpoint (entities, functions, actions), CSRF handling, paging, errors.
-  - `data.js` — sign-in, the manager check, cached reference data and shared calculations (leave grouping, weekly compliance, utilisation, sickness triggers).
-  - `config.js` — `TEST_SHOW_ALL` (see below) and the manager exceptions.
-  - `needed.js` — the services the HRX service still needs. Where the design has a feature with no endpoint, the page shows which service it needs instead of data; App Explorer → HRX services lists them all.
-  - `pages/*.js` — one module per page.
-- `webapp/css/hrx-mobile.css` — tablets and phones: tiles go two-up below 1200px, cards stack below 1000px, the side rail becomes a drawer opened from the top bar below 900px, and below 640px forms go single-column while wide tables and the team calendar scroll sideways (names pinned).
-- `docs/screenshots/{desktop,tablet,phone}` — every page at 1440×900, 768×1024 (iPad) and 390×844 (iPhone 14).
-- `webapp/localService/hrx/metadata.xml` — the HRX service's metadata.
-- `mock/` — a local stand-in for the HRX service (dev only, not deployed). It is a small local npm package (`hrx-mock-service`, a devDependency) with its own `ui5.yaml`, so the app's `ui5*.yaml` files stay single YAML documents, which SAP Fiori tools (Preview Application) requires.
+| Running as | `/hrx` goes to |
+| --- | --- |
+| Deployed on BTP | the `hrxservice` destination (`xs-app.json`), which `mta.yaml` creates with the app: `OAuth2UserTokenExchange` against the service's own XSUAA (`bsx-hrx-xsuaa`), so the service receives the signed-in user |
+| Local preview (`npm run start-noflp`) | `http://localhost:4004` (`ui5.yaml`) - a local copy of the HRX service |
+| Local preview without the CAP project (`npm run start-hrx`) | `mock/` (`ui5-hrx.yaml`): with `HRX_TOKEN=<bearer token>` it proxies to the deployed service; without, an in-memory stand-in with the service's entities, functions, actions and response shapes answers (development only - not part of the app, never deployed) |
 
-## The HRX service
+Writes to `/hrx` carry an `X-CSRF-Token` (`model/Hrx.js`), as the approuter route requires.
 
-`hrx/` calls go through the approuter route in `xs-app.json` to the destination **`hrxservice`**, which `mta.yaml` creates in the app's destination service:
+Pictures and client logos are SAP Document Management documents (`ImageObjectID` / `LogoObjectID`):
+the app shows them through the `/browser` route (destination `dms_service`), and stores new ones
+through the HRX service's `Documents` entity.
 
-- URL `https://bsx-tdd-tdd-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com`
-- `OAuth2UserTokenExchange` with the CAP service's own XSUAA instance (`bsx-hrx-xsuaa`, key `bsx-hrx-xsuaa-key`), so the service receives a token issued to it for the signed-in user.
+The deployed service only answers a signed-in user, so a local preview needs its own copy of the
+service running on port 4004 (`cds watch` in the CAP project).
 
-If that instance has another name in your space, change `bsx-hrx-xsuaa` in `mta.yaml`, or delete the `hrxservice` entry there and create a subaccount destination called `hrxservice` instead.
+### Previewing with real data in Business Application Studio
 
-## Profile pictures and logos
+A BAS dev space runs inside the BTP subaccount, so its preview can reach both services through the
+subaccount's destinations instead of a local copy:
 
-Pictures live in SAP Document Management, as in hrx2023: a user's `ImageObjectID` (a client's `LogoObjectID`) is a document in repository `0dc65852-e10f-4a43-8cab-43397e9739e4` (`ImageRootID` / `LogoRootID`, fallback in `config.js`). The app shows them from `browser/<repository>/root?cmisselector=content&objectId=<id>`, which `xs-app.json` routes to the subaccount destination **`dms_service`** (the one hrx2023 uses). Uploads go through the HRX service's `Documents` entity (Manage Resources → Info → Picture, Manage Clients → Logo). Anyone without a picture, or whose picture cannot be loaded, shows their initials. Only real pictures are ever shown: locally the mock has none (everyone shows initials) unless you start it with `HRX_DMS_TOKEN=<token for SAP Document Management>`, which fetches them from the real document store; a picture you upload locally is kept and shown back.
+1. Open a SAP Fiori dev space, clone the repository and check out `Joes-Branc`.
+2. `cd hrx2026 && npm install`
+3. `npm run start-bas` (uses `ui5-bas.yaml`: `/hrx` through `hrxservices`, `/services` through
+   `bsxorgappsservices`).
 
-## Who sees what
+For BAS to offer a destination, it needs these additional properties in the BTP cockpit:
+`WebIDEEnabled = true`, `WebIDEUsage = odata_gen`, `HTML5.DynamicDestination = true`. A BAS
+preview has no approuter in front of it, so the app uses its development identity unless told
+otherwise: change the preview url's `#app-preview` to `#app-preview?email=<your email>` to load your
+own employee record (or use the "View as (demo)" switch for full access).
 
-The signed-in user is resolved by `getUserDetail()`. Managers are those the service flags (`isManager`), anyone with people reporting to them, and the exceptions in `config.js`.
+### How the pages use it
 
-**Temporary, for testing:** `TEST_SHOW_ALL: true` in `webapp/ui/config.js` shows everyone the manager pages, and puts a *View as (testing)* switch at the foot of the side rail. The real result of the check is shown next to the user's name. Set it to `false` before go-live.
+The pages were written against the older xsjs commands (`timesheet.xsjs?cmd=fetch`, ...) and the
+`services.xsodata` OData V2 service. Rather than rewrite every page, `model/Backend.js` hands their
+calls to `model/HrxLegacy.js`, which answers them from `/hrx` in the shapes the pages already read.
+`Backend.USE_HRX` switches this on and off.
 
-## Running locally
+Some data has no home in the HRX service and still comes from the original services
+(`bsxorgappsservices`): client SLAs, licensed apps and components, BTP services, client support
+users, project attachments and project tasks. Sickness trigger reviews and return-to-work
+checklists have no home anywhere yet (see `model/SicknessService.js`).
 
-```bash
-npm install
-npm run start-hrx      # http://localhost:8080/index.html
-```
+| File | What it does |
+| --- | --- |
+| `model/Hrx.js` | Small client for the HRX service: paged reads, create, update, delete, functions, actions |
+| `model/HrxTime.js` | People, bookings, projects, rates, and each person's expected hours |
+| `model/HrxLegacy.js` | Answers the old xsjs commands and OData reads from `/hrx` |
+| `model/TimesheetReportService.js` | Timesheet Reporting's reads |
+| `model/SicknessService.js` | Sickness absences (as Sick leave) and the parts still to be stored |
+| `model/DocumentService.js` | Documents and acknowledgements - the contract for the DMS service still to be built (`ENDPOINT` unset until then) |
 
-The deployed service only accepts XSUAA tokens, so locally `/hrx` is answered by `mock/hrx-mock-middleware.js`: the same entity sets, functions, actions and response shapes as the CAP handlers, seeded with realistic data, writes kept until the server restarts. `HRX_MOCK_USER=someone@bluestonex.com` signs in as someone else.
+### How the HRX service's data is read (checked against its handlers, `srv/hrx-services.js`)
 
-To run against the real service, start with a bearer token for it:
+- **Leave status** is `Leaves.Status_ID`: requested `e7ab05aa-…`, approved `e7ab02da-…`, rejected
+  `e7ab06f4-…` (`HrxTime.LEAVE_STATUS`). `actionOnLeave` changes `Status_ID` and never `WFFlag`, so
+  the state is read from `Status_ID`; `WFFlag` is only a fallback for a row without a known status.
+  Lists of requests waiting for a decision filter on the requested status.
+- **Project types.** Every project is billable except `INT` (internal) - as the service counts
+  utilisation and bonus - and `FOC` (free of charge) (`HrxTime.isBillable`).
+- **Leave year** is April to March, as `fetchUserLeave` counts it (`leaveYear` in `model/HrxLegacy.js`).
+- **Leave rows** are one per day; each row's `NoOfDays` is that day (1 or 0.5).
+- **Client location** is a site's ID in `Clients.BaseSite`; the pages show and edit the site's name.
 
-```bash
-HRX_TOKEN=<token> npm run start-hrx
-```
+### Services still needed
 
-`App Explorer → HRX services` lists every endpoint, which page uses it, and a live check of each read.
+These parts of the pages have no HRX endpoint. Nothing is made up for them: they show empty states
+or "not connected yet", or still use the original services.
 
-## Services needed to complete the app
-
-The app shows no sample data. Where the design has a feature the HRX service has no endpoint for, that place says *Service needed* and names the endpoints (proposed names, in the style of the existing service). The list lives in `webapp/ui/needed.js` and is shown in full under App Explorer → HRX services.
-
-| Needed for | Where it shows | Endpoints needed |
-|---|---|---|
-| Policies & acknowledgements | Policies to read, Documents, Home tile | `Policies`, `PolicyAcknowledgements`, `fetchMyPolicies()`, `acknowledgePolicy(PolicyID)`, `fetchPolicyAcknowledgements(PolicyID)`, Documents object type `Policy` |
-| Reminders & notifications | Remind buttons, the bell | `sendReminder(Type, EmployeeIDs, Message)`, optionally `Notifications` (until then reminders open the mail app; the bell is worked out from live data) |
-| Sickness follow-up | Sickness — outcomes, return-to-work checklist | `SicknessReviews`, `ReturnToWork` (until then kept in the browser only) |
-| Client support team | Manage Clients — Support Team; Manage Projects — Client Team | `ClientUsers` |
-| Client service levels | Manage Clients — SLA | `ClientSLAs` |
-| Licensed components | Manage Clients — Components | `ClientComponents` |
-| Application services | Manage Clients — Application Details | `ClientApplications` |
-| Project areas | Manage Projects — Info | `ProjectAreas` |
-| Project client team | Manage Projects — Client Team | `ProjectClientTeam` |
-| Project attachments | Manage Projects — Attachments | Documents object type `Project`, `fetchProjectDocuments(ProjectID)` |
-| Job title | Team Calendar, Manage Resources | `Users.JobTitle` |
-| Client contact name | Manage Clients — primary contact | `Contacts.FirstName`, `Contacts.LastName` |
-| Bonus objectives & feedback | My Bonus | `BonusObjectives` |
-| Day cost | Manage Projects — Assign resource | `UserToProject.DayCost` |
-| Expenses | Side rail (coming soon) | Out of scope — its own app |
+| Needed for | Where | Today |
+| --- | --- | --- |
+| Policies & acknowledgements (`Policies`, `PolicyAcknowledgements`, `fetchMyPolicies()`, `acknowledgePolicy`, `fetchPolicyAcknowledgements`, Documents type `Policy`) | Policies to read, Documents, Home tile, notifications | Not connected (`DocumentService.ENDPOINT` unset) |
+| Sickness follow-up (`SicknessReviews`, `ReturnToWork`) | Sickness - trigger reviews, return-to-work checklists | Not connected (`SicknessService.ENDPOINT` unset); absences themselves are real Sick leave |
+| Client support users, SLAs, licensed components, application services (`ClientUsers`, `ClientSLAs`, `ClientComponents`, `ClientApplications`) | Manage Clients tabs | Original services (`supportx/*.xsjs`, `services.xsodata`) |
+| Project areas / tasks, client team, attachments (`ProjectAreas`, `ProjectClientTeam`, Documents type `Project`) | Manage Projects | Original services |
+| Reminders (`sendReminder`) and a stored notification list | Remind buttons, the bell | Reminders open an email draft; the bell is worked out from live data, read state kept in the browser |
+| `Users.JobTitle`, `Contacts.FirstName` / `LastName`, `UserToProject.DayCost` | Team Calendar / Manage Resources, Manage Clients contact, Manage Projects resourcing | Not held |

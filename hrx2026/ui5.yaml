@@ -6,16 +6,8 @@ metadata:
 type: application
 server:
   customMiddleware:
-    # /hrx: the HRX CAP service (middleware: mock/, a local package - see mock/ui5.yaml). With HRX_TOKEN set (a bearer token for the deployed
-    # service) requests are proxied to it; otherwise mock/hrx-mock-middleware.js answers
-    # from an in-memory copy with the same entities, functions and actions.
-    - name: hrx-service
-      afterMiddleware: compression
-      configuration:
-        mountPath: /hrx
-        serviceUrl: https://bsx-tdd-tdd-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com
     - name: fiori-tools-proxy
-      afterMiddleware: hrx-service
+      afterMiddleware: compression
       configuration:
         ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
         ui5:
@@ -23,6 +15,20 @@ server:
             - /resources
             - /test-resources
           url: https://ui5.sap.com
+        backend:
+          - path: /services
+            url: https://bsx-tdd-tdd-bsx-org-apps-services-v2.cfapps.eu10.hana.ondemand.com
+            # destination: bsxorgappsservices
+            # Left out on purpose for local runs: fiori-tools-proxy sends the
+            # request to https://bsxorgappsservices.dest, which answers 502 here,
+            # while url: above reaches the service directly. The destination name
+            # still applies once deployed - xs-app.json carries it.
+          - path: /hrx
+            url: http://localhost:4004
+            # The HRX service. Deployed, /hrx goes through the "hrxservices"
+            # destination, which signs the request in as the user; the deployed
+            # service answers nobody else, so a local preview talks to a local copy
+            # of it instead (cds watch on port 4004 - see README).
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:

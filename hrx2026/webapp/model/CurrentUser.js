@@ -1,0 +1,319 @@
+sap.ui.define([
+	"./Backend"
+], function (Backend) {
+	"use strict";
+
+	var DEFAULT_ORG_ID = "BSX";
+
+	var oProfile = null;
+	var pProfile = null;
+	var bMissingIdentityReported = false;
+
+	/**
+	 * @param {sap.ui.core.UIComponent} oComponent the app component
+	 * @returns {object} the startup parameters the launchpad passed in
+	 */
+	function startupParameters(oComponent) {
+		var oComponentData = oComponent && oComponent.getComponentData();
+		return (oComponentData && oComponentData.startupParameters) || {};
+	}
+
+	function firstOf(oParameters, sName) {
+		return (oParameters[sName] && oParameters[sName].length && oParameters[sName][0]) || "";
+	}
+
+	// Tia and Vicky run resourcing and payroll without line reports of their own, so
+	// the team service does not flag them as managers - but they need everything a
+	// manager has, Admin and every app under it included. They count as managers
+	// whatever the service says.
+	var MANAGER_EXCEPTIONS = [
+		"tia.menhennet@bluestonex.com",
+		"vicky.williams@bluestonex.com"
+	];
+
+	/*
+	 * TESTING AID - remove before go-live, with the "View as (demo)" picker in
+	 * App.view.xml. Lets whoever is building the app look at it with full admin access
+	 * (every manager page, everyone in every directory) or as a plain employee,
+	 * whatever their real permissions are. Kept in this browser only.
+	 */
+	var DEMO_ROLE_KEY = "hrx.demoRole";
+	var DEMO_ROLES = ["actual", "admin", "employee"];
+
+	function demoRole() {
+		try {
+			var sRole = window.localStorage.getItem(DEMO_ROLE_KEY);
+			return DEMO_ROLES.indexOf(sRole) !== -1 ? sRole : "actual";
+		} catch (oError) {
+			return "actual";
+		}
+	}
+
+	function applyDemoRole(oLoaded) {
+		var sRole = demoRole();
+		if (oLoaded && sRole !== "actual") {
+			oLoaded.isManager = sRole === "admin";
+			oLoaded.fullAccess = sRole === "admin";
+		}
+		return oLoaded;
+	}
+
+	/**
+	 * @param {string} sEmail an email, in any case
+	 * @returns {boolean} true when that person is treated as a manager regardless of the service's flag
+	 */
+	function isManagerException(sEmail) {
+		if (demoRole() === "admin") {
+			return true;
+		}
+		return MANAGER_EXCEPTIONS.indexOf((sEmail || "").toLowerCase()) !== -1;
+	}
+
+	// A Business Application Studio workspace previews the app on a host of its own.
+	// Deployments live on hana.ondemand.com, so this never matches one.
+	var BAS_HOST_SUFFIX = ".applicationstudio.cloud.sap";
+
+	/**
+	 * A development preview - the local server, or a BAS workspace - has neither an
+	 * approuter nor a launchpad in front of it, so there is no session to resolve an
+	 * identity from and the app needs a stand-in to be usable at all.
+	 *
+	 * Nowhere else does. On a real deployment an email that could not be read means
+	 * the session is broken, and standing in a colleague's shoes is far worse than
+	 * showing nothing: that is what put somebody else's leave balance and timesheet
+	 * on screen after a refresh.
+	 * @returns {boolean} true when the app is being previewed by a developer
+	 */
+	function isDevPreview() {
+		var sHost = (window.location && window.location.hostname) || "";
+
+		return sHost === "localhost" || sHost === "127.0.0.1" || sHost === "[::1]" ||
+			sHost === "" || sHost.slice(-BAS_HOST_SUFFIX.length) === BAS_HOST_SUFFIX;
+	}
+
+	return {
+
+		isManagerException: isManagerException,
+
+		/**
+		 * TESTING AID - see DEMO_ROLE_KEY.
+		 * @returns {string} "actual", "admin" or "employee"
+		 */
+		demoRole: demoRole,
+
+		/**
+		 * TESTING AID - switches the view and reloads, so every page starts again under it.
+		 * @param {string} sRole "actual", "admin" or "employee"
+		 */
+		setDemoRole: function (sRole) {
+			try {
+				window.localStorage.setItem(DEMO_ROLE_KEY, DEMO_ROLES.indexOf(sRole) !== -1 ? sRole : "actual");
+			} catch (oError) {
+				// storage blocked - nothing to remember it in
+			}
+			window.location.reload();
+		},
+
+		/**
+		 * @returns {boolean} true when the user sees everyone, not just their own reports
+		 */
+		hasFullAccess: function () {
+			return demoRole() === "admin";
+		},
+
+		/**
+		 * Only meaningful once {@link load} has resolved - before that, there is no
+		 * signed-in user to report yet, so this answers the same launchpad startup
+		 * parameter {@link load} starts from.
+		 * @param {sap.ui.core.UIComponent} oComponent the app component
+		 * @returns {string} the signed-in user's email
+		 */
+		email: function (oComponent) {
+			if (oProfile) {
+				return oProfile.email;
+			}
+			return firstOf(startupParameters(oComponent), "email").toLowerCase();
+		},
+
+		/**
+		 * Two emails for the same person can differ in case - the services answer with
+		 * an upper-cased one, /Resources stores a lower-cased one - so they are only
+		 * ever compared through here.
+		 * @param {string} sLeft one email
+		 * @param {string} sRight the other
+		 * @returns {boolean} true when both name the same person
+		 */
+		sameEmail: function (sLeft, sRight) {
+			return !!sLeft && !!sRight && sLeft.toLowerCase() === sRight.toLowerCase();
+		},
+
+		/**
+		 * @param {sap.ui.core.UIComponent} oComponent the app component
+		 * @returns {string} the organisation to read data for
+		 */
+		orgId: function (oComponent) {
+			return firstOf(startupParameters(oComponent), "org") || DEFAULT_ORG_ID;
+		},
+
+		/**
+		 * Loads who is signed in, and whether they manage anybody. The team service
+		 * already answers both from one call, so that is the single place the suite
+		 * decides on manager rights - when the dedicated identity service arrives, this
+		 * is the only method that has to change.
+		 *
+		 * The email itself comes from, in order: a launchpad startup parameter (the
+		 * only way to set it when previewing from BAS, since there is no approuter in
+		 * front of a local preview to authenticate a session), then whatever email the
+		 * caller has already resolved from the approuter's authenticated session
+		 * (App.controller's getLoggedinUser1, once the app is actually deployed).
+		 *
+		 * The profile is loaded once and shared, so navigating between pages does not
+		 * fetch it again.
+		 * @param {sap.ui.core.UIComponent} oComponent the app component
+		 * @param {string} [sEmail] the signed-in user's email, if the caller already knows it
+		 * @returns {Promise<object>} the signed-in user's profile
+		 */
+		load: function (oComponent, sEmail) {
+			if (pProfile) {
+				return pProfile;
+			}
+
+			var sParamEmail = firstOf(startupParameters(oComponent), "email");
+			var sOrgId = this.orgId(oComponent);
+			var sToday = Backend.isoDate(new Date());
+
+			// A development preview - the local server, or a BAS workspace - has no
+			// approuter and no launchpad in front of it, so there is no startup
+			// parameter and no authenticated session to resolve an email from, and it
+			// falls back to a dev identity so the app is usable while it is being
+			// worked on. Pass ?email= through the launchpad sandbox intent to preview
+			// as somebody else. A deployment must never do this: an unresolved email
+			// there means the session is broken, and loading somebody else's data
+			// instead is the bug that surfaced as "refreshing My Leave shows another
+			// person's details".
+			//
+			// Lower cased once, here, so nothing downstream has to think about it. The
+			// xsjs services match an email whatever its case, but the OData /Resources
+			// filter does not, and the identity the launchpad and the team service hand
+			// back is sometimes upper case - which silently left the work schedule on
+			// its Mon-Fri fallback and dropped the signed-in user out of their own
+			// "viewing as" directory.
+			var sResolvedEmail = (sParamEmail || sEmail ||
+				(isDevPreview() ? "gaurav.kumar@bluestonex.com" : "")).toLowerCase();
+
+			pProfile = Promise.resolve(sResolvedEmail).then(function (sResolvedEmail) {
+				if (!sResolvedEmail) {
+					// No identity to look up - asking the TEAM service for an empty Email
+					// does not mean "nobody", it means "match anybody", so it must never be
+					// sent. Go straight to the same no-identity profile the catch below
+					// falls back to on a service failure.
+					pProfile = null;
+					oProfile = {
+						email: "",
+						orgId: sOrgId,
+						empID: "",
+						name: "",
+						initials: "",
+						siteID: "",
+						isManager: false,
+						hasPendingLeave: false
+					};
+					return oProfile;
+				}
+
+				var sEmail = sResolvedEmail;
+
+				// The date range only bounds the leave the service returns alongside the
+				// user, so a single day keeps the response small.
+				return Backend.getJson(Backend.query(Backend.TEAM, {
+					cmd: "team",
+					OrgID: sOrgId,
+					Email: sEmail,
+					FromDate: sToday,
+					ToDate: sToday
+				})).then(function (oData) {
+					var oUser = (oData.loggedinUser || [])[0] || {};
+					var sName = oUser.Name || sEmail;
+
+					oProfile = {
+						email: sEmail,
+						orgId: sOrgId,
+						empID: oUser.EmpID || "",
+						name: sName,
+						initials: sName.split(/\s+/).map(function (sPart) {
+							return sPart.charAt(0).toUpperCase();
+						}).slice(0, 2).join(""),
+						siteID: oUser.SiteID || "",
+						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
+						hasPendingLeave: oUser.HasPendingLeaves === "Y"
+					};
+					return oProfile;
+				}).catch(function () {
+					// A failed call must not stick for the rest of the session: drop the
+					// cached attempt so the next caller tries again.
+					pProfile = null;
+
+					// Without the service the suite still has to render, so fall back to an
+					// employee-level profile rather than failing the whole shell.
+					oProfile = {
+						email: sEmail,
+						orgId: sOrgId,
+						empID: "",
+						name: sEmail,
+						initials: sEmail.charAt(0).toUpperCase(),
+						siteID: "",
+						isManager: isManagerException(sEmail),
+						hasPendingLeave: false
+					};
+					return oProfile;
+				});
+			});
+
+			pProfile = pProfile.then(applyDemoRole);
+			return pProfile;
+		},
+
+		/**
+		 * The one place a controller should wait on before it fetches anything for the
+		 * signed-in user. Component.init() seeds the lookup before routing starts, so
+		 * this is that same shared promise rather than a second resolution - and it
+		 * never rejects.
+		 *
+		 * Reading the email synchronously in onInit (as every page used to) is what
+		 * broke a browser refresh: onInit runs while the lookup is still in flight, so
+		 * the email came back "", which the services read as "match anybody" - the
+		 * timesheet lost its projects and kept only the bank holiday row, and My Leave
+		 * filled in with whoever the service answered with.
+		 * @param {sap.ui.core.UIComponent} oComponent the app component
+		 * @returns {Promise<object>} the signed-in user's profile
+		 */
+		ready: function (oComponent) {
+			if (oComponent && oComponent._pProfile) {
+				return Promise.resolve(oComponent._pProfile);
+			}
+			return this.load(oComponent);
+		},
+
+		/**
+		 * Every page notices a session with no identity and every page wants to say so,
+		 * which on its own means a fresh error dialog on each one - and another every
+		 * time the user comes back to a page they have already seen. It is one problem
+		 * with one answer ("sign in again"), so it is reported once.
+		 * @returns {boolean} true the first time it is asked, false afterwards
+		 */
+		shouldReportMissingIdentity: function () {
+			if (bMissingIdentityReported) {
+				return false;
+			}
+			bMissingIdentityReported = true;
+			return true;
+		},
+
+		/**
+		 * @returns {object|null} the profile, once loaded
+		 */
+		get: function () {
+			return oProfile;
+		}
+	};
+});

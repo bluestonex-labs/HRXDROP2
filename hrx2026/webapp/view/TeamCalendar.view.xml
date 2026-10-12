@@ -1,0 +1,157 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.TeamCalendar"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:unified="sap.ui.unified"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	height="100%"
+	class="hrxTeamCalendar">
+
+	<Page id="teamCalPage" showHeader="false" title="{i18n>teamCalendarTitle}" showNavButton="false" class="hrxPageContent">
+
+		<subHeader>
+			<OverflowToolbar id="teamCalToolbar" class="hrxFilterBar sapUiSmallMarginBottom">
+				<!-- Only a manager may look at somebody else's calendar -->
+				<Label
+					text="{i18n>tcViewingAs}"
+					labelFor="teamCalViewAs"
+					class="sapUiTinyMarginEnd" 
+					visible="false"/>
+				<ComboBox
+					id="teamCalViewAs"
+					visible="false"
+					selectedKey="{tcView>/currentEmail}"
+					items="{tc>/directory}"
+					showSecondaryValues="true"
+					width="16rem"
+					change=".onViewAsChange"
+					selectionChange=".onViewAsChange"
+					placeholder="{i18n>tcViewingAsPlaceholder}">
+					<core:ListItem key="{tc>Email}" text="{tc>FullName}" additionalText="{tc>EmpID}" />
+				</ComboBox>
+
+				<ToolbarSeparator visible="false" />
+
+				<!-- Staff by default. Contractors come and go and their leave is not what
+				     the team plans around day to day, so they are a step away rather
+				     than mixed into the list. -->
+				<Select
+					id="teamCalResourceType"
+					selectedKey="{tcView>/resourceType}"
+					width="11rem"
+					change=".onResourceTypeChange"
+					class="sapUiTinyMarginEnd">
+					<core:Item key="S" text="{i18n>tcResourceTypeStaff}" />
+					<core:Item key="C" text="{i18n>tcResourceTypeContractors}" />
+					<core:Item key="ALL" text="{i18n>tcResourceTypeAll}" />
+				</Select>
+
+				<MultiComboBox
+					id="teamCalResourceFilter"
+					items="{tc>/allPeople}"
+					width="18rem"
+					selectionFinish=".onResourceFilterChange"
+					placeholder="{i18n>tcResourceFilterPlaceholder}">
+					<core:Item key="{tc>EmpID}" text="{tc>Name}" />
+				</MultiComboBox>
+
+				<ToolbarSpacer />
+
+				<Button
+					id="teamCalBookLeave"
+					text="{i18n>tcBookLeave}"
+					icon="sap-icon://create-leave-request"
+					type="Transparent"
+					visible="{tcView>/isManager}"
+					press=".onOpenBookLeave" />
+				<Button
+					id="teamCalApprovals"
+					text="{i18n>tcPendingLeave}"
+					icon="sap-icon://validate"
+					type="Emphasized"
+					visible="{= ${tcView>/isManager} &amp;&amp; ${tcView>/hasPendingLeave} }"
+					press=".onOpenApprovals" />
+				<!-- Reloading is on the shell bar with the page title. -->
+			</OverflowToolbar>
+		</subHeader>
+
+		<content>
+			<PlanningCalendar
+				id="teamPlanningCalendar"
+				startDate="{tcView>/startDate}"
+				rows="{tc>/people}"
+				busy="{tcView>/busy}"
+				busyIndicatorDelay="0"
+				viewKey="week"
+				appointmentsVisualization="Filled"
+				appointmentsReducedHeight="true"
+				showEmptyIntervalHeaders="false"
+				showWeekNumbers="false"
+				stickyHeader="true"
+				noDataText="{i18n>tcNoData}"
+				startDateChange=".onStartDateChange"
+				viewChange=".onViewChange"
+				appointmentSelect=".onAppointmentSelect"
+				legend="teamCalLegend">
+				<views>
+					<!-- Day intervals, so every booking in the period is laid out on the timeline.
+					     The built-in "Month" view would use whole months as intervals instead.
+					     The week opens first: a month of day columns leaves the date headers
+					     too narrow to read.
+					     The month's interval count is set by the controller to the number of
+					     days that month actually has - a fixed 31 here drew columns belonging
+					     to the next month whenever the current one was shorter. -->
+					<PlanningCalendarView key="week" intervalType="Day" description="{i18n>tcViewWeek}" intervalsL="7" intervalsM="7" intervalsS="7" />
+					<PlanningCalendarView id="teamCalMonthView" key="month" intervalType="Day" description="{i18n>tcViewMonth}" intervalsL="31" intervalsM="31" intervalsS="7" />
+				</views>
+				<toolbarContent>
+					<Title text="{tcView>/title}" level="H3" />
+					<ToolbarSpacer />
+					<Text text="{tcView>/periodLabel}" class="hrxResourceMeta" />
+				</toolbarContent>
+				<rows>
+					<PlanningCalendarRow
+						nonWorkingDays="0,6"
+						icon="{path: 'tc>Pic', formatter: '.formatter.imageSrc'}"
+						title="{tc>Name}"
+						text="{tc>LeaveSummary}"
+						appointments="{path: 'tc>Leave', templateShareable: true}">
+						<appointments>
+							<unified:CalendarAppointment
+								startDate="{tc>start}"
+								endDate="{tc>end}"
+								icon="{tc>icon}"
+								title="{tc>title}"
+								text="{tc>info}"
+								type="{tc>type}"
+								tentative="{tc>tentative}"
+								tooltip="{tc>title} ({tc>info}) — {tc>status}" />
+						</appointments>
+					</PlanningCalendarRow>
+				</rows>
+			</PlanningCalendar>
+
+			<!-- sap.m.PlanningCalendarLegend, not the plain unified CalendarLegend, and
+			     the leave types go in appointmentItems rather than items: the calendar
+			     paints a booking as a CalendarAppointment, whose Type01-05 colours come
+			     from a different set of theme parameters than a *day* type's. Listed as
+			     day types, the legend showed one colour while the timeline drew another -
+			     the dark-orange "Holiday" swatch over pale blue holiday blocks. -->
+			<PlanningCalendarLegend
+				id="teamCalLegend"
+				standardItems="Today,NonWorkingDay"
+				appointmentItemsHeader="{i18n>tcLegendLeaveHeader}"
+				class="sapUiSmallMarginTop">
+				<appointmentItems>
+					<unified:CalendarLegendItem text="{i18n>tcLegendHoliday}" type="Type01" />
+					<unified:CalendarLegendItem text="{i18n>tcLegendSick}" type="Type02" />
+					<unified:CalendarLegendItem text="{i18n>tcLegendUnpaid}" type="Type03" />
+					<unified:CalendarLegendItem text="{i18n>tcLegendCompassionate}" type="Type04" />
+					<unified:CalendarLegendItem text="{i18n>tcLegendBankHoliday}" type="Type05" />
+				</appointmentItems>
+			</PlanningCalendarLegend>
+		</content>
+	</Page>
+</mvc:View>

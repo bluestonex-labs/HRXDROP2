@@ -1,0 +1,80 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<Dialog
+		id="recordSicknessDialog"
+		title="{i18n>skRecordTitle}"
+		contentWidth="34rem"
+		resizable="false"
+		draggable="true"
+		class="sapUiContentPadding"
+		afterClose=".onRecordAfterClose">
+		<content>
+			<VBox busy="{skForm>/saving}" busyIndicatorDelay="0">
+				<Label text="{i18n>skFieldEmployee}" required="true" labelFor="skEmployee" />
+				<ComboBox
+					id="skEmployee"
+					width="100%"
+					showSecondaryValues="true"
+					filterSecondaryValues="true"
+					selectedKey="{skForm>/EmpID}"
+					items="{path: 'sk>/employees', length: 2000}"
+					placeholder="{i18n>skEmployeePlaceholder}"
+					selectionChange=".onRecordInput"
+					class="sapUiSmallMarginBottom">
+					<core:ListItem key="{sk>EmpID}" text="{sk>FullName}" additionalText="{sk>Email}" />
+				</ComboBox>
+
+				<Label text="{i18n>skFieldDates}" required="true" labelFor="skDates" />
+				<DateRangeSelection
+					id="skDates"
+					width="100%"
+					displayFormat="d MMM yyyy"
+					placeholder="{i18n>skDatesPlaceholder}"
+					change=".onRecordInput"
+					class="sapUiSmallMarginBottom" />
+
+				<Label text="{i18n>skFieldReason}" required="true" labelFor="skReason" />
+				<Input
+					id="skReason"
+					width="100%"
+					value="{skForm>/Reason}"
+					maxLength="200"
+					valueLiveUpdate="true"
+					liveChange=".onRecordInput"
+					placeholder="{i18n>skReasonPlaceholder}"
+					class="sapUiSmallMarginBottom" />
+
+				<Label text="{i18n>skFieldNotes}" labelFor="skNotes" />
+				<TextArea
+					id="skNotes"
+					width="100%"
+					rows="3"
+					maxLength="1000"
+					value="{skForm>/Notes}"
+					placeholder="{i18n>skOptional}" />
+
+				<CheckBox
+					id="skFitNote"
+					text="{i18n>skFieldFitNote}"
+					selected="{skForm>/FitNote}"
+					class="sapUiSmallMarginBottom" />
+
+				<MessageStrip
+					text="{skForm>/daysText}"
+					type="{= ${skForm>/datesPicked} &amp;&amp; ${skForm>/Days} === 0 ? 'Error' : 'Information' }"
+					showIcon="true" />
+			</VBox>
+		</content>
+		<beginButton>
+			<Button
+				text="{i18n>skRecord}"
+				type="Emphasized"
+				enabled="{= ${skForm>/canSave} &amp;&amp; !${skForm>/saving} }"
+				press=".onSaveRecord" />
+		</beginButton>
+		<endButton>
+			<Button text="{i18n>skCancel}" press=".onCancelRecord" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

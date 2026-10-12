@@ -1,0 +1,516 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.TimesheetReport"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	xmlns:layout="sap.ui.layout"
+	displayBlock="true"
+	class="hrxTimesheetReport">
+
+	<Page id="timesheetReportPage" showHeader="false" title="{i18n>trTitle}" showNavButton="false" class="hrxPageContent">
+
+
+		<content>
+			<IllustratedMessage
+				visible="{= !${app>/user/isManager} }"
+				illustrationType="sapIllus-UnableToLoad"
+				title="{i18n>trTitle}"
+				description="{i18n>adminRestricted}" />
+
+			<VBox visible="{app>/user/isManager}" class="hrxTrBody">
+
+				<!-- The prototype's filter bar: every filter on show, each label above its
+				     control, wrapping onto a second line rather than hiding in an overflow. -->
+				<VBox class="hrxSkCard hrxTrFilters">
+				<HBox wrap="Wrap" alignItems="End" class="hrxTrFieldRow">
+					<VBox class="hrxTrField">
+						<Label text="{i18n>trCustomer}" labelFor="trCustomer" />
+						<Select
+							id="trCustomer"
+							width="100%"
+							forceSelection="false"
+							selectedKey="{trView>/filters/ClientKey}"
+							items="{path: 'tr>/customers', templateShareable: false}"
+							change=".onFilterChange">
+							<core:Item key="{tr>key}" text="{tr>label}" />
+						</Select>
+					</VBox>
+					<VBox class="hrxTrField">
+						<Label text="{i18n>trProject}" labelFor="trProject" />
+						<Select
+							id="trProject"
+							width="100%"
+							forceSelection="false"
+							selectedKey="{trView>/filters/ProjectKey}"
+							items="{path: 'tr>/projects', templateShareable: false}"
+							change=".onFilterChange">
+							<core:Item key="{tr>key}" text="{tr>label}" />
+						</Select>
+					</VBox>
+					<VBox class="hrxTrField">
+						<Label text="{i18n>trResource}" labelFor="trResource" />
+						<Select
+							id="trResource"
+							width="100%"
+							forceSelection="false"
+							selectedKey="{trView>/filters/EmpID}"
+							items="{path: 'tr>/people', templateShareable: false}"
+							change=".onFilterChange">
+							<core:Item key="{tr>key}" text="{tr>label}" />
+						</Select>
+					</VBox>
+					<VBox class="hrxTrField">
+						<Label text="{i18n>trPeriod}" labelFor="trPeriod" />
+						<DateRangeSelection
+							id="trPeriod"
+							width="100%"
+							displayFormat="d MMM yyyy"
+							change=".onPeriodChange" />
+					</VBox>
+				</HBox>
+				<!-- The quick periods on the left and when the data was read on the right,
+				     on one line along the foot of the card. -->
+				<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="hrxTrFilterFoot">
+					<HBox alignItems="Center" class="hrxTrQuick">
+						<Button text="{i18n>trThisYear}" press=".onThisYear" />
+						<Button text="{i18n>trLastYear}" press=".onLastYear" />
+						<Button text="{i18n>trClear}" type="Transparent" press=".onClear" />
+					</HBox>
+					<!-- Team utilisation's own filter, at the foot of the card while that tab is
+					     open, the same width as the Period box above it (see .hrxTrFilterFoot). -->
+					<Label
+						text="{i18n>trShow}"
+						labelFor="trUtilShow"
+						visible="{= ${trView>/tab} === 'util' }"
+						class="hrxTrShowLabel" />
+					<Select
+						id="trUtilShow"
+						selectedKey="{trView>/util/show}"
+						change=".onUtilShow"
+						visible="{= ${trView>/tab} === 'util' }"
+						width="100%">
+							<core:Item key="all" text="{i18n>trShowEveryone}" />
+							<core:Item key="bill" text="{i18n>trShowBillable}" />
+							<core:Item key="u50" text="{i18n>trShowUnder50}" />
+							<core:Item key="u80" text="{i18n>trShowUnder80}" />
+					</Select>
+				</HBox>
+				</VBox>
+
+				<MessageStrip
+					text="{trView>/failedText}"
+					type="Warning"
+					showIcon="true"
+					visible="{= !!${trView>/failedText} }"
+					class="sapUiSmallMarginBottom" />
+
+				<HBox alignItems="Center" visible="{trView>/loading}" class="hrxTrLoading">
+					<BusyIndicator size="1.25rem" class="sapUiSmallMarginEnd" />
+					<Text text="{trView>/progressText}" />
+				</HBox>
+
+				<IconTabBar
+					id="trTabs"
+					selectedKey="{trView>/tab}"
+					select=".onTabSelect"
+					expandable="false"
+					headerMode="Inline"
+					applyContentPadding="false"
+					backgroundDesign="Transparent"
+					headerBackgroundDesign="Transparent"
+					class="hrxTrTabs">
+					<items>
+
+						<!-- billing by assignment -->
+						<IconTabFilter key="assign" text="{i18n>trTabAssign}">
+							<layout:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://suitcase" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiBillableAssignments}" class="hrxKpiLabel" />
+									<Text text="{tr>/assign/kpis/billable}" class="hrxKpiNum" />
+									<Text text="{tr>/assign/kpis/billableSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://building" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiClients}" class="hrxKpiLabel" />
+									<Text text="{tr>/assign/kpis/clients}" class="hrxKpiNum" />
+									<Text text="{i18n>trKpiClientsSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://lead" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiBilled}" class="hrxKpiLabel" />
+									<Text text="{tr>/assign/kpis/billed}" class="hrxKpiNum" />
+									<Text text="{i18n>trInPeriod}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://calendar" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiBilledMonth}" class="hrxKpiLabel" />
+									<Text text="{tr>/assign/kpis/month}" class="hrxKpiNum" />
+									<Text text="{trView>/month/label}" class="hrxKpiSub" />
+								</VBox>
+							</layout:Grid>
+
+							<VBox class="hrxSkCard hrxTrCard" busy="{trView>/loading}" busyIndicatorDelay="0">
+								<HBox alignItems="Center" wrap="Wrap" class="hrxTrCardHead">
+									<VBox class="hrxTrCardHeadText">
+										<Title text="{i18n>trTabAssign}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+										<Text text="{tr>/assign/hint}" class="hrxSkHint" />
+									</VBox>
+									<HBox alignItems="Center" wrap="Wrap" class="hrxTrTools">
+										<SearchField
+											width="15rem"
+											value="{trView>/assign/q}"
+											placeholder="{i18n>trSearchAssign}"
+											liveChange=".onAssignSearch" />
+										<Select selectedKey="{trView>/assign/work}" change=".onAssignSearch" width="9.5rem">
+											<core:Item key="all" text="{i18n>trAllWork}" />
+											<core:Item key="bill" text="{i18n>trBillableOnly}" />
+											<core:Item key="int" text="{i18n>trInternalOnly}" />
+										</Select>
+										<Button text="{tr>/assign/expandText}" press=".onExpandAllAssign" />
+									</HBox>
+								</HBox>
+
+								<ScrollContainer horizontal="true" vertical="false" width="100%">
+									<VBox class="hrxTrAsgTable">
+										<HBox class="hrxTrAsgRow hrxTrAsgHead">
+											<Text text="" />
+											<Text text="{i18n>trColEmployee}" />
+											<Text text="{i18n>trColProject}" />
+											<Text text="{i18n>trColBilling}" />
+											<Text text="{i18n>trColDayRate}" class="hrxTrNum" />
+											<Text text="{i18n>trColThisMonth}" class="hrxTrNum" />
+											<Text text="{i18n>trColBilledTotal}" class="hrxTrNum" />
+										</HBox>
+										<Text text="{i18n>trNothing}" visible="{= ${tr>/assign/rows}.length === 0 }" class="hrxTrEmpty" />
+										<VBox id="trAssignList" items="{path: 'tr>/assign/rows', templateShareable: false}">
+											<VBox class="hrxTrAsg">
+												<customData>
+													<core:CustomData key="key" value="{tr>key}" writeToDom="true" />
+													<core:CustomData key="open" value="{= ${tr>open} ? 'yes' : 'no' }" writeToDom="true" />
+												</customData>
+												<HBox class="hrxTrAsgRow">
+													<Button
+														icon="sap-icon://slim-arrow-right"
+														type="Transparent"
+														tooltip="{i18n>trShowBookings}"
+														press=".onToggleAssign"
+														class="hrxTrChev" />
+													<VBox>
+														<Text text="{tr>Name}" class="hrxResourceName" />
+														<Text text="{tr>bookingsText}" class="hrxResourceMeta" />
+													</VBox>
+													<VBox>
+														<Text text="{tr>ClientDesc}" />
+														<Text text="{tr>projectLine}" class="hrxResourceMeta" />
+													</VBox>
+													<HBox>
+														<ObjectStatus
+															text="{= ${tr>Billable} ? ${i18n>trBillable} : ${i18n>trInternal} }"
+															state="{= ${tr>Billable} ? 'Success' : 'None' }"
+															inverted="true"
+															class="hrxSkPill" />
+													</HBox>
+													<Text text="{tr>rateText}" class="hrxTrNum" />
+													<Text text="{tr>monthText}" class="hrxTrNum" />
+													<Text text="{tr>totalText}" class="hrxTrNum hrxTrStrong" />
+												</HBox>
+												<Table
+													visible="{tr>open}"
+													items="{path: 'tr>logs', templateShareable: false}"
+													noDataText="{i18n>trNoBookings}"
+													class="hrxSkTable hrxTrLogs">
+													<columns>
+														<Column width="9rem"><Text text="{i18n>trColDate}" /></Column>
+														<Column width="6rem" hAlign="End"><Text text="{i18n>trColHours}" /></Column>
+														<Column><Text text="{i18n>trColWork}" /></Column>
+													</columns>
+													<items>
+														<ColumnListItem>
+															<cells>
+																<Text text="{tr>dateText}" />
+																<Text text="{tr>hoursText}" />
+																<Text text="{tr>Comment}" />
+															</cells>
+														</ColumnListItem>
+													</items>
+												</Table>
+											</VBox>
+										</VBox>
+									</VBox>
+								</ScrollContainer>
+							</VBox>
+						</IconTabFilter>
+
+						<!-- billed days overview -->
+						<IconTabFilter key="days" text="{i18n>trTabDays}">
+							<layout:Grid defaultSpan="XL3 L3 M12 S12" hSpacing="1" vSpacing="1" class="hrxTrDaysGrid">
+								<VBox class="hrxSkCard hrxTrCard">
+									<layoutData>
+										<layout:GridData span="XL3 L3 M12 S12" />
+									</layoutData>
+									<HBox class="hrxTrCardHead">
+										<Title text="{trView>/period/title}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+									</HBox>
+									<VBox class="hrxTrCardBody">
+										<VBox class="hrxTrStat">
+											<Text text="{i18n>trTotalDays}" class="hrxTrStatLabel" />
+											<HBox alignItems="Baseline"><Text text="{tr>/days/totalText}" class="hrxTrStatValue" /><Text text="{i18n>trDaysUnit}" class="hrxTrStatUnit" /></HBox>
+										</VBox>
+										<VBox class="hrxTrStat">
+											<Text text="{i18n>trBillableDays}" class="hrxTrStatLabel" />
+											<HBox alignItems="Baseline"><Text text="{tr>/days/billableText}" class="hrxTrStatValue" /><Text text="{i18n>trDaysUnit}" class="hrxTrStatUnit" /></HBox>
+										</VBox>
+										<VBox class="hrxTrStat">
+											<Text text="{i18n>trNonBillableDays}" class="hrxTrStatLabel" />
+											<HBox alignItems="Baseline"><Text text="{tr>/days/nonBillableText}" class="hrxTrStatValue" /><Text text="{i18n>trDaysUnit}" class="hrxTrStatUnit" /></HBox>
+										</VBox>
+									</VBox>
+								</VBox>
+
+								<VBox id="trPieCard" class="hrxSkCard hrxTrCard">
+									<layoutData>
+										<layout:GridData span="XL5 L5 M12 S12" />
+									</layoutData>
+									<HBox alignItems="Center" class="hrxTrCardHead">
+										<VBox class="hrxTrCardHeadText">
+											<Title text="{tr>/days/title}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+											<Text text="{tr>/days/hint}" class="hrxSkHint" />
+										</VBox>
+										<Button text="{i18n>trAllCustomers}" visible="{= !!${trView>/drill} }" press=".onAllCustomers" />
+									</HBox>
+									<VBox class="hrxTrCardBody">
+										<Text text="{i18n>trNothingBooked}" visible="{= ${tr>/days/slices}.length === 0 }" class="hrxTrEmpty" />
+										<!-- preferDOM off: the chart is redrawn whole each time its data
+										     changes, rather than swapped in place - which left the old
+										     chart on screen beside the new one. -->
+										<core:HTML
+											content="{tr>/days/pieHtml}"
+											preferDOM="false"
+											visible="{= ${tr>/days/slices}.length > 0 }" />
+										<List
+											items="{path: 'tr>/days/slices', templateShareable: false}"
+											showSeparators="None"
+											backgroundDesign="Transparent"
+											class="hrxTrLegend">
+											<CustomListItem type="{= ${trView>/drill} ? 'Inactive' : 'Active' }" press=".onSliceSelect">
+												<HBox alignItems="Center" class="hrxTrLegendRow">
+													<core:HTML content="{tr>dotHtml}" />
+													<Text text="{tr>label}" class="hrxTrLegendLabel" />
+													<Text text="{tr>valueText}" class="hrxTrStrong" />
+												</HBox>
+											</CustomListItem>
+										</List>
+									</VBox>
+								</VBox>
+
+								<VBox class="hrxSkCard hrxTrCard">
+									<layoutData>
+										<layout:GridData span="XL4 L4 M12 S12" />
+									</layoutData>
+									<HBox class="hrxTrCardHead">
+										<Title text="{i18n>trTopProjects}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+									</HBox>
+									<VBox class="hrxTrCardBody">
+										<Text text="{i18n>trNothingBooked}" visible="{= ${tr>/days/top}.length === 0 }" class="hrxTrEmpty" />
+										<VBox items="{path: 'tr>/days/top', templateShareable: false}">
+											<VBox class="hrxTrTopRow">
+												<HBox justifyContent="SpaceBetween" class="hrxTrTopLabel">
+													<Text text="{tr>label}" />
+													<Text text="{tr>valueText}" class="hrxTrStrong" />
+												</HBox>
+												<core:HTML content="{tr>barHtml}" />
+											</VBox>
+										</VBox>
+									</VBox>
+								</VBox>
+							</layout:Grid>
+						</IconTabFilter>
+
+						<!-- timesheet breakdown -->
+						<IconTabFilter key="break" text="{i18n>trTabBreakdown}">
+							<VBox class="hrxSkCard hrxTrCard">
+								<HBox alignItems="Center" class="hrxTrCardHead">
+									<VBox class="hrxTrCardHeadText">
+										<Title text="{i18n>trBreakdownTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+										<Text text="{tr>/brk/hint}" class="hrxSkHint" />
+									</VBox>
+									<Button
+										text="{tr>/brk/expandText}"
+										visible="{= ${tr>/brk/customers} > 0 }"
+										press=".onExpandAllBreakdown" />
+								</HBox>
+								<Text text="{i18n>trNothingBooked}" visible="{= ${tr>/brk/customers} === 0 }" class="hrxTrEmpty" />
+								<ScrollContainer horizontal="true" vertical="false" width="100%" visible="{= ${tr>/brk/customers} > 0 }">
+									<Table id="trBreakTable" fixedLayout="false" class="hrxSkTable hrxTrBreak" />
+								</ScrollContainer>
+							</VBox>
+						</IconTabFilter>
+
+						<!-- who's submitted -->
+						<IconTabFilter key="sub" text="{i18n>trTabSubmitted}">
+							<layout:Grid defaultSpan="XL4 L4 M4 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="{tr>/sub/complianceState}" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://complete" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiCompliance}" class="hrxKpiLabel" />
+									<HBox alignItems="Baseline" class="hrxKpiFigure">
+										<Text text="{tr>/sub/compliance}" class="hrxKpiNum" />
+										<Text text="%" class="hrxKpiUnit" />
+									</HBox>
+									<Text text="{i18n>trKpiComplianceSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="{= ${tr>/sub/under} > 0 ? 'Warning' : 'Good' }" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://warning" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiUnder}" class="hrxKpiLabel" />
+									<Text text="{tr>/sub/under}" class="hrxKpiNum" />
+									<Text text="{i18n>trKpiUnderSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://accept" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiFull}" class="hrxKpiLabel" />
+									<Text text="{tr>/sub/full}" class="hrxKpiNum" />
+									<Text text="{i18n>trKpiFullSub}" class="hrxKpiSub" />
+								</VBox>
+							</layout:Grid>
+
+							<VBox class="hrxSkCard hrxTrCard" busy="{trView>/weekLoading}" busyIndicatorDelay="0">
+								<HBox alignItems="Center" wrap="Wrap" class="hrxTrCardHead">
+									<VBox class="hrxTrCardHeadText">
+										<Title text="{i18n>trAllEmployees}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+										<Text text="{tr>/sub/hint}" class="hrxSkHint" />
+									</VBox>
+									<HBox alignItems="Center" wrap="Wrap" class="hrxTrTools">
+										<SearchField width="13rem" value="{trView>/sub/q}" placeholder="{i18n>trSearch}" liveChange=".onSubSearch" />
+										<Button text="{i18n>trRefreshWeek}" icon="sap-icon://refresh" press=".onRefreshWeek" />
+										<Button text="{i18n>trSendAll}" icon="sap-icon://email" type="Emphasized" press=".onRemindAll" />
+									</HBox>
+								</HBox>
+								<Table
+									items="{path: 'tr>/sub/rows', templateShareable: false}"
+									noDataText="{i18n>trNoWeek}"
+									growing="true"
+									growingThreshold="60"
+									class="hrxSkTable">
+									<columns>
+										<Column width="30%"><Text text="{i18n>trColEmployee}" /></Column>
+										<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>trColThisWeek}" /></Column>
+										<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>trColReminder}" /></Column>
+										<Column hAlign="End"><Text text="{i18n>trColBooked}" /></Column>
+									</columns>
+									<items>
+										<ColumnListItem>
+											<cells>
+												<HBox alignItems="Center">
+													<f:Avatar initials="{tr>initials}" displaySize="XS" backgroundColor="Accent6" class="sapUiTinyMarginEnd" />
+													<Text text="{tr>Name}" class="hrxResourceName" />
+												</HBox>
+												<VBox class="hrxTrWeek">
+													<Text text="{tr>hoursText}" class="hrxResourceMeta" />
+													<core:HTML content="{tr>barHtml}" />
+												</VBox>
+												<HBox>
+													<Button
+														text="{i18n>trRemind}"
+														icon="sap-icon://email"
+														visible="{= !${tr>complete} }"
+														press=".onRemind" />
+													<Text text="—" visible="{tr>complete}" class="hrxResourceMeta" />
+												</HBox>
+												<ObjectStatus text="{tr>statusText}" state="{tr>statusState}" inverted="true" class="hrxSkPill" />
+											</cells>
+										</ColumnListItem>
+									</items>
+								</Table>
+							</VBox>
+						</IconTabFilter>
+
+						<!-- team utilisation -->
+						<IconTabFilter key="util" text="{i18n>trTabUtil}">
+							<layout:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="{tr>/util/teamState}" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://bar-chart" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiTeamUtil}" class="hrxKpiLabel" />
+									<HBox alignItems="Baseline" class="hrxKpiFigure">
+										<Text text="{tr>/util/team}" class="hrxKpiNum" />
+										<Text text="%" class="hrxKpiUnit" />
+									</HBox>
+									<Text text="{i18n>trKpiTeamUtilSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://suitcase" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiOnBillable}" class="hrxKpiLabel" />
+									<Text text="{tr>/util/onBillable}" class="hrxKpiNum" />
+									<Text text="{i18n>trKpiOnBillableSub}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://money-bills" class="hrxKpiGlyph" />
+									<Text text="{i18n>trBillableDays}" class="hrxKpiLabel" />
+									<Text text="{tr>/util/billable}" class="hrxKpiNum" />
+									<Text text="{i18n>trInPeriod}" class="hrxKpiSub" />
+								</VBox>
+								<VBox class="hrxKpi">
+									<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
+									<core:Icon src="sap-icon://calendar" class="hrxKpiGlyph" />
+									<Text text="{i18n>trKpiTotalBooked}" class="hrxKpiLabel" />
+									<Text text="{tr>/util/total}" class="hrxKpiNum" />
+									<Text text="{i18n>trKpiTotalBookedSub}" class="hrxKpiSub" />
+								</VBox>
+							</layout:Grid>
+
+							<VBox class="hrxSkCard hrxTrCard">
+								<HBox class="hrxTrCardHead">
+									<VBox class="hrxTrCardHeadText">
+										<Title text="{i18n>trUtilByPerson}" level="H3" wrapping="true" class="hrxTrCardTitle" />
+										<Text text="{tr>/util/hint}" class="hrxSkHint" />
+									</VBox>
+								</HBox>
+								<Table
+									items="{path: 'tr>/util/rows', templateShareable: false}"
+									noDataText="{i18n>trNoUtil}"
+									growing="true"
+									growingThreshold="60"
+									class="hrxSkTable">
+									<columns>
+										<Column width="24%"><Text text="{i18n>trColEmployee}" /></Column>
+										<Column hAlign="End" width="7rem" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>trColBillable}" /></Column>
+										<Column hAlign="End" width="7rem" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>trColTotal}" /></Column>
+										<Column width="22%"><Text text="{i18n>trColUtil}" /></Column>
+										<Column minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>trColBillableProjects}" /></Column>
+									</columns>
+									<items>
+										<ColumnListItem>
+											<cells>
+												<VBox>
+													<Text text="{tr>Name}" class="hrxResourceName" />
+													<Text text="{tr>projectsCount}" class="hrxResourceMeta" />
+												</VBox>
+												<Text text="{tr>billableText}" />
+												<Text text="{tr>totalText}" />
+												<HBox alignItems="Center" class="hrxTrUtilBar">
+													<core:HTML content="{tr>barHtml}" />
+													<Text text="{tr>pctText}" class="hrxTrStrong" />
+												</HBox>
+												<Text text="{tr>projectsText}" class="hrxResourceMeta" />
+											</cells>
+										</ColumnListItem>
+									</items>
+								</Table>
+							</VBox>
+						</IconTabFilter>
+					</items>
+				</IconTabBar>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

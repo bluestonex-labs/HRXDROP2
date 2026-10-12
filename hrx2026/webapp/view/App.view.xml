@@ -1,5 +1,145 @@
-<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:core="sap.ui.core" controllerName="bsx.hrx.hrx2026.controller.App" displayBlock="true" height="100%">
-	<!-- The HRX frame and pages are rendered by bsx/hrx/hrx2026/ui/shell into this host,
-	     using the HRX design's own markup and stylesheet (css/hrx.css). -->
-	<core:HTML id="hrxHost" content="&lt;div class=&quot;hrx-host&quot;&gt;&lt;/div&gt;" preferDOM="true" afterRendering=".onHostRendered"/>
+<mvc:View xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:tnt="sap.tnt" xmlns:core="sap.ui.core" controllerName="bsx.hrx.hrx2026.controller.App" displayBlock="true" height="100%" class="hrxAppRoot">
+	<tnt:ToolPage id="toolPage" class="hrxToolPage">
+		<tnt:header>
+			<!-- sap.tnt.SideNavigation has no slot of its own for a logo/toggle row, so
+			     this lives here and CSS lays it over the rail - the header wrapper is
+			     the one ancestor that isn't clipped by the main content's overflow. -->
+			<Button id="navToggleButton" press="onMenuButtonPress" type="Transparent" tooltip="{i18n>navToggle}" class="hrxNavToggle" icon="sap-icon://nav-back"/>
+		</tnt:header>
+		<tnt:sideContent>
+			<tnt:SideNavigation id="sideNavigation" itemSelect="onItemSelect">
+				<tnt:NavigationList selectedKey="home">
+					<tnt:NavigationListItem key="home" text="{i18n>navHome}" icon="sap-icon://home"/>
+					<tnt:NavigationListItem key="timesheet" text="{i18n>navTimesheet}" icon="sap-icon://history"/>
+					<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
+					<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
+					<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
+					<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
+					<!-- Everything else is reached from the App Explorer. Admin belongs to
+					     managers only, which the shell decides from the signed-in profile. -->
+					<tnt:NavigationListItem key="admin" text="{i18n>navAdmin}" icon="sap-icon://action-settings" visible="{app>/user/isManager}"/>
+				</tnt:NavigationList>
+			</tnt:SideNavigation>
+		</tnt:sideContent>
+		<tnt:mainContents>
+			<!-- One header bar for the app: the launchpad shell already provides the bar
+			     above it, so the page name and the health strip live here rather than in
+			     a second tool header. -->
+			<VBox fitContainer="true" class="hrxMainStack">
+				<VBox class="hrxCrumbBar">
+					<HBox alignItems="End" wrap="Wrap" width="100%">
+						<VBox justifyContent="Center">
+							<Text text="{i18n>appEyebrow}" class="hrxEyebrow"/>
+							<Title text="{app>/page/title}" level="H1" class="hrxPageTitle"/>
+						</VBox>
+
+						<!-- The strip summarises the signed-in user's own week, so it belongs to
+						     the home page rather than to every screen. Bottom-aligned against the
+						     title/eyebrow stack so it lines up with the title text itself, not the
+						     midpoint of the whole stack. -->
+						<HBox wrap="Wrap" class="hrxHealthStrip" visible="{app>/page/showStrip}" items="{app>/healthStrip}">
+							<ObjectStatus text="{app>text}" state="{app>state}" class="hrxPill sapUiTinyMarginEnd"/>
+						</HBox>
+
+						<!-- Reload sits on the one bar the app already has rather than in a
+						     toolbar of its own on every page: between the launchpad's shell
+						     bar and this one, a strip carrying nothing but a refresh icon was
+						     costing a row of screen height on every screen. It goes to the far
+						     right, where it was on those toolbars - FlexItemData puts the class
+						     that pushes it there on the flex item wrapper. (A ToolbarSpacer did
+						     nothing here: it only grows inside a toolbar, not an HBox, which is
+						     how the button ended up jammed against the page title.) -->
+						<!-- When the page's data was last read, where a page reports it, sits
+						     just left of the reload button it refers to. -->
+						<HBox alignItems="Center" class="hrxCrumbActions">
+							<layoutData>
+								<FlexItemData styleClass="hrxCrumbActionSlot"/>
+							</layoutData>
+							<Text
+								id="pageStamp"
+								text="{app>/page/stamp}"
+								visible="{= !!${app>/page/stamp} }"
+								class="hrxCrumbStamp"/>
+							<Button
+								id="pageRefresh"
+								icon="sap-icon://refresh"
+								type="Transparent"
+								tooltip="{i18n>appRefreshTooltip}"
+								visible="{app>/page/showRefresh}"
+								press="onRefreshPage"
+								class="hrxCrumbAction"/>
+						</HBox>
+					</HBox>
+				</VBox>
+				<NavContainer id="appNavContainer" height="100%">
+					<layoutData>
+						<FlexItemData growFactor="1" baseSize="0%"/>
+					</layoutData>
+				</NavContainer>
+			</VBox>
+		</tnt:mainContents>
+	</tnt:ToolPage>
+
+	<!-- TESTING AID - remove before go-live, with the demo role in CurrentUser.js.
+	     The prototype's "View as (demo)" switch: look at the app with full admin
+	     access or as a plain employee, whatever the signed-in user's own rights.
+	     Laid over the rail just above the signed-in user, like that footer. -->
+	<HBox
+		id="railDemo"
+		alignItems="Center"
+		visible="{= !${device>/system/phone} }"
+		class="hrxRailDemo">
+		<Label text="{i18n>viewAsDemo}" labelFor="railDemoRole" class="hrxRailDemoLabel" />
+		<Select
+			id="railDemoRole"
+			selectedKey="{app>/demoRole}"
+			change=".onDemoRoleChange"
+			width="100%"
+			class="hrxRailDemoSelect">
+			<core:Item key="actual" text="{i18n>demoRoleActual}" />
+			<core:Item key="admin" text="{i18n>demoRoleAdmin}" />
+			<core:Item key="employee" text="{i18n>demoRoleEmployee}" />
+		</Select>
+	</HBox>
+
+	<!-- Who is signed in, pinned to the foot of the side rail as it is in SupportX:
+	     their initials, their name and their role. sap.tnt.SideNavigation's own
+	     footer slots only take navigation items, so this sits beside the ToolPage
+	     and CSS lays it over the bottom of the rail - the same way the collapse
+	     toggle above is laid over its top. Hidden on a phone, where the rail itself
+	     is not shown. -->
+	<HBox
+		id="railUser"
+		alignItems="Center"
+		visible="{= !!${app>/user/name} &amp;&amp; !${device>/system/phone} }"
+		tooltip="{app>/user/email}"
+		class="hrxRailUser">
+		<customData>
+			<!-- The role picks the avatar's and the tag's colour. A data-* attribute,
+			     since a bound class does not evaluate on `class`. -->
+			<core:CustomData key="role" value="{= ${app>/user/isManager} ? 'manager' : 'employee' }" writeToDom="true"/>
+		</customData>
+		<HBox alignItems="Center" justifyContent="Center" class="hrxRailAvatar">
+			<Text text="{app>/user/initials}" class="hrxRailAvatarText"/>
+		</HBox>
+		<VBox class="hrxRailUserInfo">
+			<Text text="{app>/user/name}" wrapping="false" class="hrxRailUserName"/>
+			<Text text="{= ${app>/user/isManager} ? ${i18n>roleManager} : ${i18n>roleEmployee} }" class="hrxRailRoleTag"/>
+		</VBox>
+		<!-- Notifications, worked out from the user's own data (NotificationService) -->
+		<HBox class="hrxBellWrap">
+			<Button
+				id="railBell"
+				icon="sap-icon://bell"
+				type="Transparent"
+				tooltip="{i18n>notifTitle}"
+				ariaHasPopup="Dialog"
+				press=".onBellPress"
+				class="hrxBell" />
+			<Text
+				text="{= ${app>/notif/items}.length > 9 ? '9+' : ${app>/notif/items}.length }"
+				visible="{= ${app>/notif/items}.length > 0 }"
+				class="hrxBellBadge" />
+		</HBox>
+	</HBox>
 </mvc:View>

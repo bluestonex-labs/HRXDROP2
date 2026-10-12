@@ -15,6 +15,13 @@
       "csrfProtection": true
     },
     {
+      "source": "^/services/(.*)$",
+      "target": "/services/$1",
+      "destination": "bsxorgappsservices",
+      "authenticationType": "none",
+      "csrfProtection": false
+    },
+    {
       "source": "^/browser/(.*)$",
       "target": "/browser/$1",
       "destination": "dms_service",
