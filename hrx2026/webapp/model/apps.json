@@ -65,6 +65,12 @@
       "subtitle": "Billing, days booked, submissions and utilisation",
       "icon": "sap-icon://business-objects-experience",
       "route": "timesheetreport"
+    },
+    {
+      "title": "Documents",
+      "subtitle": "Publish policies and track acknowledgement",
+      "icon": "sap-icon://document-text",
+      "route": "documents"
     }
   ]
 }

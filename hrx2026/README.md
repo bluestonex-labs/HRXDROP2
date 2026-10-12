@@ -47,6 +47,7 @@ checklists have no home anywhere yet (see `model/SicknessService.js`).
 | `model/HrxLegacy.js` | Answers the old xsjs commands and OData reads from `/hrx` |
 | `model/TimesheetReportService.js` | Timesheet Reporting's reads |
 | `model/SicknessService.js` | Sickness absences (as Sick leave) and the parts still to be stored |
+| `model/DocumentService.js` | Documents and acknowledgements - the contract for the DMS service still to be built (`ENDPOINT` unset until then) |
 
 ### Things to confirm against the deployed service
 

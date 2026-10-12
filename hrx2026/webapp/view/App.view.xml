@@ -13,6 +13,7 @@
 					<tnt:NavigationListItem key="timesheet" text="{i18n>navTimesheet}" icon="sap-icon://history"/>
 					<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
 					<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
+					<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
 					<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
 					<!-- Everything else is reached from the App Explorer. Admin belongs to
 					     managers only, which the shell decides from the signed-in profile. -->

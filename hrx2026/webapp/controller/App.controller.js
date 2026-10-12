@@ -13,6 +13,7 @@ sap.ui.define([
 		timesheet: "timesheet",
 		leave: "leave",
 		teamcal: "teamcal",
+		policies: "policies",
 		explorer: "explorer",
 		admin: "admin"
 	};
@@ -30,6 +31,8 @@ sap.ui.define([
 		missingtimesheets: "navMissingTimesheets",
 		sickness: "navSickness",
 		timesheetreport: "navTimesheetReport",
+		policies: "navPolicies",
+		documents: "navDocuments",
 		explorer: "navAppExplorer",
 		admin: "navAdmin"
 	};
@@ -37,7 +40,7 @@ sap.ui.define([
 	// Pages whose controller offers an onRefresh - the shell bar's reload button is
 	// theirs. Driven off the route rather than off whichever page the NavContainer
 	// reports, which during a transition is still the page being left behind.
-	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport"];
+	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport", "policies", "documents"];
 
 	// Which nav row to light up for pages that have none of their own: the admin
 	// apps are opened from the Admin page, so Admin stays lit while one is open.
@@ -47,7 +50,8 @@ sap.ui.define([
 		projects: "admin",
 		missingtimesheets: "admin",
 		sickness: "admin",
-		timesheetreport: "admin"
+		timesheetreport: "admin",
+		documents: "admin"
 	};
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.App", {

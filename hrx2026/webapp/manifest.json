@@ -170,6 +170,16 @@
           "name": "timesheetreport",
           "pattern": "timesheetreporting",
           "target": "timesheetreport"
+        },
+        {
+          "name": "policies",
+          "pattern": "policies",
+          "target": "policies"
+        },
+        {
+          "name": "documents",
+          "pattern": "documents",
+          "target": "documents"
         }
       ],
       "targets": {
@@ -232,6 +242,16 @@
           "viewName": "TimesheetReport",
           "viewLevel": 1,
           "viewId": "timesheetreport"
+        },
+        "policies": {
+          "viewName": "Policies",
+          "viewLevel": 1,
+          "viewId": "policies"
+        },
+        "documents": {
+          "viewName": "Documents",
+          "viewLevel": 1,
+          "viewId": "documents"
         },
         "notFound": {
           "viewName": "NotFound",

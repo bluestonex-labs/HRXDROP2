@@ -2716,3 +2716,96 @@ body.hrxApp {
 .hrxApp .hrxLeaveHead {
 	gap: 12px;
 }
+
+/* ── DOCUMENTS AND POLICIES TO READ ───────────────────────────────────────── */
+
+.hrxApp .hrxDocEmpty {
+	align-items: center;
+	text-align: center;
+	gap: 4px;
+	padding: 36px 20px;
+}
+
+.hrxApp .hrxDocRow,
+.hrxApp .hrxDocRow2 {
+	gap: 12px 16px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxDocMain {
+	flex: 1 1 14rem !important;
+	min-width: 0 !important;
+}
+
+.hrxApp .hrxDocName {
+	font-weight: 700;
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxDocStatus,
+.hrxApp .hrxDocActs {
+	gap: 8px;
+}
+
+.hrxApp .hrxDocRow2 {
+	cursor: pointer;
+}
+
+.hrxApp .hrxDocRow2:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxDocRow2[data-sel="yes"] {
+	background: var(--ice-glow);
+	box-shadow: inset 3px 0 0 var(--ice);
+}
+
+.hrxApp .hrxDocAck {
+	flex: 0 0 10.5rem !important;
+	gap: 4px;
+}
+
+.hrxApp .hrxDocAck .hrxResourceMeta {
+	font-size: 12px;
+}
+
+.hrxApp .hrxDocAckN {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxDocAct {
+	flex: 0 0 2.5rem !important;
+}
+
+.hrxApp .hrxDocTools {
+	gap: 10px;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxDocToolRow {
+	gap: 10px;
+}
+
+.hrxApp .hrxDocChips {
+	gap: 6px;
+}
+
+.hrxApp .hrxDocWhoRow {
+	padding: 10px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxDocWhoFoot {
+	gap: 8px;
+	padding: 12px 20px;
+}
+
+.hrxApp .hrxDocUploadPair {
+	gap: 12px;
+	margin-bottom: 12px;
+}

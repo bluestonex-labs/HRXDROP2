@@ -1,0 +1,79 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	xmlns:u="sap.ui.unified">
+
+	<Dialog
+		id="documentUploadDialog"
+		title="{i18n>dmUploadTitle}"
+		contentWidth="34rem"
+		class="sapUiContentPadding">
+		<content>
+			<VBox busy="{dmUpload>/saving}" busyIndicatorDelay="0">
+				<Label text="{i18n>dmFieldName}" required="true" labelFor="documentUploadName" />
+				<Input
+					id="documentUploadName"
+					width="100%"
+					maxLength="200"
+					value="{dmUpload>/Name}"
+					valueLiveUpdate="true"
+					liveChange=".onUploadInput"
+					class="sapUiSmallMarginBottom" />
+
+				<HBox class="hrxDocUploadPair">
+					<VBox>
+						<layoutData><FlexItemData growFactor="1" baseSize="0" /></layoutData>
+						<Label text="{i18n>dmFieldCategory}" labelFor="documentUploadCategory" />
+						<Select
+							id="documentUploadCategory"
+							width="100%"
+							selectedKey="{dmUpload>/Category}"
+							items="{path: 'dmUpload>/categories', templateShareable: false}">
+							<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
+						</Select>
+					</VBox>
+					<VBox>
+						<layoutData><FlexItemData growFactor="1" baseSize="0" /></layoutData>
+						<Label text="{i18n>dmFieldVisibility}" labelFor="documentUploadVisibility" />
+						<Select
+							id="documentUploadVisibility"
+							width="100%"
+							selectedKey="{dmUpload>/Visibility}"
+							items="{path: 'dmUpload>/audiences', templateShareable: false}">
+							<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
+						</Select>
+					</VBox>
+				</HBox>
+
+				<CheckBox
+					text="{i18n>dmFieldAckRequired}"
+					selected="{dmUpload>/AckRequired}"
+					class="sapUiSmallMarginBottom" />
+
+				<Label text="{i18n>dmFieldFile}" required="true" labelFor="documentUploadFile" />
+				<u:FileUploader
+					id="documentUploadFile"
+					width="100%"
+					fileType="pdf,doc,docx"
+					mimeType="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+					maximumFileSize="10"
+					sameFilenameAllowed="true"
+					placeholder="{i18n>dmFilePlaceholder}"
+					change=".onUploadFileChange"
+					typeMissmatch=".onUploadFileRejected"
+					fileSizeExceed=".onUploadFileTooBig" />
+				<Text text="{i18n>dmFileHint}" class="hrxResourceMeta" />
+			</VBox>
+		</content>
+		<beginButton>
+			<Button
+				text="{i18n>dmUploadConfirm}"
+				type="Emphasized"
+				enabled="{= ${dmUpload>/canSave} &amp;&amp; !${dmUpload>/saving} }"
+				press=".onConfirmUpload" />
+		</beginButton>
+		<endButton>
+			<Button text="{i18n>dmCancel}" press=".onCancelUpload" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>
