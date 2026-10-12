@@ -3033,7 +3033,9 @@ body.hrxApp {
 	flex: 0 0 9rem !important;
 }
 
-/* Breathing room between the year / Book leave bar and the first card. */
-.hrxApp .hrxLmBody {
+/* Breathing room between the year bar and the first card - on Sickness too,
+   whose alert strip otherwise sits right against the Record sickness bar. */
+.hrxApp .hrxLmBody,
+.hrxApp .hrxSkBody {
 	margin-top: 20px;
 }
