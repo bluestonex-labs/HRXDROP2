@@ -408,13 +408,21 @@
 								</form:SimpleForm>
 							</IconTabFilter>
 
-							<!-- tab: leave taken -->
+							<!-- tab: leave -->
 							<IconTabFilter
 								key="leave"
 								text="{i18n>mrTabLeave}"
 								icon="sap-icon://general-leave-request"
 								tooltip="{i18n>mrTabLeave}">
 								<VBox busy="{mrView>/leaveBusy}" busyIndicatorDelay="0">
+									<HBox justifyContent="End" class="sapUiSmallMarginBottom">
+										<Button
+											id="resourceBookLeaveButton"
+											text="{i18n>mrBookLeave}"
+											icon="sap-icon://create-leave-request"
+											type="Emphasized"
+											press=".onOpenBookLeave" />
+									</HBox>
 									<HBox wrap="Wrap" class="sapUiSmallMarginBottom">
 										<VBox class="sapUiMediumMarginEnd">
 											<NumericContent
@@ -474,6 +482,7 @@
 											<Column width="30%"><Text text="{i18n>mrLeaveColDate}" /></Column>
 											<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mrLeaveColType}" /></Column>
 											<Column hAlign="End"><Text text="{i18n>mrLeaveColStatus}" /></Column>
+											<Column hAlign="End" width="6.5rem"><Text text="" /></Column>
 										</columns>
 										<items>
 											<ColumnListItem type="Inactive">
@@ -483,6 +492,20 @@
 													<ObjectStatus
 														text="{mrLeave>Status}"
 														state="{path: 'mrLeave>StatusID', formatter: '.formatter.leaveStatusState'}" />
+													<!-- A request still waiting can be decided here. -->
+													<HBox justifyContent="End" visible="{= ${mrLeave>StatusID} === 'REQ' }">
+														<Button
+															icon="sap-icon://accept"
+															type="Accept"
+															tooltip="{i18n>mrLeaveApprove}"
+															press=".onApproveLeave"
+															class="sapUiTinyMarginEnd" />
+														<Button
+															icon="sap-icon://decline"
+															type="Reject"
+															tooltip="{i18n>mrLeaveReject}"
+															press=".onRejectLeave" />
+													</HBox>
 												</cells>
 											</ColumnListItem>
 										</items>

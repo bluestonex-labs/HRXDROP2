@@ -2705,3 +2705,10 @@ body.hrxApp {
 	color: var(--txt-3);
 	white-space: nowrap;
 }
+
+/* Manage Resources: one row per day in the book-leave dialog */
+.hrxApp .hrxBookDay {
+	gap: 12px;
+	padding: 6px 0;
+	border-bottom: 1px solid var(--line-soft);
+}
