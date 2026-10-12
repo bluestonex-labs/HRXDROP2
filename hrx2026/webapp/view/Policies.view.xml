@@ -12,9 +12,10 @@
 			<VBox busy="{pdView>/busy}" busyIndicatorDelay="0">
 
 				<MessageStrip
-					text="{i18n>docNotBoundStrip}"
-					type="Information"
+					text="{i18n>serviceNeededPolicies}"
+					type="Warning"
 					showIcon="true"
+					enableFormattedText="true"
 					visible="{= !${pdView>/bound} }"
 					class="sapUiSmallMarginBottom" />
 

@@ -156,6 +156,12 @@
 								text="{i18n>mpTabInfo}"
 								icon="sap-icon://hint"
 								tooltip="{i18n>mpTabInfo}">
+								<MessageStrip
+									text="{i18n>serviceNeededProjectAreas}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<form:SimpleForm
 									id="projectInfoForm"
 									editable="true"
@@ -338,6 +344,12 @@
 								text="{i18n>mpTabClientTeam}"
 								icon="sap-icon://account"
 								tooltip="{i18n>mpTabClientTeam}">
+								<MessageStrip
+									text="{i18n>serviceNeededProjectTeam}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="projectSupportTable"
 									items="{mpTabs>/supportTeam}"
@@ -386,6 +398,12 @@
 								text="{i18n>mpTabAttachments}"
 								icon="sap-icon://attachment"
 								tooltip="{i18n>mpTabAttachments}">
+								<MessageStrip
+									text="{i18n>serviceNeededProjectAttachments}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="projectAttachmentTable"
 									items="{mpTabs>/attachments}"

@@ -37,6 +37,8 @@ sap.ui.define([
 				isCurrentYear: true,
 				ruleText: this.getText("skRule", [SicknessPolicy.TRIGGER_INSTANCES]),
 				alert: { text: "", type: "Information" },
+				// false until the HRX service can store trigger reviews and return to work
+				reviewBound: SicknessService.isReviewBound(),
 				allExpanded: false,
 				allCount: ""
 			}), "skView");

@@ -28,9 +28,10 @@
 				</HBox>
 
 				<MessageStrip
-					text="{i18n>docNotBoundStrip}"
-					type="Information"
+					text="{i18n>serviceNeededDocuments}"
+					type="Warning"
 					showIcon="true"
+					enableFormattedText="true"
 					visible="{= !${dmView>/bound} }"
 					class="sapUiSmallMarginBottom" />
 				<MessageStrip

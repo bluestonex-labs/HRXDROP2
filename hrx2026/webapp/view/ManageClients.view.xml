@@ -235,6 +235,12 @@
 								text="{i18n>mcTabTeam}"
 								icon="sap-icon://employee"
 								tooltip="{i18n>mcTabTeam}">
+								<MessageStrip
+									text="{i18n>serviceNeededClientTeam}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="clientUserTable"
 									items="{mcTabs>/users}"
@@ -287,6 +293,12 @@
 								text="{i18n>mcTabSla}"
 								icon="sap-icon://decision"
 								tooltip="{i18n>mcTabSla}">
+								<MessageStrip
+									text="{i18n>serviceNeededClientSla}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="clientSlaTable"
 									items="{mcTabs>/sla}"
@@ -333,6 +345,12 @@
 								text="{i18n>mcTabComponents}"
 								icon="sap-icon://responsive"
 								tooltip="{i18n>mcTabComponents}">
+								<MessageStrip
+									text="{i18n>serviceNeededClientComponents}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="clientComponentTable"
 									items="{mcTabs>/components}"
@@ -413,6 +431,12 @@
 								text="{i18n>mcTabServices}"
 								icon="sap-icon://crm-service-manager"
 								tooltip="{i18n>mcTabServices}">
+								<MessageStrip
+									text="{i18n>serviceNeededClientApps}"
+									type="Warning"
+									showIcon="true"
+									enableFormattedText="true"
+									class="sapUiSmallMarginBottom" />
 								<Table
 									id="clientServiceTable"
 									items="{mcTabs>/services}"

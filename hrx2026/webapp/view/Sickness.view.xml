@@ -61,6 +61,14 @@
 					showIcon="true"
 					class="hrxSkAlert" />
 
+				<MessageStrip
+					text="{i18n>serviceNeededSickness}"
+					type="Warning"
+					showIcon="true"
+					enableFormattedText="true"
+					visible="{= !${skView>/reviewBound} }"
+					class="sapUiSmallMarginBottom" />
+
 				<!-- policy triggers -->
 				<Title text="{i18n>skTriggersTitle}" level="H2" class="hrxSectionTitle hrxSkSectionTitle" />
 
