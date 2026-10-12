@@ -25,10 +25,18 @@ server:
             # still applies once deployed - xs-app.json carries it.
           - path: /hrx
             url: http://localhost:4004
-            # The HRX service. Deployed, /hrx goes through the "hrxservices"
-            # destination, which signs the request in as the user; the deployed
-            # service answers nobody else, so a local preview talks to a local copy
-            # of it instead (cds watch on port 4004 - see README).
+            destination: hrxservices
+            # The HRX service. In Business Application Studio the proxy uses the
+            # destination (url is ignored there), which signs the request in as the
+            # user. Anywhere else the destination is ignored and the url is used:
+            # the deployed service answers only a signed-in user, so a local preview
+            # talks to a local copy of it (cds watch on port 4004 - see README).
+          - path: /browser
+            url: https://api-sdm-di.cfapps.eu10.hana.ondemand.com
+            destination: dms_service
+            # Profile pictures and client logos (SAP Document Management). In BAS
+            # through the dms_service destination; elsewhere they need a sign-in the
+            # local preview does not have, and the pages show initials instead.
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
