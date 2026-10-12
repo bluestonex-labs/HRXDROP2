@@ -1,0 +1,56 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- The bell's list: unread notifications only, as in the prototype. Clicking
+	     one marks it read and opens the page it is about. -->
+	<Popover
+		id="notificationsPopover"
+		placement="Right"
+		showHeader="false"
+		contentWidth="24rem"
+		class="hrxNotifPop">
+		<content>
+			<VBox busy="{app>/notif/loading}" busyIndicatorDelay="300">
+				<HBox alignItems="Center" justifyContent="SpaceBetween" class="hrxNotifHead">
+					<Title text="{i18n>notifTitle}" level="H3" class="hrxNotifTitle" />
+					<Text text="{app>/notif/countText}" class="hrxResourceMeta" />
+				</HBox>
+
+				<VBox visible="{= ${app>/notif/items}.length === 0 }" class="hrxNotifEmpty">
+					<Text text="{i18n>notifEmptyTitle}" class="hrxNotifEmptyTitle" />
+					<Text text="{i18n>notifEmptyText}" class="hrxResourceMeta" textAlign="Center" />
+				</VBox>
+
+				<List
+					items="{path: 'app>/notif/items', templateShareable: false}"
+					visible="{= ${app>/notif/items}.length > 0 }"
+					showSeparators="Inner"
+					class="hrxNotifList">
+					<CustomListItem type="Active" press=".onNotificationPress">
+						<HBox alignItems="Center" class="hrxNotifItem">
+							<core:HTML content="&lt;span class=&quot;hrxNotifDot&quot;&gt;&lt;/span&gt;" />
+							<VBox class="hrxNotifBody">
+								<Text text="{app>subject}" tooltip="{app>subject}" wrapping="false" class="hrxNotifSubj" />
+								<Text text="{app>detail}" visible="{= !!${app>detail} }" wrapping="false" class="hrxResourceMeta" />
+								<Text text="{app>when}" class="hrxNotifTime" />
+							</VBox>
+							<core:Icon src="sap-icon://navigation-right-arrow" class="hrxNotifChev" />
+						</HBox>
+					</CustomListItem>
+				</List>
+			</VBox>
+		</content>
+		<footer>
+			<OverflowToolbar class="hrxNotifFoot">
+				<ToolbarSpacer />
+				<Button
+					text="{i18n>notifMarkAll}"
+					type="Transparent"
+					visible="{= ${app>/notif/items}.length > 0 }"
+					press=".onNotificationsMarkAll" />
+				<Button text="{i18n>notifClose}" type="Transparent" press=".onNotificationsClose" />
+			</OverflowToolbar>
+		</footer>
+	</Popover>
+</core:FragmentDefinition>

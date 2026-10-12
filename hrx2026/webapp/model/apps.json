@@ -9,6 +9,7 @@
     "title": "Home"
   },
   "healthStrip": [],
+  "notif": { "items": [], "countText": "", "loading": false },
   "explorerApps": [
     {
       "title": "My Timesheet",

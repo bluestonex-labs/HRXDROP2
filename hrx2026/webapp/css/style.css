@@ -274,7 +274,7 @@ body.hrxApp {
 }
 
 /* min-width: 0 lets a long name ellipsise rather than push the footer wider. */
-.hrxApp .hrxRailUser > .sapMFlexItem:last-child {
+.hrxApp .hrxRailUser > .sapMFlexItem:nth-child(2) {
 	flex: 1 1 auto;
 	min-width: 0;
 }
@@ -2843,6 +2843,20 @@ body.hrxApp {
 @media (max-width: 1100px) {
 	.hrxApp .hrxMgrKpis.sapMFlexBox { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.hrxApp .hrxMgrGrid.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
+
+	/* Stacked, the cards have no shared row height to fill, so their lists take
+	   their own height (FlexItemData starts them at 0 for the wide layout) and
+	   scroll past a sensible cap. */
+	.hrxApp .hrxMgrGrid .hrxMgrScrollItem,
+	.hrxApp .hrxMgrGrid .hrxMgrUtilCard {
+		flex: 0 0 auto !important;
+	}
+
+	.hrxApp .hrxMgrGrid .hrxMgrScrollItem {
+		max-height: 24rem;
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
 }
 
 @media (max-width: 600px) {
@@ -3038,4 +3052,136 @@ body.hrxApp {
 .hrxApp .hrxLmBody,
 .hrxApp .hrxSkBody {
 	margin-top: 10px;
+}
+
+/* ── NOTIFICATIONS (the bell beside the signed-in user) ───────────────────── */
+
+/* The bell keeps its size at the end of the row; the name takes the rest. */
+.hrxApp .hrxRailUser > .sapMFlexItem:last-child {
+	flex: 0 0 auto;
+	min-width: 0;
+}
+
+.hrxApp .hrxBellWrap {
+	position: relative;
+}
+
+.hrxApp .hrxBell.sapMBtn .sapMBtnInner {
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	border-radius: 9px;
+	border: none;
+	background: rgba(255, 255, 255, .06);
+}
+
+.hrxApp .hrxBell.sapMBtn:hover .sapMBtnInner {
+	background: rgba(255, 255, 255, .14);
+}
+
+.hrxApp .hrxBell.sapMBtn .sapMBtnIcon {
+	color: #C9D8E1;
+	font-size: 15px;
+}
+
+.hrxApp .sapMText.hrxBellBadge {
+	position: absolute;
+	top: -5px;
+	right: -5px;
+	min-width: 16px;
+	height: 16px;
+	line-height: 16px;
+	padding: 0 4px;
+	border-radius: 8px;
+	border: 2px solid #0A0A0B;
+	background: var(--signal);
+	color: #FFFFFF;
+	font-size: 10px;
+	font-weight: 700;
+	text-align: center;
+	pointer-events: none;
+	box-sizing: content-box;
+}
+
+/* Collapsed rail: the bell sits above the avatar. */
+.hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailUser {
+	flex-direction: column-reverse;
+	gap: 12px;
+}
+
+.hrxApp .hrxToolPage.hrxSideCollapsed .sapTntSideNavigation {
+	padding-bottom: 120px;
+}
+
+.hrxNotifPop .hrxNotifHead {
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxNotifPop .hrxNotifTitle.sapMTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-weight: 800;
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.hrxNotifPop .hrxNotifList {
+	max-height: 320px;
+	overflow-y: auto;
+}
+
+.hrxNotifPop .hrxNotifItem {
+	gap: 12px;
+	padding: 12px 18px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.hrxNotifPop .hrxNotifItem > .sapMFlexItem:nth-child(2) {
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+}
+
+.hrxNotifPop .hrxNotifDot {
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--ice);
+}
+
+.hrxNotifPop .sapMText.hrxNotifSubj {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.hrxNotifPop .sapMText.hrxNotifTime {
+	font-size: 11.5px;
+	color: var(--txt-3);
+	margin-top: 2px;
+}
+
+.hrxNotifPop .hrxNotifChev {
+	color: var(--txt-3);
+	font-size: 12px;
+}
+
+.hrxNotifPop .hrxNotifEmpty {
+	padding: 34px 24px;
+	align-items: center;
+	gap: 6px;
+}
+
+.hrxNotifPop .sapMText.hrxNotifEmptyTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-weight: 800;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxNotifPop .hrxNotifFoot {
+	background: var(--frost);
 }

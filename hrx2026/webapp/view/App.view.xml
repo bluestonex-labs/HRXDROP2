@@ -126,5 +126,20 @@
 			<Text text="{app>/user/name}" wrapping="false" class="hrxRailUserName"/>
 			<Text text="{= ${app>/user/isManager} ? ${i18n>roleManager} : ${i18n>roleEmployee} }" class="hrxRailRoleTag"/>
 		</VBox>
+		<!-- Notifications, worked out from the user's own data (NotificationService) -->
+		<HBox class="hrxBellWrap">
+			<Button
+				id="railBell"
+				icon="sap-icon://bell"
+				type="Transparent"
+				tooltip="{i18n>notifTitle}"
+				ariaHasPopup="Dialog"
+				press=".onBellPress"
+				class="hrxBell" />
+			<Text
+				text="{= ${app>/notif/items}.length > 9 ? '9+' : ${app>/notif/items}.length }"
+				visible="{= ${app>/notif/items}.length > 0 }"
+				class="hrxBellBadge" />
+		</HBox>
 	</HBox>
 </mvc:View>

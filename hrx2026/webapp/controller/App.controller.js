@@ -4,9 +4,19 @@ sap.ui.define([
 	"sap/ui/Device",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
-], function (Controller, Fragment, Device, Backend, CurrentUser, formatter) {
+	"../model/formatter",
+	"sap/ui/core/format/DateFormat",
+	"../model/Notifications",
+	"../model/NotificationService"
+], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService) {
 	"use strict";
+
+	// The bell re-reads its sources at most this often while the user moves around
+	// (opening it always reads them afresh), and on its own every few minutes.
+	var NOTIF_MIN_GAP_MS = 60 * 1000;
+	var NOTIF_POLL_MS = 5 * 60 * 1000;
+
+	var oNotifTime = DateFormat.getDateTimeInstance({ pattern: "d MMM yyyy, HH:mm" });
 
 	var mKeyToRoute = {
 		home: "home",
@@ -96,7 +106,156 @@ sap.ui.define([
 					isManager: oProfile.isManager,
 					roleLabel: oProfile.empID
 				});
+
+				this._oNotifProfile = oProfile;
+				this._loadNotifications(true);
+				setInterval(this._loadNotifications.bind(this, true), NOTIF_POLL_MS);
 			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* notifications                                               */
+		/* =========================================================== */
+
+		/**
+		 * Works the signed-in user's notifications out again and keeps the unread
+		 * ones in app>/notif.
+		 * @param {boolean} [bForce] read even if the last read was moments ago
+		 * @returns {Promise} resolved once the bell is up to date
+		 */
+		_loadNotifications: function (bForce) {
+			var oProfile = this._oNotifProfile;
+			var oModel = this.getOwnerComponent().getModel("app");
+			var iNow = Date.now();
+
+			if (!oProfile || (!bForce && this._iNotifAt && iNow - this._iNotifAt < NOTIF_MIN_GAP_MS)) {
+				return Promise.resolve();
+			}
+			this._iNotifAt = iNow;
+			var iLoad = this._iNotifLoad = (this._iNotifLoad || 0) + 1;
+
+			oModel.setProperty("/notif/loading", true);
+			return NotificationService.load(oProfile).then(function (aItems) {
+				if (iLoad !== this._iNotifLoad) {
+					return;
+				}
+				this._aNotifs = aItems;
+				this._renderNotifications();
+			}.bind(this)).catch(function (oError) {
+				console.error("Notifications failed", oError);
+			}).then(function () {
+				oModel.setProperty("/notif/loading", false);
+			});
+		},
+
+		_renderNotifications: function () {
+			var oModel = this.getOwnerComponent().getModel("app");
+			var sEmpId = (this._oNotifProfile || {}).empID;
+			var aRead = NotificationService.readIds(sEmpId).concat(this._aNotifReadHere || []);
+			var aItems = Notifications.unread(this._aNotifs || [], aRead).map(this._toNotification, this);
+
+			oModel.setProperty("/notif/items", aItems);
+			oModel.setProperty("/notif/countText", aItems.length ? this.getText("notifUnread", [aItems.length]) : "");
+		},
+
+		/**
+		 * @param {object} oItem a notification from Notifications.js
+		 * @returns {object} it with the subject, detail and time to show
+		 */
+		_toNotification: function (oItem) {
+			var fnDates = function (sFrom, sTo) {
+				return sFrom === sTo ? formatter.date(sFrom) : formatter.dateRange(sFrom, sTo);
+			};
+			var sSubject;
+			var sDetail = "";
+
+			switch (oItem.kind) {
+				case "leaveApproved":
+					sSubject = this.getText("notifLeaveApproved", [fnDates(oItem.from, oItem.to)]);
+					sDetail = oItem.type;
+					break;
+				case "leaveRejected":
+					sSubject = this.getText("notifLeaveRejected", [fnDates(oItem.from, oItem.to)]);
+					sDetail = oItem.note ? this.getText("notifNote", [oItem.note]) : oItem.type;
+					break;
+				case "timesheet":
+					sSubject = this.getText("notifTimesheet", [Math.round(oItem.minutes / 60 * 10) / 10]);
+					break;
+				case "document":
+					sSubject = this.getText("notifDocument", [oItem.name]);
+					break;
+				case "approvals":
+					sSubject = this.getText(oItem.count === 1 ? "notifApprovalsOne" : "notifApprovals", [oItem.count]);
+					break;
+				default:
+					sSubject = oItem.subject || "";
+					sDetail = oItem.detail || "";
+			}
+
+			return Object.assign({}, oItem, {
+				subject: sSubject,
+				detail: sDetail,
+				when: oItem.at && !isNaN(oItem.at) ? oNotifTime.format(oItem.at) : ""
+			});
+		},
+
+		onBellPress: function (oEvent) {
+			var oBell = oEvent.getSource();
+
+			if (!this._pNotifPopover) {
+				this._pNotifPopover = Fragment.load({
+					id: this.getView().getId(),
+					name: "bsx.hrx.hrx2026.fragment.NotificationsPopover",
+					controller: this
+				}).then(function (oPopover) {
+					this.getView().addDependent(oPopover);
+					return oPopover;
+				}.bind(this));
+			}
+			this._pNotifPopover.then(function (oPopover) {
+				if (oPopover.isOpen()) {
+					oPopover.close();
+					return;
+				}
+				oPopover.openBy(oBell);
+				this._loadNotifications(true);
+			}.bind(this));
+		},
+
+		/**
+		 * Marks the notification read and opens the page it is about.
+		 * @param {sap.ui.base.Event} oEvent the list item press event
+		 */
+		onNotificationPress: function (oEvent) {
+			var oItem = oEvent.getSource().getBindingContext("app").getObject();
+			this._markNotificationsRead([oItem.id]);
+			this.onNotificationsClose();
+			if (oItem.route) {
+				this.getOwnerComponent().getRouter().navTo(oItem.route);
+			}
+		},
+
+		onNotificationsMarkAll: function () {
+			this._markNotificationsRead((this.getOwnerComponent().getModel("app").getProperty("/notif/items") || [])
+				.map(function (oItem) {
+					return oItem.id;
+				}));
+		},
+
+		onNotificationsClose: function () {
+			if (this._pNotifPopover) {
+				this._pNotifPopover.then(function (oPopover) {
+					oPopover.close();
+				});
+			}
+		},
+
+		_markNotificationsRead: function (aIds) {
+			// Kept here as well, so read holds for this page even where the browser
+			// will not store it.
+			this._aNotifReadHere = (this._aNotifReadHere || []).concat(aIds);
+			NotificationService.markRead((this._oNotifProfile || {}).empID, aIds);
+			this._renderNotifications();
 		},
 
 		/**
@@ -123,6 +282,10 @@ sap.ui.define([
 		 * @param {sap.ui.base.Event} oEvent the routeMatched event
 		 */
 		_onRouteMatched: function (oEvent) {
+			// Leaving a page is when its notifications may have changed (a timesheet
+			// booked, a policy acknowledged) - at most once a minute.
+			this._loadNotifications(false);
+
 			this._loadShell();
 			
 			var sRoute = oEvent.getParameter("name");
