@@ -2812,13 +2812,49 @@ body.hrxApp {
 
 /* ── HOME: MANAGER DASHBOARD ──────────────────────────────────────────────── */
 
-.hrxApp .hrxMgrKpis {
-	margin-bottom: 4px;
+/* Both rows are CSS grids with the same 16px gap and the same outer edges: four
+   tiles above, two equal halves below, so the gutter between the halves sits
+   exactly on the middle gutter of the tiles. */
+.hrxApp .hrxMgrKpis.sapMFlexBox,
+.hrxApp .hrxMgrGrid.sapMFlexBox {
+	display: grid !important;
+	gap: 16px;
+	align-items: stretch;
+}
+
+.hrxApp .hrxMgrKpis.sapMFlexBox {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin-bottom: 16px;
+}
+
+.hrxApp .hrxMgrGrid.sapMFlexBox {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	margin-bottom: 24px;
+}
+
+.hrxApp .hrxMgrKpis > .sapMFlexItem,
+.hrxApp .hrxMgrGrid > .sapMFlexItem {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxApp .hrxMgrKpis > .sapMFlexItem > .hrxKpi,
+.hrxApp .hrxMgrGrid > .sapMFlexItem > .sapMFlexBox {
+	flex: 1 1 auto;
+	box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+	.hrxApp .hrxMgrKpis.sapMFlexBox { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.hrxApp .hrxMgrGrid.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+	.hrxApp .hrxMgrKpis.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
 }
 
 .hrxApp .hrxMgrKpis .hrxKpi {
-	height: 100%;
-	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
 }
@@ -2834,17 +2870,24 @@ body.hrxApp {
 	padding-left: 0;
 }
 
-.hrxApp .hrxMgrGrid {
-	margin-bottom: 20px;
+/* Approvals over utilisation, 16px apart; utilisation takes up the rest so the
+   column ends level with Team today. */
+.hrxApp .hrxMgrStack {
+	gap: 16px;
 }
 
-.hrxApp .hrxMgrGrid > [class*="sapUiRespGridSpan"] > .hrxSkCard,
-.hrxApp .hrxMgrStack > .sapMFlexItem > .hrxSkCard {
-	height: 100%;
+.hrxApp .hrxMgrStack > .sapMFlexItem {
+	margin: 0 !important;
 }
 
-.hrxApp .hrxMgrStack > .sapMFlexItem:not(:last-child) {
-	margin-bottom: 16px;
+.hrxApp .hrxMgrStack > .sapMFlexItem:last-child {
+	flex: 1 1 auto !important;
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxApp .hrxMgrStack > .sapMFlexItem:last-child > .hrxMgrUtilCard {
+	flex: 1 1 auto;
 }
 
 .hrxApp .hrxMgrApprRow {
@@ -2905,4 +2948,22 @@ body.hrxApp {
 	font-size: 18px;
 	font-weight: 800;
 	color: var(--ink);
+}
+
+/* Under the manager dashboard the employee's own two cards take the same halves
+   as the cards above, so every gutter on the page lines up. Only matches while
+   the dashboard is shown - hidden, it renders as a placeholder without the class. */
+.hrxApp .hrxMgrDash ~ .hrxActionRow.sapMFlexBox {
+	display: grid !important;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.hrxApp .hrxMgrDash ~ .hrxActionRow > .sapMFlexItem {
+	min-width: 0 !important;
+	max-width: none !important;
+}
+
+@media (max-width: 1100px) {
+	.hrxApp .hrxMgrDash ~ .hrxActionRow.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
 }

@@ -14,7 +14,9 @@
 		     Keyed off the profile's isManager flag, so "View as (demo)" applies to it. -->
 		<VBox id="managerDash" visible="{app>/user/isManager}" class="hrxMgrDash">
 
-			<layout:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow hrxMgrKpis">
+			<!-- Plain CSS grids (style.css) rather than layout:Grid, so the gutter between
+			     the two cards below lines up exactly with the middle gutter of the tiles. -->
+			<HBox class="hrxMgrKpis">
 				<VBox class="hrxKpi" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
 					<core:Icon src="sap-icon://group" class="hrxKpiGlyph" />
@@ -65,13 +67,12 @@
 						<customData><core:CustomData key="go" value="documents" /></customData>
 					</Button>
 				</VBox>
-			</layout:Grid>
+			</HBox>
 
-			<layout:Grid defaultSpan="XL5 L5 M12 S12" hSpacing="1" vSpacing="1" class="hrxMgrGrid">
+			<HBox class="hrxMgrGrid">
 
 				<!-- Team today -->
 				<VBox class="hrxSkCard hrxTrCard hrxMgrTeam" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
-					<layoutData><layout:GridData span="XL5 L5 M12 S12" /></layoutData>
 					<HBox alignItems="Center" class="hrxTrCardHead">
 						<VBox class="hrxTrCardHeadText">
 							<Title text="{i18n>mgrTeamToday}" level="H3" wrapping="true" class="hrxTrCardTitle" />
@@ -108,7 +109,6 @@
 				</VBox>
 
 				<VBox class="hrxMgrStack">
-					<layoutData><layout:GridData span="XL7 L7 M12 S12" /></layoutData>
 
 					<!-- Pending approvals -->
 					<VBox class="hrxSkCard hrxTrCard" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
@@ -141,7 +141,7 @@
 					</VBox>
 
 					<!-- Billable utilisation, financial year to date -->
-					<VBox class="hrxSkCard hrxTrCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+					<VBox class="hrxSkCard hrxTrCard hrxMgrUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
 						<HBox alignItems="Center" class="hrxTrCardHead">
 							<VBox class="hrxTrCardHeadText">
 								<Title text="{i18n>mgrUtilTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
@@ -174,7 +174,7 @@
 						</ScrollContainer>
 					</VBox>
 				</VBox>
-			</layout:Grid>
+			</HBox>
 
 			<VBox class="hrxMgrOwnHead">
 				<Text text="{i18n>mgrOwnEyebrow}" class="hrxEyebrow" />
