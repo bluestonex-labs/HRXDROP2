@@ -3017,8 +3017,9 @@ body.hrxApp {
 .hrxApp .hrxLmDotUNPDL { background: var(--sapLegendColor3); }
 .hrxApp .hrxLmDotCOMPL { background: var(--sapLegendColor4); }
 
-/* Type and duration wrap as words, never letter by letter in a narrow column. */
-.hrxApp .hrxLmType .sapMText {
+/* The type name stays whole rather than breaking letter by letter in a narrow
+   column; the duration may wrap onto its own line under it. */
+.hrxApp .hrxLmType .sapMText:not(.hrxLmDur) {
 	white-space: nowrap;
 }
 
@@ -3084,23 +3085,30 @@ body.hrxApp {
 	font-size: 15px;
 }
 
+/* A rounded square sitting on the bell's top-right corner, the count centred
+   in it. Border-box, so the dark ring is inside the 18px rather than added to
+   it; "9+" widens it a little rather than squashing the text. */
 .hrxApp .sapMText.hrxBellBadge {
 	position: absolute;
 	top: -5px;
-	right: -5px;
-	min-width: 16px;
-	height: 16px;
-	line-height: 16px;
-	padding: 0 4px;
-	border-radius: 8px;
+	right: -9px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 3px;
+	border-radius: 6px;
 	border: 2px solid #0A0A0B;
 	background: var(--signal);
 	color: #FFFFFF;
 	font-size: 10px;
 	font-weight: 700;
-	text-align: center;
+	line-height: 1;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 	pointer-events: none;
-	box-sizing: content-box;
 }
 
 /* Collapsed rail: the bell sits above the avatar. */
