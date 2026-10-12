@@ -2712,3 +2712,7 @@ body.hrxApp {
 	padding: 6px 0;
 	border-bottom: 1px solid var(--line-soft);
 }
+
+.hrxApp .hrxLeaveHead {
+	gap: 12px;
+}

@@ -415,15 +415,10 @@
 								icon="sap-icon://general-leave-request"
 								tooltip="{i18n>mrTabLeave}">
 								<VBox busy="{mrView>/leaveBusy}" busyIndicatorDelay="0">
-									<HBox justifyContent="End" class="sapUiSmallMarginBottom">
-										<Button
-											id="resourceBookLeaveButton"
-											text="{i18n>mrBookLeave}"
-											icon="sap-icon://create-leave-request"
-											type="Emphasized"
-											press=".onOpenBookLeave" />
-									</HBox>
-									<HBox wrap="Wrap" class="sapUiSmallMarginBottom">
+									<!-- The figures on the left and Book leave on the right, level with
+									     the top of the numbers. -->
+									<HBox justifyContent="SpaceBetween" alignItems="Start" wrap="Wrap" class="sapUiSmallMarginBottom hrxLeaveHead">
+									<HBox wrap="Wrap">
 										<VBox class="sapUiMediumMarginEnd">
 											<NumericContent
 												value="{mrLeave>/user/annualLeaveQuota}"
@@ -452,6 +447,13 @@
 												valueColor="Neutral" />
 											<Text text="{i18n>mrLeaveBankHolidaysLabel}" class="hrxResourceMeta" />
 										</VBox>
+									</HBox>
+										<Button
+											id="resourceBookLeaveButton"
+											text="{i18n>mrBookLeave}"
+											icon="sap-icon://create-leave-request"
+											type="Emphasized"
+											press=".onOpenBookLeave" />
 									</HBox>
 
 									<VBox
