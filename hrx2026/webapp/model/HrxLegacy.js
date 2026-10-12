@@ -280,8 +280,8 @@ sap.ui.define([
 	 * is a site's back into its ID (any other text is kept as typed).
 	 */
 	function locationName(sBaseSite, aSites) {
-		var oSite = (aSites || []).filter(function (o) {
-			return o.ID === sBaseSite;
+		var oSite = (aSites || []).filter(function (oCandidate) {
+			return oCandidate.ID === sBaseSite;
 		})[0];
 		return oSite ? oSite.SiteDesc || "" : (sBaseSite || "");
 	}
@@ -292,8 +292,8 @@ sap.ui.define([
 			return Promise.resolve(null);
 		}
 		return Data.sites().then(function (aSites) {
-			var oSite = aSites.filter(function (o) {
-				return o.ID === sText || lower(o.SiteDesc) === lower(sText);
+			var oSite = aSites.filter(function (oCandidate) {
+				return oCandidate.ID === sText || lower(oCandidate.SiteDesc) === lower(sText);
 			})[0];
 			return oSite ? oSite.ID : sText.slice(0, 40);
 		});
@@ -368,18 +368,26 @@ sap.ui.define([
 		},
 
 		Clients: function () {
-			return Promise.all([Hrx.list("Clients"), Hrx.list("Contacts", { $filter: "ObjectType eq 'C'" }), Data.sites()]).then(function (aResults) {
+			return Promise.all([
+				Hrx.list("Clients"),
+				Hrx.list("Contacts", { $filter: "ObjectType eq 'C'" }),
+				Data.sites()
+			]).then(function (aResults) {
+				var aClients = aResults[0];
+				var aContacts = aResults[1];
+				var aSites = aResults[2];
+
 				var mContacts = {};
-				aResults[1].forEach(function (oContact) {
+				aContacts.forEach(function (oContact) {
 					mContacts[oContact.ObjectID] = mContacts[oContact.ObjectID] || oContact;
 				});
-				return aResults[0].map(function (oClient) {
+				return aClients.map(function (oClient) {
 					var oContact = mContacts[oClient.ID] || {};
 					return {
 						OrgID: oClient.OrgID_ID || "",
 						ClientKey: oClient.ID,
 						ClientDesc: oClient.ClientName || "",
-						ClientLocation: locationName(oClient.BaseSite, aResults[2]),
+						ClientLocation: locationName(oClient.BaseSite, aSites),
 						ClientLogo: Hrx.pictureUrl(oClient.LogoRootID, oClient.LogoObjectID),
 						// Contacts has no name field, so a client contact's name is not held.
 						ClientContactName: "",
@@ -391,8 +399,12 @@ sap.ui.define([
 		},
 
 		ProjectsData: function () {
-			return Promise.all([Hrx.list("Projects", { $expand: "ClientID($select=ID,ClientName,BaseSite)" }), Data.sites()]).then(function (aResults) {
+			return Promise.all([
+				Hrx.list("Projects", { $expand: "ClientID($select=ID,ClientName,BaseSite)" }),
+				Data.sites()
+			]).then(function (aResults) {
 				var aProjects = aResults[0];
+				var aSites = aResults[1];
 				return aProjects.map(function (oProject) {
 					return {
 						OrgID: oProject.OrgID_ID || "",
@@ -409,7 +421,7 @@ sap.ui.define([
 						ProjectManagerID: oProject.ProjectManagerID || "",
 						TotBillableDays: oProject.TotBillableDays || "",
 						ClientDesc: (oProject.ClientID && oProject.ClientID.ClientName) || "",
-						ClientLocation: locationName(oProject.ClientID && oProject.ClientID.BaseSite, aResults[1])
+						ClientLocation: locationName(oProject.ClientID && oProject.ClientID.BaseSite, aSites)
 					};
 				});
 			});
@@ -693,10 +705,15 @@ sap.ui.define([
 		},
 
 		missingTimesheet: function (oParams) {
-			return Promise.all([HrxTime.compliance(oParams.fromDate, oParams.toDate), Data.users()]).then(function (aResults) {
+			return Promise.all([
+				HrxTime.compliance(oParams.fromDate, oParams.toDate),
+				Data.users()
+			]).then(function (aResults) {
 				var aRows = aResults[0];
+				var aUsers = aResults[1];
+
 				var mUsers = {};
-				aResults[1].forEach(function (oUser) {
+				aUsers.forEach(function (oUser) {
 					mUsers[oUser.EmployeeID] = oUser;
 				});
 				return aRows.map(function (oRow) {
@@ -1266,10 +1283,13 @@ sap.ui.define([
 
 		"new": function (oBody) {
 			return Promise.all([orgId(), locationKey(oBody.ClientLocation)]).then(function (aResults) {
+				var sOrgId = aResults[0];
+				var sBaseSite = aResults[1];
+
 				return Hrx.create("Clients", {
-					OrgID_ID: aResults[0],
+					OrgID_ID: sOrgId,
 					ClientName: oBody.ClientDesc,
-					BaseSite: aResults[1],
+					BaseSite: sBaseSite,
 					IsActive: true
 				});
 			}).then(function (oCreated) {

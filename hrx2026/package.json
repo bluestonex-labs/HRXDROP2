@@ -15,8 +15,7 @@
     "@sap-ux/eslint-plugin-fiori-tools": "^10.0.0",
     "eslint": "^10",
     "@sap-ux/ui5-middleware-fe-mockserver": "2",
-    "ui5-task-zipper": "^3.4.x",
-    "hrx-mock-service": "file:./mock"
+    "ui5-task-zipper": "^3.4.x"
   },
   "scripts": {
     "start": "fiori run --open \"test/flp.html#app-preview\"",
@@ -31,8 +30,7 @@
     "start-variants-management": "fiori run --open \"/preview.html#app-preview\"",
     "unit-test": "fiori run --config ./ui5-mock.yaml --open \"test/unit/unitTests.qunit.html\"",
     "build:cf": "ui5 build preload --clean-dest --config ui5-deploy.yaml --include-task=generateCachebusterInfo",
-    "start-bas": "fiori run --config ./ui5-bas.yaml --open \"test/flp.html#app-preview\"",
-    "start-hrx": "fiori run --config ./ui5-hrx.yaml"
+    "start-bas": "fiori run --config ./ui5-bas.yaml --open \"test/flp.html#app-preview\""
   },
   "sapuxLayer": "CUSTOMER_BASE"
 }

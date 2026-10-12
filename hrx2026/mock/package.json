@@ -1,7 +1,0 @@
-{
-  "name": "hrx-mock-service",
-  "version": "1.0.0",
-  "private": true,
-  "description": "UI5 server middleware for /hrx in local development: proxies to the HRX CAP service when HRX_TOKEN is set, otherwise serves an in-memory copy of it.",
-  "main": "hrx-mock-middleware.js"
-}

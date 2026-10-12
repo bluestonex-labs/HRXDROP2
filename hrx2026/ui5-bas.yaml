@@ -26,6 +26,10 @@ server:
           - path: /hrx
             destination: hrxservices
             url: https://bsx-tdd-tdd-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com
+          # Profile pictures and client logos (SAP Document Management), through the
+          # subaccount's dms_service destination - as xs-app.json routes /browser once deployed.
+          - path: /browser
+            destination: dms_service
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:

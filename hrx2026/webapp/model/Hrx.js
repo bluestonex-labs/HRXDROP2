@@ -46,15 +46,34 @@ sap.ui.define([], function () {
 	var pCsrfToken = null;
 
 	function csrfToken(bRenew) {
-		if (!pCsrfToken || bRenew) {
-			pCsrfToken = fetch(ROOT + "/", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
-				.then(function (oResponse) {
-					return oResponse.headers.get("X-CSRF-Token") || "";
-				}, function () {
-					return "";
-				});
+		if (pCsrfToken && !bRenew) {
+			return pCsrfToken;
 		}
+
+		var oTokenRequest = {
+			method: "HEAD",
+			credentials: "same-origin",
+			headers: { "X-CSRF-Token": "Fetch" }
+		};
+
+		pCsrfToken = fetch(ROOT + "/", oTokenRequest).then(function (oResponse) {
+			return oResponse.headers.get("X-CSRF-Token") || "";
+		}, function () {
+			// No token to be had (e.g. a local preview without an approuter): send without one.
+			return "";
+		});
 		return pCsrfToken;
+	}
+
+	/**
+	 * The approuter answers a write whose token has expired with 403 and the header
+	 * "X-CSRF-Token: Required".
+	 * @param {Response} oResponse the answer to a write
+	 * @returns {boolean} true when the token has to be fetched again
+	 */
+	function isCsrfTokenExpired(oResponse) {
+		var sTokenHeader = oResponse.headers.get("X-CSRF-Token") || "";
+		return oResponse.status === 403 && sTokenHeader.toLowerCase() === "required";
 	}
 
 	function send(sUrl, oInit, bRetried) {
@@ -68,8 +87,8 @@ sap.ui.define([], function () {
 			}
 			return fetch(sUrl, oOptions);
 		}).then(function (oResponse) {
-			// An expired token is answered 403 "Required": fetch a fresh one and try once more.
-			if (bWrite && !bRetried && oResponse.status === 403 && /required/i.test(oResponse.headers.get("X-CSRF-Token") || "")) {
+			// An expired token: fetch a fresh one and send the write once more.
+			if (bWrite && !bRetried && isCsrfTokenExpired(oResponse)) {
 				return csrfToken(true).then(function () {
 					return send(sUrl, oInit, true);
 				});
@@ -239,10 +258,17 @@ sap.ui.define([], function () {
 		 * @returns {Promise} settles once stored
 		 */
 		upload: function (sObjectType, sObjectId, sCurrentId, oFile, sFileName) {
+			var sDocumentKey = [
+				"objectID=" + literal(String(sObjectId)),
+				"objectType=" + literal(sObjectType),
+				"objectFolderID=" + literal(String(sCurrentId || ""))
+			].join(",");
+			var sUploadUrl = ROOT + "/Documents(" + sDocumentKey + ")/content";
+
 			var oForm = new FormData();
 			oForm.append("file", oFile, sFileName);
-			return send(ROOT + "/Documents(objectID=" + literal(String(sObjectId)) + ",objectType=" + literal(sObjectType) +
-				",objectFolderID=" + literal(String(sCurrentId || "")) + ")/content", { method: "PUT", body: oForm });
+
+			return send(sUploadUrl, { method: "PUT", body: oForm });
 		},
 
 		/**
@@ -256,8 +282,11 @@ sap.ui.define([], function () {
 			if (!sObjectId) {
 				return "";
 			}
-			return new URL(sap.ui.require.toUrl("bsx/hrx/hrx2026") + "/browser/" + encodeURIComponent(sRepositoryId || PICTURE_REPOSITORY) +
-				"/root?cmisselector=content&objectId=" + encodeURIComponent(sObjectId), document.baseURI).href;
+			var sAppRoot = sap.ui.require.toUrl("bsx/hrx/hrx2026");
+			var sRepository = encodeURIComponent(sRepositoryId || PICTURE_REPOSITORY);
+			var sPicturePath = "/browser/" + sRepository + "/root?cmisselector=content&objectId=" + encodeURIComponent(sObjectId);
+
+			return new URL(sAppRoot + sPicturePath, document.baseURI).href;
 		},
 
 		/**

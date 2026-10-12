@@ -8,7 +8,6 @@ The app's backend is the **HRX service** (`bsx-hrx-srv`, OData V4, CAP), reached
 | --- | --- |
 | Deployed on BTP | the `hrxservice` destination (`xs-app.json`), which `mta.yaml` creates with the app: `OAuth2UserTokenExchange` against the service's own XSUAA (`bsx-hrx-xsuaa`), so the service receives the signed-in user |
 | Local preview (`npm run start-noflp`) | `http://localhost:4004` (`ui5.yaml`) - a local copy of the HRX service |
-| Local preview without the CAP project (`npm run start-hrx`) | `mock/` (`ui5-hrx.yaml`): with `HRX_TOKEN=<bearer token>` it proxies to the deployed service; without, an in-memory stand-in with the service's entities, functions, actions and response shapes answers (development only - not part of the app, never deployed) |
 
 Writes to `/hrx` carry an `X-CSRF-Token` (`model/Hrx.js`), as the approuter route requires.
 
