@@ -2859,11 +2859,24 @@ body.hrxApp {
 	flex-direction: column;
 }
 
-/* The link sits at the foot of the tile however long the line above it runs. */
-.hrxApp .hrxKpiLink.sapMBtn {
+/* The link sits at the foot of the tile however long the lines above it run.
+   The tile is a VBox, so its flex items are UI5's wrapper divs - the auto margin
+   has to go on the link's wrapper, not on the button inside it. */
+.hrxApp .hrxMgrKpis .hrxKpi > .sapMFlexItem:last-child {
 	margin-top: auto;
 	padding-top: 10px;
+}
+
+.hrxApp .hrxKpiLink.sapMBtn {
 	align-self: flex-start;
+}
+
+/* Room for a two-line label on every tile, so the figures stay on one line across
+   the row when only some labels wrap. */
+.hrxApp .hrxMgrKpis .hrxKpiLabel {
+	display: block;
+	line-height: 1.3;
+	min-height: 2.6em;
 }
 
 .hrxApp .hrxKpiLink .sapMBtnInner {
