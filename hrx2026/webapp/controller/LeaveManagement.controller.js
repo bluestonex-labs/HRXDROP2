@@ -17,9 +17,10 @@ sap.ui.define([
 	"../model/HrxLegacy",
 	"../model/SicknessPolicy",
 	"../model/formatter",
+	"../model/Mail",
 	"./BookLeave"
 ], function (Controller, Fragment, JSONModel, MessageToast, MessageBox, Dialog, Button, Label, Text, TextArea, VBox,
-	Backend, CurrentUser, Hrx, HrxTime, HrxLegacy, SicknessPolicy, formatter, BookLeave) {
+	Backend, CurrentUser, Hrx, HrxTime, HrxLegacy, SicknessPolicy, formatter, Mail, BookLeave) {
 	"use strict";
 
 	var DAY_FLAGS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -55,6 +56,7 @@ sap.ui.define([
 				isLastYear: false
 			}), "lmView");
 			this.setModel(new JSONModel({ rows: [], pending: [], countText: "", pendingText: "" }), "lm");
+			this.setModel(new JSONModel({}), "lmReq");
 
 			this.getOwnerComponent().getRouter().getRoute("leavemanagement")
 				.attachPatternMatched(this._onRouteMatched, this);
@@ -208,6 +210,8 @@ sap.ui.define([
 					type: oType.desc,
 					duration: this.getText(sDuration),
 					typeText: oType.desc + " · " + this.getText(sDuration),
+					comments: oFirst.RequesterComments || "",
+					approverComments: oFirst.ApproverComments || "",
 					dotHtml: "<span class=\"hrxLmDot hrxLmDot" + (oType.code || "OTHER") + "\"></span>",
 					status: oGroup.status,
 					statusText: this.getText(oStatus.key),
@@ -344,6 +348,100 @@ sap.ui.define([
 				this.getModel("lmView").setProperty("/pendingBusy", false);
 				this._showError("tcErrorApprovalAction", oError);
 			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* one request: details and cancelling                         */
+		/* =========================================================== */
+
+		/**
+		 * Shows the request clicked in Team leave. One that has not started yet -
+		 * pending or approved - can be cancelled; leave already under way or taken,
+		 * and rejected requests, are history and stay as they are.
+		 * @param {sap.ui.base.Event} oEvent the row press event
+		 */
+		onOpenRequest: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("lm").getObject();
+			var bUpcoming = oRequest.from > this._isoDate(new Date());
+			var bOpen = oRequest.status === "REQ" || oRequest.status === "APR";
+
+			this.getModel("lmReq").setData(Object.assign({}, oRequest, {
+				cancellable: bUpcoming && bOpen,
+				cancelHint: this.getText(!bOpen ? "lmCannotCancelRejected" : "lmCannotCancelStarted"),
+				saving: false
+			}));
+			this._openDialog("_pRequestDialog", "bsx.hrx.hrx2026.fragment.LeaveRequestDialog");
+		},
+
+		onCloseRequest: function () {
+			this._closeDialog("_pRequestDialog");
+		},
+
+		/**
+		 * Cancels the request once confirmed. The service has no cancelled status, so
+		 * the request's rows are removed - as My Leave's delete does.
+		 */
+		onCancelRequest: function () {
+			var oReqModel = this.getModel("lmReq");
+			var oRequest = oReqModel.getData();
+			var sKeep = this.getText("lmKeepLeave");
+
+			MessageBox.confirm(this.getText("lmConfirmCancel", [oRequest.Name, oRequest.dates, oRequest.typeText]), {
+				title: this.getText("lmCancelLeave"),
+				icon: MessageBox.Icon.WARNING,
+				actions: [this.getText("lmCancelLeave"), sKeep],
+				emphasizedAction: sKeep,
+				onClose: function (sAction) {
+					if (sAction !== this.getText("lmCancelLeave")) {
+						return;
+					}
+					oReqModel.setProperty("/saving", true);
+					Promise.all(oRequest.ids.map(function (sId) {
+						return Hrx.remove("Leaves(" + sId + ")");
+					})).then(function () {
+						oReqModel.setProperty("/saving", false);
+						this._closeDialog("_pRequestDialog");
+						this._load();
+						this._offerCancelEmail(oRequest);
+					}.bind(this)).catch(function (oError) {
+						oReqModel.setProperty("/saving", false);
+						// Some days may have gone before the failure; show what is left.
+						this._load();
+						this._showError("lmErrorCancel", oError);
+					}.bind(this));
+				}.bind(this)
+			});
+		},
+
+		/**
+		 * Says the leave was cancelled and offers an Outlook draft to the employee.
+		 * Nothing is sent unless the manager sends the draft.
+		 * @param {object} oRequest the cancelled request
+		 */
+		_offerCancelEmail: function (oRequest) {
+			var sTell = this.getText("lmLetThemKnow");
+
+			MessageBox.success(this.getText("lmCancelled", [oRequest.Name, oRequest.dates]), {
+				actions: oRequest.Email ? [sTell, MessageBox.Action.CLOSE] : [MessageBox.Action.CLOSE],
+				emphasizedAction: oRequest.Email ? sTell : MessageBox.Action.CLOSE,
+				onClose: function (sAction) {
+					if (sAction !== sTell) {
+						return;
+					}
+					var oProfile = this._oProfile || {};
+					Mail.open({
+						to: oRequest.Email,
+						subject: this.getText("lmCancelSubject", [oRequest.dates]),
+						body: this.getText("lmCancelBody", [
+							(oRequest.Name || "").split(" ")[0],
+							oRequest.type,
+							oRequest.dates,
+							oRequest.daysText,
+							oProfile.name || ""
+						])
+					});
+				}.bind(this)
+			});
 		},
 
 		/* =========================================================== */

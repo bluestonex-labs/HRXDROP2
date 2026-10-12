@@ -102,7 +102,8 @@
 							<Column hAlign="End" width="9rem"><Text text="{i18n>mgrColStatus}" /></Column>
 						</columns>
 						<items>
-							<ColumnListItem>
+							<!-- Click a request to see it, and to cancel one that has not started -->
+							<ColumnListItem type="Active" press=".onOpenRequest">
 								<cells>
 									<HBox alignItems="Center">
 										<Avatar initials="{lm>initials}" displaySize="XS" class="sapUiTinyMarginEnd" />
@@ -110,7 +111,7 @@
 									</HBox>
 									<Text text="{lm>dates}" />
 									<Text text="{lm>daysNum}" />
-									<HBox alignItems="Center">
+									<HBox alignItems="Center" wrap="Wrap" class="hrxLmType">
 										<core:HTML content="{lm>dotHtml}" />
 										<Text text="{lm>type}" />
 										<Text text="{lm>duration}" class="hrxLmDur" />

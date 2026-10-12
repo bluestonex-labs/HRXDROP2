@@ -1644,7 +1644,7 @@ body.hrxApp {
    but leaves the appointment body on the theme default. Both are set to the
    same values here so the appointment renders as one solid block matching the
    legend, not a two-tone border/fill split. */
-.hrxMyLeave, .hrxTeamCalendar, .hrxLeaveManagement {
+.hrxMyLeave, .hrxTeamCalendar, .hrxLeaveManagement, .hrxLmReq {
 	--sapLegendColor1: #96C2FA; /* Holiday */
 	--sapLegendColor2: #BB98C5; /* Sick */
 	--sapLegendColor3: #EB7F5D; /* Unpaid */
@@ -3003,6 +3003,11 @@ body.hrxApp {
 .hrxApp .hrxLmDotUNPDL { background: var(--sapLegendColor3); }
 .hrxApp .hrxLmDotCOMPL { background: var(--sapLegendColor4); }
 
+/* Type and duration wrap as words, never letter by letter in a narrow column. */
+.hrxApp .hrxLmType .sapMText {
+	white-space: nowrap;
+}
+
 .hrxApp .hrxLmDur {
 	margin-left: 8px;
 	font-size: 12px;
@@ -3012,4 +3017,18 @@ body.hrxApp {
 .hrxApp .hrxLeaveManagement .hrxMgrApprRow > .sapMFlexItem:nth-child(2) {
 	flex: 1 1 auto !important;
 	min-width: 0 !important;
+}
+
+.hrxApp .hrxLmReq .sapMFlexItem:has(> .hrxLmReqStatus) {
+	margin-left: auto;
+}
+
+.hrxApp .hrxLmReqLine {
+	gap: 12px;
+	padding: 8px 0;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxLmReqLine > .sapMFlexItem:first-child {
+	flex: 0 0 9rem !important;
 }
