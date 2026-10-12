@@ -3037,5 +3037,5 @@ body.hrxApp {
    whose alert strip otherwise sits right against the Record sickness bar. */
 .hrxApp .hrxLmBody,
 .hrxApp .hrxSkBody {
-	margin-top: 20px;
+	margin-top: 10px;
 }
