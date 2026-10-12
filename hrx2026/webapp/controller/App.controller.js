@@ -39,12 +39,13 @@ sap.ui.define([
 	// reports, which during a transition is still the page being left behind.
 	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport"];
 
-	// Which nav row to light up for the pages that are reached from the App Explorer.
+	// Which nav row to light up for pages that have none of their own: the admin
+	// apps are opened from the Admin page, so Admin stays lit while one is open.
 	var mRouteToNavKey = {
-		resources: "explorer",
-		clients: "explorer",
-		projects: "explorer",
-		missingtimesheets: "explorer",
+		resources: "admin",
+		clients: "admin",
+		projects: "admin",
+		missingtimesheets: "admin",
 		sickness: "admin",
 		timesheetreport: "admin"
 	};
