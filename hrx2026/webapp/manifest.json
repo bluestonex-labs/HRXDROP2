@@ -42,6 +42,7 @@
   },
   "sap.ui": {
     "technology": "UI5",
+    "fullWidth": true,
     "icons": {
       "icon": "",
       "favIcon": "",
