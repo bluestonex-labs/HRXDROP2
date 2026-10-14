@@ -258,10 +258,15 @@ sap.ui.define([], function () {
 		 * @returns {Promise} settles once stored
 		 */
 		upload: function (sObjectType, sObjectId, sCurrentId, oFile, sFileName) {
+			// The Documents key fields are strings, so every value is quoted - even one
+			// shaped like a GUID, which literal() would leave bare.
+			var stringLiteral = function (sValue) {
+				return "'" + String(sValue || "").replace(/'/g, "''") + "'";
+			};
 			var sDocumentKey = [
-				"objectID=" + literal(String(sObjectId)),
-				"objectType=" + literal(sObjectType),
-				"objectFolderID=" + literal(String(sCurrentId || ""))
+				"objectID=" + stringLiteral(sObjectId),
+				"objectType=" + stringLiteral(sObjectType),
+				"objectFolderID=" + stringLiteral(sCurrentId)
 			].join(",");
 			var sUploadUrl = ROOT + "/Documents(" + sDocumentKey + ")/content";
 

@@ -147,6 +147,7 @@
 							class="sapUiMediumMarginEnd" />
 						<VBox>
 							<Title text="{mrDetail>/FullName}" level="H3" />
+							<Text text="{mrDetail>/JobTitle}" visible="{= !!${mrDetail>/JobTitle} }" class="hrxResourceMeta" />
 							<Text text="{mrDetail>/Email}" class="hrxResourceMeta" />
 							<HBox alignItems="Center" class="sapUiTinyMarginTop">
 								<ObjectStatus
@@ -196,6 +197,14 @@
 
 										<Label text="{i18n>mrFieldLastName}" />
 										<Input id="resourceLastName" value="{mrDetail>/LName}" />
+
+										<Label text="{i18n>mrFieldJobTitle}" visible="{services>/jobTitle}" />
+										<Input
+											id="resourceJobTitle"
+											value="{mrDetail>/JobTitle}"
+											maxLength="100"
+											visible="{services>/jobTitle}"
+											placeholder="{i18n>mrFieldJobTitlePlaceholder}" />
 
 										<Label text="{i18n>mrFieldEmail}" />
 										<Text id="resourceEmail" text="{mrDetail>/Email}" />

@@ -113,6 +113,16 @@ sap.ui.define([
 		},
 
 		/**
+		 * Puts a value into an i18n text with one placeholder, e.g. "Day cost {0}".
+		 * @param {string} sText the text, with {0}
+		 * @param {string} sValue the value
+		 * @returns {string} the text with the value in it
+		 */
+		textWithValue: function (sText, sValue) {
+			return String(sText || "").replace("{0}", sValue || "");
+		},
+
+		/**
 		 * @param {string|number} vAmount an amount
 		 * @param {string} sCurrency the currency, defaults to GBP
 		 * @returns {string} the amount with a currency symbol

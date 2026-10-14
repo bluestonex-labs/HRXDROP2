@@ -576,6 +576,7 @@ sap.ui.define([
 				EmpID: oAssignment.EmpID,
 				BillingID: oAssignment.BillingID || "",
 				DayRate: formatter.clean(oAssignment.DayRate),
+				DayCost: formatter.clean(oAssignment.DayCost),
 				BillableDays: formatter.clean(oAssignment.BillableDays),
 				StartDate: formatter.toDate(oAssignment.AssignmentStartDate || oAssignment.StartDate),
 				IsActive: oAssignment.IsActive || "Y",
@@ -633,6 +634,7 @@ sap.ui.define([
 				AssignmentID: oForm.AssignmentID,
 				BillingID: oForm.BillingID,
 				DayRate: String(fDayRate),
+				DayCost: String(oForm.DayCost || ""),
 				BillableDays: String(fDays),
 				TotalCharge: String(fDayRate * fDays),
 				StartDate: this._isoDate(oForm.StartDate),
@@ -646,6 +648,7 @@ sap.ui.define([
 				ProjectID: oDetail.ProjectKey,
 				BillingID: oForm.BillingID,
 				DayRate: String(fDayRate),
+				DayCost: String(oForm.DayCost || ""),
 				Currency: "GBP",
 				BillableDays: String(fDays),
 				TotalCharge: String(fDayRate * fDays),
@@ -803,11 +806,16 @@ sap.ui.define([
 		},
 
 		/**
-		 * Streams a stored attachment back to the browser as a download.
+		 * Opens a stored attachment: from SAP Document Management when it is kept there
+		 * (url), otherwise from the content the original service sends with the list.
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 */
 		onDownloadAttachment: function (oEvent) {
 			var oAttachment = oEvent.getSource().getBindingContext("mpTabs").getObject();
+			if (oAttachment.url) {
+				window.open(oAttachment.url, "_blank", "noopener");
+				return;
+			}
 			var sContent = oAttachment.Attachment || "";
 
 			if (!sContent) {

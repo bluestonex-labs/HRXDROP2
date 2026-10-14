@@ -340,7 +340,8 @@ sap.ui.define([
 				// Spelt out here rather than in a formatter so it can name the period it
 				// counts: "5 days away" on its own read as a countdown to someone's next
 				// holiday rather than as leave booked in the month on screen.
-				LeaveSummary: this._awayText(iDays),
+				// The job title, when HRX holds one, leads the line under the name.
+				LeaveSummary: (oUser.JobTitle ? oUser.JobTitle + " · " : "") + this._awayText(iDays),
 				Leave: aAppointments
 			};
 		},

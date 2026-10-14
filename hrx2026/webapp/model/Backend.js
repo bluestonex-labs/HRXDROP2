@@ -192,6 +192,9 @@ sap.ui.define([
 		 * @returns {boolean} true when the service has that entity set
 		 */
 		hasEntitySet: function (oModel, sPath) {
+			if (USE_HRX && HrxLegacy.answers(sPath)) {
+				return true;
+			}
 			var sName = String(sPath).replace(/^\//, "").split(/[(/]/)[0];
 			var oMetadata = oModel.getServiceMetadata && oModel.getServiceMetadata();
 			var aSchemas = (oMetadata && oMetadata.dataServices && oMetadata.dataServices.schema) || [];

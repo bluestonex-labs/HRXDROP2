@@ -1,8 +1,10 @@
 sap.ui.define([
     "sap/ui/core/UIComponent",
+    "sap/ui/model/json/JSONModel",
     "bsx/hrx/hrx2026/model/models",
-    "bsx/hrx/hrx2026/model/CurrentUser"
-], (UIComponent, models, CurrentUser) => {
+    "bsx/hrx/hrx2026/model/CurrentUser",
+    "bsx/hrx/hrx2026/model/HrxServices"
+], (UIComponent, JSONModel, models, CurrentUser, HrxServices) => {
     "use strict";
 
     return UIComponent.extend("bsx.hrx.hrx2026.Component", {
@@ -65,8 +67,13 @@ sap.ui.define([
                 };
             }.bind(this));
 
-            // enable routing
-            this.getRouter().initialize();
+            // Which HRX services are deployed decides how several pages load, so routing
+            // waits for it (one small $metadata read, which never fails the app).
+            this.setModel(new JSONModel(HrxServices.flags()), "services");
+            HrxServices.load().then(function () {
+                this.getModel("services").setData(HrxServices.flags());
+                this.getRouter().initialize();
+            }.bind(this));
         },
 
         exit() {

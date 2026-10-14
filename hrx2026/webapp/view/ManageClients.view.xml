@@ -237,6 +237,7 @@
 								tooltip="{i18n>mcTabTeam}">
 								<MessageStrip
 									text="{i18n>serviceNeededClientTeam}"
+									visible="{= !${services>/clientUsers} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
@@ -295,6 +296,7 @@
 								tooltip="{i18n>mcTabSla}">
 								<MessageStrip
 									text="{i18n>serviceNeededClientSla}"
+									visible="{= !${services>/clientSlas} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
@@ -347,6 +349,7 @@
 								tooltip="{i18n>mcTabComponents}">
 								<MessageStrip
 									text="{i18n>serviceNeededClientComponents}"
+									visible="{= !${services>/clientComponents} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
@@ -433,6 +436,7 @@
 								tooltip="{i18n>mcTabServices}">
 								<MessageStrip
 									text="{i18n>serviceNeededClientApps}"
+									visible="{= !${services>/clientApplications} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"

@@ -56,6 +56,15 @@
 					<Label text="{i18n>mpFieldDayRate}" required="true" />
 					<Input id="assignmentDayRate" value="{mpForm>/DayRate}" type="Number" description="GBP" />
 
+					<Label text="{i18n>mpFieldDayCost}" visible="{services>/dayCost}" />
+					<Input
+						id="assignmentDayCost"
+						value="{mpForm>/DayCost}"
+						type="Number"
+						description="GBP"
+						visible="{services>/dayCost}"
+						placeholder="{i18n>mpFieldDayCostPlaceholder}" />
+
 					<Label text="{i18n>mpFieldBillableDays}" required="true" />
 					<Input id="assignmentDays" value="{mpForm>/BillableDays}" type="Number" />
 

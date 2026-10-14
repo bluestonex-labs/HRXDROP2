@@ -1,8 +1,8 @@
 sap.ui.define([
-	"./Backend",
 	"./Hrx",
+	"./HrxServices",
 	"./SicknessPolicy"
-], function (Backend, Hrx, SicknessPolicy) {
+], function (Hrx, HrxServices, SicknessPolicy) {
 	"use strict";
 
 	/*
@@ -13,14 +13,12 @@ sap.ui.define([
 	 * on My Leave, the team calendar and in the timesheet's expected hours. One request
 	 * - its rows share a LeaveGrpID - is one absence instance.
 	 *
-	 * The HRX service has nowhere to keep the rest - trigger reviews (follow-up emails,
-	 * dismissals) and return-to-work checklists - so those still go to ENDPOINT, a
-	 * service still to be built. Unset, their reads answer with nothing and their
-	 * writes fail with a NOT_BOUND error the page reports. Once that service exists,
-	 * set ENDPOINT - e.g. Backend.SERVICE_ROOT + "/hrx/sickness.xsjs" - and map its
-	 * commands below if they differ.
+	 * What managers do about them is kept by the HRX service too, once it has the
+	 * sickness services (see HrxServices): trigger reviews (SicknessReviews,
+	 * reviewSicknessTrigger) and return-to-work processes (ReturnsToWork with their
+	 * steps). Until then their reads answer with nothing and their writes fail with a
+	 * NOT_BOUND error the page reports.
 	 */
-	var ENDPOINT = null;
 
 	// RequesterComments holds the reason and any notes; it is 255 characters long.
 	var COMMENT_LENGTH = 255;
@@ -44,27 +42,18 @@ sap.ui.define([
 		return (oProfile && oProfile.empID) || null;
 	}
 
+	function isReviewBound() {
+		return HrxServices.has("SicknessReviews");
+	}
+
 	function notBound() {
 		var oError = new Error("The sickness service is not connected yet.");
 		oError.notBound = true;
 		return Promise.reject(oError);
 	}
 
-	function get(sCmd, oParams) {
-		if (!ENDPOINT) {
-			return Promise.resolve([]);
-		}
-		return Backend.getJson(Backend.query(ENDPOINT, Object.assign({ cmd: sCmd }, oParams)))
-			.then(function (oJson) {
-				return (oJson && oJson.data) || [];
-			});
-	}
-
-	function post(sCmd, oPayload) {
-		if (!ENDPOINT) {
-			return notBound();
-		}
-		return Backend.postJson(Backend.query(ENDPOINT, { cmd: sCmd }), oPayload);
+	function fullName(oEmployee) {
+		return oEmployee ? ((oEmployee.FirstName || "") + " " + (oEmployee.LastName || "")).trim() : "";
 	}
 
 	return {
@@ -79,9 +68,7 @@ sap.ui.define([
 		/**
 		 * @returns {boolean} true once trigger reviews and return to work can be saved
 		 */
-		isReviewBound: function () {
-			return !!ENDPOINT;
-		},
+		isReviewBound: isReviewBound,
 
 		/**
 		 * Every sickness absence starting in the range, for the whole organisation.
@@ -182,13 +169,18 @@ sap.ui.define([
 					})
 				});
 			}).then(function (vResult) {
-				// The return-to-work checklist has nowhere to go yet; the absence itself is saved.
-				if (ENDPOINT) {
-					return post("openRtw", { EmpID: oAbsence.EmpID, RtwSteps: oAbsence.RtwSteps }).then(function () {
-						return vResult;
-					});
+				// Opens the return-to-work checklist, or carries on the employee's open one.
+				if (!isReviewBound()) {
+					return vResult;
 				}
-				return vResult;
+				return Hrx.callAction("openReturnToWork", {
+					EmployeeID: oAbsence.EmpID,
+					Steps: (oAbsence.RtwSteps || []).map(function (oStep) {
+						return { StepNo: oStep.StepNo, Text: oStep.Text, Done: oStep.Done === "Y" || oStep.Done === true };
+					})
+				}).then(function () {
+					return vResult;
+				});
 			});
 		},
 
@@ -202,49 +194,96 @@ sap.ui.define([
 		 * ReviewedOn (when it was logged - a timestamp, or "yyyy-MM-dd")
 		 */
 		getTriggerReviews: function (sOrgId, iFiscalYear) {
-			return get("triggerReviews", { OrgID: sOrgId, FiscalYear: iFiscalYear });
+			if (!isReviewBound()) {
+				return Promise.resolve([]);
+			}
+			return Hrx.list("SicknessReviews", { $filter: "FiscalYear eq " + iFiscalYear, $orderby: "ReviewedOn" }).then(function (aReviews) {
+				return aReviews.map(function (oReview) {
+					return {
+						EmpID: oReview.Employee_EmployeeID,
+						Status: oReview.Status,
+						Note: oReview.Note || "",
+						InstanceCount: oReview.InstanceCount || 0,
+						ReviewedBy: oReview.ReviewedBy || "",
+						ReviewedOn: oReview.ReviewedOn
+					};
+				});
+			});
 		},
 
 		/**
 		 * Logs an action on a trigger against the employee's attendance record. Only a
-		 * dismissal closes the trigger; an email leaves it open, marked as emailed.
-		 * @param {object} oReview OrgID, EmpID, FiscalYear, Status ("EMAILED"|"DISMISSED"),
-		 * Note (the dismissal reason, or the email sent), InstanceCount and ReviewedBy
-		 * @returns {Promise<object>} the service's answer
+		 * dismissal closes the trigger; an email leaves it open, marked as emailed. The
+		 * service records who did it from the sign-in.
+		 * @param {object} oReview EmpID, FiscalYear, Status ("EMAILED"|"DISMISSED"),
+		 * Note (the dismissal reason, or the email sent) and InstanceCount
+		 * @returns {Promise} settles once logged
 		 */
 		reviewTrigger: function (oReview) {
-			return post("reviewTrigger", oReview);
+			if (!isReviewBound()) {
+				return notBound();
+			}
+			return Hrx.callAction("reviewSicknessTrigger", {
+				EmployeeID: oReview.EmpID,
+				FiscalYear: oReview.FiscalYear,
+				Status: oReview.Status,
+				Note: oReview.Note || "",
+				InstanceCount: oReview.InstanceCount || 0
+			});
 		},
 
 		/**
 		 * Every return-to-work process still in progress.
-		 * @param {string} sOrgId the organisation
 		 * @returns {Promise<Array<object>>} processes: RtwID, EmpID, Name, Email, Title
 		 * (job title) and Steps - an array of { StepNo, Text, Done ("Y"/"N") }
 		 */
-		getReturnsToWork: function (sOrgId) {
-			return get("returnsToWork", { OrgID: sOrgId });
+		getReturnsToWork: function () {
+			if (!isReviewBound()) {
+				return Promise.resolve([]);
+			}
+			var sEmployeeFields = "EmployeeID,FirstName,LastName,WorkEmail" + (HrxServices.hasProperty("Users", "JobTitle") ? ",JobTitle" : "");
+			return Hrx.list("ReturnsToWork", {
+				$filter: "Status eq 'OPEN'",
+				$expand: "Steps,Employee($select=" + sEmployeeFields + ")"
+			}).then(function (aProcesses) {
+				return aProcesses.map(function (oProcess) {
+					var oEmployee = oProcess.Employee || {};
+					return {
+						RtwID: oProcess.ID,
+						EmpID: oProcess.Employee_EmployeeID,
+						Name: fullName(oEmployee),
+						Email: String(oEmployee.WorkEmail || "").toLowerCase(),
+						Title: oEmployee.JobTitle || "",
+						Steps: (oProcess.Steps || []).map(function (oStep) {
+							return { StepNo: oStep.StepNo, Text: oStep.Text, Done: oStep.Done ? "Y" : "N" };
+						})
+					};
+				});
+			});
 		},
 
 		/**
 		 * @param {string} sRtwId the process
 		 * @param {number} iStepNo the step to mark done
-		 * @param {string} sBy the signed-in admin's email
-		 * @returns {Promise<object>} the service's answer
+		 * @returns {Promise} settles once saved
 		 */
-		completeRtwStep: function (sRtwId, iStepNo, sBy) {
-			return post("completeRtwStep", { RtwID: sRtwId, StepNo: iStepNo, CompletedBy: sBy });
+		completeRtwStep: function (sRtwId, iStepNo) {
+			if (!isReviewBound()) {
+				return notBound();
+			}
+			return Hrx.callAction("completeReturnToWorkStep", { ReturnToWorkID: sRtwId, StepNo: iStepNo });
 		},
 
 		/**
-		 * Closes a return-to-work process. The page only offers this once every step is
-		 * done; the service should refuse it otherwise.
+		 * Closes a return-to-work process. The service refuses it while any step is not done.
 		 * @param {string} sRtwId the process
-		 * @param {string} sBy the signed-in admin's email
-		 * @returns {Promise<object>} the service's answer
+		 * @returns {Promise} settles once closed
 		 */
-		completeRtw: function (sRtwId, sBy) {
-			return post("completeRtw", { RtwID: sRtwId, CompletedBy: sBy });
+		completeRtw: function (sRtwId) {
+			if (!isReviewBound()) {
+				return notBound();
+			}
+			return Hrx.callAction("completeReturnToWork", { ReturnToWorkID: sRtwId });
 		}
 	};
 });

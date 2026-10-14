@@ -1,32 +1,36 @@
 sap.ui.define([
-	"./Backend"
-], function (Backend) {
+	"./Hrx",
+	"./HrxServices"
+], function (Hrx, HrxServices) {
 	"use strict";
 
 	/*
-	 * The documents backend - the one file to touch when the service is delivered.
+	 * The documents backend: policies and other documents published to the whole
+	 * organisation, and who has acknowledged them.
 	 *
-	 * Documents live in SAP Document Management Service (DMS) on BTP; what the pages
-	 * also need - each document's category, who it is for, whether it must be
-	 * acknowledged, and who has acknowledged it - has to be recorded alongside. This
-	 * contract covers both, so whoever builds the service can split them however
-	 * suits (files in DMS, the rest in the HRX service, say) behind it.
+	 * Served by the HRX service (Policies, PolicyAcknowledgements, acknowledgePolicy,
+	 * removePolicy); the file itself is kept in SAP Document Management and opened
+	 * through the app's /browser route. Until the HRX service has these (see
+	 * HrxServices), reads answer with nothing and writes fail with a NOT_BOUND error
+	 * the pages report as "not connected yet".
 	 *
-	 * It is not built yet, so ENDPOINT is unset: reads answer with nothing (the pages
-	 * show their empty states), writes fail with a NOT_BOUND error the pages report as
-	 * "not connected yet", and a document has no file to open. Once the service
-	 * exists, set ENDPOINT - e.g. Backend.SERVICE_ROOT + "/hrx/documents.xsjs" or a
-	 * route to the CAP service - and map its commands or field names below if they
-	 * differ, so the pages keep receiving the shapes documented on each method.
-	 *
-	 * Assumed to follow the other xsjs services: a "cmd" query parameter picks the
-	 * operation, and each answer is an envelope of { msgType: "S", data: ... }.
+	 * The shapes handed to the pages are the ones documented on each method; the
+	 * mapping from the HRX entities is in toDocument() and toAcknowledgement().
 	 */
-	var ENDPOINT = null;
 
 	// What the upload dialog accepts - checked in the browser before anything is sent.
 	var MAX_FILE_BYTES = 10 * 1024 * 1024;
 	var FILE_TYPES = ["pdf", "doc", "docx"];
+
+	// Every document is for the whole organisation.
+	var EVERYONE = "ALL";
+
+	// DocumentID -> where its file opens, from the last getDocuments().
+	var mFileUrls = {};
+
+	function isBound() {
+		return HrxServices.has("Policies");
+	}
 
 	function notBound() {
 		var oError = new Error("The document service is not connected yet.");
@@ -34,21 +38,27 @@ sap.ui.define([
 		return Promise.reject(oError);
 	}
 
-	function get(sCmd, oParams) {
-		if (!ENDPOINT) {
-			return Promise.resolve([]);
-		}
-		return Backend.getJson(Backend.query(ENDPOINT, Object.assign({ cmd: sCmd }, oParams)))
-			.then(function (oJson) {
-				return (oJson && oJson.data) || [];
-			});
+	function toDocument(oPolicy) {
+		return {
+			DocumentID: oPolicy.ID,
+			Name: oPolicy.Name || "",
+			Category: oPolicy.Category || "Policy",
+			Version: oPolicy.Version || "1.0",
+			PublishedOn: oPolicy.PublishedOn || "",
+			PublishedBy: oPolicy.PublishedBy || "",
+			Visibility: EVERYONE,
+			AckRequired: oPolicy.AckRequired !== false,
+			FileName: oPolicy.FileName || "",
+			MimeType: oPolicy.MimeType || ""
+		};
 	}
 
-	function post(sCmd, oPayload) {
-		if (!ENDPOINT) {
-			return notBound();
-		}
-		return Backend.postJson(Backend.query(ENDPOINT, { cmd: sCmd }), oPayload);
+	function toAcknowledgement(oAcknowledgement) {
+		return {
+			DocumentID: oAcknowledgement.Policy_ID,
+			EmpID: oAcknowledgement.Employee_EmployeeID,
+			AcknowledgedOn: oAcknowledgement.AcknowledgedOn
+		};
 	}
 
 	return {
@@ -57,82 +67,99 @@ sap.ui.define([
 		FILE_TYPES: FILE_TYPES,
 
 		/**
-		 * @returns {boolean} true once the service is bound
+		 * @returns {boolean} true once the HRX service has the policy services
 		 */
-		isBound: function () {
-			return !!ENDPOINT;
-		},
+		isBound: isBound,
 
 		/**
 		 * Every published document - removed ones are left out.
-		 * @param {string} sOrgId the organisation
 		 * @returns {Promise<Array<object>>} documents: DocumentID, Name, Category
 		 * ("Policy" | "Procedure" | "Handbook" | "Form" | "Other"), Version, PublishedOn
-		 * ("yyyy-MM-dd"), PublishedBy, Visibility ("ALL" for every employee, otherwise
-		 * the site ID it is for), AckRequired (true/false), FileName and MimeType
+		 * ("yyyy-MM-dd"), PublishedBy, Visibility (always "ALL"), AckRequired (true/false),
+		 * FileName and MimeType
 		 */
-		getDocuments: function (sOrgId) {
-			return get("documents", { OrgID: sOrgId });
+		getDocuments: function () {
+			if (!isBound()) {
+				return Promise.resolve([]);
+			}
+			return Hrx.list("Policies", { $filter: "IsRemoved eq false or IsRemoved eq null" }).then(function (aPolicies) {
+				mFileUrls = {};
+				aPolicies.forEach(function (oPolicy) {
+					mFileUrls[oPolicy.ID] = Hrx.pictureUrl(oPolicy.FileRootID, oPolicy.FileObjectID);
+				});
+				return aPolicies.map(toDocument);
+			});
 		},
 
 		/**
 		 * Every acknowledgement of a published document.
-		 * @param {string} sOrgId the organisation
 		 * @returns {Promise<Array<object>>} acknowledgements: DocumentID, EmpID and
 		 * AcknowledgedOn
 		 */
-		getAcknowledgements: function (sOrgId) {
-			return get("acknowledgements", { OrgID: sOrgId });
+		getAcknowledgements: function () {
+			if (!isBound()) {
+				return Promise.resolve([]);
+			}
+			return Hrx.list("PolicyAcknowledgements", { $select: "Policy_ID,Employee_EmployeeID,AcknowledgedOn" })
+				.then(function (aAcknowledgements) {
+					return aAcknowledgements.map(toAcknowledgement);
+				});
 		},
 
 		/**
-		 * Records that the signed-in employee has read and acknowledged a document.
-		 * @param {object} oAck OrgID, DocumentID and EmpID
-		 * @returns {Promise<object>} the service's answer
+		 * Records that the signed-in employee has read and acknowledged a document (the
+		 * service takes the employee from the sign-in).
+		 * @param {object} oAck DocumentID
+		 * @returns {Promise} settles once recorded
 		 */
 		acknowledge: function (oAck) {
-			return post("acknowledge", oAck);
+			if (!isBound()) {
+				return notBound();
+			}
+			return Hrx.callAction("acknowledgePolicy", { PolicyID: oAck.DocumentID });
 		},
 
 		/**
-		 * Publishes a document: the file goes to DMS, the rest is recorded with it.
-		 * Sent as multipart/form-data, the file under "file" and the other fields
-		 * alongside it.
-		 * @param {object} oDocument OrgID, Name, Category, Visibility, AckRequired,
-		 * PublishedBy (the signed-in admin's email) and file (a browser File)
-		 * @returns {Promise<object>} the service's answer, with data.DocumentID
+		 * Publishes a document to the whole organisation: the service records it (and who
+		 * published it, and when), then the file is stored in SAP Document Management.
+		 * @param {object} oDocument Name, Category, AckRequired and file (a browser File)
+		 * @returns {Promise<object>} { data: { DocumentID } }
 		 */
 		upload: function (oDocument) {
-			if (!ENDPOINT) {
+			if (!isBound()) {
 				return notBound();
 			}
-			var oForm = new FormData();
-			Object.keys(oDocument).forEach(function (sKey) {
-				if (sKey !== "file") {
-					oForm.append(sKey, String(oDocument[sKey]));
-				}
+			return Hrx.create("Policies", {
+				Name: oDocument.Name,
+				Category: oDocument.Category,
+				AckRequired: oDocument.AckRequired === true || oDocument.AckRequired === "true"
+			}).then(function (oPolicy) {
+				return Hrx.upload("Policy", oPolicy.ID, "", oDocument.file, oDocument.file.name).then(function () {
+					return { data: { DocumentID: oPolicy.ID } };
+				});
 			});
-			oForm.append("file", oDocument.file, oDocument.file.name);
-			return Backend.request(Backend.query(ENDPOINT, { cmd: "upload" }), { method: "POST", body: oForm });
 		},
 
 		/**
 		 * Unpublishes a document: it disappears for employees, and its acknowledgement
 		 * history is kept.
-		 * @param {object} oRemoval OrgID, DocumentID and RemovedBy (the signed-in admin's email)
-		 * @returns {Promise<object>} the service's answer
+		 * @param {object} oRemoval DocumentID
+		 * @returns {Promise} settles once removed
 		 */
 		remove: function (oRemoval) {
-			return post("remove", oRemoval);
+			if (!isBound()) {
+				return notBound();
+			}
+			return Hrx.callAction("removePolicy", { PolicyID: oRemoval.DocumentID });
 		},
 
 		/**
-		 * Where a document's file can be opened - streamed from DMS by the service.
+		 * Where a document's file opens (SAP Document Management, through /browser).
 		 * @param {string} sDocumentId the document
-		 * @returns {string|null} the url, or null while the service is not connected
+		 * @returns {string|null} the url, or null when it has no file
 		 */
 		fileUrl: function (sDocumentId) {
-			return ENDPOINT ? Backend.query(ENDPOINT, { cmd: "file", DocumentID: sDocumentId }) : null;
+			return mFileUrls[sDocumentId] || null;
 		}
 	};
 });

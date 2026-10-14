@@ -11,9 +11,9 @@ sap.ui.define([
 	"../model/SicknessPolicy",
 	"../model/SicknessService",
 	"../model/formatter",
-	"../model/Mail"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast,
-	Backend, CurrentUser, SicknessPolicy, SicknessService, formatter, Mail) {
+	"../model/Mail",
+	"../model/Reminders"
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, SicknessPolicy, SicknessService, formatter, Mail, Reminders) {
 	"use strict";
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -428,10 +428,18 @@ sap.ui.define([
 				return;
 			}
 
+			var sSubject = this.getText("skFollowUpSubject");
 			var sBody = this.getText("skFollowUpBody", [oTrigger.firstName, oTrigger.instances]);
-			Mail.open({ to: oTrigger.Email, subject: this.getText("skFollowUpSubject"), body: sBody });
 
-			this._review(oTrigger, "EMAILED", sBody).then(function () {
+			Reminders.send({
+				kind: "Sickness",
+				employeeIds: [oTrigger.EmpID],
+				subject: sSubject,
+				message: sBody,
+				draft: { to: oTrigger.Email, subject: sSubject, body: sBody }
+			}).then(function () {
+				return this._review(oTrigger, "EMAILED", sBody);
+			}.bind(this)).then(function () {
 				MessageToast.show(this.getText("skFollowUpLogged"));
 			}.bind(this)).catch(function (oError) {
 				this._showError("skErrorFollowUp", oError);

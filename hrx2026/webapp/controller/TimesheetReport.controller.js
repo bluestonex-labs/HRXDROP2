@@ -13,9 +13,9 @@ sap.ui.define([
 	"../model/TimesheetReport",
 	"../model/TimesheetReportService",
 	"../model/formatter",
-	"../model/Mail"
-], function (Controller, JSONModel, MessageBox, MessageToast, Column, ColumnListItem, Text, HBox, Icon,
-	CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail) {
+	"../model/Mail",
+	"../model/Reminders"
+], function (Controller, JSONModel, MessageBox, MessageToast, Column, ColumnListItem, Text, HBox, Icon, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
 	"use strict";
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -847,8 +847,8 @@ sap.ui.define([
 		},
 
 		/**
-		 * Opens the admin's own mail app with a reminder to one person. Nothing records
-		 * that it was sent: there is no reminder service yet.
+		 * Reminds one person to complete their timesheet: sent by the HRX service, or a
+		 * draft in the admin's own mail app where it cannot send.
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 */
 		onRemind: function (oEvent) {
@@ -857,16 +857,14 @@ sap.ui.define([
 				MessageBox.error(this.getText("trNoEmail", [oRow.Name]));
 				return;
 			}
-			Mail.open({
-				to: oRow.Email,
-				subject: this._remindSubject(),
-				body: this.getText("trRemindBody", [oRow.Name.split(/\s+/)[0], this._weekText(),
-					this._hours(oRow.bookedMinutes), this._hours(oRow.expectedMinutes)])
-			});
+			var sSubject = this._remindSubject();
+			var sMessage = this.getText("trRemindBody", [oRow.Name.split(/\s+/)[0], this._weekText(),
+				this._hours(oRow.bookedMinutes), this._hours(oRow.expectedMinutes)]);
+			this._sendReminder([oRow], sSubject, sMessage, { to: oRow.Email, subject: sSubject, body: sMessage });
 		},
 
 		/**
-		 * One email to everybody under target, each in BCC so nobody sees the others.
+		 * Reminds everybody under target (a draft has them all in BCC, so nobody sees the others).
 		 */
 		onRemindAll: function () {
 			var aUnder = ((this._aWeek && this.getModel("tr").getProperty("/sub/rows")) || []).filter(function (oRow) {
@@ -876,13 +874,30 @@ sap.ui.define([
 				MessageToast.show(this.getText("trNoReminders"));
 				return;
 			}
-			Mail.open({
-				bcc: aUnder.map(function (oRow) {
-					return oRow.Email;
-				}).join(","),
-				subject: this._remindSubject(),
-				body: this.getText("trRemindAllBody", [this._weekText()])
-			});
+			var sSubject = this._remindSubject();
+			var sMessage = this.getText("trRemindAllBody", [this._weekText()]);
+			var sBcc = aUnder.map(function (oRow) {
+				return oRow.Email;
+			}).join(",");
+			this._sendReminder(aUnder, sSubject, sMessage, { bcc: sBcc, subject: sSubject, body: sMessage });
+		},
+
+		_sendReminder: function (aRows, sSubject, sMessage, oDraft) {
+			Reminders.send({
+				kind: "Timesheet",
+				employeeIds: aRows.map(function (oRow) {
+					return oRow.UserID;
+				}),
+				subject: sSubject,
+				message: sMessage,
+				draft: oDraft
+			}).then(function (sOutcome) {
+				if (sOutcome === "sent") {
+					MessageToast.show(this.getText("reminderSentCount", [aRows.length]));
+				}
+			}.bind(this)).catch(function (oError) {
+				MessageBox.error(this.getText("reminderFailed", [oError.message]));
+			}.bind(this));
 		},
 
 		onUtilShow: function () {

@@ -1,7 +1,10 @@
 sap.ui.define([
 	"./Hrx",
-	"./HrxTime"
-], function (Hrx, HrxTime) {
+	"./HrxTime",
+	"./HrxServices",
+	"./HrxLegacyClients",
+	"./HrxLegacyProjects"
+], function (Hrx, HrxTime, HrxServices, HrxLegacyClients, HrxLegacyProjects) {
 	"use strict";
 
 	/*
@@ -319,6 +322,7 @@ sap.ui.define([
 			Mobile: oUser.MobileNo || "",
 			EmpID: oUser.EmployeeID,
 			UserTypeKey: oUser.UserType || "S",
+			JobTitle: oUser.JobTitle || "",
 			BaseSiteKey: oUser.BaseSite_ID || "",
 			ManagerID: oUser.Manager_EmployeeID || "",
 			Pic: pictureOf(oUser),
@@ -389,8 +393,7 @@ sap.ui.define([
 						ClientDesc: oClient.ClientName || "",
 						ClientLocation: locationName(oClient.BaseSite, aSites),
 						ClientLogo: Hrx.pictureUrl(oClient.LogoRootID, oClient.LogoObjectID),
-						// Contacts has no name field, so a client contact's name is not held.
-						ClientContactName: "",
+						ClientContactName: ((oContact.FirstName || "") + " " + (oContact.LastName || "")).trim(),
 						ClientContactEmail: oContact.WorkEmail || "",
 						ClientContactMobile: oContact.MobileNo || oContact.ContactNo || ""
 					};
@@ -1099,6 +1102,7 @@ sap.ui.define([
 					return {
 						EmpID: oUser.EmployeeID,
 						Name: fullName(oUser),
+						JobTitle: oUser.JobTitle || "",
 						Email: lower(oUser.WorkEmail),
 						SiteID: oUser.BaseSite_ID || "",
 						Pic: pictureOf(oUser),
@@ -1182,6 +1186,9 @@ sap.ui.define([
 				PercentRate: parseInt(oBody.PensionRate, 10) || 0,
 				IsActive: isYes(oBody.IsActive)
 			};
+			if (HrxServices.hasProperty("Users", "JobTitle") && oBody.JobTitle !== undefined) {
+				oUser.JobTitle = oBody.JobTitle || "";
+			}
 			var sPath = "Users(" + Hrx.literal(sEmpId) + ")";
 
 			return Hrx.update(sPath, oUser).then(function () {
@@ -1238,7 +1245,16 @@ sap.ui.define([
 			WorkEmail: oBody.ClientContactEmail || "",
 			IsActive: true
 		};
-		if (!oBody.ClientContactMobile && !oBody.ClientContactEmail) {
+		// The name is held once the HRX service has Contacts.FirstName / LastName:
+		// everything up to the last space is the first name.
+		var sName = String(oBody.ClientContactName || "").trim();
+		var bNameHeld = HrxServices.hasProperty("Contacts", "FirstName");
+		if (bNameHeld) {
+			var iLastSpace = sName.lastIndexOf(" ");
+			oContact.FirstName = iLastSpace > 0 ? sName.slice(0, iLastSpace) : sName;
+			oContact.LastName = iLastSpace > 0 ? sName.slice(iLastSpace + 1) : "";
+		}
+		if (!oBody.ClientContactMobile && !oBody.ClientContactEmail && !(bNameHeld && sName)) {
 			return Promise.resolve();
 		}
 		return Hrx.list("Contacts", { $filter: "ObjectType eq 'C' and ObjectID eq " + sClientId }).then(function (aContacts) {
@@ -1322,6 +1338,8 @@ sap.ui.define([
 
 		update: function (oBody) {
 			return Hrx.update("Projects(" + oBody.ProjectKey + ")", projectBody(oBody)).then(function () {
+				return HrxLegacyProjects.Areas.saveProjectAreas(oBody.ProjectKey, oBody.ProjectTask);
+			}).then(function () {
 				return ok({});
 			});
 		},
@@ -1334,7 +1352,9 @@ sap.ui.define([
 					IsActive: true
 				}));
 			}).then(function (oCreated) {
-				return ok({ ProjectKey: oCreated.ID });
+				return HrxLegacyProjects.Areas.saveProjectAreas(oCreated.ID, oBody.ProjectTask).then(function () {
+					return ok({ ProjectKey: oCreated.ID });
+				});
 			});
 		}
 	};
@@ -1351,10 +1371,15 @@ sap.ui.define([
 	var Assignments = {
 
 		fetch: function (oParams) {
-			return Hrx.list("UserToProject", {
-				$filter: "Project_ID eq " + oParams.projectKey,
-				$expand: "Employee($select=EmployeeID,FirstName,LastName,WorkEmail,ImageRootID,ImageObjectID)"
-			}).then(function (aRows) {
+			return Promise.all([
+				Hrx.list("UserToProject", {
+					$filter: "Project_ID eq " + oParams.projectKey,
+					$expand: "Employee($select=EmployeeID,FirstName,LastName,WorkEmail,ImageRootID,ImageObjectID)"
+				}),
+				HrxLegacyProjects.Areas.resourceAreasOf(oParams.projectKey)
+			]).then(function (aResults) {
+				var aRows = aResults[0];
+				var mAreasByEmployee = aResults[1];
 				return ok({
 					assignments: aRows.map(function (oRow) {
 						var oEmployee = oRow.Employee || {};
@@ -1365,16 +1390,20 @@ sap.ui.define([
 							EmpID: oRow.Employee_EmployeeID,
 							FName: oEmployee.FirstName || "",
 							LName: oEmployee.LastName || "",
+							// the resourcing table's avatar reads these spellings
+							Fname: oEmployee.FirstName || "",
+							Lname: oEmployee.LastName || "",
 							Email: lower(oEmployee.WorkEmail),
 							Pic: pictureOf(oRow.Employee),
 							BillingID: oRow.BillingID_ID,
 							DayRate: oRow.DayRate || "0",
+							DayCost: oRow.DayCost || "",
 							BillableDays: oRow.BillableDays || "0",
 							TotalCharge: oRow.TotalCharge || "",
 							StartDate: oRow.StartDate ? String(oRow.StartDate).slice(0, 10) : null,
 							AssignmentStartDate: oRow.StartDate ? String(oRow.StartDate).slice(0, 10) : null,
 							IsActive: yn(oRow.IsActive !== false),
-							TaskAssigned: []
+							TaskAssigned: mAreasByEmployee[oRow.Employee_EmployeeID] || []
 						};
 					})
 				});
@@ -1382,7 +1411,7 @@ sap.ui.define([
 		},
 
 		"new": function (oBody) {
-			return Hrx.create("UserToProject", {
+			var oAssignment = {
 				Employee_EmployeeID: oBody.EmpID,
 				Project_ID: oBody.ProjectID,
 				BillingID_ID: oBody.BillingID,
@@ -1392,6 +1421,12 @@ sap.ui.define([
 				TotalCharge: String(oBody.TotalCharge || ""),
 				StartDate: toTimestamp(oBody.StartDate),
 				IsActive: true
+			};
+			if (HrxServices.hasProperty("UserToProject", "DayCost")) {
+				oAssignment.DayCost = String(oBody.DayCost || "");
+			}
+			return Hrx.create("UserToProject", oAssignment).then(function () {
+				return HrxLegacyProjects.Areas.saveResourceAreas(oBody.ProjectID, oBody.EmpID, oBody.TaskAssigned);
 			}).then(function () {
 				return ok({});
 			});
@@ -1407,12 +1442,20 @@ sap.ui.define([
 				StartDate: toTimestamp(oBody.StartDate),
 				IsActive: isYes(oBody.IsActive)
 			};
+			if (HrxServices.hasProperty("UserToProject", "DayCost")) {
+				oChange.DayCost = String(oBody.DayCost || "");
+			}
 			if (aKey.length === 3 && aKey[2] !== oBody.BillingID) {
 				return Hrx.remove(assignmentPath(aKey[0], aKey[1], aKey[2])).then(function () {
 					return Assignments["new"](Object.assign({}, oBody, { EmpID: aKey[0], ProjectID: aKey[1] }));
 				});
 			}
-			return Hrx.update(assignmentPath(aKey[0] || oBody.EmpID, aKey[1] || oBody.ProjectID, aKey[2] || oBody.BillingID), oChange)
+			var sEmpId = aKey[0] || oBody.EmpID;
+			var sProjectId = aKey[1] || oBody.ProjectID;
+			return Hrx.update(assignmentPath(sEmpId, sProjectId, aKey[2] || oBody.BillingID), oChange)
+				.then(function () {
+					return HrxLegacyProjects.Areas.saveResourceAreas(sProjectId, sEmpId, oBody.TaskAssigned);
+				})
 				.then(function () {
 					return ok({});
 				});
@@ -1437,6 +1480,21 @@ sap.ui.define([
 	/* ----------------------------------------------------------------- */
 	/* routing                                                           */
 	/* ----------------------------------------------------------------- */
+
+	/**
+	 * How an entity set is read from /hrx: the sets above, then the client and project
+	 * sets of HrxLegacyClients / HrxLegacyProjects (once the HRX service has them).
+	 * @param {string} sSet e.g. "Resources" or "LicensedAppsData"
+	 * @returns {function|null} read(mParameters) -> Promise<Array<object>>, or null
+	 */
+	function entitySetReader(sSet) {
+		if (ENTITY_SETS[sSet]) {
+			return function () {
+				return ENTITY_SETS[sSet]();
+			};
+		}
+		return HrxLegacyClients.entitySet(sSet) || HrxLegacyProjects.entitySet(sSet);
+	}
 
 	// Service path (after /services/) -> the commands answered here.
 	var SERVICES = {
@@ -1485,7 +1543,7 @@ sap.ui.define([
 		handle: function (sUrl, oInit) {
 			var oUrl = new URL(sUrl, document.baseURI);
 			var aMatch = /\/services\/(.+\.xsjs)$/.exec(oUrl.pathname);
-			var oService = aMatch && SERVICES[aMatch[1]];
+			var oService = aMatch && (SERVICES[aMatch[1]] || HrxLegacyClients.service(aMatch[1]) || HrxLegacyProjects.service(aMatch[1]));
 			var sCmd = oUrl.searchParams.get("cmd");
 			var fnCommand = oService && sCmd && Object.prototype.hasOwnProperty.call(oService, sCmd) && oService[sCmd];
 
@@ -1510,6 +1568,15 @@ sap.ui.define([
 		},
 
 		/**
+		 * @param {string} sPath an entity set path, e.g. "/Task"
+		 * @returns {boolean} true when reads of that entity set are answered from /hrx
+		 */
+		answers: function (sPath) {
+			var aMatch = /^\/?([A-Za-z_]+)/.exec(String(sPath));
+			return !!(aMatch && entitySetReader(aMatch[1]));
+		},
+
+		/**
 		 * Answers an OData V2 read from /hrx, when the entity set is one answered here.
 		 * @param {string} sPath e.g. "/Resources" or "/Resources('S000000010')"
 		 * @param {object} [mParameters] filters, urlParameters
@@ -1518,11 +1585,12 @@ sap.ui.define([
 		read: function (sPath, mParameters) {
 			var aMatch = /^\/?([A-Za-z_]+)(?:\((.*)\))?$/.exec(String(sPath));
 			var sSet = aMatch && aMatch[1];
-			if (!sSet || !ENTITY_SETS[sSet]) {
+			var fnReadSet = sSet && entitySetReader(sSet);
+			if (!fnReadSet) {
 				return null;
 			}
 
-			return ENTITY_SETS[sSet]().then(function (aRows) {
+			return fnReadSet(mParameters).then(function (aRows) {
 				if (aMatch[2] !== undefined) {
 					var sKeyName = ENTITY_KEYS[sSet];
 					var oKey = new RegExp("(?:^|,)" + sKeyName + "='([^']*)'").exec(aMatch[2]) || /^'([^']*)'$/.exec(aMatch[2]);

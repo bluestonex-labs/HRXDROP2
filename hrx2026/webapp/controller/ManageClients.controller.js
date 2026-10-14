@@ -8,8 +8,9 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
+	"../model/HrxServices",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, HrxServices, formatter) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -703,6 +704,13 @@ sap.ui.define([
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
 			var oSoftware = this.byId("componentSoftware");
 
+			// The HRX service keeps names, so one typed in (not in the list yet) is kept too.
+			if (HrxServices.has("ClientComponents")) {
+				oForm.Software = this._pickedOrTyped("componentSoftware", oForm.Software);
+				oForm.Component = this._pickedOrTyped("componentComponent", oForm.Component);
+				oForm.SubComponent = this._pickedOrTyped("componentSubComponent", oForm.SubComponent);
+			}
+
 			if (!oForm.Software) {
 				oSoftware.setValueState("Error");
 				oSoftware.setValueStateText(this.getText("mcMandatory"));
@@ -790,6 +798,13 @@ sap.ui.define([
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
 			var oApp = this.byId("serviceApp");
 			var oService = this.byId("serviceService");
+			var bOnHrx = HrxServices.has("ClientApplications");
+
+			// The HRX service keeps names, so one typed in (not in the list yet) is kept too.
+			if (bOnHrx) {
+				oForm.AppID = this._pickedOrTyped("serviceApp", oForm.AppID);
+				oForm.ServiceID = this._pickedOrTyped("serviceService", oForm.ServiceID);
+			}
 
 			if (!oForm.AppID) {
 				oApp.setValueState("Error");
@@ -812,7 +827,7 @@ sap.ui.define([
 			var oViewModel = this.getModel("mcView");
 			oViewModel.setProperty("/saving", true);
 
-			this._create("/ClientAppServices", {
+			var oNewService = {
 				ClientKey: sClientKey,
 				AppID: oForm.AppID,
 				ServiceID: oForm.ServiceID,
@@ -820,7 +835,14 @@ sap.ui.define([
 				ValidTill: oForm.ValidTill || null,
 				DeployedVersion: "",
 				ServiceDesc: oServiceEntry ? oServiceEntry.ServiceDesc : ""
-			}).then(function () {
+			};
+			var pSave = bOnHrx
+				? Backend.postJson(Backend.SERVICE_ROOT + "/hrx/manageClientServices.xsjs?cmd=new", Object.assign({}, oNewService, {
+					ValidFrom: this._isoDate(oForm.ValidFrom),
+					ValidTill: this._isoDate(oForm.ValidTill)
+				}))
+				: this._create("/ClientAppServices", oNewService);
+			pSave.then(function () {
 				oViewModel.setProperty("/saving", false);
 				MessageToast.show(this.getText("mcServiceCreated"));
 				this._closeDialog("_pServiceDialog");
@@ -834,6 +856,17 @@ sap.ui.define([
 		/* =========================================================== */
 		/* helpers                                                     */
 		/* =========================================================== */
+
+		/**
+		 * What a ComboBox holds: the key of the entry picked from its list or, when
+		 * nothing was picked, the text typed into it.
+		 * @param {string} sControlId the ComboBox
+		 * @param {string} sPickedKey its bound selectedKey
+		 * @returns {string} the value to save
+		 */
+		_pickedOrTyped: function (sControlId, sPickedKey) {
+			return sPickedKey || this.byId(sControlId).getValue().trim();
+		},
 
 		getModel: function (sName) {
 			return this.getView().getModel(sName);

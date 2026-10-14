@@ -11,9 +11,9 @@ sap.ui.define([
 	"../model/Documents",
 	"../model/DocumentService",
 	"../model/Mail",
+	"../model/Reminders",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser,
-	Documents, DocumentService, Mail, formatter) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, Documents, DocumentService, Mail, Reminders, formatter) {
 	"use strict";
 
 	var FILTERS = ["all", "attention", "complete", "none"];
@@ -246,24 +246,42 @@ sap.ui.define([
 		},
 
 		/**
-		 * Opens a new Outlook message to everyone who has not acknowledged the document,
-		 * in BCC so they do not see each other's addresses.
+		 * Reminds everyone who has not acknowledged the document: sent by the HRX service,
+		 * or a draft in the admin's own mail app (everyone in BCC) where it cannot send.
 		 * @param {object} oDocument the document, as rendered
 		 */
 		_remind: function (oDocument) {
-			var aEmails = (oDocument.progress ? oDocument.progress.outstanding : []).map(function (oPerson) {
+			var aOutstanding = (oDocument.progress ? oDocument.progress.outstanding : []).filter(function (oPerson) {
 				return oPerson.Email;
-			}).filter(Boolean);
+			});
 
-			if (!aEmails.length) {
+			if (!aOutstanding.length) {
 				MessageToast.show(this.getText("dmEveryone"));
 				return;
 			}
-			Mail.open({
-				bcc: aEmails.join(","),
-				subject: this.getText("dmRemindSubject", [oDocument.Name]),
-				body: this.getText("dmRemindBody", [oDocument.Name])
-			});
+			var sSubject = this.getText("dmRemindSubject", [oDocument.Name]);
+			var sMessage = this.getText("dmRemindBody", [oDocument.Name]);
+			Reminders.send({
+				kind: "Policy",
+				employeeIds: aOutstanding.map(function (oPerson) {
+					return oPerson.EmpID;
+				}),
+				subject: sSubject,
+				message: sMessage,
+				draft: {
+					bcc: aOutstanding.map(function (oPerson) {
+						return oPerson.Email;
+					}).join(","),
+					subject: sSubject,
+					body: sMessage
+				}
+			}).then(function (sOutcome) {
+				if (sOutcome === "sent") {
+					MessageToast.show(this.getText("reminderSentCount", [aOutstanding.length]));
+				}
+			}.bind(this)).catch(function (oError) {
+				MessageBox.error(this.getText("reminderFailed", [oError.message]));
+			}.bind(this));
 		},
 
 		/**
@@ -300,8 +318,6 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onOpenUpload: function () {
-			var mSites = this._mSites || {};
-
 			this.setModel(new JSONModel({
 				Name: "",
 				Category: "Policy",
@@ -313,9 +329,8 @@ sap.ui.define([
 				categories: Documents.CATEGORIES.map(function (sCategory) {
 					return { key: sCategory, text: sCategory };
 				}),
-				audiences: [{ key: "ALL", text: this.getText("dmAllEmployees") }].concat(Object.keys(mSites).map(function (sSite) {
-					return { key: sSite, text: mSites[sSite] };
-				}))
+				// Every document is published to the whole organisation.
+				audiences: [{ key: "ALL", text: this.getText("dmAllEmployees") }]
 			}), "dmUpload");
 
 			if (!this._pUploadDialog) {

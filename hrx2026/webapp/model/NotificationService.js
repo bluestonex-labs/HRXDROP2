@@ -5,12 +5,15 @@ sap.ui.define([
 	"./Documents",
 	"./DocumentService",
 	"./CurrentUser",
-	"./Notifications"
-], function (Hrx, HrxTime, HrxLegacy, Documents, DocumentService, CurrentUser, Notifications) {
+	"./Notifications",
+	"./HrxServices"
+], function (Hrx, HrxTime, HrxLegacy, Documents, DocumentService, CurrentUser, Notifications, HrxServices) {
 	"use strict";
 
-	// Which notifications have been read: kept in this browser, per employee. The
-	// notifications themselves are worked out afresh each time.
+	// Which notifications have been read: kept by the HRX service per employee once it
+	// has NotificationReads (so it follows them between browsers), with a copy in this
+	// browser that readIds() answers from. The notifications themselves are worked out
+	// afresh each time.
 	var READ_KEY = "hrx.notifications.read.";
 	var READ_LIMIT = 200;
 
@@ -33,6 +36,42 @@ sap.ui.define([
 		});
 	}
 
+	function storedReadIds(sEmpId) {
+		try {
+			return JSON.parse(window.localStorage.getItem(READ_KEY + sEmpId) || "[]");
+		} catch (oError) {
+			return [];
+		}
+	}
+
+	function storeReadIds(sEmpId, aIds) {
+		try {
+			window.localStorage.setItem(READ_KEY + sEmpId, JSON.stringify(aIds.slice(-READ_LIMIT)));
+		} catch (oError) {
+			// Private window or blocked storage: read state lasts for this page only.
+		}
+	}
+
+	/**
+	 * Adds what the HRX service says has been read to this browser's copy.
+	 * @param {string} sEmpId the signed-in employee
+	 * @returns {Promise} settles once merged (at once when the service does not keep it)
+	 */
+	function syncReadIdsFromService(sEmpId) {
+		if (!HrxServices.has("fetchReadNotifications")) {
+			return Promise.resolve();
+		}
+		return Hrx.callFunction("fetchReadNotifications").then(function (aServiceIds) {
+			var aLocalIds = storedReadIds(sEmpId);
+			var aMerged = aLocalIds.concat((aServiceIds || []).filter(function (sId) {
+				return aLocalIds.indexOf(sId) === -1;
+			}));
+			storeReadIds(sEmpId, aMerged);
+		}).catch(function (oError) {
+			console.warn("Read notifications could not be fetched; using this browser's copy", oError);
+		});
+	}
+
 	return {
 
 		/**
@@ -47,6 +86,7 @@ sap.ui.define([
 			}
 			var sMe = Hrx.literal(oProfile.empID);
 			var oWindow = Notifications.timesheetWindow(oAt);
+			var pReadIdsSynced = syncReadIdsFromService(oProfile.empID);
 
 			return Promise.all([
 				// Your leave decided lately
@@ -99,9 +139,11 @@ sap.ui.define([
 					}));
 				})) : Promise.resolve(null)
 			]).then(function (aResults) {
-				return [].concat.apply([], aResults.map(function (v) {
-					return Array.isArray(v) ? v : v ? [v] : [];
-				}));
+				return pReadIdsSynced.then(function () {
+					return [].concat.apply([], aResults.map(function (v) {
+						return Array.isArray(v) ? v : v ? [v] : [];
+					}));
+				});
 			});
 		},
 
@@ -110,11 +152,7 @@ sap.ui.define([
 		 * @returns {Array<string>} the notification ids they have read
 		 */
 		readIds: function (sEmpId) {
-			try {
-				return JSON.parse(window.localStorage.getItem(READ_KEY + sEmpId) || "[]");
-			} catch (oError) {
-				return [];
-			}
+			return storedReadIds(sEmpId);
 		},
 
 		/**
@@ -122,13 +160,15 @@ sap.ui.define([
 		 * @param {Array<string>} aIds ids to mark as read
 		 */
 		markRead: function (sEmpId, aIds) {
-			var aRead = this.readIds(sEmpId).filter(function (sId) {
+			var aRead = storedReadIds(sEmpId).filter(function (sId) {
 				return aIds.indexOf(sId) === -1;
-			}).concat(aIds).slice(-READ_LIMIT);
-			try {
-				window.localStorage.setItem(READ_KEY + sEmpId, JSON.stringify(aRead));
-			} catch (oError) {
-				// Private window or blocked storage: read state lasts for this page only.
+			}).concat(aIds);
+			storeReadIds(sEmpId, aRead);
+
+			if (HrxServices.has("markNotificationsRead") && aIds.length) {
+				Hrx.callAction("markNotificationsRead", { Keys: aIds }).catch(function (oError) {
+					console.warn("Read notifications could not be saved to HRX; kept in this browser", oError);
+				});
 			}
 		}
 	};

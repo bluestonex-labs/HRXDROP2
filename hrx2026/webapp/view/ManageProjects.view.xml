@@ -158,6 +158,7 @@
 								tooltip="{i18n>mpTabInfo}">
 								<MessageStrip
 									text="{i18n>serviceNeededProjectAreas}"
+									visible="{= !${services>/projectAreas} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
@@ -315,7 +316,13 @@
 													<ObjectStatus text="{mpTabs>TaskDesc}" class="sapUiTinyMarginEnd" />
 												</HBox>
 												<Text text="{mpTabs>BillableDays} × {path: 'mpTabs>DayRate', formatter: '.formatter.money'}" />
-												<Text text="{path: 'mpTabs>TotalCharge', formatter: '.formatter.money'}" />
+												<VBox alignItems="End">
+													<Text text="{path: 'mpTabs>TotalCharge', formatter: '.formatter.money'}" />
+													<Text
+														text="{parts: ['i18n>mpDayCostLine', {path: 'mpTabs>DayCost', formatter: '.formatter.money'}], formatter: '.formatter.textWithValue'}"
+														visible="{= !!${mpTabs>DayCost} }"
+														class="hrxResourceMeta" />
+												</VBox>
 												<ObjectStatus
 													text="{path: 'mpTabs>IsActive', formatter: '.formatter.activeText'}"
 													state="{path: 'mpTabs>IsActive', formatter: '.formatter.activeState'}" />
@@ -346,6 +353,7 @@
 								tooltip="{i18n>mpTabClientTeam}">
 								<MessageStrip
 									text="{i18n>serviceNeededProjectTeam}"
+									visible="{= !${services>/projectClientTeam} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
@@ -400,6 +408,7 @@
 								tooltip="{i18n>mpTabAttachments}">
 								<MessageStrip
 									text="{i18n>serviceNeededProjectAttachments}"
+									visible="{= !${services>/projectDocuments} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"

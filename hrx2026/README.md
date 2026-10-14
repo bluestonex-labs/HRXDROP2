@@ -67,16 +67,23 @@ checklists have no home anywhere yet (see `model/SicknessService.js`).
 - **Leave rows** are one per day; each row's `NoOfDays` is that day (1 or 0.5).
 - **Client location** is a site's ID in `Clients.BaseSite`; the pages show and edit the site's name.
 
-### Services still needed
+### Drop 2 services (HRXService pull request #34)
 
-These parts of the pages have no HRX endpoint. Nothing is made up for them: they show empty states
-or "not connected yet", or still use the original services.
+The pages below use HRX services added in `bluestonex-labs/HRXService` pull request #34. The app
+checks which of them are deployed when it starts (`model/HrxServices.js` reads the service's
+`$metadata`; the answers are also in the component model `services`). Until a service is
+deployed, its page keeps its earlier behaviour and shows a "Service needed" note; once it is,
+the page uses it and the note goes - no app change needed.
 
-| Needed for | Where | Today |
-| --- | --- | --- |
-| Policies & acknowledgements (`Policies`, `PolicyAcknowledgements`, `fetchMyPolicies()`, `acknowledgePolicy`, `fetchPolicyAcknowledgements`, Documents type `Policy`) | Policies to read, Documents, Home tile, notifications | Not connected (`DocumentService.ENDPOINT` unset) |
-| Sickness follow-up (`SicknessReviews`, `ReturnToWork`) | Sickness - trigger reviews, return-to-work checklists | Not connected (`SicknessService.ENDPOINT` unset); absences themselves are real Sick leave |
-| Client support users, SLAs, licensed components, application services (`ClientUsers`, `ClientSLAs`, `ClientComponents`, `ClientApplications`) | Manage Clients tabs | Original services (`supportx/*.xsjs`, `services.xsodata`) |
-| Project areas / tasks, client team, attachments (`ProjectAreas`, `ProjectClientTeam`, Documents type `Project`) | Manage Projects | Original services |
-| Reminders (`sendReminder`) and a stored notification list | Remind buttons, the bell | Reminders open an email draft; the bell is worked out from live data, read state kept in the browser |
-| `Users.JobTitle`, `Contacts.FirstName` / `LastName`, `UserToProject.DayCost` | Team Calendar / Manage Resources, Manage Clients contact, Manage Projects resourcing | Not held |
+| What | HRX service | Pages | App code |
+| --- | --- | --- | --- |
+| Policies and acknowledgements (whole organisation) | `Policies`, `PolicyAcknowledgements`, `acknowledgePolicy`, `removePolicy`; file via `Documents` type `Policy` | Policies to read, Documents, Home tile, notifications | `model/DocumentService.js` |
+| Sickness follow-up | `SicknessReviews`, `ReturnsToWork`, `reviewSicknessTrigger`, `openReturnToWork`, `completeReturnToWorkStep`, `completeReturnToWork` | Sickness, Home tile | `model/SicknessService.js` |
+| Client support users, SLAs, components, application services | `ClientUsers`, `ClientSLAs`, `ClientComponents`, `ClientApplications` | Manage Clients tabs | `model/HrxLegacyClients.js` |
+| Project areas, client team, attachments | `ProjectAreas`, `ProjectAreaAssignments`, `ResourceAreaAssignments`, `ProjectClientTeam`, `fetchProjectDocuments`, `deleteProjectDocument`; files via `Documents` type `Project` | Manage Projects | `model/HrxLegacyProjects.js` |
+| Reminders | `sendReminder` (falls back to an email draft until email is set up on the service) | Documents, Timesheet Reporting, Sickness | `model/Reminders.js` |
+| Notification read state | `fetchReadNotifications`, `markNotificationsRead` | The bell | `model/NotificationService.js` |
+| Job title, client contact name, day cost | `Users.JobTitle`, `Contacts.FirstName` / `LastName`, `UserToProject.DayCost` | Manage Resources, Team Calendar, Sickness, Manage Clients, Manage Projects | `model/HrxLegacy.js` |
+
+Software, components, apps and services on the client tabs are names typed in (the lists
+suggest the names already used); nothing is copied from the original services.
