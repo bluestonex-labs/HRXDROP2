@@ -244,6 +244,7 @@ sap.ui.define([
 							return sPart.charAt(0).toUpperCase();
 						}).slice(0, 2).join(""),
 						siteID: oUser.SiteID || "",
+						jobTitle: oUser.JobTitle || "",
 						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};

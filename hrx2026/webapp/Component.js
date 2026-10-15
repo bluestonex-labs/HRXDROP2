@@ -78,7 +78,11 @@ sap.ui.define([
 
         exit() {
             document.body.classList.remove("hrxApp");
-            UIComponent.prototype.exit.apply(this, arguments);
+            // UIComponent has no exit of its own in every UI5 version; calling a missing
+            // one made the launchpad fail to close (and so to reopen) the app.
+            if (UIComponent.prototype.exit) {
+                UIComponent.prototype.exit.apply(this, arguments);
+            }
         },
 
         /**

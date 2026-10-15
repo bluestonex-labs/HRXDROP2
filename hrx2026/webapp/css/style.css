@@ -109,35 +109,48 @@ body.hrxApp {
 
 /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
 
-/* In UI5 1.150 the rail is the SideNavigation itself; the nav rows are
-   .sapTntNLI with .sapTntNLIText / .sapTntNLIIcon inside. */
-.hrxToolPage .sapTntSideNavigation {
+/* The 15.10.26 design's rail (.side): 248px wide, dark, the wordmark at the top,
+   "Overview" and "Admin only" groups, the signed-in user and "View as" at the
+   foot. In UI5 1.150 the rail is the SideNavigation itself; a group heading is
+   .sapTntNLGroup, a row .sapTntNLI with .sapTntNLIIcon and .sapTntNLIText inside. */
+.hrxApp .hrxToolPage .sapTntSideNavigation {
+	width: 248px !important;
+	min-width: 248px !important;
 	background-color: var(--dark);
 	border: none;
+	box-shadow: none;
 	position: relative;
-	/* room for the wordmark, which is painted as the rail's own background */
-	padding-top: 60px;
+	overflow: hidden;
+	box-sizing: border-box;
+	padding: 90px 16px 150px;
+	/* the wordmark, as .brandimg: 26px high, centred, 28px from the top */
 	background-image: url("../img/hrx-logo.png");
 	background-repeat: no-repeat;
-	background-position: center 20px;
-	background-size: auto 24px;
+	background-position: center 28px;
+	background-size: auto 26px;
+	transition: width .25s cubic-bezier(.3, .8, .3, 1), min-width .25s cubic-bezier(.3, .8, .3, 1), padding .25s cubic-bezier(.3, .8, .3, 1);
 }
 
-/* Collapsed, the rail is too narrow for the wordmark - only the toggle stays.
-   The 60px reserved above was sized for the wordmark; with it gone the toggle
-   needs its own, slightly larger, clearance so it doesn't crowd the first
-   nav icon below it. */
-.hrxToolPage .sapTntSideNavigationNotExpanded {
+.hrxToolPage .sapTntToolPageAside,
+.hrxToolPage .sapTntToolPageAsideContent {
+	width: auto;
+	min-width: 0;
+}
+
+/* Collapsed (60px), the wordmark goes and only the toggle stays at the top. */
+.hrxApp .hrxToolPage .sapTntSideNavigation.sapTntSideNavigationNotExpanded {
+	width: 60px !important;
+	min-width: 60px !important;
+	padding: 70px 8px 80px;
 	background-image: none;
-	padding-top: 70px;
 }
 
-/* The prototype's cold glow behind the wordmark */
+/* The design's cold glow behind the wordmark */
 .hrxToolPage .sapTntSideNavigation::before {
 	content: "";
 	position: absolute;
-	top: -130px;
-	left: -70px;
+	top: -120px;
+	left: -60px;
 	width: 260px;
 	height: 260px;
 	background: radial-gradient(circle, var(--ice-glow) 0%, transparent 70%);
@@ -150,127 +163,305 @@ body.hrxApp {
 	z-index: 1;
 }
 
-.hrxToolPage .sapTntNLIText,
-.hrxToolPage .sapTntNLIIcon {
+.hrxToolPage .sapTntSideNavigationFlexible,
+.hrxToolPage .sapTntSideNavigationFlexibleContent,
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNL {
+	background: transparent;
+	padding: 0;
+	margin: 0;
+}
+
+/* The theme's lines above and below the list; the design has none. */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLSeparator {
+	display: none;
+}
+
+/* Group headings: OVERVIEW, ADMIN ONLY */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLGroup {
+	/* !important: the theme's compact rows set a 2rem minimum on every row */
+	height: auto !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 16px 12px 6px;
+	background: transparent;
+	border: none;
+	cursor: default;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNL > li:nth-child(2) > .sapTntNLGroup {
+	padding-top: 4px;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLGroupText {
+	margin: 0 !important;
+	line-height: 15px;
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: #5A7180;
+	white-space: nowrap;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLGroup .sapTntNLIExpandIcon {
+	display: none;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLIItemsContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+/* Rows: 13px Raleway, 10px 12px, an 18px icon and a 12px gap */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIFirstLevel {
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-s);
+	background: transparent;
+	transition: background-color .15s, color .15s;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIFirstLevel > a {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	height: auto;
+	min-height: 0;
+	/* !important: the theme's compact rows (.sapUiSizeCompact .sapTntNL ... a) are
+	   more specific than any class selector here */
+	padding: 10px 12px !important;
+	background: transparent;
 	color: #A7C0CE;
+	text-decoration: none;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLIText {
+	color: inherit;
 	font-family: var(--sans);
 	font-size: 13px;
 	font-weight: 500;
+	line-height: 18px;
+	margin: 0;
+	padding: 0 !important;
 }
 
-.hrxToolPage .sapTntNLI,
-.hrxToolPage .sapTntNLI > a {
-	/* the theme paints these rows white; the rail is dark */
-	background: transparent;
-	border-radius: var(--radius-s);
-	transition: background-color .15s;
+/* The design's own line icon replaces SAP's glyph: the row's key (written by
+   App.controller as data-nav-key) picks the file, drawn in the text colour. */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLIIcon {
+	width: 18px;
+	min-width: 18px;
+	height: 18px;
+	margin: 0 !important;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+	opacity: .85;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-nav-icon) center / 18px 18px no-repeat;
+	mask: var(--hrx-nav-icon) center / 18px 18px no-repeat;
+	transition: opacity .15s;
 }
 
-.hrxToolPage .sapTntNLI {
-	margin: 2px 8px;
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLIIcon::before {
+	content: none !important;
 }
 
-.hrxToolPage .sapTntNLI:hover,
-.hrxToolPage .sapTntNLI:hover > a {
-	background-color: rgba(255, 255, 255, .05);
+.hrxApp .hrxToolPage [data-nav-key="home"] { --hrx-nav-icon: url("../img/nav/home.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="timesheet"] { --hrx-nav-icon: url("../img/nav/timesheet.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="leave"] { --hrx-nav-icon: url("../img/nav/leave.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="teamcal"] { --hrx-nav-icon: url("../img/nav/teamcal.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="policies"] { --hrx-nav-icon: url("../img/nav/policies.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="expenses"] { --hrx-nav-icon: url("../img/nav/expenses.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="explorer"] { --hrx-nav-icon: url("../img/nav/explorer.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="sickness"] { --hrx-nav-icon: url("../img/nav/sickness.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="documents"] { --hrx-nav-icon: url("../img/nav/documents.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="timesheetreport"] { --hrx-nav-icon: url("../img/nav/timesheetreport.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="utilisation"] { --hrx-nav-icon: url("../img/nav/utilisation.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="resources"] { --hrx-nav-icon: url("../img/nav/resources.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="clients"] { --hrx-nav-icon: url("../img/nav/clients.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="projects"] { --hrx-nav-icon: url("../img/nav/projects.svg"); }
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIFirstLevel:hover {
+	background: rgba(255, 255, 255, .05);
 }
 
-.hrxToolPage .sapTntNLI:hover .sapTntNLIText,
-.hrxToolPage .sapTntNLI:hover .sapTntNLIIcon {
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIFirstLevel:hover > a {
 	color: #E6F0F5;
 }
 
-.hrxToolPage .sapTntNLISelected,
-.hrxToolPage .sapTntNLISelected > a {
-	background-color: rgba(255, 255, 255, .12);
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIFirstLevel:hover .sapTntNLIIcon,
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLISelected .sapTntNLIIcon {
+	opacity: 1;
 }
 
-.hrxToolPage .sapTntNLISelected .sapTntNLIText,
-.hrxToolPage .sapTntNLISelected .sapTntNLIIcon {
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLISelected {
+	background: rgba(255, 255, 255, .12);
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLISelected > a {
 	color: #FFFFFF;
 }
 
-/* The selected row is a flat fill here, not the theme's accent bar */
-.hrxToolPage .sapTntNLISelected::before,
-.hrxToolPage .sapTntNLISelected::after,
-.hrxToolPage .sapTntNLI::before {
+/* The selected row is a flat fill, not the theme's accent bar or focus ring */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI::before,
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI::after {
 	display: none !important;
 }
 
-/* Signed-in user pinned to the foot of the rail */
-.hrxToolPage .sapTntSideNavigationFixedItem {
-	border-top: 1px solid rgba(255, 255, 255, .08);
-	padding-top: 8px;
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI:focus,
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI > a:focus {
+	outline: none;
 }
 
-.hrxToolPage .sapTntSideNavigationFixedItem .sapTntNLIText {
-	color: #E6F0F5;
-	font-size: 12.5px;
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI:focus-visible {
+	outline: 1px dotted rgba(255, 255, 255, .5);
+	outline-offset: -1px;
 }
 
-.hrxToolPage .sapTntSideNavigationFixedItem .sapTntNLI {
+/* Expenses: coming soon, faded, with its SOON tag on the right */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled {
+	opacity: .45;
+	cursor: not-allowed;
+}
+
+/* The theme fades every span in a disabled row; nested spans (the tag's text is
+   three deep) compounded it to near-black. The row's own .45 is the only fade. */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span {
 	opacity: 1;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span.sapTntNLIIcon {
+	opacity: .85;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover {
+	background: none;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover > a {
+	color: #A7C0CE;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer {
+	margin-left: auto;
+	height: 16px;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+/* Its screen-reader label must not take room beside the tag. */
+.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer > .sapUiInvisibleText {
+	position: absolute;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon.sapMObjStatus {
+	display: inline-flex;
+	align-items: center;
+	box-sizing: border-box;
+	height: 16px;
+	margin: 0 !important;
+	padding: 0 6px !important;
+	border: 1px solid rgba(255, 255, 255, .14);
+	border-radius: 5px;
+	background: transparent;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusWrapper,
+.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
+	padding: 0;
+	background: transparent;
+	border: none;
+	height: auto;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
+	font-family: var(--sans);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	line-height: 12px;
+	text-transform: uppercase;
+	text-shadow: none;
+	color: #7C93A0;
+}
+
+/* Collapsed: icons only, centred, and the groups become thin rules */
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLI.sapTntNLIFirstLevel > a {
+	justify-content: center;
+	padding: 10px 0 !important;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLIText,
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLITagContainer {
+	display: none;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLGroup {
+	height: 1px;
+	padding: 0;
+	margin: 10px 14px;
+	background: rgba(255, 255, 255, .08);
+	overflow: hidden;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNL > li:nth-child(2) > .sapTntNLGroup {
+	display: none;
+}
+
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLGroupText {
+	display: none;
 }
 
 /* ── SIGNED-IN USER ───────────────────────────────────────────────────────── */
 
-/* Who is signed in, at the foot of the rail - the same footer SupportX has: an
-   initials avatar, the name, and a role tag whose colours follow the role
-   (SupportX's green for an employee, its blue for a manager). The values are
-   SupportX's own; its palette and this one come from the same prototype. The
-   footer is laid over the rail from outside it (see App.view.xml), so the view
-   is its positioning context. */
+/* The design's .side-foot: a rule, the initials, the name with the job title and
+   employee ID under it, and the bell; "View as (demo)" sits below it. Both are
+   laid over the foot of the rail from outside it (see App.view.xml), so the
+   view is their positioning context. */
 .hrxAppRoot {
 	position: relative;
 }
 
 .hrxApp .hrxRailUser {
 	position: absolute;
-	left: 0;
-	bottom: 0;
+	left: 16px;
+	bottom: 55px;
 	z-index: 5;
-	/* the rail's own width, expanded and collapsed, and its own transition */
-	width: 16rem;
+	width: 216px;
 	box-sizing: border-box;
-	/* 26px puts the 28px avatar's centre on the nav icons' centre line (40px in),
-	   so the rail reads as one column of glyphs from top to bottom. */
-	padding: 14px 16px 18px 26px;
+	padding-top: 14px;
+	gap: 10px;
 	border-top: 1px solid rgba(255, 255, 255, .08);
-	transition: width .3s;
+	transition: width .25s, left .25s;
 }
 
 .hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailUser {
-	width: 4rem;
-	padding-left: 0;
-	padding-right: 0;
-	justify-content: center;
+	left: 8px;
+	width: 44px;
+	bottom: 16px;
+	flex-direction: column-reverse;
+	gap: 12px;
 }
 
 .hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailUser .hrxRailUserInfo {
 	display: none;
 }
 
-/* The nav list never runs underneath it. */
-.hrxToolPage .sapTntSideNavigation {
-	padding-bottom: 76px;
-}
-
 .hrxApp .hrxRailAvatar {
 	width: 28px;
 	height: 28px;
 	border-radius: 50%;
-	box-sizing: border-box;
-	background: rgba(255, 255, 255, .12);
-	border: 1px solid rgba(255, 255, 255, .18);
+	background: rgba(255, 255, 255, .1);
 }
 
 .hrxApp .hrxRailUser > .sapMFlexItem:first-child {
-	flex-shrink: 0;
-	margin-right: 9px;
-}
-
-.hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailUser > .sapMFlexItem:first-child {
-	margin-right: 0;
+	flex: 0 0 28px;
 }
 
 /* min-width: 0 lets a long name ellipsise rather than push the footer wider. */
@@ -280,6 +471,7 @@ body.hrxApp {
 }
 
 .hrxApp .sapMText.hrxRailAvatarText {
+	font-family: var(--sans);
 	font-size: 11px;
 	font-weight: 700;
 	color: #FFFFFF;
@@ -287,55 +479,25 @@ body.hrxApp {
 
 .hrxApp .sapMText.hrxRailUserName {
 	display: block;
+	font-family: var(--sans);
 	font-size: 12.5px;
 	font-weight: 500;
+	line-height: 1.25;
 	color: #E6F0F5;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.hrxApp .sapMText.hrxRailRoleTag {
-	display: inline-block;
-	margin-top: 2px;
-	padding: 1px 6px;
-	border-radius: 4px;
-	font-size: 9px;
-	font-weight: 700;
-	letter-spacing: .4px;
-	text-transform: uppercase;
-	background: rgba(255, 255, 255, .14);
-	color: #FFFFFF;
-}
-
-/* SupportX's .av-green / .rt-user */
-.hrxApp .hrxRailUser[data-role="employee"] .hrxRailAvatar {
-	background: var(--mint-soft);
-	border: 1.5px solid rgba(31, 174, 114, .25);
-}
-
-.hrxApp .hrxRailUser[data-role="employee"] .sapMText.hrxRailAvatarText,
-.hrxApp .hrxRailUser[data-role="employee"] .sapMText.hrxRailRoleTag {
-	color: #0F7B4F;
-}
-
-.hrxApp .hrxRailUser[data-role="employee"] .sapMText.hrxRailRoleTag {
-	background: var(--mint-soft);
-}
-
-/* SupportX's .av-primary / .rt-dev */
-.hrxApp .hrxRailUser[data-role="manager"] .hrxRailAvatar {
-	background: var(--ice-glow);
-	border: 1.5px solid rgba(38, 170, 226, .3);
-}
-
-.hrxApp .hrxRailUser[data-role="manager"] .sapMText.hrxRailAvatarText,
-.hrxApp .hrxRailUser[data-role="manager"] .sapMText.hrxRailRoleTag {
-	color: var(--ice-deep);
-}
-
-.hrxApp .hrxRailUser[data-role="manager"] .sapMText.hrxRailRoleTag {
-	background: var(--ice-glow);
+.hrxApp .sapMText.hrxRailUserSub {
+	display: block;
+	font-family: var(--sans);
+	font-size: 11px;
+	line-height: 1.25;
+	color: #7C93A0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 /* ── PAGE HEADER ──────────────────────────────────────────────────────────── */
@@ -378,38 +540,39 @@ body.hrxApp {
 
 .hrxToolPage .hrxNavToggle {
 	position: absolute;
-	top: 16px;
-	left: calc(15rem - 54px);
+	top: 27px;
+	left: 196px;
 	pointer-events: auto;
-	transition: left .3s;
+	transition: left .25s cubic-bezier(.3, .8, .3, 1);
 }
 
-/* Centered over the collapsed rail, in place of the wordmark it no longer has room for. */
+/* Collapsed, centred over the 60px rail in place of the wordmark. */
 .hrxToolPage.hrxSideCollapsed .hrxNavToggle {
-	left: 14px;
+	left: 16px;
 }
 
-/* A bare glyph on the rail, with no box of its own around it. */
-.hrxToolPage .hrxNavToggle .sapMBtnInner {
-	border-radius: var(--radius-s);
-	color: #E6F0F5;
-	height: 38px;
-	min-width: 38px;
-}
-
-.hrxToolPage .hrxNavToggle .sapMBtnInner:hover {
-	border-color: var(--ice);
-	background: rgba(255, 255, 255, .1);
-	color: var(--ice);
-}
-
-/* The toggle's glyph used to be nudged down with margin-top: 5px !important. That
-   margin was also applied to .sapMBtnIcon at large, which is what left every icon
-   in the product sitting on the bottom edge of its button. Centring the button's
-   own content is what was actually wanted, and it needs no !important. */
-.hrxApp .hrxNavToggle .sapMBtnInner {
+/* The design's .nav-toggle: a 28px rounded square, faintly lit */
+.hrxApp .hrxToolPage .hrxNavToggle .sapMBtnInner {
+	width: 28px;
+	min-width: 28px;
+	height: 28px;
+	padding: 0;
+	border: none;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, .08);
+	color: #A7C0CE;
 	align-items: center;
 	justify-content: center;
+}
+
+.hrxApp .hrxToolPage .hrxNavToggle .sapMBtnInner:hover {
+	background: rgba(255, 255, 255, .14);
+	color: #E6F0F5;
+}
+
+.hrxApp .hrxToolPage .hrxNavToggle .sapMBtnIcon {
+	font-size: 13px;
+	color: inherit;
 }
 
 .hrxEyebrow,
@@ -2634,16 +2797,16 @@ body.hrxApp {
 }
 
 /* TESTING AID - the "View as (demo)" switch, laid over the rail above the user. */
+/* "View as (demo)", below the signed-in user as in the design (.role-demo) */
 .hrxApp .hrxRailDemo {
 	position: absolute;
-	left: 0;
-	bottom: 70px;
+	left: 16px;
+	bottom: 18px;
 	z-index: 5;
-	width: 16rem;
+	width: 216px;
 	box-sizing: border-box;
-	padding: 8px 16px 6px 22px;
-	gap: 8px;
-	transition: width .3s;
+	padding: 10px 4px 0;
+	gap: 6px;
 }
 
 .hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailDemo {
@@ -2656,13 +2819,14 @@ body.hrxApp {
 }
 
 .hrxApp .hrxRailDemoLabel.sapMLabel {
+	font-family: var(--sans);
 	font-size: 10px;
 	color: #5A7180;
 	white-space: nowrap;
 }
 
 .hrxApp .hrxRailDemoSelect.sapMSlt {
-	height: 1.75rem;
+	height: 24px;
 	background: rgba(255, 255, 255, .06);
 	border: 1px solid rgba(255, 255, 255, .12);
 	border-radius: 6px;
@@ -2671,12 +2835,9 @@ body.hrxApp {
 .hrxApp .hrxRailDemoSelect .sapMSltLabel,
 .hrxApp .hrxRailDemoSelect .sapMSltArrow {
 	color: #CADAE4;
+	font-family: var(--sans);
 	font-size: 11px;
-	line-height: 1.6rem;
-}
-
-.hrxToolPage .sapTntSideNavigation {
-	padding-bottom: 112px;
+	line-height: 22px;
 }
 
 .hrxApp .hrxTrPieTotal {
@@ -3215,58 +3376,61 @@ body.hrxApp {
 	position: relative;
 }
 
+/* The design's .side-bell: a 32px rounded square with its own bell line icon */
 .hrxApp .hrxBell.sapMBtn .sapMBtnInner {
 	width: 32px;
 	height: 32px;
 	min-width: 32px;
+	padding: 0;
 	border-radius: 9px;
 	border: none;
-	background: rgba(255, 255, 255, .06);
+	background: rgba(255, 255, 255, .07);
+	color: #A7C0CE;
+	align-items: center;
+	justify-content: center;
 }
 
 .hrxApp .hrxBell.sapMBtn:hover .sapMBtnInner {
 	background: rgba(255, 255, 255, .14);
+	color: #FFFFFF;
 }
 
 .hrxApp .hrxBell.sapMBtn .sapMBtnIcon {
-	color: #C9D8E1;
-	font-size: 15px;
+	width: 16px;
+	height: 16px;
+	font-size: 0;
+	margin: 0;
+	background-color: currentColor;
+	-webkit-mask: url("../img/nav/bell.svg") center / 16px 16px no-repeat;
+	mask: url("../img/nav/bell.svg") center / 16px 16px no-repeat;
 }
 
-/* A rounded square sitting on the bell's top-right corner, the count centred
-   in it. Border-box, so the dark ring is inside the 18px rather than added to
-   it; "9+" widens it a little rather than squashing the text. */
+.hrxApp .hrxBell.sapMBtn .sapMBtnIcon::before {
+	content: none !important;
+}
+
+/* The design's .bell-badge: a red pill on the bell's top-right corner */
 .hrxApp .sapMText.hrxBellBadge {
 	position: absolute;
 	top: -5px;
-	right: -9px;
+	right: -5px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-sizing: border-box;
-	min-width: 18px;
-	height: 18px;
-	padding: 0 3px;
-	border-radius: 6px;
+	box-sizing: content-box;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 8px;
 	border: 2px solid #0A0A0B;
 	background: var(--signal);
 	color: #FFFFFF;
-	font-size: 10px;
+	font-family: var(--sans);
+	font-size: 9.5px;
 	font-weight: 700;
 	line-height: 1;
 	white-space: nowrap;
-	font-variant-numeric: tabular-nums;
 	pointer-events: none;
-}
-
-/* Collapsed rail: the bell sits above the avatar. */
-.hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailUser {
-	flex-direction: column-reverse;
-	gap: 12px;
-}
-
-.hrxApp .hrxToolPage.hrxSideCollapsed .sapTntSideNavigation {
-	padding-bottom: 120px;
 }
 
 .hrxNotifPop .hrxNotifHead {

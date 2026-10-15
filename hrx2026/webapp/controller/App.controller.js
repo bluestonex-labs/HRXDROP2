@@ -18,6 +18,7 @@ sap.ui.define([
 
 	var oNotifTime = DateFormat.getDateTimeInstance({ pattern: "d MMM yyyy, HH:mm" });
 
+	// Side navigation key -> route. Utilisation is a tab of Timesheet reporting.
 	var mKeyToRoute = {
 		home: "home",
 		timesheet: "timesheet",
@@ -25,7 +26,13 @@ sap.ui.define([
 		teamcal: "teamcal",
 		policies: "policies",
 		explorer: "explorer",
-		admin: "admin"
+		sickness: "sickness",
+		documents: "documents",
+		timesheetreport: "timesheetreport",
+		utilisation: "timesheetreport",
+		resources: "resources",
+		clients: "clients",
+		projects: "projects"
 	};
 
 	// Topbar title per route, so the page name appears once in the shell rather than
@@ -52,16 +59,11 @@ sap.ui.define([
 	// reports, which during a transition is still the page being left behind.
 	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport", "policies", "documents"];
 
-	// Which nav row to light up for pages that have none of their own: the admin
-	// apps are opened from the Admin page, so Admin stays lit while one is open.
+	// Which nav row to light up for pages that have none of their own: Missing
+	// timesheets and the Admin page are opened from the App Explorer.
 	var mRouteToNavKey = {
-		resources: "admin",
-		clients: "admin",
-		projects: "admin",
-		missingtimesheets: "admin",
-		sickness: "admin",
-		timesheetreport: "admin",
-		documents: "admin"
+		missingtimesheets: "explorer",
+		admin: "explorer"
 	};
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.App", {
@@ -75,6 +77,26 @@ sap.ui.define([
 			this._updateNavToggleIcon(oToolPage.getSideExpanded());
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
+
+			// Each row of the rail carries its key in the DOM (data-nav-key), so the
+			// stylesheet can draw the design's own line icon for it.
+			this.byId("sideNavigation").getItem().addEventDelegate({
+				onAfterRendering: this._markNavigationRows.bind(this)
+			});
+		},
+
+		_markNavigationRows: function () {
+			var oNavList = this.byId("sideNavigation").getItem();
+			var aItems = [];
+			oNavList.getItems().forEach(function (oItem) {
+				aItems = aItems.concat(oItem.isA("sap.tnt.NavigationListGroup") ? oItem.getItems() : [oItem]);
+			});
+			aItems.forEach(function (oItem) {
+				var oRow = oItem.getDomRef();
+				if (oRow) {
+					oRow.setAttribute("data-nav-key", oItem.getKey());
+				}
+			});
 		},
 
 		/**
@@ -102,13 +124,35 @@ sap.ui.define([
 					email: oProfile.email,
 					empID: oProfile.empID,
 					isManager: oProfile.isManager,
-					roleLabel: oProfile.empID
+					// "Consultant · BSX000052", as under the name in the design
+					subtitle: [oProfile.jobTitle, oProfile.empID].filter(Boolean).join(" · ")
 				});
+
+				this._showAdminNavigation(!!oProfile.isManager);
 
 				this._oNotifProfile = oProfile;
 				this._loadNotifications(true);
 				setInterval(this._loadNotifications.bind(this, true), NOTIF_POLL_MS);
 			}.bind(this));
+		},
+
+		/**
+		 * The "Admin only" group is for managers. It is taken out of the list rather
+		 * than hidden, and put back if the profile changes.
+		 * @param {boolean} bShow whether the signed-in user may see the admin pages
+		 */
+		_showAdminNavigation: function (bShow) {
+			var oNavList = this.byId("sideNavigation").getItem();
+			var oAdminGroup = this.byId("adminNavGroup");
+			var bInList = oNavList.indexOfItem(oAdminGroup) !== -1;
+
+			if (bShow && !bInList) {
+				oNavList.addItem(oAdminGroup);
+			} else if (!bShow && bInList) {
+				oNavList.removeItem(oAdminGroup);
+				// Kept as a dependent so it is destroyed with the view, not orphaned.
+				this.getView().addDependent(oAdminGroup);
+			}
 		},
 
 		/* =========================================================== */
@@ -309,7 +353,9 @@ sap.ui.define([
 
 			var oNavList = this.byId("sideNavigation").getItem();
 			if (oNavList) {
-				oNavList.setSelectedKey(mRouteToNavKey[sRoute] || sRoute);
+				var oQuery = (oEvent.getParameter("arguments") || {})["?query"] || {};
+				var bUtilisation = sRoute === "timesheetreport" && oQuery.tab === "util";
+				oNavList.setSelectedKey(bUtilisation ? "utilisation" : (mRouteToNavKey[sRoute] || sRoute));
 			}
 		},
 
@@ -401,7 +447,17 @@ sap.ui.define([
 
 		onItemSelect: function (oEvent) {
 			var sKey = oEvent.getParameter("item").getKey();
-			this.getOwnerComponent().getRouter().navTo(mKeyToRoute[sKey] || "home");
+			var oRouter = this.getOwnerComponent().getRouter();
+
+			if (sKey === "utilisation") {
+				oRouter.navTo("timesheetreport", { "?query": { tab: "util" } });
+				return;
+			}
+			if (sKey === "timesheetreport") {
+				oRouter.navTo("timesheetreport", { "?query": { tab: "assign" } });
+				return;
+			}
+			oRouter.navTo(mKeyToRoute[sKey] || "home");
 		}
 	});
 });

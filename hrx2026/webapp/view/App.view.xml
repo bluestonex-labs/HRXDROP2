@@ -7,17 +7,35 @@
 			<Button id="navToggleButton" press="onMenuButtonPress" type="Transparent" tooltip="{i18n>navToggle}" class="hrxNavToggle" icon="sap-icon://nav-back"/>
 		</tnt:header>
 		<tnt:sideContent>
+			<!-- As the 15.10.26 design has it: Overview for everyone, then the admin
+			     pages listed straight in the rail, for managers only. Expenses is the
+			     design's placeholder for a separate app still to come. -->
 			<tnt:SideNavigation id="sideNavigation" itemSelect="onItemSelect">
 				<tnt:NavigationList selectedKey="home">
-					<tnt:NavigationListItem key="home" text="{i18n>navHome}" icon="sap-icon://home"/>
-					<tnt:NavigationListItem key="timesheet" text="{i18n>navTimesheet}" icon="sap-icon://history"/>
-					<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
-					<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
-					<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
-					<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
-					<!-- Everything else is reached from the App Explorer. Admin belongs to
-					     managers only, which the shell decides from the signed-in profile. -->
-					<tnt:NavigationListItem key="admin" text="{i18n>navAdmin}" icon="sap-icon://action-settings" visible="{app>/user/isManager}"/>
+					<tnt:NavigationListGroup text="{i18n>navGroupOverview}" hasExpander="false">
+						<tnt:NavigationListItem key="home" text="{i18n>navHome}" icon="sap-icon://home"/>
+						<tnt:NavigationListItem key="timesheet" text="{i18n>navTimesheet}" icon="sap-icon://history"/>
+						<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
+						<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
+						<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
+						<tnt:NavigationListItem key="expenses" text="{i18n>navExpenses}" icon="sap-icon://expense-report" enabled="false" selectable="false" tooltip="{i18n>navExpensesSoon}">
+							<tnt:tag>
+								<ObjectStatus text="{i18n>navSoon}" class="hrxNavSoon"/>
+							</tnt:tag>
+						</tnt:NavigationListItem>
+						<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
+					</tnt:NavigationListGroup>
+					<!-- Managers only: the controller takes the group out for anybody else (a
+					     hidden NavigationListGroup breaks the list's keyboard focus handling) -->
+					<tnt:NavigationListGroup id="adminNavGroup" text="{i18n>navGroupAdmin}" hasExpander="false">
+						<tnt:NavigationListItem key="sickness" text="{i18n>navSickness}" icon="sap-icon://stethoscope"/>
+						<tnt:NavigationListItem key="documents" text="{i18n>navDocuments}" icon="sap-icon://folder-blank"/>
+						<tnt:NavigationListItem key="timesheetreport" text="{i18n>navTimesheetReport}" icon="sap-icon://clipboard"/>
+						<tnt:NavigationListItem key="utilisation" text="{i18n>navUtilisation}" icon="sap-icon://line-chart"/>
+						<tnt:NavigationListItem key="resources" text="{i18n>navManageResources}" icon="sap-icon://group"/>
+						<tnt:NavigationListItem key="clients" text="{i18n>navManageClients}" icon="sap-icon://building"/>
+						<tnt:NavigationListItem key="projects" text="{i18n>navManageProjects}" icon="sap-icon://suitcase"/>
+					</tnt:NavigationListGroup>
 				</tnt:NavigationList>
 			</tnt:SideNavigation>
 		</tnt:sideContent>
@@ -83,7 +101,7 @@
 	<!-- TESTING AID - remove before go-live, with the demo role in CurrentUser.js.
 	     The prototype's "View as (demo)" switch: look at the app with full admin
 	     access or as a plain employee, whatever the signed-in user's own rights.
-	     Laid over the rail just above the signed-in user, like that footer. -->
+	     Laid over the rail just below the signed-in user, as in the design. -->
 	<HBox
 		id="railDemo"
 		alignItems="Center"
@@ -102,8 +120,9 @@
 		</Select>
 	</HBox>
 
-	<!-- Who is signed in, pinned to the foot of the side rail as it is in SupportX:
-	     their initials, their name and their role. sap.tnt.SideNavigation's own
+	<!-- Who is signed in, pinned to the foot of the side rail as the design has it:
+	     their initials, their name, and their job title and employee ID.
+	     sap.tnt.SideNavigation's own
 	     footer slots only take navigation items, so this sits beside the ToolPage
 	     and CSS lays it over the bottom of the rail - the same way the collapse
 	     toggle above is laid over its top. Hidden on a phone, where the rail itself
@@ -114,17 +133,12 @@
 		visible="{= !!${app>/user/name} &amp;&amp; !${device>/system/phone} }"
 		tooltip="{app>/user/email}"
 		class="hrxRailUser">
-		<customData>
-			<!-- The role picks the avatar's and the tag's colour. A data-* attribute,
-			     since a bound class does not evaluate on `class`. -->
-			<core:CustomData key="role" value="{= ${app>/user/isManager} ? 'manager' : 'employee' }" writeToDom="true"/>
-		</customData>
 		<HBox alignItems="Center" justifyContent="Center" class="hrxRailAvatar">
 			<Text text="{app>/user/initials}" class="hrxRailAvatarText"/>
 		</HBox>
 		<VBox class="hrxRailUserInfo">
 			<Text text="{app>/user/name}" wrapping="false" class="hrxRailUserName"/>
-			<Text text="{= ${app>/user/isManager} ? ${i18n>roleManager} : ${i18n>roleEmployee} }" class="hrxRailRoleTag"/>
+			<Text text="{app>/user/subtitle}" wrapping="false" class="hrxRailUserSub"/>
 		</VBox>
 		<!-- Notifications, worked out from the user's own data (NotificationService) -->
 		<HBox class="hrxBellWrap">

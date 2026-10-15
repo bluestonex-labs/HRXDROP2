@@ -1130,6 +1130,7 @@ sap.ui.define([
 						Name: fullName(oMe),
 						Email: lower(oMe.WorkEmail),
 						SiteID: oMe.BaseSite_ID || "",
+						JobTitle: oMe.JobTitle || "",
 						IsManager: yn(bManager),
 						HasPendingLeaves: "N"
 					}] : [],

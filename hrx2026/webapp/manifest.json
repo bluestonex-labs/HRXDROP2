@@ -96,6 +96,39 @@
       "css": [
         {
           "uri": "css/style.css"
+        },
+        {
+          "uri": "css/pages/home.css"
+        },
+        {
+          "uri": "css/pages/timesheet.css"
+        },
+        {
+          "uri": "css/pages/leave.css"
+        },
+        {
+          "uri": "css/pages/teamcalendar.css"
+        },
+        {
+          "uri": "css/pages/policies-documents.css"
+        },
+        {
+          "uri": "css/pages/sickness.css"
+        },
+        {
+          "uri": "css/pages/timesheet-reporting.css"
+        },
+        {
+          "uri": "css/pages/manage-resources.css"
+        },
+        {
+          "uri": "css/pages/manage-clients.css"
+        },
+        {
+          "uri": "css/pages/manage-projects.css"
+        },
+        {
+          "uri": "css/pages/app-explorer.css"
         }
       ]
     },
