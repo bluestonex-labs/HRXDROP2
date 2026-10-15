@@ -184,7 +184,7 @@ sap.ui.define([], function () {
 				kind: "approvals",
 				count: iCount,
 				at: oNewest ? oNewest.at : new Date(),
-				route: "leavemanagement"
+				route: "teamcal"
 			};
 		},
 

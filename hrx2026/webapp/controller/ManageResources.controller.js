@@ -572,40 +572,34 @@ sap.ui.define([
 		},
 
 		/**
-		 * Flags the selected resource as deleted through manageUsers.xsjs.
+		 * Makes the selected resource active or inactive as soon as the switch is
+		 * flipped, without saving anything else on the form. The switch goes back if
+		 * the change cannot be saved.
+		 * @param {sap.ui.base.Event} oEvent the switch's change event
 		 */
-		onDelete: function () {
-			var oDetail = this.getModel("mrDetail").getData();
+		onActiveChange: function (oEvent) {
+			var bActive = oEvent.getParameter("state");
+			var oDetailModel = this.getModel("mrDetail");
+			var oDetail = oDetailModel.getData();
 			if (!oDetail.EmpID) {
 				return;
 			}
 
-			MessageBox.confirm(this.getText("mrConfirmDelete", [oDetail.FullName]), {
-				title: this.getText("mrConfirmDeleteTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
-					}
+			this.getModel("mrView").setProperty("/saving", true);
 
-					this.getModel("mrView").setProperty("/saving", true);
-
-					this._postJson(USERS_SERVICE + "?cmd=delete", {
-						EmpID: oDetail.UserID,
-						UserTypeKey: oDetail.UserTypeKey,
-						IsDeleted: "Y"
-					}).then(function (oResult) {
-						this.getModel("mrView").setProperty("/saving", false);
-						MessageToast.show(oResult.msg || this.getText("mrDeleted"));
-						this._closeDetail();
-						return this._loadResources();
-					}.bind(this)).catch(function (oError) {
-						this.getModel("mrView").setProperty("/saving", false);
-						this._showError("mrErrorDelete", oError);
-					}.bind(this));
-				}.bind(this)
-			});
+			this._postJson(USERS_SERVICE + "?cmd=setActive", {
+				EmpID: oDetail.UserID,
+				IsActive: bActive ? "Y" : "N"
+			}).then(function () {
+				this.getModel("mrView").setProperty("/saving", false);
+				oDetailModel.setProperty("/IsActive", bActive ? "Y" : "N");
+				MessageToast.show(this.getText(bActive ? "mrSetActive" : "mrSetInactive", [oDetail.FullName]));
+				return this._loadResources();
+			}.bind(this)).catch(function (oError) {
+				this.getModel("mrView").setProperty("/saving", false);
+				oDetailModel.setProperty("/Active", !bActive);
+				this._showError("mrErrorActive", oError);
+			}.bind(this));
 		},
 
 		/* =========================================================== */

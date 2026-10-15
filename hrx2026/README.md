@@ -80,10 +80,27 @@ the page uses it and the note goes - no app change needed.
 | Policies and acknowledgements (whole organisation) | `Policies`, `PolicyAcknowledgements`, `acknowledgePolicy`, `removePolicy`; file via `Documents` type `Policy` | Policies to read, Documents, Home tile, notifications | `model/DocumentService.js` |
 | Sickness follow-up | `SicknessReviews`, `ReturnsToWork`, `reviewSicknessTrigger`, `openReturnToWork`, `completeReturnToWorkStep`, `completeReturnToWork` | Sickness, Home tile | `model/SicknessService.js` |
 | Client support users, SLAs, components, application services | `ClientUsers`, `ClientSLAs`, `ClientComponents`, `ClientApplications` | Manage Clients tabs | `model/HrxLegacyClients.js` |
-| Project areas, client team, attachments | `ProjectAreas`, `ProjectAreaAssignments`, `ResourceAreaAssignments`, `ProjectClientTeam`, `fetchProjectDocuments`, `deleteProjectDocument`; files via `Documents` type `Project` | Manage Projects | `model/HrxLegacyProjects.js` |
+| Project areas, attachments | `ProjectAreas`, `ProjectAreaAssignments`, `ResourceAreaAssignments`, `fetchProjectDocuments`, `deleteProjectDocument`; files via `Documents` type `Project` | Manage Projects | `model/HrxLegacyProjects.js` |
+| Project client contacts (primary and secondary) | `Projects.PrimaryContactName` / `PrimaryContactEmail` / `SecondaryContactName` / `SecondaryContactEmail` - HRXService pull request #36, into `dev` | Manage Projects, Client contacts tab | `model/HrxLegacy.js` |
 | Reminders | `sendReminder` (falls back to an email draft until email is set up on the service) | Documents, Timesheet Reporting, Sickness | `model/Reminders.js` |
 | Notification read state | `fetchReadNotifications`, `markNotificationsRead` | The bell | `model/NotificationService.js` |
 | Job title, client contact name, day cost | `Users.JobTitle`, `Contacts.FirstName` / `LastName`, `UserToProject.DayCost` | Manage Resources, Team Calendar, Sickness, Manage Clients, Manage Projects | `model/HrxLegacy.js` |
+
+### The 15.10.26 design
+
+- **Team Calendar** now carries what was the Leave Management page: a manager's *Team leave*
+  card (a period, a search, Pending / Approved / Rejected) above the calendar, which filters by
+  team (a manager starts on their direct reports), people, site and project. Leave is coloured
+  by type; a request still waiting is hatched and only shown to a manager, who can approve or
+  reject it from the calendar, from "N pending" under a name, or from the card. Requests are
+  read and decided through `model/TeamLeave.js`.
+- **Home** *Pending approvals* lists only the manager's own team.
+- **Manage Resources**: no Delete; an Active / Inactive switch beside Save takes effect at once.
+- **Manage Projects**: resources are Assigned or Released (with Re-assign); the client team tab
+  is now *Client contacts* (a primary and an optional secondary contact).
+- **Policies to read**: two figures (available, need acknowledgement); Acknowledge before Read.
+
+The app as it was before this design is kept on the branch `archive/ui-before-15-10-26-design`.
 
 Software, components, apps and services on the client tabs are names typed in (the lists
 suggest the names already used); nothing is copied from the original services.

@@ -424,7 +424,11 @@ sap.ui.define([
 						ProjectManagerID: oProject.ProjectManagerID || "",
 						TotBillableDays: oProject.TotBillableDays || "",
 						ClientDesc: (oProject.ClientID && oProject.ClientID.ClientName) || "",
-						ClientLocation: locationName(oProject.ClientID && oProject.ClientID.BaseSite, aSites)
+						ClientLocation: locationName(oProject.ClientID && oProject.ClientID.BaseSite, aSites),
+						PrimaryContactName: oProject.PrimaryContactName || "",
+						PrimaryContactEmail: oProject.PrimaryContactEmail || "",
+						SecondaryContactName: oProject.SecondaryContactName || "",
+						SecondaryContactEmail: oProject.SecondaryContactEmail || ""
 					};
 				});
 			});
@@ -985,14 +989,16 @@ sap.ui.define([
 					mTypes[o.ID] = o;
 				});
 
-				// Full access (a testing aid) sees every request waiting, not just its own.
-				var CurrentUser = sap.ui.require("bsx/hrx/hrx2026/model/CurrentUser");
-				var bEveryone = !!(CurrentUser && CurrentUser.hasFullAccess());
-
-				return Hrx.list("Leaves", bEveryone ? {} : { $filter: "ApproverID_EmployeeID eq " + Hrx.literal(oMe.EmployeeID) }).then(function (aLeaves) {
+				// The signed-in manager's own team: requests they are the approver of, and
+				// requests from anybody reporting to them. (Everybody's pending leave is on
+				// Team Calendar, under Team: Everyone.)
+				return Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }).then(function (aLeaves) {
 					var aPending = [];
 					aLeaves.filter(function (oLeave) {
-						return leaveStatus(oLeave) === "REQ";
+						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
+						var bMine = oLeave.ApproverID_EmployeeID === oMe.EmployeeID ||
+							(!!oRequester && oRequester.Manager_EmployeeID === oMe.EmployeeID);
+						return bMine && leaveStatus(oLeave) === "REQ";
 					}).forEach(function (oLeave) {
 						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
 						var oType = mTypes[oLeave.LeaveCategoryId_ID] || { code: "", desc: "" };
@@ -1105,6 +1111,8 @@ sap.ui.define([
 						JobTitle: oUser.JobTitle || "",
 						Email: lower(oUser.WorkEmail),
 						SiteID: oUser.BaseSite_ID || "",
+						ManagerID: oUser.Manager_EmployeeID || "",
+						UserType: oUser.UserType || "",
 						Pic: pictureOf(oUser),
 						IsLoggedinUser: yn(!!oMe && oMe.EmployeeID === oUser.EmployeeID),
 						Leave: aLeave
@@ -1235,6 +1243,13 @@ sap.ui.define([
 			return Hrx.update("Users(" + Hrx.literal(oBody.EmpID) + ")", { IsActive: false }).then(function () {
 				return ok({});
 			});
+		},
+
+		/** Makes a person active or inactive, and changes nothing else on their record. */
+		setActive: function (oBody) {
+			return Hrx.update("Users(" + Hrx.literal(oBody.EmpID) + ")", { IsActive: isYes(oBody.IsActive) }).then(function () {
+				return ok({});
+			});
 		}
 	};
 
@@ -1344,6 +1359,18 @@ sap.ui.define([
 			});
 		},
 
+		/** The client's primary and secondary contacts for the project (the service checks them). */
+		saveContacts: function (oBody) {
+			return Hrx.update("Projects(" + oBody.ProjectKey + ")", {
+				PrimaryContactName: oBody.PrimaryContactName || "",
+				PrimaryContactEmail: oBody.PrimaryContactEmail || "",
+				SecondaryContactName: oBody.SecondaryContactName || "",
+				SecondaryContactEmail: oBody.SecondaryContactEmail || ""
+			}).then(function () {
+				return ok({});
+			});
+		},
+
 		"new": function (oBody) {
 			return orgId().then(function (sOrgId) {
 				return Hrx.create("Projects", Object.assign(projectBody(oBody), {
@@ -1366,6 +1393,26 @@ sap.ui.define([
 
 	function toTimestamp(sDate) {
 		return sDate ? String(sDate).slice(0, 10) + "T00:00:00Z" : null;
+	}
+
+	/**
+	 * Applies one change to every assignment row of a person on a project (there is one
+	 * row per billing scheme).
+	 * @param {string} sEmpId the employee ID
+	 * @param {string} sProjectId the project ID
+	 * @param {object} oChange the fields to set
+	 * @returns {Promise<object>} the xsjs-style success answer
+	 */
+	function setAssignmentActive(sEmpId, sProjectId, oChange) {
+		return Hrx.list("UserToProject", {
+			$filter: "Employee_EmployeeID eq " + Hrx.literal(sEmpId) + " and Project_ID eq " + sProjectId
+		}).then(function (aRows) {
+			return Promise.all(aRows.map(function (oRow) {
+				return Hrx.update(assignmentPath(oRow.Employee_EmployeeID, oRow.Project_ID, oRow.BillingID_ID), oChange);
+			}));
+		}).then(function () {
+			return ok({});
+		});
 	}
 
 	var Assignments = {
@@ -1462,17 +1509,17 @@ sap.ui.define([
 		},
 
 		release: function (oBody) {
-			return Hrx.list("UserToProject", {
-				$filter: "Employee_EmployeeID eq " + Hrx.literal(oBody.empID) + " and Project_ID eq " + oBody.projectID
-			}).then(function (aRows) {
-				return Promise.all(aRows.map(function (oRow) {
-					return Hrx.update(assignmentPath(oRow.Employee_EmployeeID, oRow.Project_ID, oRow.BillingID_ID), {
-						IsActive: false,
-						EndDate: new Date().toISOString()
-					});
-				}));
-			}).then(function () {
-				return ok({});
+			return setAssignmentActive(oBody.empID, oBody.projectID, {
+				IsActive: false,
+				EndDate: new Date().toISOString()
+			});
+		},
+
+		/** Puts a released resource back on the project. */
+		reassign: function (oBody) {
+			return setAssignmentActive(oBody.empID, oBody.projectID, {
+				IsActive: true,
+				EndDate: null
 			});
 		}
 	};

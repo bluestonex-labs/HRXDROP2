@@ -19,7 +19,7 @@
 					visible="{= !${pdView>/bound} }"
 					class="sapUiSmallMarginBottom" />
 
-				<layout:Grid defaultSpan="XL4 L4 M4 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
+				<layout:Grid defaultSpan="XL6 L6 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
 					<VBox class="hrxKpi">
 						<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
 						<core:Icon src="sap-icon://document-text" class="hrxKpiGlyph" />
@@ -33,13 +33,6 @@
 						<Text text="{i18n>pdKpiNeed}" class="hrxKpiLabel" />
 						<Text text="{pd>/kpis/need}" class="hrxKpiNum" />
 						<Text text="{i18n>pdKpiNeedSub}" class="hrxKpiSub" />
-					</VBox>
-					<VBox class="hrxKpi">
-						<customData><core:CustomData key="state" value="{= ${pd>/kpis/outstanding} > 0 ? 'Warning' : 'Good' }" writeToDom="true" /></customData>
-						<core:Icon src="sap-icon://alert" class="hrxKpiGlyph" />
-						<Text text="{i18n>pdKpiOutstanding}" class="hrxKpiLabel" />
-						<Text text="{pd>/kpis/outstanding}" class="hrxKpiNum" />
-						<Text text="{= ${pd>/kpis/outstanding} > 0 ? ${i18n>pdKpiOutstandingSub} : ${i18n>pdKpiAllDone} }" class="hrxKpiSub" />
 					</VBox>
 				</layout:Grid>
 
@@ -74,13 +67,14 @@
 									class="hrxSkPill" />
 							</HBox>
 							<HBox alignItems="Center" class="hrxDocActs">
-								<Button text="{i18n>pdRead}" icon="sap-icon://show" press=".onRead" />
+								<!-- Acknowledge first, where there is one to give, then Read -->
 								<Button
 									text="{i18n>pdAcknowledge}"
 									icon="sap-icon://accept"
 									type="Emphasized"
 									visible="{pd>outstanding}"
 									press=".onAcknowledge" />
+								<Button text="{i18n>pdRead}" icon="sap-icon://show" press=".onRead" />
 							</HBox>
 						</HBox>
 					</VBox>

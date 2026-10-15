@@ -5,9 +5,8 @@ sap.ui.define([
 	"use strict";
 
 	/*
-	 * Manage Projects' areas, client team and attachments, answered from the HRX service
-	 * in the shapes the page was written against (the original xsodata and supportx
-	 * services). As with HrxLegacyClients, a call is only answered when the HRX service
+	 * Manage Projects' areas and attachments, answered from the HRX service in the
+	 * shapes the page was written against (the original xsodata services). As with HrxLegacyClients, a call is only answered when the HRX service
 	 * has what it needs deployed; otherwise it goes to the original services as before.
 	 *
 	 * An area's key on the page (TaskKey, ProjectTaskKey) is the HRX ProjectAreas ID.
@@ -15,14 +14,6 @@ sap.ui.define([
 
 	function ok(oPayload) {
 		return Object.assign({ msgType: "S", msg: "" }, oPayload);
-	}
-
-	function yn(bValue) {
-		return bValue ? "Y" : "N";
-	}
-
-	function isYes(vValue) {
-		return vValue === true || vValue === "Y" || vValue === "true";
 	}
 
 	function projectKeyFilter(aFilters) {
@@ -116,50 +107,6 @@ sap.ui.define([
 	};
 
 	/* --------------------------------------------------------------- */
-	/* the client's people on a project (supportx/ManageAssignments.xsjs) */
-	/* --------------------------------------------------------------- */
-
-	var ClientTeam = {
-		// OrgID is the client's key and ProjectID the project's.
-		fetch: function (oParams) {
-			return Hrx.list("ProjectClientTeam", {
-				$filter: "Project_ID eq " + oParams.ProjectID,
-				$expand: "ClientUser($select=ID,FirstName,LastName,Email)"
-			}).then(function (aRows) {
-				return ok({
-					users: aRows.map(function (oRow) {
-						var oUser = oRow.ClientUser || {};
-						return {
-							AssignmentID: oRow.ID,
-							UserID: oRow.ClientUser_ID,
-							FName: oUser.FirstName || "",
-							LName: oUser.LastName || "",
-							Email: oUser.Email || "",
-							IsActive: yn(oRow.IsActive !== false)
-						};
-					})
-				});
-			});
-		},
-
-		"new": function (oBody) {
-			return Hrx.create("ProjectClientTeam", {
-				Project_ID: oBody.ProjectID,
-				ClientUser_ID: oBody.UserID,
-				IsActive: isYes(oBody.IsActive)
-			}).then(function () {
-				return ok({});
-			});
-		},
-
-		update: function (oBody) {
-			return Hrx.update("ProjectClientTeam(" + oBody.AssignmentID + ")", { IsActive: isYes(oBody.IsActive) }).then(function () {
-				return ok({});
-			});
-		}
-	};
-
-	/* --------------------------------------------------------------- */
 	/* attachments (hrx/manageAttachments.xsjs)                         */
 	/* --------------------------------------------------------------- */
 
@@ -231,7 +178,6 @@ sap.ui.define([
 	};
 
 	var SERVICES = {
-		"supportx/ManageAssignments.xsjs": { needs: "ProjectClientTeam", commands: ClientTeam },
 		"hrx/manageAttachments.xsjs": { needs: "fetchProjectDocuments", commands: Attachments }
 	};
 

@@ -12,7 +12,7 @@ sap.ui.define([
 
 	/*
 	 * Book leave on someone's behalf, approved straight away - shared by Manage
-	 * Resources (for the resource on screen) and Leave management (for a chosen
+	 * Resources (for the resource on screen) and Team Calendar (for a chosen
 	 * employee). Mixed into the controller, which provides _read, _getJson,
 	 * _postJson, _openDialog, _closeDialog, _isoDate, getText, getModel, setModel,
 	 * _showError and _sOrgId, and is told about each booking through

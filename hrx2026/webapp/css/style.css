@@ -1644,7 +1644,7 @@ body.hrxApp {
    but leaves the appointment body on the theme default. Both are set to the
    same values here so the appointment renders as one solid block matching the
    legend, not a two-tone border/fill split. */
-.hrxMyLeave, .hrxTeamCalendar, .hrxLeaveManagement, .hrxLmReq {
+.hrxMyLeave, .hrxTeamCalendar {
 	--sapLegendColor1: #96C2FA; /* Holiday */
 	--sapLegendColor2: #BB98C5; /* Sick */
 	--sapLegendColor3: #EB7F5D; /* Unpaid */
@@ -2999,23 +2999,7 @@ body.hrxApp {
 	.hrxApp .hrxMgrDash ~ .hrxActionRow.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ── LEAVE MANAGEMENT ─────────────────────────────────────────────────────── */
-
-/* The type's dot takes the team calendar's colour for it - .hrxLeaveManagement
-   shares the calendars' palette (see MY LEAVE). */
-.hrxApp .hrxLmDot {
-	display: inline-block;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	margin-right: 8px;
-	background: var(--txt-3);
-}
-
-.hrxApp .hrxLmDotHOLIL { background: var(--sapLegendColor1); }
-.hrxApp .hrxLmDotSICKL { background: var(--sapLegendColor2); }
-.hrxApp .hrxLmDotUNPDL { background: var(--sapLegendColor3); }
-.hrxApp .hrxLmDotCOMPL { background: var(--sapLegendColor4); }
+/* ── TEAM LEAVE (Team Calendar) ───────────────────────────────────────────── */
 
 /* The type name stays whole rather than breaking letter by letter in a narrow
    column; the duration may wrap onto its own line under it. */
@@ -3029,28 +3013,192 @@ body.hrxApp {
 	color: var(--txt-3);
 }
 
-.hrxApp .hrxLeaveManagement .hrxMgrApprRow > .sapMFlexItem:nth-child(2) {
-	flex: 1 1 auto !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxLmReq .sapMFlexItem:has(> .hrxLmReqStatus) {
+/* The Team leave card's period, range and search sit on the right of its head. */
+.hrxApp .hrxTlTools {
+	gap: 10px;
 	margin-left: auto;
 }
 
-.hrxApp .hrxLmReqLine {
-	gap: 12px;
-	padding: 8px 0;
+.hrxApp .hrxTlDot {
+	margin-right: 8px;
+}
+
+/* Approve / Reject (and Release / Re-assign on Manage Projects) side by side,
+   against the right-hand edge of their column. */
+.hrxApp .hrxRowActions {
+	gap: 6px;
+}
+
+/* The calendar card: its filters across the top, the legend across the foot. */
+.hrxApp .hrxTcCard .hrxTcFilters.sapMTB {
+	height: auto;
+	min-height: 3rem;
+	padding: 8px 16px;
+	flex-wrap: wrap;
+	row-gap: 6px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTcLegend {
+	gap: 18px;
+	padding: 4px 16px 10px;
 	border-top: 1px solid var(--line-soft);
 }
 
-.hrxApp .hrxLmReqLine > .sapMFlexItem:first-child {
-	flex: 0 0 9rem !important;
+/* Under each name: job title and site, then "N pending" for a manager. */
+.hrxApp .hrxTcPerson {
+	min-width: 0;
+	padding: 4px 0;
 }
 
-/* Breathing room between the year bar and the first card - on Sickness too,
-   whose alert strip otherwise sits right against the Record sickness bar. */
-.hrxApp .hrxLmBody,
+.hrxApp .hrxTcPersonText {
+	min-width: 0;
+}
+
+.hrxApp .hrxTcSub.sapMText {
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTcPend.sapMBtn {
+	height: auto;
+	margin-top: 4px;
+	align-self: flex-start;
+}
+
+.hrxApp .hrxTcPend.sapMBtn .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 2px 9px;
+	border-radius: 999px;
+	border: 1px solid var(--amber);
+	background: var(--amber-soft);
+	color: #92400E;
+	font-size: 10.5px;
+	font-weight: 700;
+}
+
+.hrxApp .hrxTcPend.sapMBtn:hover .sapMBtnInner {
+	background: var(--amber);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxTcPend.sapMBtn .sapMBtnContent {
+	line-height: 1.5;
+}
+
+/* A request still waiting is hatched over its leave type's colour, and dashed,
+   so it reads as the same kind of absence but plainly not yet approved. Only a
+   manager is shown these. */
+.hrxApp .hrxTeamCalendar .sapUiCalendarApp.sapUiCalendarAppTent > .sapUiCalendarAppCont {
+	background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .6) 0 5px, transparent 5px 10px);
+	border: 1px dashed rgba(10, 10, 11, .45);
+	font-style: italic;
+}
+
+.hrxApp .hrxTcHatchKey {
+	gap: 7px;
+}
+
+.hrxApp .hrxTcHatchSwatch {
+	display: inline-block;
+	width: 14px;
+	height: 10px;
+	border-radius: 3px;
+	border: 1px dashed var(--txt-3);
+	background: repeating-linear-gradient(45deg, #E4E6EA 0 3px, #FFFFFF 3px 6px);
+}
+
+/* The pop-over beside a request on the calendar, or a person's pending requests. */
+.hrxTlPop .hrxTlPopHead {
+	gap: 4px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .hrxTlPopWho {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxTlPop .hrxTlPopBody {
+	padding: 12px 16px;
+}
+
+.hrxTlPop .hrxTlPopLine {
+	margin-bottom: 6px;
+}
+
+.hrxTlPop .hrxTlPopNote.sapMText {
+	margin-top: 6px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--frost);
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+.hrxTlPop .hrxTlPopFoot,
+.hrxTlPop .hrxTlPopFoot2 {
+	gap: 8px;
+}
+
+.hrxTlPop .hrxTlPopFoot {
+	padding: 12px 16px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+}
+
+.hrxTlPop .hrxTlPopFoot > .sapMFlexItem,
+.hrxTlPop .hrxTlPopFoot2 > .sapMFlexItem {
+	flex: 1 1 0 !important;
+}
+
+.hrxTlPop .hrxTlPopAll {
+	padding: 12px 16px 14px;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .hrxTlPopAllTitle.sapMText {
+	margin-bottom: 8px;
+	font-size: 10.5px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .1em;
+	color: var(--txt-3);
+}
+
+.hrxTlPop .hrxTlPopList {
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.hrxTlPop .hrxTlPopItem {
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .hrxTlPopLink.sapMBtn {
+	width: 100%;
+	border-top: 1px solid var(--line-soft);
+}
+
+/* ── DETAIL HEADERS ───────────────────────────────────────────────────────── */
+
+/* Manage Resources and Manage Projects: the name with its status pill beside it. */
+.hrxApp .hrxNameRow {
+	gap: 4px 0;
+}
+
+/* Manage Resources' footer: the Active / Inactive switch and its word. */
+.hrxApp .hrxSwitchText.sapMText {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+/* Breathing room between the year bar and the first card on Sickness, whose
+   alert strip otherwise sits right against the Record sickness bar. */
 .hrxApp .hrxSkBody {
 	margin-top: 10px;
 }

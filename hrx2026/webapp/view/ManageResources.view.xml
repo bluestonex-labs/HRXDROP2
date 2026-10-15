@@ -146,18 +146,19 @@
 							initials="{parts: ['mrDetail>/FName', 'mrDetail>/LName'], formatter: '.formatter.initials'}"
 							class="sapUiMediumMarginEnd" />
 						<VBox>
-							<Title text="{mrDetail>/FullName}" level="H3" />
-							<Text text="{mrDetail>/JobTitle}" visible="{= !!${mrDetail>/JobTitle} }" class="hrxResourceMeta" />
-							<Text text="{mrDetail>/Email}" class="hrxResourceMeta" />
-							<HBox alignItems="Center" class="sapUiTinyMarginTop">
+							<!-- The name with its Active / Inactive pill beside it, then type, site and job title -->
+							<HBox alignItems="Center" wrap="Wrap" class="hrxNameRow">
+								<Title text="{mrDetail>/FullName}" level="H3" class="sapUiSmallMarginEnd" />
 								<ObjectStatus
 									text="{path: 'mrDetail>/IsActive', formatter: '.formatter.activeText'}"
 									state="{path: 'mrDetail>/IsActive', formatter: '.formatter.activeState'}"
-									class="sapUiTinyMarginEnd" />
-								<Text
-									class="hrxResourceMeta"
-									text="{path: 'mrDetail>/UserTypeKey', formatter: '.formatter.userTypeText'} · {mrDetail>/SiteName}" />
+									inverted="true"
+									class="hrxSkPill" />
 							</HBox>
+							<Text
+								class="hrxResourceMeta"
+								text="{path: 'mrDetail>/UserTypeKey', formatter: '.formatter.userTypeText'} · {mrDetail>/SiteName}{= ${mrDetail>/JobTitle} ? ' · ' + ${mrDetail>/JobTitle} : '' }" />
+							<Text text="{mrDetail>/Email}" class="hrxResourceMeta" />
 						</VBox>
 					</HBox>
 
@@ -229,9 +230,6 @@
 											placeholder="{i18n>mrFieldUserTypePlaceholder}">
 											<core:ListItem key="{mr>UserTypeKey}" text="{mr>UserTypeDesc}" />
 										</ComboBox>
-
-										<Label text="{i18n>mrFieldActive}" />
-										<Switch id="resourceActive" state="{mrDetail>/Active}" type="AcceptReject" />
 
 										<Label text="{i18n>mrFieldPicture}" />
 										<VBox>
@@ -529,13 +527,15 @@
 
 				<footer>
 					<OverflowToolbar id="resourceDetailFooter">
+						<!-- Active / Inactive takes effect straight away; Save is for the form -->
+						<Switch
+							id="resourceActive"
+							state="{mrDetail>/Active}"
+							type="AcceptReject"
+							tooltip="{i18n>mrFieldActive}"
+							change=".onActiveChange" />
+						<Text text="{= ${mrDetail>/Active} ? ${i18n>mrActive} : ${i18n>mrInactive} }" class="hrxSwitchText" />
 						<ToolbarSpacer />
-						<Button
-							id="resourceDeleteButton"
-							text="{i18n>mrDelete}"
-							icon="sap-icon://delete"
-							type="Reject"
-							press=".onDelete" />
 						<Button
 							id="resourceSaveButton"
 							text="{i18n>mrSave}"

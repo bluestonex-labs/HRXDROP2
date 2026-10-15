@@ -130,15 +130,16 @@
 					<HBox alignItems="Center" class="sapUiSmallMargin">
 						<core:Icon src="sap-icon://project-definition-triangle-2" size="2rem" class="sapUiMediumMarginEnd hrxProjectIcon" />
 						<VBox>
-							<Title text="{mpDetail>/ProjectDesc}" level="H3" />
-							<Text text="{mpDetail>/ClientDesc}" class="hrxResourceMeta" />
-							<HBox alignItems="Center" class="sapUiTinyMarginTop">
+							<!-- The name with its booking pill beside it, then the client and the project ID -->
+							<HBox alignItems="Center" wrap="Wrap" class="hrxNameRow">
+								<Title text="{mpDetail>/ProjectDesc}" level="H3" class="sapUiSmallMarginEnd" />
 								<ObjectStatus
 									text="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? ${i18n>mpStatusOpen} : ${i18n>mpStatusClosed} }"
 									state="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? 'Success' : 'Warning' }"
-									class="sapUiTinyMarginEnd" />
-								<Text text="{mpDetail>/ProjectKey}" class="hrxResourceMeta" />
+									inverted="true"
+									class="hrxSkPill" />
 							</HBox>
+							<Text text="{mpDetail>/ClientDesc} · {mpDetail>/ProjectKey}" class="hrxResourceMeta" />
 						</VBox>
 					</HBox>
 
@@ -295,7 +296,7 @@
 										<Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColRate}" /></Column>
 										<Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColCost}" /></Column>
 										<Column hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColStatus}" /></Column>
-										<Column hAlign="End" width="6rem"><Text text="" /></Column>
+										<Column hAlign="End" width="10rem"><Text text="" /></Column>
 									</columns>
 									<items>
 										<ColumnListItem>
@@ -324,20 +325,26 @@
 														class="hrxResourceMeta" />
 												</VBox>
 												<ObjectStatus
-													text="{path: 'mpTabs>IsActive', formatter: '.formatter.activeText'}"
-													state="{path: 'mpTabs>IsActive', formatter: '.formatter.activeState'}" />
-												<HBox>
+													text="{= ${mpTabs>IsActive} === 'Y' ? ${i18n>mpAssigned} : ${i18n>mpReleased} }"
+													state="{= ${mpTabs>IsActive} === 'Y' ? 'Success' : 'None' }"
+													inverted="true"
+													class="hrxSkPill" />
+												<HBox justifyContent="End" alignItems="Center" class="hrxRowActions">
 													<Button
 														icon="sap-icon://edit"
 														type="Transparent"
 														tooltip="{i18n>mpEditAssignment}"
 														press=".onEditAssignment" />
 													<Button
-														icon="sap-icon://sys-cancel"
-														type="Transparent"
+														text="{i18n>mpRelease}"
 														tooltip="{i18n>mpReleaseAssignment}"
 														press=".onReleaseAssignment"
 														visible="{= ${mpTabs>IsActive} === 'Y' }" />
+													<Button
+														text="{i18n>mpReassign}"
+														tooltip="{i18n>mpReassignAssignment}"
+														press=".onReassignAssignment"
+														visible="{= ${mpTabs>IsActive} !== 'Y' }" />
 												</HBox>
 											</cells>
 										</ColumnListItem>
@@ -345,55 +352,45 @@
 								</Table>
 							</IconTabFilter>
 
-							<!-- tab: client support team -->
+							<!-- tab: the client's contacts for the project -->
 							<IconTabFilter
-								key="clientteam"
-								text="{i18n>mpTabClientTeam}"
-								icon="sap-icon://account"
-								tooltip="{i18n>mpTabClientTeam}">
+								key="contacts"
+								text="{i18n>mpTabContacts}"
+								icon="sap-icon://customer"
+								tooltip="{i18n>mpTabContacts}">
 								<MessageStrip
-									text="{i18n>serviceNeededProjectTeam}"
-									visible="{= !${services>/projectClientTeam} }"
+									text="{i18n>serviceNeededProjectContacts}"
+									visible="{= !${services>/projectContacts} }"
 									type="Warning"
 									showIcon="true"
 									enableFormattedText="true"
 									class="sapUiSmallMarginBottom" />
 								<Table
-									id="projectSupportTable"
-									items="{mpTabs>/supportTeam}"
-									busy="{mpView>/tabBusy}"
-									busyIndicatorDelay="0"
-									noDataText="{i18n>mpNoSupportTeam}"
+									id="projectContactsTable"
+									items="{mpDetail>/contacts}"
 									alternateRowColors="true">
 									<headerToolbar>
 										<Toolbar>
-											<Title text="{i18n>mpSupportTeamTitle}" level="H3" />
+											<Title text="{i18n>mpContactsTitle}" level="H3" />
 											<ToolbarSpacer />
 											<Button
-												icon="sap-icon://add-employee"
-												tooltip="{i18n>mpAddSupportUser}"
-												press=".onAddSupportUser" />
+												text="{= ${mpDetail>/hasContacts} ? ${i18n>mpEditContacts} : ${i18n>mpAddContacts} }"
+												icon="sap-icon://edit"
+												enabled="{services>/projectContacts}"
+												press=".onEditContacts" />
 										</Toolbar>
 									</headerToolbar>
 									<columns>
-										<Column><Text text="{i18n>mpColUser}" /></Column>
+										<Column><Text text="{i18n>mpColContact}" /></Column>
+										<Column><Text text="{i18n>mpColName}" /></Column>
 										<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColEmail}" /></Column>
-										<Column hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColStatus}" /></Column>
-										<Column hAlign="End" width="4rem"><Text text="" /></Column>
 									</columns>
 									<items>
 										<ColumnListItem>
 											<cells>
-												<Text text="{mpTabs>FName} {mpTabs>LName}" />
-												<Text text="{path: 'mpTabs>Email', formatter: '.formatter.clean'}" />
-												<ObjectStatus
-													text="{path: 'mpTabs>IsActive', formatter: '.formatter.activeText'}"
-													state="{path: 'mpTabs>IsActive', formatter: '.formatter.activeState'}" />
-												<Button
-													icon="sap-icon://edit"
-													type="Transparent"
-													tooltip="{i18n>mpEditSupportUser}"
-													press=".onEditSupportUser" />
+												<Text text="{mpDetail>role}" class="hrxResourceName" />
+												<Text text="{= ${mpDetail>name} || '—' }" />
+												<Text text="{= ${mpDetail>email} || '—' }" />
 											</cells>
 										</ColumnListItem>
 									</items>

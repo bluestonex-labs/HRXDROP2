@@ -2,41 +2,46 @@ sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Fragment",
 	"sap/ui/model/json/JSONModel",
-	"sap/ui/model/Filter",
-	"sap/ui/model/FilterOperator",
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
+	"sap/m/Dialog",
+	"sap/m/Button",
+	"sap/m/Label",
+	"sap/m/Text",
+	"sap/m/TextArea",
+	"sap/m/VBox",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+	"../model/TeamLeave",
+	"../model/Mail",
+	"../model/formatter",
+	"./BookLeave"
+], function (Controller, Fragment, JSONModel, MessageToast, MessageBox, Dialog, Button, Label, Text, TextArea, VBox,
+	Backend, CurrentUser, TeamLeave, Mail, formatter, BookLeave) {
 	"use strict";
 
-	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
-	var SERVICE_ROOT = Backend.SERVICE_ROOT;
+	var TEAM_SERVICE = Backend.SERVICE_ROOT + "/hrx/teamCalendar1.xsjs";
 
-	var TEAM_SERVICE = SERVICE_ROOT + "/hrx/teamCalendar1.xsjs";
-	var LEAVE_REQS_SERVICE = SERVICE_ROOT + "/hrx/leaveReqs.xsjs";
-	var LEAVE_APPROVALS_SERVICE = SERVICE_ROOT + "/hrx/leaveApprovals.xsjs";
+	// The leave types in the calendar's colour key, in the design's order.
+	var LEGEND_TYPES = ["COMPL", "HOLIL", "MATEL", "PATEL", "SICKL", "UNPDL"];
 
-	// UserTypeKey on the /Resources entity. The calendar opens on the permanent
-	// staff: contractors are a small minority who come and go, and their leave is
-	// not what the team is planning around day to day.
-	var STAFF = "S";
-	var CONTRACTOR = "C";
-
-	// The calendar colours each leave type through its appointment type.
-	var LEAVE_TYPES = {
-		HOLIL: { type: "Type01", icon: "sap-icon://general-leave-request" },
-		SICKL: { type: "Type02", icon: "sap-icon://bed" },
-		UNPDL: { type: "Type03", icon: "sap-icon://unpaid-leave" },
-		COMPL: { type: "Type04", icon: "sap-icon://e-care" },
-		MATEL: { type: "Type06", icon: "sap-icon://family-care" },
-		PATEL: { type: "Type07", icon: "sap-icon://family-care" },
-		BANKHOLIDAY: { type: "Type05", icon: "sap-icon://calendar" }
-	};
-
-	return Controller.extend("bsx.hrx.hrx2026.controller.TeamCalendar", {
+	/*
+	 * Team Calendar, as the 15.10.26 design has it.
+	 *
+	 * Team leave (managers only, what was the Leave Management page): the requests in
+	 * a period - the next month by default, any month of the financial year, the
+	 * whole year or a range - by status, to approve or reject. Clicking one moves the
+	 * calendar to its week and opens it there.
+	 *
+	 * Availability: who is away, week or month, filtered by team (a manager starts on
+	 * their direct reports), people, site and project. Approved leave is drawn in its
+	 * leave type's colour; a request still waiting is hatched and only shown to a
+	 * manager, who can open it - or "N pending" under a name - to decide it.
+	 *
+	 * Everybody's leave comes from teamCalendar1.xsjs (answered by the HRX service, see
+	 * HrxLegacy); the requests behind it come from model/TeamLeave.
+	 */
+	return Controller.extend("bsx.hrx.hrx2026.controller.TeamCalendar", Object.assign({}, BookLeave, {
 
 		formatter: formatter,
 
@@ -45,63 +50,72 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onInit: function () {
-			// The signed-in user is resolved in _onRouteMatched, not here: onInit runs
-			// while that lookup is still in flight, and an empty Email is read by the
-			// services as "match anybody".
 			this._sOrgId = CurrentUser.orgId(this.getOwnerComponent());
-			this._sUserEmail = "";
+			this._aCalendarPeople = [];
+			this._aPending = [];
+			this._aPeriodRequests = [];
+			this._aCalendarRequests = [];
+			this._aProjects = [];
 
 			this.setModel(new JSONModel({
 				startDate: this._mondayOf(new Date()),
 				busy: true,
-				saving: false,
-				isManager: false,
-				hasPendingLeave: false,
-				currentEmail: "",
-				currentName: "",
-				currentEmpId: "",
-				periodLabel: "",
-				// "week" or "month" - the away count and the period the calendar loads
-				// both follow whichever view is showing.
 				viewKey: "week",
-				// The calendar opens on staff; contractors are a step away rather than
-				// mixed in, and "all" is there for when both are wanted.
-				resourceType: STAFF,
+				isManager: false,
+				myEmpId: "",
+				team: "mine",
+				site: "all",
+				project: "all",
+				selectedResources: [],
 				title: this.getText("tcTitle"),
-				selectedResources: []
+				periodLabel: ""
 			}), "tcView");
 
 			this.setModel(new JSONModel({
 				people: [],
-				allPeople: [],
-				directory: [],
-				leaveTypes: [],
-				reportees: [],
-				approvals: [],
-				dates: []
+				pool: [],
+				sites: [],
+				projects: [],
+				legend: []
 			}), "tc");
 
-			this.setModel(new JSONModel(this._emptyLeaveForm()), "tcForm");
+			this.setModel(new JSONModel({
+				busy: false,
+				period: "next",
+				rangeFrom: null,
+				rangeTo: null,
+				q: "",
+				status: "REQ"
+			}), "tlView");
+
+			this.setModel(new JSONModel({
+				periods: TeamLeave.periods(new Date(), this.getText.bind(this)),
+				chips: [],
+				rows: [],
+				countText: "",
+				noDataText: ""
+			}), "tl");
+
+			this.setModel(new JSONModel({ kind: "", pending: [] }), "tcPop");
 
 			this.getOwnerComponent().getRouter().getRoute("teamcal")
 				.attachPatternMatched(this._onRouteMatched, this);
 		},
 
 		/**
-		 * The view is reused across navigations, so every entry returns to the current
-		 * week with no resource filter applied.
+		 * Every visit opens on this week and on the manager's own team.
 		 */
 		_onRouteMatched: function () {
 			var oViewModel = this.getModel("tcView");
 			oViewModel.setProperty("/selectedResources", []);
-			oViewModel.setProperty("/resourceType", STAFF);
+			oViewModel.setProperty("/site", "all");
+			oViewModel.setProperty("/project", "all");
 
 			return CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
-				this._sUserEmail = oProfile.email;
+				this._oProfile = oProfile;
 				this._sOrgId = oProfile.orgId;
-				oViewModel.setProperty("/currentEmail", this._sUserEmail);
 
-				if (!this._sUserEmail) {
+				if (!oProfile.email) {
 					oViewModel.setProperty("/busy", false);
 					if (CurrentUser.shouldReportMissingIdentity()) {
 						this._showError("tcErrorNoIdentity", null);
@@ -109,14 +123,795 @@ sap.ui.define([
 					return undefined;
 				}
 
-				// The view is reused across navigations, so every entry comes back to the
-				// period around today rather than to wherever it was last left.
+				oViewModel.setProperty("/isManager", !!oProfile.isManager);
+				oViewModel.setProperty("/myEmpId", oProfile.empID || "");
 				this._applyView(this._currentViewKey(), new Date());
-
-				this._pDirectoryLoaded = this._pDirectoryLoaded || this._loadDirectory();
-				return this._pDirectoryLoaded.then(this._loadTeam.bind(this));
+				return this._loadAll();
 			}.bind(this));
 		},
+
+		onRefresh: function () {
+			return this._loadAll();
+		},
+
+		/* =========================================================== */
+		/* loading                                                     */
+		/* =========================================================== */
+
+		/**
+		 * The lookups (sites, projects, the legend), then the calendar and the requests.
+		 * @returns {Promise} resolved once everything on the page is filled
+		 */
+		_loadAll: function () {
+			return Promise.all([
+				TeamLeave.references(),
+				TeamLeave.assignedProjects().catch(function () {
+					// The project filter is not in the MVP; the page works without it.
+					return [];
+				})
+			]).then(function (aResults) {
+				this._oReferences = aResults[0];
+				this._aProjects = aResults[1];
+				this._fillLookups();
+				return Promise.all([this._loadCalendar(), this._loadRequests()]);
+			}.bind(this)).catch(function (oError) {
+				this.getModel("tcView").setProperty("/busy", false);
+				this._showError("lmErrorLoad", oError);
+			}.bind(this));
+		},
+
+		_fillLookups: function () {
+			var oModel = this.getModel("tc");
+			var mSites = this._oReferences.sites;
+			var mTypeNames = {};
+
+			Object.keys(this._oReferences.types).forEach(function (sId) {
+				var oType = this._oReferences.types[sId];
+				mTypeNames[oType.code] = oType.desc;
+			}, this);
+
+			oModel.setProperty("/sites", [{ key: "all", text: this.getText("tcSiteAll") }].concat(
+				Object.keys(mSites).map(function (sId) {
+					return { key: sId, text: mSites[sId] };
+				}).sort(function (a, b) {
+					return a.text.localeCompare(b.text);
+				})));
+
+			oModel.setProperty("/projects", [{ key: "all", text: this.getText("tcProjectAll") }].concat(
+				this._aProjects.map(function (oProject) {
+					return { key: oProject.ID, text: oProject.name };
+				})));
+
+			oModel.setProperty("/legend", LEGEND_TYPES.filter(function (sCode) {
+				return !!mTypeNames[sCode];
+			}).map(function (sCode) {
+				return { text: mTypeNames[sCode], colour: TeamLeave.colourOf(sCode) };
+			}));
+		},
+
+		/**
+		 * Everybody's leave for the period the calendar shows, and the requests behind it.
+		 * @returns {Promise} resolved once the calendar is filled
+		 */
+		_loadCalendar: function () {
+			var oViewModel = this.getModel("tcView");
+			var oPeriod = this._calendarPeriod();
+
+			oViewModel.setProperty("/busy", true);
+			oViewModel.setProperty("/periodLabel", formatter.dateRange(oPeriod.from, oPeriod.to));
+
+			return Promise.all([
+				this._getJson(TEAM_SERVICE + "?cmd=team&" + new URLSearchParams({
+					OrgID: this._sOrgId,
+					Email: this._oProfile.email,
+					FromDate: this._isoDate(oPeriod.from),
+					ToDate: this._isoDate(oPeriod.to)
+				}).toString()),
+				TeamLeave.leavesBetween(this._isoDate(oPeriod.from), this._isoDate(oPeriod.to))
+			]).then(function (aResults) {
+				var oUser = (aResults[0].loggedinUser || [])[0] || {};
+				// The team service knows whether this person has anybody reporting to them.
+				oViewModel.setProperty("/isManager", oUser.IsManager === "Y" || !!this._oProfile.isManager);
+				oViewModel.setProperty("/myEmpId", oUser.EmpID || this._oProfile.empID || "");
+
+				this._aCalendarPeople = aResults[0].users || [];
+				this._aCalendarRequests = TeamLeave.toRequests(aResults[1], this._oReferences, this.getText.bind(this));
+				this._chooseStartingTeam();
+				this._renderCalendar();
+				// Team leave lists the people the calendar shows, so it follows them.
+				this._renderLeave();
+				oViewModel.setProperty("/busy", false);
+			}.bind(this)).catch(function (oError) {
+				oViewModel.setProperty("/busy", false);
+				this._aCalendarPeople = [];
+				this._renderCalendar();
+				this._showError("tcErrorTeam", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * The requests for the Team leave card: those in its period, and everything
+		 * still pending (for the counts under each name and "approve all").
+		 * @returns {Promise} resolved once the card is filled
+		 */
+		_loadRequests: function () {
+			var oLeaveViewModel = this.getModel("tlView");
+			var oPeriod = this._leavePeriod();
+			var fnText = this.getText.bind(this);
+
+			oLeaveViewModel.setProperty("/busy", true);
+
+			return Promise.all([
+				oPeriod ? TeamLeave.leavesBetween(this._isoDate(oPeriod.from), this._isoDate(oPeriod.to)) : Promise.resolve([]),
+				TeamLeave.pendingLeaves()
+			]).then(function (aResults) {
+				this._aPeriodRequests = TeamLeave.toRequests(aResults[0], this._oReferences, fnText);
+				this._aPending = TeamLeave.toRequests(aResults[1], this._oReferences, fnText);
+				oLeaveViewModel.setProperty("/busy", false);
+				this._renderCalendar();
+				this._renderLeave();
+			}.bind(this)).catch(function (oError) {
+				oLeaveViewModel.setProperty("/busy", false);
+				this._showError("lmErrorLoad", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * A manager opens on their own team - unless nobody reports to them (an admin
+		 * who runs resourcing, say), when that would be an empty page.
+		 */
+		_chooseStartingTeam: function () {
+			if (this._bTeamChosen) {
+				return;
+			}
+			this._bTeamChosen = true;
+			var sMe = this.getModel("tcView").getProperty("/myEmpId");
+			var bHasReports = this._aCalendarPeople.some(function (oPerson) {
+				return oPerson.ManagerID === sMe;
+			});
+			this.getModel("tcView").setProperty("/team", bHasReports ? "mine" : "all");
+		},
+
+		/* =========================================================== */
+		/* who is shown                                                */
+		/* =========================================================== */
+
+		/**
+		 * @returns {Array<object>} the people the Team choice covers: a manager's direct
+		 * reports (or everyone), and everyone for an employee
+		 */
+		_pool: function () {
+			var oViewModel = this.getModel("tcView");
+			var sMe = oViewModel.getProperty("/myEmpId");
+			var bMineOnly = oViewModel.getProperty("/isManager") && oViewModel.getProperty("/team") === "mine";
+
+			return this._aCalendarPeople.filter(function (oPerson) {
+				return !bMineOnly || oPerson.ManagerID === sMe;
+			});
+		},
+
+		/**
+		 * @returns {Array<object>} the pool narrowed by the people, site and project
+		 * filters; for a manager, anyone with a request waiting comes first
+		 */
+		_shown: function () {
+			var oViewModel = this.getModel("tcView");
+			var aPicked = oViewModel.getProperty("/selectedResources") || [];
+			var sSite = oViewModel.getProperty("/site");
+			var sProject = oViewModel.getProperty("/project");
+			var bManager = oViewModel.getProperty("/isManager");
+			var oProject = this._aProjects.filter(function (oCandidate) {
+				return oCandidate.ID === sProject;
+			})[0];
+
+			return this._pool().filter(function (oPerson) {
+				return (sSite === "all" || oPerson.SiteID === sSite) &&
+					(!aPicked.length || aPicked.indexOf(oPerson.EmpID) !== -1) &&
+					(sProject === "all" || (oProject && oProject.empIds.indexOf(oPerson.EmpID) !== -1));
+			}).sort(function (a, b) {
+				var bAWaiting = bManager && this._pendingOf(a.EmpID).length > 0;
+				var bBWaiting = bManager && this._pendingOf(b.EmpID).length > 0;
+				if (bAWaiting !== bBWaiting) {
+					return bAWaiting ? -1 : 1;
+				}
+				return a.Name.localeCompare(b.Name);
+			}.bind(this));
+		},
+
+		/**
+		 * @param {string} sEmpId an employee
+		 * @returns {Array<object>} their requests still waiting, earliest first
+		 */
+		_pendingOf: function (sEmpId) {
+			return this._aPending.filter(function (oRequest) {
+				return oRequest.EmpID === sEmpId;
+			}).sort(function (a, b) {
+				return a.from.localeCompare(b.from);
+			});
+		},
+
+		/* =========================================================== */
+		/* rendering                                                   */
+		/* =========================================================== */
+
+		_renderCalendar: function () {
+			var oViewModel = this.getModel("tcView");
+			var bManager = oViewModel.getProperty("/isManager");
+			var sSelectedKey = this._sSelectedRequestKey;
+			var mRequestByLeaveId = this._requestsByLeaveId();
+			var aPeople = this._shown().map(function (oPerson) {
+				return this._toRow(oPerson, bManager, mRequestByLeaveId, sSelectedKey);
+			}, this);
+
+			this.getModel("tc").setProperty("/pool", this._pool().map(function (oPerson) {
+				return { EmpID: oPerson.EmpID, Name: oPerson.Name };
+			}).sort(function (a, b) {
+				return a.Name.localeCompare(b.Name);
+			}));
+			this.getModel("tc").setProperty("/people", aPeople);
+			oViewModel.setProperty("/title", this.getText("tcTitleCount", [aPeople.length]));
+		},
+
+		/**
+		 * One person's calendar row: their leave as appointments, coloured by leave type.
+		 * A request still waiting is hatched (tentative), and only a manager sees it.
+		 * @param {object} oPerson a person from the team service
+		 * @param {boolean} bManager whether the signed-in user is a manager
+		 * @param {object} mRequestByLeaveId the requests behind the leave, by Leaves ID
+		 * @param {string} [sSelectedKey] the request to show as selected
+		 * @returns {object} the row
+		 */
+		_toRow: function (oPerson, bManager, mRequestByLeaveId, sSelectedKey) {
+			var aLeave = (oPerson.Leave || []).filter(function (oDay) {
+				return oDay.StatusID === "APR" || (bManager && oDay.StatusID === "REQ");
+			}).map(function (oDay) {
+				var oDate = formatter.toDate(oDay.Date);
+				if (!oDate) {
+					return null;
+				}
+				var sHalf = oDay.AbsenceType;
+				var oRequest = mRequestByLeaveId[oDay.LeaveID];
+				var bBankHoliday = oDay.LeaveTypeID === "BANKHOLIDAY";
+
+				return {
+					leaveId: oDay.LeaveID || "",
+					requestKey: oRequest ? oRequest.key : "",
+					start: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), sHalf === "PM" ? 13 : 0, 0),
+					end: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), sHalf === "AM" ? 13 : 23, sHalf === "AM" ? 0 : 59),
+					title: oDay.LeaveType + (sHalf ? " · " + sHalf : ""),
+					info: bBankHoliday ? this.getText("tcBankHoliday") : "",
+					colour: TeamLeave.colourOf(oDay.LeaveTypeID),
+					tentative: oDay.StatusID === "REQ",
+					selected: !!oRequest && oRequest.key === sSelectedKey,
+					tooltip: oPerson.Name + " · " + oDay.LeaveType + (oRequest ? " · " + oRequest.dates + " · " + oRequest.statusText : "")
+				};
+			}, this).filter(Boolean);
+
+			var iPending = this._pendingOf(oPerson.EmpID).length;
+			var sSite = this._oReferences.sites[oPerson.SiteID] || "";
+
+			return {
+				EmpID: oPerson.EmpID,
+				Name: oPerson.Name,
+				Pic: oPerson.Pic || "",
+				initials: formatter.nameInitials(oPerson.Name),
+				subText: [oPerson.JobTitle, sSite].filter(Boolean).join(" · "),
+				pendingCount: iPending,
+				pendingText: this.getText("tcPendingCount", [iPending]),
+				Leave: aLeave
+			};
+		},
+
+		/**
+		 * @returns {object} every request the page knows about, by the ID of each of its Leaves rows
+		 */
+		_requestsByLeaveId: function () {
+			var mRequests = {};
+			this._aCalendarRequests.concat(this._aPeriodRequests, this._aPending).forEach(function (oRequest) {
+				oRequest.ids.forEach(function (sLeaveId) {
+					mRequests[sLeaveId] = oRequest;
+				});
+			});
+			return mRequests;
+		},
+
+		/**
+		 * Fills the Team leave card: the period's requests for the people shown, by the
+		 * chosen status.
+		 */
+		_renderLeave: function () {
+			var oLeaveView = this.getModel("tlView").getData();
+			var oModel = this.getModel("tl");
+			var oPeriod = this._leavePeriod();
+			var mShown = {};
+			this._shown().forEach(function (oPerson) {
+				mShown[oPerson.EmpID] = true;
+			});
+			var sQuery = (oLeaveView.q || "").trim().toLowerCase();
+
+			var aInScope = this._aPeriodRequests.filter(function (oRequest) {
+				return mShown[oRequest.EmpID] && (!sQuery || oRequest.Name.toLowerCase().indexOf(sQuery) !== -1);
+			});
+			var fnCount = function (sStatus) {
+				return aInScope.filter(function (oRequest) {
+					return oRequest.status === sStatus;
+				}).length;
+			};
+
+			oModel.setProperty("/chips", ["REQ", "APR", "REJ"].map(function (sStatus) {
+				return {
+					status: sStatus,
+					text: this.getText(TeamLeave.STATUS[sStatus].textKey) + "  " + fnCount(sStatus),
+					selected: oLeaveView.status === sStatus
+				};
+			}, this));
+
+			var aRows = aInScope.filter(function (oRequest) {
+				return oRequest.status === oLeaveView.status;
+			}).sort(function (a, b) {
+				// What is waiting, soonest first; what is decided, latest first.
+				return oLeaveView.status === "REQ" ? a.from.localeCompare(b.from) : b.from.localeCompare(a.from);
+			});
+			oModel.setProperty("/rows", aRows);
+
+			var bMyTeam = this.getModel("tcView").getProperty("/team") === "mine";
+			var sPeriod = oPeriod ? formatter.dateRange(oPeriod.from, oPeriod.to) : this.getText("tlSelectDates");
+			oModel.setProperty("/countText", this.getText(bMyTeam ? "tlCountMine" : "tlCount", [
+				this.getText(aRows.length === 1 ? "tlOneRequest" : "tlRequests", [aRows.length]), sPeriod]));
+			oModel.setProperty("/noDataText", oLeaveView.status === "REQ"
+				? this.getText("tlNothingPending")
+				: this.getText("tlNothingDecided", [this.getText(TeamLeave.STATUS[oLeaveView.status].textKey).toLowerCase()]));
+		},
+
+		/* =========================================================== */
+		/* periods                                                     */
+		/* =========================================================== */
+
+		/**
+		 * @returns {{from: Date, to: Date}} the days the calendar shows
+		 */
+		_calendarPeriod: function () {
+			var oViewModel = this.getModel("tcView");
+			var oStart = formatter.toDate(oViewModel.getProperty("/startDate")) || new Date();
+			if (oViewModel.getProperty("/viewKey") === "month") {
+				return { from: this._firstOfMonth(oStart), to: new Date(oStart.getFullYear(), oStart.getMonth() + 1, 0) };
+			}
+			return { from: oStart, to: new Date(oStart.getFullYear(), oStart.getMonth(), oStart.getDate() + 6) };
+		},
+
+		/**
+		 * @returns {{from: Date, to: Date}|null} the Team leave period, or null while a
+		 * custom range is still being picked
+		 */
+		_leavePeriod: function () {
+			var oLeaveView = this.getModel("tlView").getData();
+			if (oLeaveView.period === "custom") {
+				return oLeaveView.rangeFrom && oLeaveView.rangeTo ? { from: oLeaveView.rangeFrom, to: oLeaveView.rangeTo } : null;
+			}
+			return this.getModel("tl").getProperty("/periods").filter(function (oPeriod) {
+				return oPeriod.key === oLeaveView.period;
+			})[0] || null;
+		},
+
+		/* =========================================================== */
+		/* Team leave events                                           */
+		/* =========================================================== */
+
+		onPeriodChange: function () {
+			if (this.getModel("tlView").getProperty("/period") === "custom") {
+				if (this._leavePeriod()) {
+					this._loadRequests();
+				} else {
+					this._renderLeave();
+					var oRange = this.byId("teamLeaveRange");
+					setTimeout(function () {
+						oRange.focus();
+					}, 0);
+				}
+				return;
+			}
+			this._loadRequests();
+		},
+
+		onRangeChange: function (oEvent) {
+			if (oEvent.getParameter("valid") && oEvent.getParameter("from") && oEvent.getParameter("to")) {
+				this._loadRequests();
+			}
+		},
+
+		onLeaveSearch: function () {
+			this._renderLeave();
+		},
+
+		onStatusChip: function (oEvent) {
+			this.getModel("tlView").setProperty("/status", oEvent.getSource().data("status"));
+			this._renderLeave();
+		},
+
+		onApproveRow: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("tl").getObject();
+			this._approve([oRequest], oRequest.Name);
+		},
+
+		onRejectRow: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("tl").getObject();
+			this._reject([oRequest], oRequest.Name);
+		},
+
+		/**
+		 * Moves the calendar to the week the request starts in (its first weekday) and
+		 * opens it there.
+		 * @param {sap.ui.base.Event} oEvent the row press event
+		 */
+		onLeaveRowPress: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("tl").getObject();
+			var oFirstDay = formatter.toDate(oRequest.from);
+			while (oFirstDay.getDay() === 0 || oFirstDay.getDay() === 6) {
+				oFirstDay.setDate(oFirstDay.getDate() + 1);
+			}
+
+			this._sSelectedRequestKey = oRequest.key;
+			this._applyView("week", oFirstDay);
+			this._loadCalendar().then(function () {
+				var oCard = this.byId("teamCalCard");
+				if (oCard && oCard.getDomRef()) {
+					oCard.getDomRef().scrollIntoView({ block: "start", behavior: "smooth" });
+				}
+				// After the scroll, so the pop-over opens beside the block where it now is.
+				setTimeout(function () {
+					this._openRequest(oRequest, this._appointmentOf(oRequest) || oEvent.getSource());
+				}.bind(this), 350);
+			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* calendar events                                             */
+		/* =========================================================== */
+
+		onFilterChange: function () {
+			this._renderCalendar();
+			this._renderLeave();
+		},
+
+		/**
+		 * Stepping back or forward moves by the calendar's own idea of a step - in
+		 * month view, 31 days from wherever it is - so it is snapped back onto a whole
+		 * week or a whole month.
+		 * @param {sap.ui.base.Event} oEvent the startDateChange event
+		 */
+		onStartDateChange: function (oEvent) {
+			var sViewKey = this._currentViewKey();
+			var oNewStart = oEvent.getSource().getStartDate();
+
+			if (sViewKey === "month") {
+				oNewStart = this._snapMonthStep(formatter.toDate(this.getModel("tcView").getProperty("/startDate")), oNewStart);
+			}
+			this._sSelectedRequestKey = "";
+			this._applyView(sViewKey, oNewStart);
+			this._loadCalendar();
+		},
+
+		onViewChange: function (oEvent) {
+			this._applyView(oEvent.getSource().getViewKey(), formatter.toDate(this.getModel("tcView").getProperty("/startDate")));
+			this._loadCalendar();
+		},
+
+		/**
+		 * Opens the request behind a leave block. A bank holiday has none.
+		 * @param {sap.ui.base.Event} oEvent the appointmentSelect event
+		 */
+		onAppointmentSelect: function (oEvent) {
+			var oAppointment = oEvent.getParameter("appointment");
+			var oContext = oAppointment && oAppointment.getBindingContext("tc");
+			var oDay = oContext && oContext.getObject();
+			var oRequest = oDay && oDay.leaveId && this._requestsByLeaveId()[oDay.leaveId];
+			if (!oRequest) {
+				return;
+			}
+			this._sSelectedRequestKey = oRequest.key;
+			this._openRequest(oRequest, oAppointment);
+		},
+
+		/**
+		 * Opens a person's pending requests from "N pending" under their name.
+		 * @param {sap.ui.base.Event} oEvent the button press event
+		 */
+		onPersonPendingPress: function (oEvent) {
+			var oButton = oEvent.getSource();
+			var oPerson = oButton.getBindingContext("tc").getObject();
+			var aPending = this._pendingOf(oPerson.EmpID);
+			if (!aPending.length) {
+				return;
+			}
+
+			this.getModel("tcPop").setData({
+				kind: "person",
+				saving: false,
+				name: oPerson.Name,
+				initials: oPerson.initials,
+				pending: aPending,
+				pendingText: this.getText(aPending.length === 1 ? "tlOnePendingRequest" : "tlPendingRequests", [aPending.length]),
+				approveAllText: aPending.length > 1 ? this.getText("tlApproveAllCount", [aPending.length]) : this.getText("tcApproveAll"),
+				rejectAllText: aPending.length > 1 ? this.getText("tlRejectAllCount", [aPending.length]) : this.getText("tcRejectAll")
+			});
+			this._openPopover(oButton);
+		},
+
+		/* =========================================================== */
+		/* the pop-over                                                */
+		/* =========================================================== */
+
+		/**
+		 * @param {object} oRequest the request to show
+		 * @param {sap.ui.core.Control} oAnchor what the pop-over opens beside
+		 */
+		_openRequest: function (oRequest, oAnchor) {
+			var bManager = this.getModel("tcView").getProperty("/isManager");
+			var aPending = this._pendingOf(oRequest.EmpID);
+			var bUpcoming = oRequest.from > this._isoDate(new Date());
+
+			this.getModel("tcPop").setData({
+				kind: "request",
+				saving: false,
+				request: oRequest,
+				pending: aPending,
+				canAct: bManager && oRequest.status === "REQ",
+				allPendingText: this.getText("tlAllPendingFor", [aPending.length, oRequest.FirstName]),
+				// A manager can cancel leave that has not started; what is taken is history.
+				cancellable: bManager && bUpcoming && (oRequest.status === "REQ" || oRequest.status === "APR")
+			});
+			this._openPopover(oAnchor);
+		},
+
+		_openPopover: function (oAnchor) {
+			if (!this._pPopover) {
+				this._pPopover = Fragment.load({
+					id: this.getView().getId(),
+					name: "bsx.hrx.hrx2026.fragment.TeamLeavePopover",
+					controller: this
+				}).then(function (oPopover) {
+					this.getView().addDependent(oPopover);
+					return oPopover;
+				}.bind(this));
+			}
+			return this._pPopover.then(function (oPopover) {
+				oPopover.openBy(oAnchor);
+			});
+		},
+
+		_closePopover: function () {
+			if (this._pPopover) {
+				this._pPopover.then(function (oPopover) {
+					oPopover.close();
+				});
+			}
+		},
+
+		onPopApprove: function () {
+			var oRequest = this.getModel("tcPop").getProperty("/request");
+			this._approve([oRequest], oRequest.Name);
+		},
+
+		onPopReject: function () {
+			var oRequest = this.getModel("tcPop").getProperty("/request");
+			this._reject([oRequest], oRequest.Name);
+		},
+
+		onPopApproveAll: function () {
+			var oPop = this.getModel("tcPop").getData();
+			this._approve(oPop.pending, oPop.kind === "person" ? oPop.name : oPop.request.Name);
+		},
+
+		onPopRejectAll: function () {
+			var oPop = this.getModel("tcPop").getData();
+			this._reject(oPop.pending, oPop.kind === "person" ? oPop.name : oPop.request.Name);
+		},
+
+		onPopApproveOne: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("tcPop").getObject();
+			this._approve([oRequest], oRequest.Name);
+		},
+
+		onPopRejectOne: function (oEvent) {
+			var oRequest = oEvent.getSource().getBindingContext("tcPop").getObject();
+			this._reject([oRequest], oRequest.Name);
+		},
+
+		/* =========================================================== */
+		/* deciding and cancelling                                     */
+		/* =========================================================== */
+
+		/**
+		 * @param {Array<object>} aRequests the requests to approve
+		 * @param {string} sName whose they are
+		 */
+		_approve: function (aRequests, sName) {
+			this._decide(aRequests, "APR", "").then(function () {
+				MessageToast.show(aRequests.length > 1
+					? this.getText("tlApprovedMany", [aRequests.length, sName])
+					: this.getText("mgrApprovedToast", [sName]));
+			}.bind(this));
+		},
+
+		/**
+		 * Asks for an optional note to the employee, then turns the requests down.
+		 * @param {Array<object>} aRequests the requests to reject
+		 * @param {string} sName whose they are
+		 */
+		_reject: function (aRequests, sName) {
+			var bMany = aRequests.length > 1;
+			var oNote = new TextArea({
+				width: "100%",
+				rows: 3,
+				maxLength: 500,
+				placeholder: this.getText("mgrDeclineNotePlaceholder")
+			});
+			var aLines = bMany
+				? [new Text({ text: this.getText("tlDeclineManyIntro", [sName, aRequests.length]) })
+					.addStyleClass("hrxResourceMeta sapUiTinyMarginBottom")].concat(aRequests.map(function (oRequest) {
+					return new Text({ text: "• " + oRequest.dates + " · " + oRequest.type }).addStyleClass("hrxResourceMeta");
+				}))
+				: [new Text({ text: sName + " · " + aRequests[0].dates + " · " + aRequests[0].typeText })
+					.addStyleClass("hrxResourceMeta")];
+
+			this._closePopover();
+			var oDialog = new Dialog({
+				title: this.getText(bMany ? "tlDeclineManyTitle" : "mgrDeclineTitle"),
+				contentWidth: "28rem",
+				content: new VBox({
+					items: aLines.concat([
+						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("sapUiSmallMarginTop"),
+						oNote
+					])
+				}).addStyleClass("sapUiSmallMargin"),
+				beginButton: new Button({
+					text: this.getText(bMany ? "tcRejectAll" : "btnReject"),
+					type: "Reject",
+					press: function () {
+						var sNote = oNote.getValue().trim();
+						oDialog.close();
+						this._decide(aRequests, "REJ", sNote).then(function () {
+							MessageToast.show(bMany
+								? this.getText("tlDeclinedMany", [aRequests.length, sName])
+								: this.getText("mgrDeclinedToast", [sName]));
+						}.bind(this));
+					}.bind(this)
+				}),
+				endButton: new Button({
+					text: this.getText("dmCancel"),
+					press: function () {
+						oDialog.close();
+					}
+				}),
+				afterClose: function () {
+					oDialog.destroy();
+				}
+			});
+			this.getView().addDependent(oDialog);
+			oDialog.open();
+		},
+
+		/**
+		 * Saves a decision and reloads the page. A failure is reported here.
+		 * @param {Array<object>} aRequests the requests
+		 * @param {string} sStatus "APR" or "REJ"
+		 * @param {string} sNote the approver's note
+		 * @returns {Promise} resolved once saved and reloaded; never rejected
+		 */
+		_decide: function (aRequests, sStatus, sNote) {
+			var oProfile = this._oProfile || {};
+			this.getModel("tcPop").setProperty("/saving", true);
+			this.getModel("tlView").setProperty("/busy", true);
+
+			return TeamLeave.decide(aRequests, sStatus, sNote, {
+				orgId: this._sOrgId,
+				empID: oProfile.empID,
+				name: oProfile.name,
+				email: oProfile.email
+			}).then(function () {
+				this._closePopover();
+				this._sSelectedRequestKey = "";
+				return Promise.all([this._loadCalendar(), this._loadRequests()]);
+			}.bind(this)).catch(function (oError) {
+				this.getModel("tcPop").setProperty("/saving", false);
+				this.getModel("tlView").setProperty("/busy", false);
+				this._showError("tcErrorApprovalAction", oError);
+				return Promise.reject(oError);
+			}.bind(this));
+		},
+
+		/**
+		 * Cancels a request that has not started, once confirmed, and offers an email
+		 * draft to the employee.
+		 */
+		onPopCancel: function () {
+			var oRequest = this.getModel("tcPop").getProperty("/request");
+			var sCancel = this.getText("lmCancelLeave");
+			var sKeep = this.getText("lmKeepLeave");
+
+			this._closePopover();
+			MessageBox.confirm(this.getText("lmConfirmCancel", [oRequest.Name, oRequest.dates, oRequest.typeText]), {
+				title: sCancel,
+				icon: MessageBox.Icon.WARNING,
+				actions: [sCancel, sKeep],
+				emphasizedAction: sKeep,
+				onClose: function (sAction) {
+					if (sAction !== sCancel) {
+						return;
+					}
+					TeamLeave.cancel(oRequest).then(function () {
+						this._offerCancelEmail(oRequest);
+					}.bind(this)).catch(function (oError) {
+						this._showError("lmErrorCancel", oError);
+					}.bind(this)).then(function () {
+						// Some days may have gone before a failure; show what is left.
+						this._sSelectedRequestKey = "";
+						return Promise.all([this._loadCalendar(), this._loadRequests()]);
+					}.bind(this));
+				}.bind(this)
+			});
+		},
+
+		/**
+		 * Says the leave was cancelled and offers an Outlook draft to the employee.
+		 * Nothing is sent unless the manager sends the draft.
+		 * @param {object} oRequest the cancelled request
+		 */
+		_offerCancelEmail: function (oRequest) {
+			var sTell = this.getText("lmLetThemKnow");
+
+			MessageBox.success(this.getText("lmCancelled", [oRequest.Name, oRequest.dates]), {
+				actions: oRequest.Email ? [sTell, MessageBox.Action.CLOSE] : [MessageBox.Action.CLOSE],
+				emphasizedAction: oRequest.Email ? sTell : MessageBox.Action.CLOSE,
+				onClose: function (sAction) {
+					if (sAction !== sTell) {
+						return;
+					}
+					Mail.open({
+						to: oRequest.Email,
+						subject: this.getText("lmCancelSubject", [oRequest.dates]),
+						body: this.getText("lmCancelBody", [
+							oRequest.FirstName,
+							oRequest.type,
+							oRequest.dates,
+							oRequest.daysText,
+							(this._oProfile || {}).name || ""
+						])
+					});
+				}.bind(this)
+			});
+		},
+
+		/* =========================================================== */
+		/* book leave (shared with Manage Resources, see BookLeave.js) */
+		/* =========================================================== */
+
+		/**
+		 * Book leave for someone: a manager's direct reports, or anyone with full access.
+		 */
+		onOpenBookLeave: function () {
+			var sMe = this.getModel("tcView").getProperty("/myEmpId");
+			var bEveryone = CurrentUser.hasFullAccess();
+			var aEmployees = this._oReferences.list.filter(function (oPerson) {
+				return oPerson.IsActive && (bEveryone || oPerson.ManagerID === sMe);
+			}).map(function (oPerson) {
+				return { EmpID: oPerson.EmpID, EmpName: oPerson.Name, EmpEmail: oPerson.Email, SiteID: oPerson.SiteID };
+			});
+
+			if (!aEmployees.length) {
+				MessageBox.information(this.getText("lmNoReports"));
+				return;
+			}
+			this.openBookLeave(null, aEmployees);
+		},
+
+		_afterBookLeave: function () {
+			return Promise.all([this._loadCalendar(), this._loadRequests()]);
+		},
+
+		/* =========================================================== */
+		/* calendar periods                                            */
+		/* =========================================================== */
 
 		/**
 		 * @returns {string} the key of the view the calendar is showing
@@ -127,40 +922,29 @@ sap.ui.define([
 		},
 
 		/**
-		 * Puts the calendar on the whole period its view is named after, and sizes that
-		 * view to match.
-		 *
-		 * Month view used to keep whatever start date the week view left behind and lay
-		 * a fixed 31 columns out from there, so "September" opened on the 9th and ran
-		 * into October - hiding the leave booked earlier in the month while the label
-		 * over it still said September. A month now starts on the 1st and is exactly as
-		 * many columns wide as that month has days; a week still starts on its Monday.
+		 * Puts the calendar on the whole period its view is named after: a week from its
+		 * Monday, or a month from the 1st and exactly as many columns wide as it has days.
 		 * @param {string} sViewKey "week" or "month"
 		 * @param {Date} [oAnchor] a day inside the period to show, today by default
 		 */
 		_applyView: function (sViewKey, oAnchor) {
 			var oViewModel = this.getModel("tcView");
 			var oCalendar = this.byId("teamPlanningCalendar");
-			var oDate = oAnchor || formatter.toDate(oViewModel.getProperty("/startDate")) || new Date();
+			var oDate = oAnchor || new Date();
 			var oStart = sViewKey === "month" ? this._firstOfMonth(oDate) : this._mondayOf(oDate);
 
 			oViewModel.setProperty("/viewKey", sViewKey);
 			oViewModel.setProperty("/startDate", oStart);
-
 			if (!oCalendar) {
 				return;
 			}
 
 			if (sViewKey === "month") {
-				var iDays = this._daysInMonth(oStart);
+				var iDays = new Date(oStart.getFullYear(), oStart.getMonth() + 1, 0).getDate();
 				var oMonthView = this.byId("teamCalMonthView");
-				if (oMonthView) {
-					// A short month must not draw columns belonging to the next one.
-					oMonthView.setIntervalsL(iDays);
-					oMonthView.setIntervalsM(iDays);
-				}
+				oMonthView.setIntervalsL(iDays);
+				oMonthView.setIntervalsM(iDays);
 			}
-
 			if (oCalendar.getViewKey() !== sViewKey) {
 				oCalendar.setViewKey(sViewKey);
 			}
@@ -168,271 +952,8 @@ sap.ui.define([
 		},
 
 		/**
-		 * @param {Date} oDate any day
-		 * @returns {number} how many days that day's month has
-		 */
-		_daysInMonth: function (oDate) {
-			return new Date(oDate.getFullYear(), oDate.getMonth() + 1, 0).getDate();
-		},
-
-		/* =========================================================== */
-		/* data loading                                                */
-		/* =========================================================== */
-
-		/**
-		 * Loads the resource directory that backs the "viewing as" picker and the leave
-		 * type value help. Both are stable, so they are fetched once.
-		 * Scoped to the signed-in manager's own direct reports (plus themselves) - not
-		 * the whole org - so a manager can only view calendars they are entitled to see.
-		 * @returns {Promise} resolved once the lookups are in the model
-		 */
-		_loadDirectory: function () {
-			var oModel = this.getModel("tc");
-			var sManagerId = CurrentUser.get() && CurrentUser.get().empID;
-
-			return Promise.all([
-				this._read("/Resources", {
-					urlParameters: { "$select": "EmpID,FName,LName,Email,IsActive,UserTypeKey,ManagerID" },
-					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-				}),
-				this._read("/LeaveTypes", {
-					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-				})
-			]).then(function (aResults) {
-				var aResources = this._strip(aResults[0]);
-
-				// Staff or contractor is only on the /Resources entity - the team
-				// service says nothing about it - so the type is taken from the list
-				// already being read here rather than by fetching it again. Keyed by
-				// EmpID, which is what the calendar rows carry.
-				this._mResourceType = aResources.reduce(function (mTypes, oResource) {
-					mTypes[oResource.EmpID] = oResource.UserTypeKey;
-					return mTypes;
-				}, {});
-
-				var aDirectory = aResources
-					.filter(function (oResource) {
-						return oResource.IsActive === "Y" && oResource.Email &&
-							(CurrentUser.hasFullAccess() || CurrentUser.sameEmail(oResource.Email, this._sUserEmail) ||
-								oResource.ManagerID === sManagerId);
-					}.bind(this))
-					.map(function (oResource) {
-						oResource.FullName = ((oResource.FName || "") + " " + (oResource.LName || "")).trim();
-						return oResource;
-					})
-					.sort(function (a, b) {
-						return a.FullName.localeCompare(b.FullName);
-					});
-
-				oModel.setProperty("/directory", aDirectory);
-				oModel.setProperty("/leaveTypes", this._strip(aResults[1]));
-			}.bind(this)).catch(function (oError) {
-				this._showError("tcErrorLookups", oError);
-			}.bind(this));
-		},
-
-		/**
-		 * Loads everybody's leave for the month shown by the calendar.
-		 * @returns {Promise} resolved once the calendar rows are in the model
-		 */
-		_loadTeam: function () {
-			var oViewModel = this.getModel("tcView");
-			var oStart = formatter.toDate(oViewModel.getProperty("/startDate")) || new Date();
-			var bMonth = oViewModel.getProperty("/viewKey") === "month";
-
-			// The period loaded is exactly the period on screen, so the away count under
-			// each name counts what the calendar next to it actually shows. It used to
-			// load the whole month whatever the view, which is how a week view came to
-			// report "6 days away" for a week with no leave in it at all.
-			var oFirstDay = bMonth ? this._firstOfMonth(oStart) : oStart;
-			var oLastDay = bMonth
-				? new Date(oStart.getFullYear(), oStart.getMonth() + 1, 0)
-				: new Date(oStart.getFullYear(), oStart.getMonth(), oStart.getDate() + 6);
-
-			oViewModel.setProperty("/busy", true);
-			oViewModel.setProperty("/periodLabel", formatter.dateRange(oFirstDay, oLastDay));
-			// Short, and without the year: this goes in the narrow column under each
-			// name, where the full month name is truncated away, and the period label
-			// above the calendar already carries the year.
-			oViewModel.setProperty("/periodMonth", oFirstDay.toLocaleDateString("en-GB", { month: "short" }));
-
-			return this._getJson(TEAM_SERVICE + "?cmd=team&" + new URLSearchParams({
-				OrgID: this._sOrgId,
-				Email: oViewModel.getProperty("/currentEmail"),
-				FromDate: this._isoDate(oFirstDay),
-				ToDate: this._isoDate(oLastDay)
-			}).toString()).then(function (oData) {
-				var oUser = (oData.loggedinUser || [])[0] || {};
-
-				oViewModel.setProperty("/currentName", oUser.Name || "");
-				oViewModel.setProperty("/currentEmpId", oUser.EmpID || "");
-				oViewModel.setProperty("/isManager", oUser.IsManager === "Y" ||
-					CurrentUser.isManagerException(oViewModel.getProperty("/currentEmail")));
-				oViewModel.setProperty("/hasPendingLeave", oUser.HasPendingLeaves === "Y");
-
-				this.getModel("tc").setProperty("/allPeople", (oData.users || []).map(this._toRow, this));
-				this._applyResourceFilter();
-				oViewModel.setProperty("/busy", false);
-			}.bind(this)).catch(function (oError) {
-				oViewModel.setProperty("/busy", false);
-				this.getModel("tc").setProperty("/allPeople", []);
-				this._applyResourceFilter();
-				this._showError("tcErrorTeam", oError);
-			}.bind(this));
-		},
-
-		/**
-		 * Turns one person's leave records into planning calendar appointments. Half days
-		 * occupy the matching half of the day so they read correctly on the timeline.
-		 * @param {object} oUser a person as returned by the service
-		 * @returns {object} the calendar row
-		 */
-		_toRow: function (oUser) {
-			var aAppointments = (oUser.Leave || []).map(function (oLeave) {
-				var oDate = formatter.toDate(oLeave.Date);
-				if (!oDate) {
-					return null;
-				}
-
-				var sAbsence = oLeave.AbsenceType;
-				var iStartHour = sAbsence === "PM" ? 13 : 0;
-				var iEndHour = sAbsence === "AM" ? 13 : 23;
-				var iEndMinute = sAbsence === "AM" ? 0 : 59;
-
-				var oMeta = LEAVE_TYPES[oLeave.LeaveTypeID] || {};
-
-				return {
-					start: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), iStartHour, 0),
-					end: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), iEndHour, iEndMinute),
-					title: oLeave.LeaveType,
-					info: oLeave.LeaveTypeID === "BANKHOLIDAY" ? this.getText("tcBankHoliday") : sAbsence,
-					type: oMeta.type || "Type09",
-					icon: oMeta.icon,
-					// Requested leave is drawn as tentative until it is approved.
-					tentative: oLeave.StatusID !== "APR",
-					status: oLeave.Status,
-					statusId: oLeave.StatusID,
-					requester: oLeave.RequesterName,
-					comments: oLeave.RequesterComments
-				};
-			}, this).filter(Boolean);
-
-			// Days, not bookings: an AM and a PM half on the same day are two
-			// appointments but one day away.
-			var mDays = {};
-			aAppointments.forEach(function (oAppointment) {
-				mDays[Backend.dayKey(oAppointment.start)] = true;
-			});
-			var iDays = Object.keys(mDays).length;
-
-			return {
-				EmpID: oUser.EmpID,
-				Name: oUser.Name,
-				Email: oUser.Email,
-				SiteID: oUser.SiteID,
-				Pic: oUser.Pic || "",
-				IsLoggedinUser: oUser.IsLoggedinUser === "Y",
-				// Somebody the resource list does not cover is shown rather than
-				// hidden: an unknown type must not make a person disappear from the
-				// default view with no way to tell they are missing.
-				IsContractor: (this._mResourceType || {})[oUser.EmpID] === CONTRACTOR,
-				LeaveCount: iDays,
-				// Spelt out here rather than in a formatter so it can name the period it
-				// counts: "5 days away" on its own read as a countdown to someone's next
-				// holiday rather than as leave booked in the month on screen.
-				// The job title, when HRX holds one, leads the line under the name.
-				LeaveSummary: (oUser.JobTitle ? oUser.JobTitle + " · " : "") + this._awayText(iDays),
-				Leave: aAppointments
-			};
-		},
-
-		/**
-		 * @param {number} iDays days of leave in the period on screen
-		 * @returns {string} the line under a person's name
-		 */
-		_awayText: function (iDays) {
-			var oViewModel = this.getModel("tcView");
-			var sMonth = oViewModel.getProperty("/periodMonth");
-
-			if (!iDays) {
-				return this.getText("tcAwayNone");
-			}
-			if (oViewModel.getProperty("/viewKey") === "month") {
-				return iDays === 1
-					? this.getText("tcAwayMonthOne", [sMonth])
-					: this.getText("tcAwayMonth", [iDays, sMonth]);
-			}
-			return iDays === 1 ? this.getText("tcAwayWeekOne") : this.getText("tcAwayWeek", [iDays]);
-		},
-
-		/**
-		 * Narrows the calendar to the resources picked in the toolbar.
-		 */
-		_applyResourceFilter: function () {
-			var oViewModel = this.getModel("tcView");
-			var aSelected = oViewModel.getProperty("/selectedResources") || [];
-			var sType = oViewModel.getProperty("/resourceType");
-			var aAll = this.getModel("tc").getProperty("/allPeople") || [];
-
-			// Naming people is the more specific request, so it wins outright: somebody
-			// picked from the filter is shown whether they are staff or a contractor,
-			// rather than silently dropping out because of the type on the left of it.
-			var aPeople = aSelected.length
-				? aAll.filter(function (oPerson) {
-					return aSelected.indexOf(oPerson.EmpID) !== -1;
-				})
-				: aAll.filter(function (oPerson) {
-					if (sType === STAFF) {
-						return !oPerson.IsContractor;
-					}
-					if (sType === CONTRACTOR) {
-						return oPerson.IsContractor;
-					}
-					return true;
-				});
-
-			this.getModel("tc").setProperty("/people", aPeople);
-			oViewModel.setProperty("/title", this.getText("tcTitleCount", [aPeople.length]));
-		},
-
-		onResourceTypeChange: function (oEvent) {
-			this.getModel("tcView").setProperty("/resourceType", oEvent.getSource().getSelectedKey());
-			this._applyResourceFilter();
-		},
-
-		/* =========================================================== */
-		/* calendar events                                             */
-		/* =========================================================== */
-
-		/**
-		 * Stepping back or forward, or pressing Today, moves the calendar by whatever
-		 * its own view thinks a step is - which in month view is 31 days from wherever
-		 * it happens to be standing. Snap back onto a whole week or a whole month so the
-		 * columns always start where the label over them says they do.
-		 * @param {sap.ui.base.Event} oEvent the startDateChange event
-		 */
-		onStartDateChange: function (oEvent) {
-			var sViewKey = this._currentViewKey();
-			var oNewStart = oEvent.getSource().getStartDate();
-
-			if (sViewKey === "month") {
-				oNewStart = this._snapMonthStep(
-					formatter.toDate(this.getModel("tcView").getProperty("/startDate")), oNewStart);
-			}
-
-			this._applyView(sViewKey, oNewStart);
-			this._loadTeam();
-		},
-
-		/**
-		 * Reads a month-view step as the month it was meant to reach.
-		 *
-		 * The calendar steps by exactly as many days as it is showing, which forwards
-		 * from the 1st lands on the 1st of the next month, but backwards lands short
-		 * whenever the previous month is shorter: back from 1 October, 31 days, is 31
-		 * August - so stepping back from October used to show August and skip September
-		 * entirely. A jump (the Today button) is left alone: it is recognisable by
-		 * landing further away than a single step could reach.
+		 * Reads a month-view step as the month it was meant to reach: back from
+		 * 1 October by 31 days is 31 August, which would skip September.
 		 * @param {Date} oOldStart where the calendar was
 		 * @param {Date} oNewStart where it says it is going
 		 * @returns {Date} the first day of the month that step was meant to reach
@@ -441,412 +962,50 @@ sap.ui.define([
 			if (!oOldStart || !oNewStart) {
 				return oNewStart;
 			}
-
-			var iDayMs = 24 * 60 * 60 * 1000;
-			var iDaysBack = Math.round((oOldStart.getTime() - oNewStart.getTime()) / iDayMs);
-
-			if (iDaysBack > 0 && iDaysBack <= this._daysInMonth(oOldStart)) {
+			var iDaysBack = Math.round((oOldStart.getTime() - oNewStart.getTime()) / (24 * 60 * 60 * 1000));
+			var iDaysInOldMonth = new Date(oOldStart.getFullYear(), oOldStart.getMonth() + 1, 0).getDate();
+			if (iDaysBack > 0 && iDaysBack <= iDaysInOldMonth) {
 				return new Date(oOldStart.getFullYear(), oOldStart.getMonth() - 1, 1);
 			}
 			return oNewStart;
 		},
 
 		/**
-		 * Switching between Week and Month re-anchors the calendar on the whole period
-		 * the new view names.
-		 * @param {sap.ui.base.Event} oEvent the viewChange event
+		 * @param {object} oRequest a request
+		 * @returns {sap.ui.unified.CalendarAppointment|null} its first block on the calendar
 		 */
-		onViewChange: function (oEvent) {
-			var sViewKey = oEvent.getSource().getViewKey();
-			// Keep the day that was on screen in view rather than jumping to today: the
-			// start of a week showing late September belongs to September's month view,
-			// not to whatever month it is now.
-			this._applyView(sViewKey, formatter.toDate(this.getModel("tcView").getProperty("/startDate")));
-			this._loadTeam();
-		},
-
-		onResourceFilterChange: function (oEvent) {
-			this.getModel("tcView").setProperty("/selectedResources", oEvent.getSource().getSelectedKeys());
-			this._applyResourceFilter();
-		},
-
-		onViewAsChange: function (oEvent) {
-			var sEmail = oEvent.getSource().getSelectedKey();
-			if (!sEmail) {
-				return;
-			}
-			this.getModel("tcView").setProperty("/currentEmail", sEmail);
-			this._loadTeam();
-		},
-
-		onRefresh: function () {
-			this._loadTeam();
-		},
-
-		/**
-		 * Shows the detail of the selected leave rather than leaving the click silent.
-		 * @param {sap.ui.base.Event} oEvent the appointmentSelect event
-		 */
-		onAppointmentSelect: function (oEvent) {
-			var oAppointment = oEvent.getParameter("appointment");
-			if (!oAppointment) {
-				return;
-			}
-
-			var oContext = oAppointment.getBindingContext("tc");
-			var oLeave = oContext && oContext.getObject();
-			if (!oLeave) {
-				return;
-			}
-
-			var oRow = oAppointment.getParent();
-			var oRowContext = oRow && oRow.getBindingContext("tc");
-			var sName = oRowContext ? oRowContext.getProperty("Name") : "";
-
-			MessageBox.information(this.getText("tcLeaveDetail", [
-				oLeave.title,
-				oLeave.info,
-				formatter.date(oLeave.start),
-				oLeave.status || ""
-			]), {
-				title: sName
-			});
-		},
-
-		/* =========================================================== */
-		/* book leave                                                  */
-		/* =========================================================== */
-
-		onOpenBookLeave: function () {
-			this.getModel("tcForm").setData(this._emptyLeaveForm());
-			this._loadReportees();
-			this._openDialog("_pBookLeaveDialog", "bsx.hrx.hrx2026.fragment.BookLeaveDialog");
-		},
-
-		onCancelBookLeave: function () {
-			this._closeDialog("_pBookLeaveDialog");
-		},
-
-		/**
-		 * Loads the people the signed-in user manages - only they can have leave booked
-		 * on their behalf.
-		 * @returns {Promise} resolved once the reportees are in the model
-		 */
-		_loadReportees: function () {
-			var sManagerId = this.getModel("tcView").getProperty("/currentEmpId");
-
-			return this._read("/Resources", {
-				urlParameters: { "$select": "EmpID,FName,LName,Email,BaseSiteKey,IsActive" },
-				// Full access (a testing aid) may book for anyone; everyone else for their reports.
-				filters: CurrentUser.hasFullAccess() ? [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)] : [
-					new Filter("OrgID", FilterOperator.EQ, this._sOrgId),
-					new Filter("ManagerID", FilterOperator.EQ, sManagerId)
-				]
-			}).then(function (oData) {
-				this.getModel("tc").setProperty("/reportees", this._strip(oData)
-					.filter(function (oResource) {
-						return oResource.IsActive === "Y";
-					})
-					.map(function (oResource) {
-						oResource.FullName = ((oResource.FName || "") + " " + (oResource.LName || "")).trim();
-						return oResource;
-					})
-					.sort(function (a, b) {
-						return a.FullName.localeCompare(b.FullName);
-					}));
-			}.bind(this)).catch(function (oError) {
-				this._showError("tcErrorReportees", oError);
-			}.bind(this));
-		},
-
-		onEmployeeChange: function (oEvent) {
-			var sEmpId = oEvent.getSource().getSelectedKey();
-			var oEmployee = (this.getModel("tc").getProperty("/reportees") || []).filter(function (oResource) {
-				return oResource.EmpID === sEmpId;
-			})[0];
-
-			var oForm = this.getModel("tcForm");
-			oForm.setProperty("/EmpID", sEmpId);
-			oForm.setProperty("/EmpName", oEmployee ? oEmployee.FullName : "");
-			oForm.setProperty("/EmpEmail", oEmployee ? oEmployee.Email : "");
-			oForm.setProperty("/SiteID", oEmployee ? oEmployee.BaseSiteKey : "");
-
-			if (oForm.getProperty("/FromDate")) {
-				this._loadLeaveDates();
-			}
-		},
-
-		onLeaveDatesChange: function (oEvent) {
-			var oForm = this.getModel("tcForm");
-			var bValid = oEvent.getParameter("valid") && !!oEvent.getParameter("value");
-
-			oEvent.getSource().setValueState(bValid ? "None" : "Error");
-			oEvent.getSource().setValueStateText(this.getText("tcMandatory"));
-
-			if (!bValid) {
-				oForm.setProperty("/FromDate", null);
-				oForm.setProperty("/ToDate", null);
-				this.getModel("tc").setProperty("/dates", []);
-				this._updateDayCount();
-				return;
-			}
-
-			oForm.setProperty("/FromDate", oEvent.getParameter("from"));
-			oForm.setProperty("/ToDate", oEvent.getParameter("to"));
-
-			if (!oForm.getProperty("/EmpID")) {
-				MessageToast.show(this.getText("tcSelectEmployeeFirst"));
-				return;
-			}
-			this._loadLeaveDates();
-		},
-
-		/**
-		 * Asks the service which of the chosen days are actually bookable - weekends,
-		 * bank holidays and days already taken are left out, and part-booked days come
-		 * back with only their free half available.
-		 * @returns {Promise} resolved once the day list is in the model
-		 */
-		_loadLeaveDates: function () {
-			var oForm = this.getModel("tcForm").getData();
-
-			return this._getJson(LEAVE_REQS_SERVICE + "?cmd=getDates&" + new URLSearchParams({
-				FromDate: this._isoDate(oForm.FromDate),
-				ToDate: this._isoDate(oForm.ToDate),
-				OrgID: this._sOrgId,
-				SiteID: oForm.SiteID || "",
-				EmpID: oForm.EmpID
-			}).toString()).then(function (oData) {
-				this.getModel("tc").setProperty("/dates", (oData.dates || []).map(function (oDay) {
-					var sSlot = oDay.availableSlot;
-					return Object.assign({}, oDay, {
-						SelectedKey: sSlot === "AM" ? "A" : sSlot === "PM" ? "P" : "F",
-						FullDayEnabled: sSlot === "",
-						AMEnabled: sSlot === "" || sSlot === "AM",
-						PMEnabled: sSlot === "" || sSlot === "PM"
-					});
-				}));
-				this._updateDayCount();
-			}.bind(this)).catch(function (oError) {
-				this.getModel("tc").setProperty("/dates", []);
-				this._updateDayCount();
-				this._showError("tcErrorDates", oError);
-			}.bind(this));
-		},
-
-		/**
-		 * Half days count as 0.5 towards the booking.
-		 */
-		_updateDayCount: function () {
-			var aDates = this.getModel("tc").getProperty("/dates") || [];
-			var fDays = aDates.reduce(function (fTotal, oDay) {
-				return fTotal + (oDay.SelectedKey === "F" ? 1 : 0.5);
-			}, 0);
-
-			this.getModel("tcForm").setProperty("/NoOfDays", fDays);
-		},
-
-		onOpenHalfDays: function () {
-			this._openDialog("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.HalfDayDialog");
-		},
-
-		onConfirmHalfDays: function () {
-			this._updateDayCount();
-			this._closeDialog("_pHalfDayDialog");
-		},
-
-		onResetHalfDays: function () {
-			this._loadLeaveDates();
-			this._closeDialog("_pHalfDayDialog");
-		},
-
-		/**
-		 * Books the leave. A manager booking on someone's behalf is approved straight
-		 * away, which is what the standalone app did.
-		 */
-		onBookLeave: function () {
-			var oViewModel = this.getModel("tcView");
-			var oForm = this.getModel("tcForm").getData();
-			var aDates = this.getModel("tc").getProperty("/dates") || [];
-
-			this._markValueState("bookLeaveEmployee", !!oForm.EmpID);
-			if (!oForm.EmpID) {
-				return;
-			}
-
-			if (!aDates.length) {
-				MessageToast.show(this.getText("tcNoBookableDays"));
-				return;
-			}
-
-			var sToday = this._isoDate(new Date());
-			var sManagerId = oViewModel.getProperty("/currentEmpId");
-
-			var aLeaveRequests = aDates.map(function (oDay) {
-				return {
-					OrgID: this._sOrgId,
-					LeaveID: "",
-					EmpID: oForm.EmpID,
-					EmpName: oForm.EmpName,
-					EmpEmail: oForm.EmpEmail,
-					EmpSite: oForm.SiteID || "",
-					IsPaid: oForm.LeaveCategoryId === "UNPDL" ? "N" : "Y",
-					LeaveCategoryId: oForm.LeaveCategoryId,
-					NoOfDays: "1",
-					StartDate: oDay.date,
-					EndDate: oDay.date,
-					DayTime: oDay.SelectedKey === "A" ? "AM" : oDay.SelectedKey === "P" ? "PM" : "Full Day",
-					CreatedBy: sManagerId,
-					CreatedOn: sToday,
-					ApprovalRequired: "N",
-					ApproverID: sManagerId,
-					ApproverName: oViewModel.getProperty("/currentName"),
-					ApproverEmail: oViewModel.getProperty("/currentEmail"),
-					Status: "APR",
-					ApprovedOn: sToday,
-					ApprovedBy: sManagerId,
-					RequesterComments: oForm.Comments || "",
-					ApproverComments: ""
-				};
-			}, this);
-
-			this._save(LEAVE_REQS_SERVICE + "?cmd=requestLeave", { LeaveReqSet: aLeaveRequests },
-				"tcLeaveBooked", "tcErrorBookLeave").then(function () {
-					this._closeDialog("_pBookLeaveDialog");
-					return this._loadTeam();
-				}.bind(this)).catch(function () { /* reported by _save */ });
-		},
-
-		/* =========================================================== */
-		/* approvals                                                   */
-		/* =========================================================== */
-
-		onOpenApprovals: function () {
-			this._loadApprovals();
-			this._openDialog("_pApprovalsDialog", "bsx.hrx.hrx2026.fragment.LeaveApprovalsDialog");
-		},
-
-		onCloseApprovals: function () {
-			this._closeDialog("_pApprovalsDialog");
-			this._loadTeam();
-		},
-
-		/**
-		 * Loads the leave awaiting the signed-in user's decision, grouped by requester.
-		 * @returns {Promise} resolved once the approvals are in the model
-		 */
-		_loadApprovals: function () {
-			var oViewModel = this.getModel("tcView");
-			oViewModel.setProperty("/saving", true);
-
-			return this._getJson(LEAVE_APPROVALS_SERVICE + "?cmd=pendingApproval&" + new URLSearchParams({
-				Email: oViewModel.getProperty("/currentEmail"),
-				OrgID: this._sOrgId
-			}).toString()).then(function (oData) {
-				var mByRequester = {};
-
-				(oData.leaveToApprove || []).forEach(function (oLeave) {
-					var oGroup = mByRequester[oLeave.RequesterID];
-					if (!oGroup) {
-						oGroup = mByRequester[oLeave.RequesterID] = {
-							RequesterID: oLeave.RequesterID,
-							RequesterName: oLeave.RequesterName,
-							RequesterEmail: oLeave.RequesterEmail,
-							LeaveList: []
-						};
+		_appointmentOf: function (oRequest) {
+			var oCalendar = this.byId("teamPlanningCalendar");
+			var oFound = null;
+			oCalendar.getRows().some(function (oRow) {
+				return oRow.getAppointments().some(function (oAppointment) {
+					var oContext = oAppointment.getBindingContext("tc");
+					if (oContext && oContext.getProperty("requestKey") === oRequest.key) {
+						oFound = oAppointment;
+						return true;
 					}
-					oGroup.LeaveList.push({
-						LeaveID: oLeave.LeaveID,
-						DisplayDate: oLeave.DisplayDate,
-						AbsenceType: oLeave.AbsenceType,
-						LeaveType: oLeave.LeaveType,
-						LeaveTypeID: oLeave.LeaveTypeID,
-						icon: (LEAVE_TYPES[oLeave.LeaveTypeID] || {}).icon,
-						RequesterComments: oLeave.RequesterComments,
-						Status: oLeave.Status,
-						StatusID: oLeave.StatusID
-					});
+					return false;
 				});
-
-				this.getModel("tc").setProperty("/approvals", Object.keys(mByRequester).map(function (sKey) {
-					return mByRequester[sKey];
-				}));
-				oViewModel.setProperty("/saving", false);
-			}.bind(this)).catch(function (oError) {
-				oViewModel.setProperty("/saving", false);
-				this.getModel("tc").setProperty("/approvals", []);
-				this._showError("tcErrorApprovals", oError);
-			}.bind(this));
+			});
+			return oFound && oFound.getDomRef() ? oFound : null;
 		},
 
-		onApproveLeave: function (oEvent) {
-			this._actionLeave(oEvent, "APR");
-		},
-
-		onRejectLeave: function (oEvent) {
-			this._actionLeave(oEvent, "REJ");
+		_firstOfMonth: function (oDate) {
+			return new Date(oDate.getFullYear(), oDate.getMonth(), 1);
 		},
 
 		/**
-		 * Approves or rejects either a single leave day or every pending day of one
-		 * requester, depending on which button was pressed.
-		 * @param {sap.ui.base.Event} oEvent the button press event
-		 * @param {string} sStatus "APR" or "REJ"
+		 * @param {Date} oDate any day
+		 * @returns {Date} the Monday of that day's week
 		 */
-		_actionLeave: function (oEvent, sStatus) {
-			var oViewModel = this.getModel("tcView");
-			var oContext = oEvent.getSource().getBindingContext("tc");
-			if (!oContext) {
-				return;
-			}
-
-			var oItem = oContext.getObject();
-			var bSingleDay = !!oItem.LeaveID;
-			var oGroup = bSingleDay ? this._groupOf(oContext) : oItem;
-			if (!oGroup) {
-				return;
-			}
-
-			var sToday = this._isoDate(new Date());
-			var aLeaves = bSingleDay ? [oItem] : oGroup.LeaveList;
-
-			var aLeaveRequests = aLeaves.map(function (oLeave) {
-				return {
-					LeaveID: oLeave.LeaveID,
-					RequesterID: oGroup.RequesterID,
-					RequesterName: oGroup.RequesterName,
-					RequesterEmail: oGroup.RequesterEmail,
-					Status: sStatus,
-					OrgID: this._sOrgId,
-					ApprovedOn: sToday,
-					ApprovedBy: oViewModel.getProperty("/currentEmpId"),
-					ApproverName: oViewModel.getProperty("/currentName"),
-					ApproverEmail: oViewModel.getProperty("/currentEmail")
-				};
-			}, this);
-
-			this._save(LEAVE_APPROVALS_SERVICE + "?cmd=action", { LeaveReqSet: aLeaveRequests },
-				sStatus === "APR" ? "tcLeaveApproved" : "tcLeaveRejected", "tcErrorApprovalAction")
-				.then(function () {
-					return this._loadApprovals();
-				}.bind(this)).catch(function () { /* reported by _save */ });
-		},
-
-		/**
-		 * Walks from a leave row back up to the requester it belongs to.
-		 * @param {sap.ui.model.Context} oContext the leave context
-		 * @returns {object|null} the requester group
-		 */
-		_groupOf: function (oContext) {
-			var aMatch = /^\/approvals\/(\d+)\//.exec(oContext.getPath());
-			if (!aMatch) {
-				return null;
-			}
-			return this.getModel("tc").getProperty("/approvals/" + aMatch[1]);
+		_mondayOf: function (oDate) {
+			var oMonday = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
+			oMonday.setDate(oMonday.getDate() - ((oMonday.getDay() + 6) % 7));
+			return oMonday;
 		},
 
 		/* =========================================================== */
-		/* helpers                                                     */
+		/* helpers (BookLeave.js relies on these too)                  */
 		/* =========================================================== */
 
 		getModel: function (sName) {
@@ -858,63 +1017,28 @@ sap.ui.define([
 			return this;
 		},
 
-		getResourceBundle: function () {
-			return this.getOwnerComponent().getModel("i18n").getResourceBundle();
-		},
-
 		getText: function (sKey, aArgs) {
-			return this.getResourceBundle().getText(sKey, aArgs);
+			return this.getOwnerComponent().getModel("i18n").getResourceBundle().getText(sKey, aArgs);
 		},
 
-		/**
-		 * Flags a field as valid or not. The control only exists once its dialog has been
-		 * loaded, so a missing one is simply skipped.
-		 * @param {string} sId the control id inside the view
-		 * @param {boolean} bValid whether the field passes
-		 */
-		_markValueState: function (sId, bValid) {
-			var oControl = this.byId(sId);
-			if (!oControl) {
-				return;
-			}
-			oControl.setValueState(bValid ? "None" : "Error");
-			oControl.setValueStateText(this.getText("tcMandatory"));
-		},
-
-		_save: function (sUrl, oPayload, sSuccessKey, sErrorKey) {
-			var oViewModel = this.getModel("tcView");
-			oViewModel.setProperty("/saving", true);
-
-			return this._request(sUrl, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(oPayload)
-			}).then(function (oResult) {
-				oViewModel.setProperty("/saving", false);
-				MessageToast.show(oResult.msg || this.getText(sSuccessKey));
-				return oResult;
-			}.bind(this)).catch(function (oError) {
-				oViewModel.setProperty("/saving", false);
-				this._showError(sErrorKey, oError);
-				throw oError;
-			}.bind(this));
+		_isoDate: function (vDate) {
+			return Backend.isoDate(formatter.toDate(vDate));
 		},
 
 		_read: function (sPath, mParameters) {
-			// Backend.read, not a bare model.read: it waits for the service metadata,
-			// including the retries Component.js makes after a failed first attempt, so
-			// a momentary outage at startup no longer leaves every value help on the
-			// page empty for the rest of the session.
 			return Backend.read(this.getOwnerComponent().getModel(), sPath, mParameters);
 		},
 
 		_getJson: function (sUrl) {
-			return this._request(sUrl, { method: "GET" });
+			return Backend.request(sUrl, { method: "GET" });
 		},
 
-		_request: function (sUrl, oInit) {
-			// Through Backend, which answers from the HRX service where it can.
-			return Backend.request(sUrl, oInit);
+		_postJson: function (sUrl, oPayload) {
+			return Backend.request(sUrl, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(oPayload)
+			});
 		},
 
 		_openDialog: function (sCacheKey, sFragmentName) {
@@ -928,7 +1052,6 @@ sap.ui.define([
 					return oDialog;
 				}.bind(this));
 			}
-
 			return this[sCacheKey].then(function (oDialog) {
 				oDialog.open();
 				return oDialog;
@@ -943,74 +1066,10 @@ sap.ui.define([
 			}
 		},
 
-		_strip: function (oData) {
-			return (oData.results || []).map(function (oRow) {
-				var oCopy = Object.assign({}, oRow);
-				delete oCopy.__metadata;
-				return oCopy;
-			});
-		},
-
-		_firstOfMonth: function (oDate) {
-			return new Date(oDate.getFullYear(), oDate.getMonth(), 1);
-		},
-
-		/**
-		 * @param {Date} oDate any day
-		 * @returns {Date} the Monday of that day's week
-		 */
-		_mondayOf: function (oDate) {
-			var oCopy = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
-			oCopy.setDate(oCopy.getDate() - ((oCopy.getDay() + 6) % 7));
-			return oCopy;
-		},
-
-		_isoDate: function (vDate) {
-			var oDate = formatter.toDate(vDate);
-			if (!oDate) {
-				return "";
-			}
-			var sMonth = String(oDate.getMonth() + 1).padStart(2, "0");
-			var sDay = String(oDate.getDate()).padStart(2, "0");
-			return oDate.getFullYear() + "-" + sMonth + "-" + sDay;
-		},
-
-		_emptyLeaveForm: function () {
-			return {
-				EmpID: "",
-				EmpName: "",
-				EmpEmail: "",
-				SiteID: "",
-				FromDate: null,
-				ToDate: null,
-				LeaveCategoryId: "HOLIL",
-				Comments: "",
-				NoOfDays: 0
-			};
-		},
-
-		_errorText: function (oError) {
-			if (!oError) {
-				return "";
-			}
-			if (oError.message) {
-				return oError.message;
-			}
-			if (oError.responseText) {
-				try {
-					var oBody = JSON.parse(oError.responseText);
-					return oBody.msg || (oBody.error && oBody.error.message && oBody.error.message.value) || oError.responseText;
-				} catch (oParseError) {
-					return oError.responseText;
-				}
-			}
-			return String(oError);
-		},
-
 		_showError: function (sTextKey, oError) {
 			MessageBox.error(this.getText(sTextKey), {
-				details: this._errorText(oError)
+				details: (oError && oError.message) || (oError ? String(oError) : "")
 			});
 		}
-	});
+	}));
 });

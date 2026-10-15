@@ -18,8 +18,8 @@ sap.ui.define([
 	var PROJECTS_SERVICE = SERVICE_ROOT + "/hrx/manageProjects.xsjs";
 	var ASSIGNMENTS_SERVICE = SERVICE_ROOT + "/hrx/manageAssignments.xsjs";
 	var ATTACHMENTS_SERVICE = SERVICE_ROOT + "/hrx/manageAttachments.xsjs";
-	var CLIENT_USERS_SERVICE = SERVICE_ROOT + "/supportx/ManageClientUsers.xsjs";
-	var SUPPORT_ASSIGNMENTS_SERVICE = SERVICE_ROOT + "/supportx/ManageAssignments.xsjs";
+
+	var EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 	// The project list does not need the client logo, which is a base64 blob.
 	var LIST_FIELDS = [
@@ -252,7 +252,19 @@ sap.ui.define([
 				taskKeys: aProjectTasks.map(function (oTask) {
 					return oTask.TaskKey;
 				}),
-				projectTasks: aProjectTasks
+				projectTasks: aProjectTasks,
+				// The client's contacts, as the two rows of the Client contacts tab
+				contacts: [{
+					role: this.getText("mpPrimaryContact"),
+					name: oProject.PrimaryContactName || "",
+					email: oProject.PrimaryContactEmail || ""
+				}, {
+					role: this.getText("mpSecondaryContact"),
+					name: oProject.SecondaryContactName || "",
+					email: oProject.SecondaryContactEmail || ""
+				}],
+				hasContacts: !!(oProject.PrimaryContactName || oProject.PrimaryContactEmail ||
+					oProject.SecondaryContactName || oProject.SecondaryContactEmail)
 			};
 		},
 
@@ -282,8 +294,6 @@ sap.ui.define([
 			switch (sKey) {
 				case "resourcing":
 					return this._loadAssignments(sProjectKey);
-				case "clientteam":
-					return this._loadSupportTeam(oViewModel.getProperty("/selectedClientKey"), sProjectKey);
 				case "attachments":
 					return this._loadAttachments(sProjectKey);
 				default:
@@ -311,23 +321,6 @@ sap.ui.define([
 					return oAssignment;
 				}));
 			}.bind(this)), "mpErrorAssignments");
-		},
-
-		_loadSupportTeam: function (sClientKey, sProjectKey) {
-			return this._withTabBusy(Promise.all([
-				this._getJson(SUPPORT_ASSIGNMENTS_SERVICE + "?cmd=fetch&" + new URLSearchParams({
-					OrgID: sClientKey,
-					ProjectID: sProjectKey
-				}).toString()),
-				this._getJson(CLIENT_USERS_SERVICE + "?cmd=fetch&" + new URLSearchParams({
-					OrgID: sClientKey
-				}).toString())
-			]).then(function (aResults) {
-				this.getModel("mpTabs").setProperty("/supportTeam", aResults[0].users || []);
-				this.getModel("mpTabs").setProperty("/clientUsers", (aResults[1].users || []).filter(function (oUser) {
-					return oUser.IsActive === "Y";
-				}));
-			}.bind(this)), "mpErrorSupportTeam");
 		},
 
 		_loadAttachments: function (sProjectKey) {
@@ -690,73 +683,108 @@ sap.ui.define([
 			});
 		},
 
+		/**
+		 * Puts a released resource back on the project.
+		 * @param {sap.ui.base.Event} oEvent the Re-assign button's press event
+		 */
+		onReassignAssignment: function (oEvent) {
+			var oAssignment = oEvent.getSource().getBindingContext("mpTabs").getObject();
+			var sProjectKey = this.getModel("mpView").getProperty("/selectedId");
+
+			this._save(ASSIGNMENTS_SERVICE + "?cmd=reassign", {
+				orgID: oAssignment.OrgID || this._sOrgId,
+				empID: oAssignment.EmpID,
+				projectID: oAssignment.ProjectKey || sProjectKey
+			}, "mpAssignmentReassigned", "mpErrorAssignmentReassign", "PUT").then(function () {
+				return this._loadAssignments(sProjectKey);
+			}.bind(this)).catch(function () { /* reported by _save */ });
+		},
+
 		/* =========================================================== */
-		/* client support team                                         */
+		/* client contacts                                             */
 		/* =========================================================== */
 
-		onAddSupportUser: function () {
+		onEditContacts: function () {
+			var aContacts = this.getModel("mpDetail").getProperty("/contacts");
 			this.getModel("mpForm").setData({
-				mode: "new",
-				AssignmentID: "",
-				UserID: "",
-				IsActive: true
+				PrimaryContactName: aContacts[0].name,
+				PrimaryContactEmail: aContacts[0].email,
+				SecondaryContactName: aContacts[1].name,
+				SecondaryContactEmail: aContacts[1].email,
+				state: {}
 			});
-			this._openDialog("_pSupportUserDialog", "bsx.hrx.hrx2026.fragment.SupportUserDialog");
+			this._openDialog("_pContactsDialog", "bsx.hrx.hrx2026.fragment.ProjectContactsDialog");
 		},
 
-		onEditSupportUser: function (oEvent) {
-			var oUser = oEvent.getSource().getBindingContext("mpTabs").getObject();
-
-			this.getModel("mpForm").setData({
-				mode: "edit",
-				// The picker is locked on an edit, but it still has to hold the person
-				// being edited to show their name.
-				resources: this.getModel("mp").getProperty("/managers") || [],
-				AssignmentID: oUser.AssignmentID,
-				UserID: oUser.UserID,
-				UserName: ((oUser.FName || "") + " " + (oUser.LName || "")).trim(),
-				IsActive: oUser.IsActive === "Y"
-			});
-			this._openDialog("_pSupportUserDialog", "bsx.hrx.hrx2026.fragment.SupportUserDialog");
+		onCancelContacts: function () {
+			this._closeDialog("_pContactsDialog");
 		},
 
-		onCancelSupportUser: function () {
-			this._closeDialog("_pSupportUserDialog");
-		},
+		/**
+		 * Checks the contacts as the design asks - a primary needs a name and an email,
+		 * a secondary needs both or neither, every email must look like one - then
+		 * saves them to the project.
+		 */
+		onSaveContacts: function () {
+			var oFormModel = this.getModel("mpForm");
+			var oForm = oFormModel.getData();
+			var sProjectKey = this.getModel("mpView").getProperty("/selectedId");
+			var oContacts = {
+				PrimaryContactName: (oForm.PrimaryContactName || "").trim(),
+				PrimaryContactEmail: (oForm.PrimaryContactEmail || "").trim(),
+				SecondaryContactName: (oForm.SecondaryContactName || "").trim(),
+				SecondaryContactEmail: (oForm.SecondaryContactEmail || "").trim()
+			};
 
-		onSaveSupportUser: function () {
-			var oForm = this.getModel("mpForm").getData();
-			var oViewModel = this.getModel("mpView");
-			var sClientKey = oViewModel.getProperty("/selectedClientKey");
-			var sProjectKey = oViewModel.getProperty("/selectedId");
-			var bEdit = oForm.mode === "edit";
-			var sToday = this._today();
-
-			if (!bEdit && !this._validateSelection([{ id: "supportUser", value: oForm.UserID }])) {
+			var sProblem = this._contactsProblem(oContacts);
+			oFormModel.setProperty("/state", sProblem ? sProblem.fields.reduce(function (oState, sField) {
+				oState[sField] = "Error";
+				return oState;
+			}, {}) : {});
+			if (sProblem) {
+				MessageToast.show(this.getText(sProblem.textKey));
 				return;
 			}
 
-			var oPayload = bEdit ? {
-				AssignmentID: oForm.AssignmentID,
-				UpdatedOn: sToday,
-				UpdatedBy: this._sUserEmail,
-				IsActive: oForm.IsActive ? "Y" : "N"
-			} : {
-				OrgID: sClientKey,
-				UserID: oForm.UserID,
-				ProjectID: sProjectKey,
-				AssignedOn: sToday,
-				AssignedBy: this._sUserEmail,
-				UpdatedOn: "",
-				UpdatedBy: "",
-				IsActive: oForm.IsActive ? "Y" : "N"
-			};
-
-			this._save(SUPPORT_ASSIGNMENTS_SERVICE + (bEdit ? "?cmd=update" : "?cmd=new"), oPayload,
-				bEdit ? "mpSupportUserUpdated" : "mpSupportUserCreated", "mpErrorSupportUserSave").then(function () {
-					this._closeDialog("_pSupportUserDialog");
-					return this._loadSupportTeam(sClientKey, sProjectKey);
+			this._save(PROJECTS_SERVICE + "?cmd=saveContacts", Object.assign({ ProjectKey: sProjectKey }, oContacts),
+				"mpContactsSaved", "mpErrorContactsSave", "PUT").then(function () {
+					this._closeDialog("_pContactsDialog");
+					var oDetailModel = this.getModel("mpDetail");
+					oDetailModel.setProperty("/contacts/0/name", oContacts.PrimaryContactName);
+					oDetailModel.setProperty("/contacts/0/email", oContacts.PrimaryContactEmail);
+					oDetailModel.setProperty("/contacts/1/name", oContacts.SecondaryContactName);
+					oDetailModel.setProperty("/contacts/1/email", oContacts.SecondaryContactEmail);
+					oDetailModel.setProperty("/hasContacts", true);
 				}.bind(this)).catch(function () { /* reported by _save */ });
+		},
+
+		/**
+		 * The first thing wrong with the contacts, if anything.
+		 * @param {object} oContacts the four trimmed contact fields
+		 * @returns {object|null} { textKey, fields } naming the message and the fields to mark
+		 */
+		_contactsProblem: function (oContacts) {
+			if (!oContacts.PrimaryContactName || !oContacts.PrimaryContactEmail) {
+				return {
+					textKey: "mpContactsPrimaryRequired",
+					fields: ["PrimaryContactName", "PrimaryContactEmail"].filter(function (sField) {
+						return !oContacts[sField];
+					})
+				};
+			}
+			if (!EMAIL_PATTERN.test(oContacts.PrimaryContactEmail)) {
+				return { textKey: "mpContactsPrimaryEmail", fields: ["PrimaryContactEmail"] };
+			}
+			if (!!oContacts.SecondaryContactName !== !!oContacts.SecondaryContactEmail) {
+				return {
+					textKey: "mpContactsSecondaryBoth",
+					fields: [oContacts.SecondaryContactName ? "SecondaryContactEmail" : "SecondaryContactName"]
+				};
+			}
+			if (oContacts.SecondaryContactEmail && !EMAIL_PATTERN.test(oContacts.SecondaryContactEmail)) {
+				return { textKey: "mpContactsSecondaryEmail", fields: ["SecondaryContactEmail"] };
+			}
+			return null;
 		},
 
 		/* =========================================================== */
@@ -1006,7 +1034,7 @@ sap.ui.define([
 		},
 
 		_emptyTabs: function () {
-			return { assignments: [], supportTeam: [], clientUsers: [], attachments: [] };
+			return { assignments: [], attachments: [] };
 		},
 
 		_resolveOrgId: function () {

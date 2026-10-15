@@ -20,7 +20,7 @@ sap.ui.define([
 
 		onInit: function () {
 			this.setModel(new JSONModel({ busy: false, onlyOutstanding: false, bound: DocumentService.isBound() }), "pdView");
-			this.setModel(new JSONModel({ rows: [], kpis: { available: 0, need: 0, outstanding: 0 } }), "pd");
+			this.setModel(new JSONModel({ rows: [], kpis: { available: 0, need: 0 } }), "pd");
 
 			this.getOwnerComponent().getRouter().getRoute("policies").attachPatternMatched(this._onRouteMatched, this);
 		},
@@ -91,8 +91,7 @@ sap.ui.define([
 					available: aMine.length,
 					need: aMine.filter(function (oDocument) {
 						return oDocument.AckRequired;
-					}).length,
-					outstanding: aOutstanding.length
+					}).length
 				}
 			});
 		},
