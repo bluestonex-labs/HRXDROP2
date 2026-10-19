@@ -150,11 +150,13 @@ sap.ui.define([
 
 		NON_BILLABLE_TYPES: ["INT", "FOC"],
 
+		// Named as the design names them ("Time & materials", "Fixed price",
+		// "Internal"); free of charge is a type the HRX service also holds.
 		PROJECT_TYPES: [
-			{ key: "FXD", text: "Fix Bid" },
-			{ key: "TNM", text: "Time and material" },
-			{ key: "INT", text: "BSX Internal" },
-			{ key: "FOC", text: "Free of Charge" }
+			{ key: "TNM", text: "Time & materials" },
+			{ key: "FXD", text: "Fixed price" },
+			{ key: "INT", text: "Internal" },
+			{ key: "FOC", text: "Free of charge" }
 		],
 
 		/**

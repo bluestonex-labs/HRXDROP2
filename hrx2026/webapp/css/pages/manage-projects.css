@@ -1102,22 +1102,24 @@
 	color: var(--txt-3);
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow {
+/* Body rows only: sap.m.Table's header row is a .sapMListTblRow too, and these
+   rules are more specific than the header's own. */
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:not(.sapMListTblHeader) {
 	height: auto;
 	border-bottom: 1px solid var(--line-soft);
 	background: transparent;
 	transition: .12s;
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:last-child {
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:not(.sapMListTblHeader):last-child {
 	border-bottom: none;
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:hover {
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:not(.sapMListTblHeader):hover {
 	background: rgba(38, 170, 226, .04);
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow > .sapMListTblCell {
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:not(.sapMListTblHeader) > .sapMListTblCell {
 	height: auto;
 	padding: 12px 18px;
 	border: none;
@@ -1127,7 +1129,7 @@
 	color: var(--ink);
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow > .sapMListTblCell .sapMText {
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:not(.sapMListTblHeader) > .sapMListTblCell .sapMText {
 	font-size: 13px;
 	line-height: 16px;
 	color: var(--ink);
@@ -1148,7 +1150,8 @@
 	background: transparent;
 }
 
-.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblCellNoData {
+/* (the no-data row is a .sapMListTblRow too: as specific as the body cell rule) */
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow > td.sapMListTblCell.sapMListTblCellNoData {
 	height: auto;
 	padding: 26px 20px;
 	text-align: center;
