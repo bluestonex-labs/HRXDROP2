@@ -560,7 +560,8 @@ sap.ui.define([
 			// The header row: Customer / Project, one column per person, Totals.
 			oTable.addItem(fnRow([new Text({ text: this.getText("trColCustomerProject"), wrapping: false })]
 				.concat(oBreak.people.map(function (oPerson) {
-					return fnCell(oPerson.label);
+					// the whole name on hover, where the column cuts it short
+					return fnCell(oPerson.label).setTooltip(oPerson.label);
 				}), [fnCell(this.getText("trColTotals"))]), "hrxTsTh"));
 
 			oBreak.customers.forEach(function (oCustomer) {
@@ -960,7 +961,10 @@ sap.ui.define([
 			var oAppModel = this.getOwnerComponent().getModel("app");
 			// The whole object: a JSONModel does not create a missing parent on set.
 			oAppModel.setProperty("/stamps", Object.assign({}, oAppModel.getProperty("/stamps"), { timesheetreport: sStamp }));
-			oAppModel.setProperty("/page/stamp", sStamp);
+			// The design's Utilisation page has no stamp
+			if (!this.getModel("trView").getProperty("/utilMode")) {
+				oAppModel.setProperty("/page/stamp", sStamp);
+			}
 		},
 
 		_remindSubject: function () {

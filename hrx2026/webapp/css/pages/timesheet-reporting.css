@@ -431,12 +431,6 @@
 	background: var(--ice-glow);
 }
 
-.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsGlyphText {
-	font-family: var(--sans);
-	font-weight: 600;
-	font-size: 17px;
-}
-
 .hrxTimesheetReport .hrxTsKpi[data-state="ok"] .hrxTsGlyph { color: var(--mint); background: var(--mint-soft); }
 .hrxTimesheetReport .hrxTsKpi[data-state="warn"] .hrxTsGlyph { color: var(--amber); background: var(--amber-soft); }
 .hrxTimesheetReport .hrxTsKpi[data-state="crit"] .hrxTsGlyph { color: var(--signal); background: var(--signal-soft); }
@@ -992,16 +986,15 @@
 	flex: 1 0 260px;
 }
 
+/* The design's table sizes its columns to their content; the rows here are flex
+   boxes of their own, so each person gets 150px, room for a full name on one line
+   (as the design's headers never wrap). A longer name ends in "…", whole in its
+   tooltip. */
 .hrxTimesheetReport .hrxTsBrkRow > :not(:first-child) {
-	flex: 0 0 125px;
-	width: 125px;
+	flex: 0 0 150px;
+	width: 150px;
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-
-/* People's full names can be longer than the column: the header wraps instead. */
-.hrxTimesheetReport .hrxTsBody .hrxTsBrkRow.hrxTsTh > :not(:first-child) {
-	white-space: normal;
 }
 
 .hrxTimesheetReport .hrxTsBrkRow > :last-child {

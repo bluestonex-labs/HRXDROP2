@@ -343,23 +343,26 @@ sap.ui.define([
 
 			this._sRoute = sRoute;
 
+			// Timesheet reporting opened as Utilisation (?tab=util) is the design's
+			// Utilisation page: its own title, and no "Last refreshed" stamp.
+			var oQuery = (oEvent.getParameter("arguments") || {})["?query"] || {};
+			var bUtilisation = sRoute === "timesheetreport" && oQuery.tab === "util";
+
 			// The app catalogue arrives asynchronously and replaces the whole model, so
 			// the title is written once that has landed. Setting it earlier leaves a
 			// deep link showing whatever title the catalogue was seeded with.
 			var oModel = this.getOwnerComponent().getModel("app");
 			oModel.dataLoaded().then(function () {
 				oModel.setProperty("/page", {
-					title: this.getText(sKey),
+					title: this.getText(bUtilisation ? "navUtilisation" : sKey),
 					// A page that reported when its data was read keeps showing it on return.
-					stamp: oModel.getProperty("/stamps/" + sRoute) || ""
+					stamp: bUtilisation ? "" : oModel.getProperty("/stamps/" + sRoute) || ""
 				});
 				this._refreshStripVisibility();
 			}.bind(this));
 
 			var oNavList = this.byId("sideNavigation").getItem();
 			if (oNavList) {
-				var oQuery = (oEvent.getParameter("arguments") || {})["?query"] || {};
-				var bUtilisation = sRoute === "timesheetreport" && oQuery.tab === "util";
 				oNavList.setSelectedKey(bUtilisation ? "utilisation" : (mRouteToNavKey[sRoute] || sRoute));
 			}
 		},

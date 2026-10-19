@@ -149,29 +149,28 @@
 					<HBox renderType="Bare" class="hrxTsKpis">
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://suitcase" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/briefcase" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiBillableAssignments}" class="hrxTsKlab" />
 							<Text text="{tr>/assign/kpis/billable}" class="hrxTsKnum" />
 							<Text text="{tr>/assign/kpis/billableSub}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://building" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/building" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiClients}" class="hrxTsKlab" />
 							<Text text="{tr>/assign/kpis/clients}" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiClientsSub}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="ok" writeToDom="true" /></customData>
-							<!-- The design's glyph is a pound sign, which the SAP icon font has no match for. -->
-							<Text text="£" class="hrxTsGlyph hrxTsGlyphText" />
+							<core:Icon src="sap-icon://tabler/currency-pound" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiBilled}" class="hrxTsKlab" />
 							<Text text="{tr>/assign/kpis/billed}" class="hrxTsKnum" />
 							<Text text="{i18n>trInPeriod}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://calendar" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/calendar-month" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiBilledMonth}" class="hrxTsKlab" />
 							<Text text="{tr>/assign/kpis/month}" class="hrxTsKnum" />
 							<Text text="{trView>/month/label}" class="hrxTsKsub" />
@@ -404,7 +403,7 @@
 					<HBox renderType="Bare" class="hrxTsKpis">
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="{tr>/sub/complianceState}" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://task" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/clipboard-check" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiCompliance}" class="hrxTsKlab" />
 							<HBox renderType="Bare" class="hrxTsKnum">
 								<Text text="{tr>/sub/compliance}" />
@@ -414,14 +413,14 @@
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="{= ${tr>/sub/under} > 0 ? 'warn' : 'ok' }" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://warning" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/alert-triangle" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiUnder}" class="hrxTsKlab" />
 							<Text text="{tr>/sub/under}" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiUnderSub}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="ok" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://sys-enter" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/circle-check" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiFull}" class="hrxTsKlab" />
 							<Text text="{tr>/sub/full}" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiFullSub}" class="hrxTsKsub" />
@@ -430,7 +429,7 @@
 						     count to show - the tile says what is missing instead. -->
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://email" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/mail" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiReminders}" class="hrxTsKlab" />
 							<Text text="—" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiRemindersNeeded}" class="hrxTsKsub" />
@@ -508,7 +507,7 @@
 					<HBox renderType="Bare" class="hrxTsKpis">
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="{tr>/util/teamState}" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://vertical-bar-chart" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/chart-bar" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiTeamUtil}" class="hrxTsKlab" />
 							<HBox renderType="Bare" class="hrxTsKnum">
 								<Text text="{tr>/util/team}" />
@@ -518,21 +517,21 @@
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://suitcase" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/briefcase" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiOnBillable}" class="hrxTsKlab" />
 							<Text text="{tr>/util/onBillable}" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiOnBillableSub}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="ok" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://per-diem" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/calendar-dollar" class="hrxTsGlyph" />
 							<Text text="{i18n>trBillableDays}" class="hrxTsKlab" />
 							<Text text="{tr>/util/billable}" class="hrxTsKnum" />
 							<Text text="{i18n>trInPeriod}" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="neu" writeToDom="true" /></customData>
-							<core:Icon src="sap-icon://appointment" class="hrxTsGlyph" />
+							<core:Icon src="sap-icon://tabler/calendar-stats" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiTotalBooked}" class="hrxTsKlab" />
 							<Text text="{tr>/util/total}" class="hrxTsKnum" />
 							<Text text="{i18n>trKpiTotalBookedSub}" class="hrxTsKsub" />
