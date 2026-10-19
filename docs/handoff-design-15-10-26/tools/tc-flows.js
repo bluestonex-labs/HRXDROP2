@@ -39,7 +39,7 @@ const state = (oPage) => oPage.evaluate(() => {
 const press = (oPage, fnFind) => oPage.evaluate(fnFind);
 
 (async () => {
-	const oBrowser = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"] });
+	const oBrowser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"].concat(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(" ") : []) });
 	const iRealBefore = realEmails();
 	const oSam = await open(oBrowser, "sam.evans@example.test");
 	let s = await state(oSam);

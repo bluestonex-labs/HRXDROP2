@@ -2,7 +2,8 @@
 # Runs a copy of the HRX service on http://localhost:4004 with an in-memory database,
 # mock users and the fake Document Management server - never the real credentials.
 set -e
-HRX_SERVICE_DIR=/Users/davidakilapa/Documents/GitHub/HRXService
+# Set HRX_SERVICE_DIR to your HRXService checkout (it needs its node_modules).
+HRX_SERVICE_DIR=${HRX_SERVICE_DIR:-/Users/davidakilapa/Documents/GitHub/HRXService}
 TEST_DIR=$(dirname "$0")
 COPY_DIR="$TEST_DIR/service-copy"
 rm -rf "$COPY_DIR" && mkdir -p "$COPY_DIR"
@@ -10,7 +11,9 @@ rsync -a --exclude .git --exclude node_modules --exclude .env --exclude 'db/.env
 ln -s "$HRX_SERVICE_DIR/node_modules" "$COPY_DIR/node_modules"
 # Local test only: HANA hands back the upper-case column name EMPID_EMPLOYEEID, the
 # in-memory SQLite database the mixed-case EmpID_EmployeeID. Accept either here.
-sed -i '' 's/RequesterID\[0\]\.EMPID_EMPLOYEEID/(RequesterID[0].EMPID_EMPLOYEEID || RequesterID[0].EmpID_EmployeeID)/' "$COPY_DIR/srv/hrx-services.js"
+# (sed -i.orig works with both macOS and GNU sed.)
+sed -i.orig 's/RequesterID\[0\]\.EMPID_EMPLOYEEID/(RequesterID[0].EMPID_EMPLOYEEID || RequesterID[0].EmpID_EmployeeID)/' "$COPY_DIR/srv/hrx-services.js"
+rm "$COPY_DIR/srv/hrx-services.js.orig"
 # Local test only: no real email, ever. A stand-in "nodemailer" goes in the copy's
 # srv/node_modules, which Node searches before the real package for every file under
 # srv/, so every send is only logged. The service does not start unless that holds.

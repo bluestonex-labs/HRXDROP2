@@ -5,7 +5,7 @@ const puppeteer = require("puppeteer-core");
 const a = process.argv.slice(2); const view = a[0], out = a[1];
 const opt = (k) => { const i = a.indexOf(k); return i === -1 ? null : (a[i + 1] || true); };
 (async () => {
-	const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"] });
+	const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"].concat(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(" ") : []) });
 	const p = await b.newPage(); await p.setViewport({ width: 1440, height: 1000 });
 	await p.goto("file://" + require("path").resolve(__dirname, "../design/HRX Drop 2 - 15.10.26.html").split("/").map(encodeURIComponent).join("/"), { waitUntil: "networkidle0", timeout: 60000 });
 	await new Promise((r) => setTimeout(r, 800));
