@@ -172,7 +172,8 @@ local service (one `tools/*-flows.js` script per page; run them after a fresh re
 
 `Message sent: <` stayed 0 in the service log throughout. The cleanup removed 51 unused i18n keys
 and about 240 unused rules from `css/style.css` (left from the pre-design UI). Screenshots of every
-page before and after the cleanup are compared by the regression run.
+page as manager and employee, before and after, were pixel-identical apart from the "Last
+refreshed" clock and font anti-aliasing (also in the SAP shell header, which style.css does not touch).
 
 Icons: the design's Tabler icons are a small font in `fonts/tabler` (built with
 `tools/build-tabler-font.py`), registered in `Component.js` as `sap-icon://tabler/<name>`.
