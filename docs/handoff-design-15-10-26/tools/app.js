@@ -1,4 +1,4 @@
-// node app.js <email> <route> <out.png|-> [--full] [--eval "js"] [--measure '["css selectors"]']
+// node app.js <email> <route> <out.png|-> [--full] [--eval "js"] [--measure '["css selectors"]'] [--scroll px]
 // Opens the HRX app in the local FLP preview (http://localhost:8088) as <email> (test users: sam.evans@example.test
 // is a manager, kyle.barnfield@example.test an employee, dan.barton@example.test a manager) on <route>
 // (the hash after &/ - "" home, timesheet, leave, teamcalendar, policies, explorer, sickness, documents,
@@ -23,6 +23,8 @@ const NOISE = /fioriSandboxConfig|\/user-api\/currentUser|\/sap\/bc\/lrep\/|Lrep
 	await p.waitForNetworkIdle({ idleTime: 800, timeout: 30000 }).catch(() => {});
 	await new Promise((r) => setTimeout(r, 1500));
 	if (opt("--eval")) { console.log(await p.evaluate(opt("--eval"))); await new Promise((r) => setTimeout(r, 1500)); }
+	// --scroll <px>: scroll the page's main scroll area (the largest scrollable box) before the shot.
+	if (opt("--scroll")) { await p.evaluate((iTop) => { const aBoxes = [...document.querySelectorAll("*")].filter((e) => e.scrollHeight > e.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(e).overflowY)); aBoxes.sort((x, y) => y.clientWidth * y.clientHeight - x.clientWidth * x.clientHeight); if (aBoxes[0]) aBoxes[0].scrollTop = iTop; }, Number(opt("--scroll"))); await new Promise((r) => setTimeout(r, 400)); }
 	if (opt("--measure")) console.log(await p.evaluate((sel) => JSON.parse(sel).map((s) => { const e = document.querySelector(s); if (!e) return s + ": none"; const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return s + ": x" + r.x.toFixed(1) + " y" + (r.y - 52).toFixed(1) + " w" + r.width.toFixed(1) + " h" + r.height.toFixed(1) + " | font " + cs.fontSize + " " + cs.fontWeight + " " + cs.fontFamily.split(",")[0] + " color " + cs.color + " bg " + cs.backgroundColor + " pad " + cs.padding + " radius " + cs.borderRadius + " border " + cs.border; }).join("\n"), opt("--measure")));
 	if (out && out !== "-") {
 		if (opt("--full")) await p.screenshot({ path: out, fullPage: true });
