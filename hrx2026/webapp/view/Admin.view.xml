@@ -27,7 +27,7 @@
 				subheader="{app>subtitle}"
 				mode="HeaderMode"
 				frameType="TwoByHalf"
-				press="onTilePress" />
+				press=".onTilePress" />
 		</f:GridContainer>
 	</Page>
 </mvc:View>

@@ -732,20 +732,6 @@ body.hrxApp {
 	background: var(--signal);
 }
 
-/* Home's own pills (e.g. the week's status on the Timesheet card) */
-.hrxPill,
-.hrxPill.sapMObjStatus {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 6px 12px;
-	border-radius: 999px;
-	font-size: 12px;
-	font-weight: 600;
-	border: 1px solid var(--line);
-	color: var(--txt-2);
-}
-
 /* ── PAGE / CONTENT ───────────────────────────────────────────────────────── */
 
 /* The design's .scroll: 26px above the content, 28px either side */
@@ -822,13 +808,6 @@ body.hrxApp {
 	box-shadow: none;
 }
 
-/* Manage Resources / Manage Clients / Manage Projects — list page title */
-#resources--resourceListPage > header .sapMTitle,
-#clients--clientListPage > header .sapMTitle,
-#projects--projectListPage > header .sapMTitle {
-	padding: 8px 18px;
-}
-
 /* ── CARDS AND PANELS ─────────────────────────────────────────────────────── */
 
 .hrxApp .sapFCard,
@@ -870,7 +849,6 @@ body.hrxApp {
 	box-shadow: var(--shadow);
 }
 
-.hrxKpiGood { border-top-color: var(--mint) !important; }
 .hrxKpiCritical { border-top-color: var(--signal) !important; }
 .hrxKpiWarning { border-top-color: var(--amber) !important; }
 .hrxKpiNeutral { border-top-color: var(--ice) !important; }
@@ -1515,14 +1493,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 
 /* ── SHARED TEXT HELPERS ──────────────────────────────────────────────────── */
 
-.hrxSectionTitle {
-	font-family: var(--disp);
-	font-weight: 800;
-	letter-spacing: -.3px;
-	text-transform: uppercase;
-	color: var(--ink);
-}
-
 .hrxResourceName {
 	font-weight: 600;
 	font-size: 13.5px;
@@ -1532,20 +1502,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .hrxResourceMeta {
 	font-size: 11.5px;
 	color: var(--txt-3);
-}
-
-/* Padding rather than margin: the row is 100% wide and box-sizing is border-box,
-   so a horizontal margin would push the row past the list and scroll the page. */
-.hrxResourceRow {
-	padding: 14px 20px;
-}
-
-.hrxProjectIcon {
-	color: var(--ice-deep);
-}
-
-.hrxComment {
-	padding-bottom: 42px;
 }
 
 /* ── MANAGE RESOURCES / CLIENTS / PROJECTS ────────────────────────────────── */
@@ -1560,16 +1516,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	height: 100%;
 }
 
-/* The master list otherwise sits flush against the column edges. Padding
-   rather than margin, same reasoning as .hrxResourceRow: the list is 100% wide
-   and border-box, so a margin would push it past the column and scroll the page. */
-.hrxManageResources .hrxResourceListPad,
-.hrxManageClients .hrxResourceListPad,
-.hrxManageProjects .hrxResourceListPad {
-	padding-left: 12px;
-	padding-right: 12px;
-}
-
 /* Work schedule day toggles read as a segmented control */
 .hrxManageResources .sapMToggleBtnPressed .sapMBtnInner,
 .hrxManageResources .sapMBtnInner.sapMToggleBtnPressed {
@@ -1579,24 +1525,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 }
 
 /* ── MY TIMESHEET ─────────────────────────────────────────────────────────── */
-
-.hrxDayTotal {
-	font-family: monospace;
-	font-weight: 700;
-	color: var(--ink);
-	font-size: 13px;
-}
-
-/* Weekend and other non-working columns recede */
-.hrxNonWorkingDay {
-	opacity: .55;
-}
-
-.hrxTimeCell input {
-	text-align: center;
-	font-family: monospace;
-	font-size: 12px;
-}
 
 /* ── APP EXPLORER TILES ───────────────────────────────────────────────────── */
 
@@ -1639,7 +1567,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	overflow: hidden;
 }
 
-.hrxApp .hrxKpi.hrxKpiGood { border-top-color: var(--mint); }
 .hrxApp .hrxKpi.hrxKpiCritical { border-top-color: var(--signal); }
 .hrxApp .hrxKpi.hrxKpiWarning { border-top-color: var(--amber); }
 .hrxApp .hrxKpi.hrxKpiNeutral { border-top-color: var(--ice); }
@@ -1656,11 +1583,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	text-align: center;
 	color: var(--ice-deep);
 	background: var(--ice-glow);
-}
-
-.hrxApp .hrxKpiGood .hrxKpiGlyph {
-	color: #0F7B4F;
-	background: var(--mint-soft);
 }
 
 .hrxApp .hrxKpiWarning .hrxKpiGlyph {
@@ -1714,21 +1636,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 
 /* ── TABLE CARD ───────────────────────────────────────────────────────────── */
 
-/* A card that holds its own toolbar, progress bar, grid and footnote, the way the
-   prototype builds its timesheet block. */
-.hrxApp .hrxTableCard {
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-radius: var(--radius);
-	box-shadow: var(--shadow);
-	overflow: hidden;
-}
-
-.hrxApp .hrxTableTop {
-	padding: 14px 18px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
 .hrxApp .hrxWeekLabel .sapMBtnInner {
 	border: none;
 	background: transparent;
@@ -1742,51 +1649,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	color: var(--ice-deep);
 	text-transform: uppercase;
 }
-
-.hrxApp .hrxHoursProgress {
-	padding: 12px 18px;
-	border-bottom: 1px solid var(--line-soft);
-	background: var(--frost);
-}
-
-.hrxApp .hrxHoursTrack {
-	min-width: 6rem;
-	margin-right: 14px;
-}
-
-
-
-.hrxApp .hrxHoursLabel {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--txt-2);
-	white-space: nowrap;
-}
-
-/* A grid inside the card keeps the card's own frame */
-.hrxApp .hrxTableCard .hrxInnerTable,
-.hrxApp .hrxTableCard .sapMListTbl {
-	border: none;
-	border-radius: 0;
-	box-shadow: none;
-	background: transparent;
-}
-
-.hrxApp .hrxCommentNote {
-	padding: 12px 18px;
-	border-top: 1px solid var(--line-soft);
-	background: var(--frost);
-	font-size: 12px;
-	color: var(--txt-2);
-}
-
-.hrxApp .hrxCommentNote .sapUiIcon {
-	color: var(--amber);
-}
-
-/*.hrxApp .hrxToolRow {
-	padding-bottom: 14px;
-}*/
 
 /* Group rows: the client a set of projects belongs to. Scoped to the Timesheet
    page only - grouped tables elsewhere in the app keep the library default. */
@@ -1826,38 +1688,8 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	height: 100%;
 }
 
-/* The action row is a flex row so a hidden card takes no space at all and the
-   rest close up to the left. Each card claims an equal share of what is left. */
-.hrxApp .hrxActionRow {
-	gap: 16px;
-	width: 100%;
-}
-
 /* The flex box theme sets its item sizing with !important, so matching it is the
    only way to make the cards share the row evenly. */
-/* The basis is what decides when the row wraps. At 320px three cards plus their
-   gaps came to just over the content width of a 1280px laptop, so the third card
-   dropped onto a row of its own and the page needed scrolling for what fits. */
-.hrxApp .hrxActionRow > .sapMFlexItem {
-	flex: 1 1 300px !important;
-	min-width: 260px !important;
-	max-width: 560px !important;
-}
-
-/* Every field fills its card, so the labels, inputs and buttons share one width */
-.hrxApp .hrxCardBody .sapMInputBase,
-.hrxApp .hrxCardBody .sapMSlt,
-.hrxApp .hrxCardBody .sapMComboBox,
-.hrxApp .hrxCardBody .sapMDP,
-.hrxApp .hrxCardBody .sapMDRS,
-.hrxApp .hrxCardBody .sapMTextArea {
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.hrxApp .hrxCardBody {
-	padding: 16px 18px 18px;
-}
 
 /* Quick Leave and Quick Timesheet sit side by side in an equal-height row
    (.hrxHomeCard), but have a different number of fields above their submit
@@ -1876,25 +1708,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	height: 100%;
 }
 
-.hrxApp .hrxQuickCardBody {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;
-	height: 100%;
-	min-height: 0;
-	box-sizing: border-box;
-}
-
-/* Quick Timesheet swaps its whole body between an entry form and an
-   already-logged summary - whichever is showing must itself grow to fill the
-   card so its own trailing button is the one that lands at the bottom. */
-.hrxApp .hrxCardBodyFill {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;
-	min-height: 0;
-}
-
 /* The week's hours-to-book pill, in the Timesheet card's header, centred on the
    card title beside it. The title's column is padded 16px down from the top of the
    header and the toolbar slot the pill sits in is not, which left the pill riding
@@ -1903,135 +1716,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .hrxApp .hrxHomePage .sapFCardHeaderToolbarCont {
 	padding-top: 12px;
 }
-
-/* Set through FlexItemData's styleClass, so it lands on the flex item wrapper
-   FlexBox puts around every child rather than on the button inside it. */
-.hrxApp .hrxCardFooterButton {
-	margin-top: auto;
-}
-
-.hrxApp .hrxLoggedIcon {
-	color: var(--mint);
-	font-size: 26px;
-}
-
-.hrxApp .hrxRingRow {
-	padding: 6px 0 0;
-	max-width: 760px;
-	width: 100%;
-}
-
-.hrxApp .hrxRingDay {
-	width: 92px;
-}
-
-.hrxApp .hrxRingDayName {
-	font-size: 11.5px;
-	font-weight: 600;
-	color: var(--txt-2);
-}
-
-/* One height for the ring and the leave marker alike, so the labels below them
-   sit on the same line across the week. */
-.hrxApp .hrxRingSlot {
-	width: 68px;
-	height: 68px;
-	margin: 8px 0 6px;
-	position: relative;
-}
-
-/* The chart's own figure is capped at 100% by the control, so it is hidden and
-   replaced by hrxRingPercent below, which states the real one. Both sit
-   absolutely centred over the ring, so neither disturbs the column. */
-.hrxApp .hrxRingSlot .sapSuiteRMCInsideLabel {
-	display: none;
-}
-
-/* The figure over the ring, laid over the whole slot so it lands dead centre of
-   the ring and adds no height of its own. The VBox carries the position; the
-   Text only needs its own type and colour (the theme sets both directly on
-   .sapMText, so a rule on an ancestor never reaches it) and overflow put back
-   to visible, since sap.m.Text's own clipping is what hid the figure. */
-.hrxApp .hrxRingSlot .hrxRingPercentBox {
-	position: absolute;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	z-index: 1;
-	pointer-events: none;
-}
-
-.hrxApp .sapMText.hrxRingPercent {
-	overflow: visible;
-	text-overflow: clip;
-	white-space: nowrap;
-	max-width: none;
-	font-family: var(--sans);
-	font-size: 12.5px;
-	font-weight: 700;
-	line-height: 1;
-	color: var(--txt);
-}
-
-/* Whatever the chart's own idea of its size, it stays inside the day column */
-.hrxApp .hrxRingSlot .sapSuiteRMC,
-.hrxApp .hrxRingSlot .sapSuiteRMC > svg {
-	width: 64px;
-	height: 64px;
-	min-width: 0;
-}
-
-/* An overbooked day. RadialMicroChart takes only its own colour enum, so
-   Home.controller asks for Sequence1 - the one value with no meaning of its own
-   in this app - and it is repainted here as the overbooked violet. The ring is
-   drawn as one full circle at 100% and as stroked paths below it, and both
-   carry this class. Three classes deep, so no !important is needed to beat the
-   theme's own single-class rule. */
-.hrxApp .hrxRingSlot .sapSuiteRMCPathSequence1 {
-	stroke: var(--over);
-}
-
-.hrxApp .sapMText.hrxRingLabel,
-.hrxApp .hrxRingLabel {
-	font-family: monospace;
-	font-size: 11.5px;
-	font-weight: 700;
-	color: var(--txt-2);
-	line-height: 16px;
-	white-space: nowrap;
-}
-
-/* A day taken as leave: filled rather than a ring, as in the prototype */
-.hrxApp .hrxLeaveRing {
-	width: 60px;
-	height: 60px;
-	border-radius: 50%;
-	background: var(--ice);
-}
-
-.hrxApp .hrxLeaveRing .sapUiIcon {
-	color: #FFFFFF;
-	font-size: 24px;
-}
-
-.hrxApp .hrxLegend {
-	font-size: 11.5px;
-	color: var(--txt-2);
-	padding-left: 18px !important;
-}
-
-.hrxApp .hrxDot {
-	font-size: 9px;
-	margin-right: 6px;
-}
-
-.hrxApp .hrxDotSignal { color: var(--signal); }
-.hrxApp .hrxDotAmber { color: var(--amber); }
-.hrxApp .hrxDotMint { color: var(--mint); }
-.hrxApp .hrxDotOver { color: var(--over); }
-.hrxApp .hrxDotIce { color: var(--ice); }
-.hrxApp .hrxDotLine { color: var(--frost-2); }
 
 /* Cards and tiles laid out by a responsive grid fill their own column, so
    neighbouring cards can never overlap whatever their height. */
@@ -2125,8 +1809,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	--sapLegendColor5: #ABC3D2; /* Bank holiday */
 }
 
-
-
 /* The legend's "Today" swatch border is theme-compiled to a literal colour
    rather than a CSS variable, so it needs its own override to match. */
 .hrxMyLeave .sapUiUnifiedLegendToday > .sapUiUnifiedLegendSquare > .sapUiUnifiedLegendSquareColor {
@@ -2170,17 +1852,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	min-height: 0;
 }
 
-/* The comparison chart sizes itself from the container it is given; without this
-   it settled at roughly three quarters of the card and left a band of empty
-   white down the right-hand side. */
-.hrxApp .hrxLeaveBreakdown .sapSuiteCpMC,
-.hrxApp .hrxLeaveBreakdown .sapSuiteCpMCChart,
-.hrxApp .hrxLeaveBreakdown .sapSuiteCpMCVerticalAlignmentContainer {
-	width: 100%;
-	max-width: 100%;
-	box-sizing: border-box;
-}
-
 /* Snapshot's figures - "14 day(s)", and "25 day(s)" / "11 day(s)" beside it - are
    laid on one baseline, each value under its own label. The card's numeric
    header ships them on three different lines: the unit pushed down by a fixed
@@ -2220,27 +1891,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	margin-left: 4px;
 }
 
-/* A Responsive chart takes the height it is given; in a flex column with nothing
-   below it that is whatever is left, which can round down to nothing. Give it a
-   floor so every bar and its figure stay readable. */
-.hrxApp .hrxLeaveBreakdown .sapSuiteCpMC {
-	min-height: 8rem;
-}
-
-/* My Requests: the table is the tab's whole content, so it keeps the card's own
-   frame rather than drawing a second rounded, shadowed box inside it. */
-.hrxApp .hrxFlushTabs .sapMITBContainerContent,
-.hrxApp .hrxFlushTabs .sapMITBContent {
-	padding: 0;
-}
-
-.hrxApp .hrxFlushTabs .sapMITBContent > .sapMList,
-.hrxApp .hrxFlushTabs .sapMITBContent > .sapMListTbl {
-	border: none;
-	border-radius: 0;
-	box-shadow: none;
-}
-
 /* Rows that may not be deleted (BlueStoneX's own projects, and the read-only
    leave and holiday rows) keep their column for alignment but show no checkbox.
    The rule itself lives in control/TimesheetRow, which makes those rows
@@ -2258,67 +1908,8 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
    the same footing as the rest of the app.
    ============================================================================ */
 
-/* The dialog asks for 60rem so its three columns read on one line each. Capped
-   here so a narrow laptop still gets a dialog that fits its window. */
-.hrxApp .hrxPickerDialog {
-	max-width: calc(100vw - 4rem);
-}
-
-/* The dialog's own scroll container carries the side gutters, so the sticky
-   column header lines up with the rows beneath it. */
-.hrxApp .hrxPickerDialog .sapMDialogScrollCont {
-	padding: 0 12px 4px;
-	box-sizing: border-box;
-}
-
-/* Header row: same quiet, uppercase label as the timesheet grid's own header.
-   The header cell is .sapMTableTH - there is no .sapMListTblHeader* class. */
-.hrxApp .hrxPickerTable .sapMTableTH {
-	background: var(--frost);
-}
-
-.hrxApp .hrxPickerTable .sapMTableTH .sapMText,
-.hrxApp .hrxPickerTable .sapMTableTH .sapMLabel,
-.hrxApp .hrxPickerTable .sapMTableTH .sapMColumnHeader {
-	font-family: var(--sans);
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: .04em;
-	text-transform: uppercase;
-	color: var(--txt-2);
-}
-
 /* Even vertical rhythm - the default cell padding leaves the two-line project
    cell noticeably taller than its neighbours. */
-/* !important on these two: the theme's own cell padding is set through a more
-   specific element-and-child selector, so a class-only rule silently loses. */
-.hrxApp .hrxPickerTable .sapMListTblCell {
-	padding-top: 8px !important;
-	padding-bottom: 8px !important;
-}
-
-.hrxApp .hrxPickerTable .sapMListTblRow > .sapMListTblSelCol {
-	padding-left: 4px !important;
-}
-
-.hrxApp .hrxPickerTable .sapMLIB {
-	border-bottom-color: var(--line-soft);
-}
-
-/* The project id under the name is a plain reference, not a link. */
-.hrxApp .hrxPickerTable .sapMObjectIdentifierText {
-	font-family: monospace;
-	font-size: 11.5px;
-	color: var(--txt-3);
-}
-
-.hrxApp .hrxPickerTable .sapMObjectIdentifierTitle,
-.hrxApp .hrxPickerTable .sapMObjectIdentifierTitle .sapMText {
-	font-family: var(--sans);
-	font-size: 13px;
-	font-weight: 700;
-	color: var(--txt);
-}
 
 .hrxApp .sapSuiteCpMCVerticalAlignmentContainer {
     max-width: 100%;
@@ -2328,284 +1919,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 /* The prototype's trigger and return-to-work cards. Built from VBoxes rather
    than sap.f.Card: each carries a header row with a status pill, a body of
    labelled text and an action row, none of which the card header can hold. */
-
-.hrxApp .hrxSkYearLabel {
-	font-weight: 700;
-	font-size: 13.5px;
-	color: var(--ink);
-	margin: 0 4px;
-}
-
-.hrxApp .hrxSkAlert {
-	margin-bottom: 4px;
-	border-radius: var(--radius-s);
-}
-
-.hrxApp .hrxSkSectionTitle.sapMTitle {
-	font-size: 15px;
-	margin: 22px 0 12px;
-}
-
-.hrxApp .hrxSkCard {
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-radius: var(--radius);
-	box-shadow: var(--shadow);
-	overflow: hidden;
-}
-
-.hrxApp .hrxSkStack > .hrxSkCard:not(:last-child) {
-	margin-bottom: 16px;
-}
-
-.hrxApp .hrxSkEmpty {
-	padding: 28px 22px;
-	align-items: center;
-}
-
-.hrxApp .hrxSkEmpty .sapMText {
-	color: var(--txt-3);
-	font-size: 13.5px;
-}
-
-.hrxApp .hrxSkTrigger:not([data-status="OPEN"]) {
-	opacity: .85;
-}
-
-.hrxApp .hrxSkCardHead {
-	gap: 10px;
-	padding: 16px 22px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxSkCardWho {
-	flex: 1;
-	min-width: 0;
-}
-
-.hrxApp .hrxSkAvatar.sapFAvatar {
-	background: linear-gradient(135deg, var(--ice), var(--ice-deep));
-	color: #fff;
-}
-
-.hrxApp .hrxSkName {
-	font-family: var(--disp);
-	text-transform: uppercase;
-	font-weight: 800;
-	font-size: 15px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxSkSub {
-	font-size: 12.5px;
-	color: var(--txt-3);
-}
-
-/* An inverted ObjectStatus draws its own pill on the inner wrapper, so the
-   outer element must not take the app-wide status background as well - that
-   showed as a tinted halo round the pill. */
-.hrxApp .hrxSkPill.sapMObjStatus {
-	background: none;
-	padding: 0;
-	font-size: 12px;
-	font-weight: 600;
-	flex-shrink: 0;
-}
-
-.hrxApp .hrxSkPill .sapMObjStatusWrapper {
-	border-radius: 999px;
-	padding: 0 4px;
-}
-
-.hrxApp .hrxSkCardBody {
-	padding: 18px 22px 20px;
-}
-
-.hrxApp .hrxSkRule {
-	font-size: 13.5px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxSkSummary {
-	font-weight: 700;
-	font-size: 13.5px;
-	color: var(--ink);
-	margin: 4px 0 6px;
-}
-
-.hrxApp .hrxSkLabel {
-	display: block;
-	font-size: 10.5px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: .1em;
-	color: var(--txt-3);
-	margin: 18px 0 8px;
-}
-
-.hrxApp .hrxSkLabel.hrxSkLabelFirst {
-	margin-top: 0;
-}
-
-.hrxApp .hrxSkRec {
-	font-size: 13.5px;
-	line-height: 1.55;
-	color: var(--ink);
-}
-
-.hrxApp .hrxSkNote.hrxSkNoteEmailed {
-	color: var(--ice-deep);
-	background: var(--ice-glow);
-}
-
-.hrxApp .hrxSkActions {
-	gap: 10px;
-	margin-top: 18px;
-}
-
-.hrxApp .hrxSkNote {
-	margin-top: 16px;
-	font-size: 12.5px;
-	color: var(--txt-2);
-	padding: 10px 14px;
-	background: var(--frost);
-	border-radius: var(--radius-s);
-}
-
-/* The absence history sits inside a card, so it drops the card styling every
-   other panel gets and reads as a disclosure row instead. */
-.hrxApp .hrxSkHistory.sapMPanel {
-	border: none;
-	box-shadow: none;
-	border-radius: 0;
-	background: transparent;
-	margin-top: 10px;
-}
-
-.hrxApp .hrxSkHistory > .sapMPanelHeadingDiv,
-.hrxApp .hrxSkHistory .sapMPanelWrappingDiv,
-.hrxApp .hrxSkHistory .sapMPanelWrappingDivTb,
-.hrxApp .hrxSkHistory .sapMPanelHdr,
-.hrxApp .hrxSkHistory .sapMTB {
-	background: transparent;
-	border: none;
-	padding-left: 0;
-	padding-right: 0;
-}
-
-.hrxApp .hrxSkHistory .hrxSkLabel {
-	margin: 0;
-}
-
-.hrxApp .hrxSkCount {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--txt-3);
-}
-
-.hrxApp .hrxSkHistory > .sapMPanelContent {
-	padding: 0;
-	background: transparent;
-	border: 1px solid var(--line-soft);
-	border-radius: var(--radius-s);
-	overflow: hidden;
-}
-
-.hrxApp .hrxSkRtwGrid.sapUiRespGrid {
-	margin: 0 -8px;
-}
-
-.hrxApp .hrxSkRtw {
-	height: 100%;
-}
-
-.hrxApp .hrxSkStep {
-	gap: 12px;
-	padding: 8px 0;
-	min-height: 2.25rem;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxSkStep:last-child {
-	border-bottom: none;
-}
-
-.hrxApp .hrxSkStepIcon.sapUiIcon {
-	width: 20px;
-	height: 20px;
-	line-height: 16px;
-	font-size: 10px;
-	border-radius: 50%;
-	border: 2px solid var(--line);
-	color: #fff;
-	flex-shrink: 0;
-	box-sizing: border-box;
-}
-
-.hrxApp .hrxSkStep[data-done="yes"] .hrxSkStepIcon {
-	background: var(--mint);
-	border-color: var(--mint);
-}
-
-.hrxApp .hrxSkStepText {
-	font-size: 13.5px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxSkStep[data-done="yes"] .hrxSkStepText {
-	color: var(--txt-2);
-}
-
-.hrxApp .hrxSkDismissedNote {
-	font-size: 11.5px;
-}
-
-.hrxApp .hrxSkPill .sapMObjStatusText {
-	white-space: nowrap;
-}
-
-.hrxApp .hrxSkAll.sapMPanel {
-	margin-top: 22px;
-}
-
-.hrxApp .hrxSkCount {
-	white-space: nowrap;
-}
-
-/* The prototype's collapsible card head: 14px/20px padding, a display-face
-   uppercase title and a quiet hint on the right. The toolbar keeps its own
-   height so the title is never clipped. */
-.hrxApp .hrxSkAll > .sapMPanelWrappingDivTb {
-	padding: 6px 12px;
-	border-bottom: none;
-}
-
-.hrxApp .hrxSkAll.sapMPanelExpanded > .sapMPanelWrappingDivTb,
-.hrxApp .hrxSkAll > .sapMPanelWrappingDivTbExpanded {
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxSkAllHead.sapMTB {
-	height: auto;
-	min-height: 2.75rem;
-	padding-left: 4px;
-}
-
-.hrxApp .hrxSkAllTitle.sapMTitle {
-	height: auto;
-	font-family: var(--disp);
-	font-size: 14px;
-	font-weight: 800;
-	line-height: 1.4;
-	text-transform: uppercase;
-	color: var(--ink);
-}
-
-.hrxApp .hrxSkHint {
-	font-size: 11.5px;
-	color: var(--txt-3);
-	white-space: nowrap;
-}
 
 /* ── TIMESHEET REPORTING ──────────────────────────────────────────────────── */
 
@@ -2617,426 +1930,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .hrxApp .hrxKpi[data-state="Good"] .hrxKpiGlyph { color: #0F7B4F; background: var(--mint-soft); }
 .hrxApp .hrxKpi[data-state="Warning"] .hrxKpiGlyph { color: #92400E; background: var(--amber-soft); }
 .hrxApp .hrxKpi[data-state="Critical"] .hrxKpiGlyph { color: #991B1B; background: var(--signal-soft); }
-
-.hrxApp .hrxTrLoading {
-	gap: 10px;
-	padding: 10px 14px;
-	margin-bottom: 12px;
-	background: var(--ice-glow);
-	border-radius: var(--radius-s);
-	color: var(--ice-deep);
-	font-size: 13px;
-}
-
-/* The prototype's tab strip: display-face uppercase labels on a single rule. */
-.hrxApp .hrxTrTabs.sapMITB {
-	background: transparent;
-	box-shadow: none;
-}
-
-.hrxApp .hrxTrTabs .sapMITH {
-	background: transparent;
-	box-shadow: inset 0 -1px 0 var(--line);
-	padding: 0;
-	margin-bottom: 18px;
-}
-
-.hrxApp .hrxTrTabs .sapMITBText {
-	font-family: var(--disp);
-	text-transform: uppercase;
-	font-weight: 700;
-	font-size: 12px;
-	letter-spacing: .04em;
-	color: var(--txt-2);
-}
-
-.hrxApp .hrxTrTabs .sapMITBSelected .sapMITBText {
-	color: var(--ice-deep);
-}
-
-.hrxApp .hrxTrTabs .sapMITBContent {
-	background: transparent;
-	padding: 0;
-	border: none;
-}
-
-.hrxApp .hrxTrCard + .hrxTrCard {
-	margin-top: 16px;
-}
-
-.hrxApp .hrxTrCardHead {
-	gap: 12px;
-	padding: 14px 20px;
-	border-bottom: 1px solid var(--line-soft);
-	justify-content: space-between;
-}
-
-.hrxApp .hrxTrCardHeadText {
-	flex: 1 !important;
-	min-width: 12rem;
-}
-
-.hrxApp .hrxTrCardTitle.sapMTitle {
-	font-family: var(--disp);
-	text-transform: uppercase;
-	font-size: 14px;
-	font-weight: 800;
-	color: var(--ink);
-}
-
-.hrxApp .hrxTrTools {
-	gap: 10px;
-}
-
-.hrxApp .hrxTrCardBody {
-	padding: 4px 20px 18px;
-}
-
-.hrxApp .hrxTrEmpty {
-	display: block;
-	padding: 28px 20px;
-	text-align: center;
-	color: var(--txt-3);
-	font-size: 13.5px;
-}
-
-.hrxApp .hrxTrStrong {
-	font-weight: 700;
-}
-
-.hrxApp .hrxTrNum {
-	text-align: right;
-	font-variant-numeric: tabular-nums;
-}
-
-/* Billing by assignment: one grid shared by the header and every row, so the
-   columns line up without a table (rows open to show their bookings). */
-.hrxApp .hrxTrAsgTable {
-	min-width: 760px;
-}
-
-.hrxApp .hrxTrAsgRow.sapMFlexBox {
-	display: grid !important;
-	grid-template-columns: 2.5rem minmax(9rem, 1.1fr) minmax(12rem, 1.6fr) 7rem 6rem 7rem 7.5rem;
-	align-items: center;
-	column-gap: 12px;
-	padding: 10px 20px 10px 8px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxTrAsgRow > .sapMFlexItem {
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxTrAsgRow > .sapMFlexItem:nth-child(n+5) {
-	text-align: right;
-}
-
-.hrxApp .hrxTrAsgHead.sapMFlexBox {
-	background: var(--frost);
-	padding-top: 8px;
-	padding-bottom: 8px;
-}
-
-.hrxApp .hrxTrAsgHead .sapMText {
-	font-size: 10.5px;
-	font-weight: 700;
-	letter-spacing: .1em;
-	text-transform: uppercase;
-	color: var(--txt-3);
-}
-
-.hrxApp .hrxTrAsg {
-	cursor: pointer;
-}
-
-.hrxApp .hrxTrAsg:hover > .hrxTrAsgRow {
-	background: rgba(38, 170, 226, .04);
-}
-
-.hrxApp .hrxTrChev .sapUiIcon {
-	transition: transform .15s;
-}
-
-.hrxApp .hrxTrAsg[data-open="yes"] .hrxTrChev .sapUiIcon {
-	transform: rotate(90deg);
-}
-
-.hrxApp .hrxTrLogs.sapMList {
-	margin: 0 20px 14px 3.5rem;
-	width: calc(100% - 3.5rem - 20px) !important;
-	border: 1px solid var(--line-soft);
-	border-radius: var(--radius-s);
-	overflow: hidden;
-	cursor: default;
-}
-
-/* Billed days overview */
-.hrxApp .hrxTrStat {
-	padding: 14px 0;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxTrStat:last-child {
-	border-bottom: none;
-}
-
-.hrxApp .hrxTrStatLabel {
-	font-size: 12px;
-	color: var(--txt-2);
-	margin-bottom: 3px;
-}
-
-.hrxApp .hrxTrStatValue {
-	font-family: var(--disp);
-	font-weight: 800;
-	font-size: 24px;
-	letter-spacing: -.5px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxTrStatUnit {
-	font-size: 13px;
-	color: var(--txt-3);
-	margin-left: 6px;
-}
-
-.hrxApp .hrxTrPieWrap {
-	display: flex;
-	justify-content: center;
-	margin: 14px 0 10px;
-}
-
-.hrxApp .hrxTrPie {
-	width: 210px;
-	height: 210px;
-	max-width: 100%;
-}
-
-.hrxApp .hrxTrWedge {
-	stroke: var(--surface);
-	stroke-width: .8;
-	stroke-linejoin: round;
-	transition: opacity .15s;
-}
-
-.hrxApp .hrxTrWedgeActive {
-	cursor: pointer;
-}
-
-.hrxApp .hrxTrWedgeActive:hover {
-	opacity: .8;
-}
-
-.hrxApp .hrxTrLegend .sapMLIB {
-	padding: 0 6px;
-	min-height: 2.25rem;
-	border-radius: 8px;
-	background: transparent;
-}
-
-.hrxApp .hrxTrLegendRow {
-	gap: 8px;
-	width: 100%;
-	font-size: 13px;
-}
-
-.hrxApp .hrxTrLegendLabel {
-	flex: 1 !important;
-}
-
-.hrxApp .hrxTrDot {
-	display: inline-block;
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-}
-
-.hrxApp .hrxTrTopRow {
-	margin-top: 14px;
-}
-
-.hrxApp .hrxTrTopLabel {
-	gap: 12px;
-	font-size: 13px;
-	margin-bottom: 5px;
-}
-
-.hrxApp .hrxTrTrack {
-	height: 7px;
-	background: var(--line-soft);
-	border-radius: 5px;
-	overflow: hidden;
-}
-
-.hrxApp .hrxTrFill {
-	height: 100%;
-	border-radius: 5px;
-	background: linear-gradient(90deg, var(--ice), #756EE5);
-}
-
-/* Timesheet breakdown */
-.hrxApp .hrxTrBreak .sapMListTblCell {
-	white-space: nowrap;
-	font-variant-numeric: tabular-nums;
-}
-
-.hrxApp .hrxTrGroup {
-	background: var(--frost);
-}
-
-.hrxApp .hrxTrGroupChev {
-	font-size: 11px;
-	color: var(--txt-2);
-	margin-right: 8px;
-}
-
-.hrxApp .hrxTrGroupCount {
-	margin-left: 8px;
-	font-size: 11.5px;
-	color: var(--txt-3);
-}
-
-.hrxApp .hrxTrIndent {
-	padding-left: 1.5rem;
-}
-
-.hrxApp .hrxTrTotals .sapMText {
-	font-weight: 800;
-}
-
-.hrxApp .hrxTrTotals {
-	border-top: 2px solid var(--line);
-}
-
-/* Who's submitted and team utilisation */
-.hrxApp .hrxTrWeek {
-	min-width: 11rem;
-	gap: 4px;
-}
-
-.hrxApp .hrxTrProgress.sapMPI {
-	margin: 0;
-}
-
-.hrxApp .hrxTrFilters {
-	padding: 14px 20px;
-	margin-bottom: 16px;
-}
-
-/* Both rows of the filter card share one four-column grid, so the foot's Show
-   box sits exactly under the Period box: same width, same edges. */
-.hrxApp .hrxTrFieldRow.sapMFlexBox,
-.hrxApp .hrxTrFilterFoot.sapMFlexBox {
-	display: grid !important;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	column-gap: 16px;
-	row-gap: 12px;
-}
-
-.hrxApp .hrxTrFilterFoot.sapMFlexBox {
-	margin-top: 12px;
-	align-items: center;
-}
-
-.hrxApp .hrxTrFieldRow > .sapMFlexItem,
-.hrxApp .hrxTrFilterFoot > .sapMFlexItem {
-	min-width: 0 !important;
-}
-
-/* foot: the quick periods across the first two columns, "Show" right-aligned in
-   the third, its box in the fourth - under Period */
-.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(1) {
-	grid-column: 1 / span 2;
-}
-
-.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(2) {
-	grid-column: 3;
-	justify-self: end;
-}
-
-.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(3) {
-	grid-column: 4;
-}
-
-@media (max-width: 900px) {
-	.hrxApp .hrxTrFieldRow.sapMFlexBox,
-	.hrxApp .hrxTrFilterFoot.sapMFlexBox {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(2) {
-		grid-column: 1;
-	}
-
-	.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(3) {
-		grid-column: 2;
-	}
-}
-
-@media (max-width: 600px) {
-	.hrxApp .hrxTrFieldRow.sapMFlexBox,
-	.hrxApp .hrxTrFilterFoot.sapMFlexBox {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(1),
-	.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(2),
-	.hrxApp .hrxTrFilterFoot > .sapMFlexItem:nth-child(3) {
-		grid-column: 1;
-		justify-self: stretch;
-	}
-}
-
-.hrxApp .hrxTrField {
-	min-width: 0;
-}
-
-.hrxApp .hrxTrField .sapMLabel {
-	font-size: 11px;
-	font-weight: 700;
-	color: var(--txt-2);
-	margin-bottom: 4px;
-}
-
-.hrxApp .hrxTrQuick {
-	gap: 6px;
-}
-
-.hrxApp .hrxTrLegendRow > .sapMFlexItem:nth-child(2),
-.hrxApp .hrxTrTopLabel > .sapMFlexItem:first-child {
-	flex: 1 1 auto !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxTrLegendRow > .sapMFlexItem:last-child,
-.hrxApp .hrxTrTopLabel > .sapMFlexItem:last-child {
-	flex: 0 0 auto !important;
-	white-space: nowrap;
-}
-
-.hrxApp .hrxTrLegendRow > .sapMFlexItem:first-child {
-	display: flex;
-	align-items: center;
-}
-
-.hrxApp .hrxTrStateSuccess .hrxTrFill { background: var(--mint); }
-.hrxApp .hrxTrStateWarning .hrxTrFill { background: var(--amber); }
-.hrxApp .hrxTrStateError .hrxTrFill { background: var(--signal); }
-
-.hrxApp .hrxTrUtilBar {
-	gap: 10px;
-}
-
-.hrxApp .hrxTrUtilBar > .sapMFlexItem:first-child {
-	flex: 1 1 auto !important;
-	min-width: 5rem !important;
-}
-
-.hrxApp .hrxTrUtilBar > .sapMFlexItem:last-child {
-	flex: 0 0 2.75rem !important;
-	text-align: right;
-}
 
 /* TESTING AID - the "View as (demo)" switch, laid over the rail above the user. */
 /* "View as (demo)", below the signed-in user as in the design (.role-demo) */
@@ -3082,342 +1975,17 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	line-height: 22px;
 }
 
-.hrxApp .hrxTrPieTotal {
-	font-family: var(--disp);
-	font-weight: 800;
-	font-size: 12px;
-	fill: var(--ink);
-	pointer-events: none;
-}
-
-.hrxApp .hrxTrPieUnit {
-	font-size: 4.6px;
-	font-weight: 700;
-	letter-spacing: .14em;
-	fill: var(--txt-3);
-	pointer-events: none;
-}
-
-/* Manage Resources: one row per day in the book-leave dialog */
-.hrxApp .hrxBookDay {
-	gap: 12px;
-	padding: 6px 0;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxLeaveHead {
-	gap: 12px;
-}
-
 /* ── DOCUMENTS AND POLICIES TO READ ───────────────────────────────────────── */
 
-.hrxApp .hrxDocEmpty {
-	align-items: center;
-	text-align: center;
-	gap: 4px;
-	padding: 36px 20px;
-}
-
-.hrxApp .hrxDocRow,
-.hrxApp .hrxDocRow2 {
-	gap: 12px 16px;
-	padding: 14px 20px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxDocMain {
-	flex: 1 1 14rem !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxDocName {
-	font-weight: 700;
-	font-size: 14px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxDocStatus,
-.hrxApp .hrxDocActs {
-	gap: 8px;
-}
-
-.hrxApp .hrxDocRow2 {
-	cursor: pointer;
-}
-
-.hrxApp .hrxDocRow2:hover {
-	background: rgba(38, 170, 226, .04);
-}
-
-.hrxApp .hrxDocRow2[data-sel="yes"] {
-	background: var(--ice-glow);
-	box-shadow: inset 3px 0 0 var(--ice);
-}
-
-.hrxApp .hrxDocAck {
-	flex: 0 0 10.5rem !important;
-	gap: 4px;
-}
-
-.hrxApp .hrxDocAck .hrxResourceMeta {
-	font-size: 12px;
-}
-
-.hrxApp .hrxDocAckN {
-	font-size: 12px;
-	font-weight: 700;
-	color: var(--ink);
-}
-
-.hrxApp .hrxDocAct {
-	flex: 0 0 2.5rem !important;
-}
-
-.hrxApp .hrxDocTools {
-	gap: 10px;
-	padding: 12px 20px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxDocToolRow {
-	gap: 10px;
-}
-
-.hrxApp .hrxDocChips {
-	gap: 6px;
-}
-
-.hrxApp .hrxDocWhoRow {
-	padding: 10px 20px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxDocWhoFoot {
-	gap: 8px;
-	padding: 12px 20px;
-}
-
-.hrxApp .hrxDocUploadPair {
-	gap: 12px;
-	margin-bottom: 12px;
-}
-
 /* ── HOME: MANAGER DASHBOARD ──────────────────────────────────────────────── */
-
-/* Both rows are CSS grids with the same 16px gap and the same outer edges: four
-   tiles above, two equal halves below, so the gutter between the halves sits
-   exactly on the middle gutter of the tiles. */
-.hrxApp .hrxMgrKpis.sapMFlexBox,
-.hrxApp .hrxMgrGrid.sapMFlexBox {
-	display: grid !important;
-	gap: 16px;
-	align-items: stretch;
-}
-
-.hrxApp .hrxMgrKpis.sapMFlexBox {
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	margin-bottom: 16px;
-}
-
-.hrxApp .hrxMgrGrid.sapMFlexBox {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	margin-bottom: 24px;
-}
-
-/* The boxes render their items bare (no wrapper divs), so the tiles and cards
-   are the grid cells themselves. */
-.hrxApp .hrxMgrKpis > .hrxKpi,
-.hrxApp .hrxMgrGrid > .sapMFlexBox {
-	min-width: 0;
-	box-sizing: border-box;
-}
-
-@media (max-width: 1100px) {
-	.hrxApp .hrxMgrKpis.sapMFlexBox { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	.hrxApp .hrxMgrGrid.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
-
-	/* Stacked, the cards have no shared row height to fill, so their lists take
-	   their own height (FlexItemData starts them at 0 for the wide layout) and
-	   scroll past a sensible cap. */
-	.hrxApp .hrxMgrGrid .hrxMgrScrollItem,
-	.hrxApp .hrxMgrGrid .hrxMgrUtilCard {
-		flex: 0 0 auto !important;
-	}
-
-	.hrxApp .hrxMgrGrid .hrxMgrScrollItem {
-		max-height: 24rem;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-}
-
-@media (max-width: 600px) {
-	.hrxApp .hrxMgrKpis.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
-}
-
-.hrxApp .hrxMgrKpis .hrxKpi {
-	display: flex;
-	flex-direction: column;
-}
-
-/* The link sits at the foot of the tile however long the lines above it run.
-   The tile is a VBox, so its flex items are UI5's wrapper divs - the auto margin
-   has to go on the link's wrapper, not on the button inside it. */
-.hrxApp .hrxMgrKpis .hrxKpi > .sapMFlexItem:last-child {
-	margin-top: auto;
-	padding-top: 10px;
-}
-
-.hrxApp .hrxKpiLink.sapMBtn {
-	align-self: flex-start;
-}
-
-/* Room for a two-line label on every tile, so the figures stay on one line across
-   the row when only some labels wrap. */
-.hrxApp .hrxMgrKpis .hrxKpiLabel {
-	display: block;
-	line-height: 1.3;
-	min-height: 2.6em;
-}
-
-.hrxApp .hrxKpiLink .sapMBtnInner {
-	padding-left: 0;
-}
 
 /* A fixed row on a wide screen: the cards' lists scroll within it, so however
    many approvals come in the two halves stay level with each other. Stacked in
    one column on a narrow screen, the cards keep their own heights. */
-@media (min-width: 1101px) {
-	.hrxApp .hrxMgrGrid.sapMFlexBox {
-		grid-auto-rows: 30rem;
-	}
-
-	.hrxApp .hrxMgrGrid > .sapMFlexBox {
-		height: 100%;
-		min-height: 0;
-	}
-
-	.hrxApp .hrxMgrScrollItem {
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-}
-
-/* Approvals over utilisation, 16px apart; utilisation takes up the rest so the
-   column ends level with Team today. */
-.hrxApp .hrxMgrStack {
-	gap: 16px;
-}
-
-.hrxApp .hrxMgrStack > .hrxSkCard {
-	margin: 0 !important;
-}
-
-.hrxApp .hrxMgrApprRow {
-	gap: 12px;
-	padding: 12px 20px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxMgrApprRow > .sapMFlexItem:nth-child(2) {
-	flex: 1 1 auto !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxMgrApprDays {
-	font-family: var(--disp);
-	font-weight: 800;
-	color: var(--ink);
-	white-space: nowrap;
-}
-
-.hrxApp .hrxMgrUtilTop {
-	gap: 10px;
-	padding: 14px 20px 6px;
-}
-
-.hrxApp .hrxMgrUtilBig {
-	font-family: var(--disp);
-	font-size: 32px;
-	font-weight: 800;
-	letter-spacing: -1px;
-	color: var(--ink);
-}
-
-.hrxApp .hrxMgrUtilRow {
-	gap: 16px;
-	padding: 10px 20px;
-	border-bottom: 1px solid var(--line-soft);
-}
-
-.hrxApp .hrxMgrUtilRow > .sapMFlexItem:first-child {
-	flex: 0 0 45% !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxMgrUtilRow > .sapMFlexItem:last-child {
-	flex: 1 1 auto !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxMgrOwnHead {
-	margin: 8px 0 14px;
-}
-
-.hrxApp .hrxMgrOwnTitle .sapMTitle,
-.hrxApp .hrxMgrOwnTitle {
-	font-family: var(--disp);
-	text-transform: uppercase;
-	font-size: 18px;
-	font-weight: 800;
-	color: var(--ink);
-}
-
-/* Under the manager dashboard the employee's own two cards take the same halves
-   as the cards above, so every gutter on the page lines up. Only matches while
-   the dashboard is shown - hidden, it renders as a placeholder without the class. */
-.hrxApp .hrxMgrDash ~ .hrxActionRow.sapMFlexBox {
-	display: grid !important;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 16px;
-}
-
-.hrxApp .hrxMgrDash ~ .hrxActionRow > .sapMFlexItem {
-	min-width: 0 !important;
-	max-width: none !important;
-}
-
-@media (max-width: 1100px) {
-	.hrxApp .hrxMgrDash ~ .hrxActionRow.sapMFlexBox { grid-template-columns: minmax(0, 1fr); }
-}
 
 /* ── ROW ACTIONS ──────────────────────────────────────────────────────────── */
 
-/* Buttons side by side against the right-hand edge of their column (Manage
-   Projects' Release / Re-assign). */
-.hrxApp .hrxRowActions {
-	gap: 6px;
-}
-
 /* ── DETAIL HEADERS ───────────────────────────────────────────────────────── */
-
-/* Manage Resources and Manage Projects: the name with its status pill beside it. */
-.hrxApp .hrxNameRow {
-	gap: 4px 0;
-}
-
-/* Manage Resources' footer: the Active / Inactive switch and its word. */
-.hrxApp .hrxSwitchText.sapMText {
-	font-size: 13.5px;
-	font-weight: 600;
-	color: var(--ink);
-}
-
-/* Breathing room between the year bar and the first card on Sickness, whose
-   alert strip otherwise sits right against the Record sickness bar. */
-.hrxApp .hrxSkBody {
-	margin-top: 10px;
-}
 
 /* ── NOTIFICATIONS (the bell beside the signed-in user) ───────────────────── */
 

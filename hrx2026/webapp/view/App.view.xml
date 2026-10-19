@@ -4,13 +4,13 @@
 			<!-- sap.tnt.SideNavigation has no slot of its own for a logo/toggle row, so
 			     this lives here and CSS lays it over the rail - the header wrapper is
 			     the one ancestor that isn't clipped by the main content's overflow. -->
-			<Button id="navToggleButton" press="onMenuButtonPress" type="Transparent" tooltip="{i18n>navToggle}" class="hrxNavToggle" icon="sap-icon://nav-back"/>
+			<Button id="navToggleButton" press=".onMenuButtonPress" type="Transparent" tooltip="{i18n>navToggle}" class="hrxNavToggle" icon="sap-icon://nav-back"/>
 		</tnt:header>
 		<tnt:sideContent>
 			<!-- As the 15.10.26 design has it: Overview for everyone, then the admin
 			     pages listed straight in the rail, for managers only. Expenses is the
 			     design's placeholder for a separate app still to come. -->
-			<tnt:SideNavigation id="sideNavigation" itemSelect="onItemSelect">
+			<tnt:SideNavigation id="sideNavigation" itemSelect=".onItemSelect">
 				<tnt:NavigationList selectedKey="home">
 					<tnt:NavigationListGroup text="{i18n>navGroupOverview}" hasExpander="false">
 						<tnt:NavigationListItem key="home" text="{i18n>navHome}" icon="sap-icon://home"/>

@@ -152,6 +152,37 @@ vs the app, fix, measure, then test the functions.
 `i18n/i18n.properties` and `css/style.css` were edited by several hands. Check for duplicate keys,
 dead keys and clashing rules at the end.
 
+### Status (19 Oct 2026): all of §5 finished
+
+Every page above was compared with the design, measured, and its functions tested against the
+local service (one `tools/*-flows.js` script per page; run them after a fresh reset and seed):
+
+| Page | Flow script | Result |
+|---|---|---|
+| Home | `home-flows.js` | 18/18 |
+| My Leave | `leave-flows.js` | 16/16 |
+| Policies, Documents, App Explorer | `docs-flows.js` | 12/12 |
+| Sickness | `sickness-flows.js` | 13/13 |
+| Timesheet reporting + Utilisation | `tsr-flows.js` (needs `local-hrx-service/seed-timesheets.js`) | 19/19 |
+| Manage Resources | `mr-flows.js` | 11/11 |
+| Manage Clients | `mc-flows.js` (needs `fake-dms.js`) | 9/9 |
+| Manage Projects | `mp-flows.js` | 12/12 |
+| My Timesheet | `ts-flows.js` | 8/8 |
+| Team Calendar | `tc-flows.js` (seeds its own leave) | 20/20 |
+
+`Message sent: <` stayed 0 in the service log throughout. The cleanup removed 51 unused i18n keys
+and about 240 unused rules from `css/style.css` (left from the pre-design UI). Screenshots of every
+page before and after the cleanup are compared by the regression run.
+
+Icons: the design's Tabler icons are a small font in `fonts/tabler` (built with
+`tools/build-tabler-font.py`), registered in `Component.js` as `sap-icon://tabler/<name>`.
+
+Kept different from the design on purpose (business rules or service needs): client and project
+codes are UUIDs (the service has no short code); My Bonus has no service yet; only *Requested*
+leave can be cancelled; the Assign resource dialog keeps Billable days and Start date, and the
+application service dialog keeps Valid from / till (the service needs them); Bluestonex internal
+projects cannot be deleted.
+
 ## 6. How to carry on
 
 1. **Set up the local environment.** Email stays blocked; never skip the guard.
@@ -170,7 +201,8 @@ dead keys and clashing rules at the end.
 3. **Finish the pages** in §5, one at a time, checking side by side and by measuring. Then run the
    functional checks against the local service for each page (load, save, approve, upload...).
    `tc-flows.js` is a worked example.
-4. **Before committing:** run the UI5 linter (MCP `run_ui5_linter`) on changed files, check all pages
+4. **Before committing:** run the UI5 linter (MCP `run_ui5_linter`, or `npx @ui5/linter@1` in
+   `hrx2026`) on changed files, check all pages
    load with no errors as manager and as employee, and check `Message sent: <` is 0 in the service log.
 5. **Commit** with clear messages ending `Co-Authored-By: Claude …`. Push to a branch, not `main`.
    When stable, ask the user before bringing it into `Functional-UI-Services`.
@@ -187,3 +219,15 @@ dead keys and clashing rules at the end.
 - The design writes date ranges as "14 – 15 Jul 2026" in every locale: `TeamLeave.rangeLabel`.
 - `sap.m.Table` adds hidden highlight / nav columns: hide them so the first visible column gets the
   20px left padding.
+- `sap.m.Table` keeps borders separate: put row lines on the cells. The header row is also a
+  `.sapMListTblRow` (use `:not(.sapMListTblHeader)`). The no-data row has an empty `td` on each
+  side of `td.sapMListTblCellNoData` (hidden in style.css).
+- The busy indicator adds `sapUiBlockLayerTabbable` spans, which become flex items: position them
+  absolutely inside flex boxes.
+- The theme sets the placeholder font size separately (14px); set it on `::placeholder`.
+- `sap.m.Text` writes its own inline `text-align`: use `textAlign="Center"`, not CSS.
+- The Dialog keeps 2.5rem padding at the bottom for its footer (see `.hrxModal` in style.css).
+- The NavContainer's autoFocus put a focus ring on the first field: App.view sets `autoFocus="false"`.
+  For a Popover, point `initialFocus` at the popover itself.
+- The old `services.xsodata` metadata is not in the local service, so `createKey` /
+  `metadataLoaded()` never resolve locally: build keys with `Backend.keyPath`.

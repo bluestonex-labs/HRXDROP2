@@ -3,7 +3,8 @@
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const OUT = __dirname + "/shots-tc/";
+const OUT = process.env.SHOTS || __dirname + "/shots-tc/";
+fs.mkdirSync(OUT, { recursive: true });
 const results = [];
 const check = (sName, bOk, sDetail) => { results.push({ name: sName, ok: !!bOk, detail: sDetail || "" }); console.log((bOk ? "PASS " : "FAIL ") + sName + (sDetail ? " — " + sDetail : "")); };
 const SERVICE = "http://localhost:4004/hrx/";
@@ -11,8 +12,11 @@ const api = async (sUser, sPath, oInit) => {
 	const oResponse = await fetch(SERVICE + sPath, Object.assign({ headers: { Authorization: "Basic " + Buffer.from(sUser + ":").toString("base64"), "Content-Type": "application/json" } }, oInit || {}));
 	return oResponse.json().catch(() => ({}));
 };
-const blockedEmails = () => (fs.readFileSync(__dirname + "/../hrxservice-test/service.log", "utf8").match(/\[email blocked/g) || []).length;
-const realEmails = () => (fs.readFileSync(__dirname + "/../hrxservice-test/service.log", "utf8").match(/Message sent: </g) || []).length;
+// HRX_SERVICE_LOG names the service's log (the output of run-service.sh).
+const LOG = process.env.HRX_SERVICE_LOG || __dirname + "/../hrxservice-test/service.log";
+const blockedEmails = () => (fs.readFileSync(LOG, "utf8").match(/\[email blocked|\[mail dry run\]/g) || []).length;
+const realEmails = () => (fs.readFileSync(LOG, "utf8").match(/Message sent: </g) || []).length;
+const SAM = "sam.evans@example.test", KYLE = "kyle.barnfield@example.test";
 
 async function open(oBrowser, sEmail) {
 	const oContext = await oBrowser.createBrowserContext();
@@ -20,7 +24,9 @@ async function open(oBrowser, sEmail) {
 	await oPage.setViewport({ width: 1440, height: 1052 });
 	await oPage.authenticate({ username: sEmail, password: "" });
 	oPage.errors = [];
-	oPage.on("pageerror", (e) => oPage.errors.push(e.message));
+	// The old services.xsodata is not part of the local test service: its metadata
+	// failing to load is expected here and left out.
+	oPage.on("pageerror", (e) => { if (!/ODataMetadata/.test(e.stack || "")) { oPage.errors.push(e.message); } });
 	await oPage.goto("http://localhost:8088/test/flp.html#app-preview?email=" + sEmail + "&/teamcalendar", { waitUntil: "networkidle0", timeout: 90000 });
 	await oPage.waitForFunction(() => document.querySelector(".hrxTcHead"), { timeout: 60000 });
 	await sleep(3000);
@@ -38,7 +44,19 @@ const state = (oPage) => oPage.evaluate(() => {
 });
 const press = (oPage, fnFind) => oPage.evaluate(fnFind);
 
+// The week of 19 October 2026: Kyle asks for Wednesday 21st, and Thursday 22nd -
+// Friday 23rd as one request that Sam approves.
+async function seed() {
+	const sType = (await api(KYLE, "LeaveType?$filter=LeaveCategoryDesc eq 'Holiday'")).value[0].ID;
+	const fnDay = (sDate) => ({ LeaveCategoryId_ID: sType, StartDate: sDate, EndDate: sDate, DayTime: "Full Day", NoOfDays: "1", IsPaid: true, ApprovalRequired: true, ApproverID_EmployeeID: "BSX000002", RequesterComments: "Test" });
+	await api(KYLE, "createLeaveRequest", { method: "POST", body: JSON.stringify({ userLog: [fnDay("2026-10-21")] }) });
+	await api(KYLE, "createLeaveRequest", { method: "POST", body: JSON.stringify({ userLog: [fnDay("2026-10-22"), fnDay("2026-10-23")] }) });
+	const aApprove = (await api(SAM, "Leaves?$filter=StartDate ge 2026-10-22 and StartDate le 2026-10-23")).value.map((o) => ({ ID: o.ID, WFFlag: true, ApproverComments: "" }));
+	await api(SAM, "actionOnLeave", { method: "POST", body: JSON.stringify({ LeaveLog: aApprove }) });
+}
+
 (async () => {
+	await seed();
 	const oBrowser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"].concat(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(" ") : []) });
 	const iRealBefore = realEmails();
 	const oSam = await open(oBrowser, "sam.evans@example.test");
