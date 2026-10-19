@@ -248,16 +248,13 @@ sap.ui.define([
 		 */
 		_showResource: function (sEmpId) {
 			var oViewModel = this.getModel("mrView");
-			var oModel = this.getOwnerComponent().getModel();
 
 			oViewModel.setProperty("/selectedId", sEmpId);
 			oViewModel.setProperty("/selectedTab", "info");
 			oViewModel.setProperty("/detailBusy", true);
 			this.getModel("mrLeave").setData(this._emptyLeaveData());
 
-			return oModel.metadataLoaded().then(function () {
-				return this._read("/" + oModel.createKey("Resources", { EmpID: sEmpId }));
-			}.bind(this)).then(function (oResource) {
+			return this._read(Backend.keyPath("Resources", { EmpID: sEmpId })).then(function (oResource) {
 				this.getModel("mrDetail").setData(this._toDetail(oResource));
 				oViewModel.setProperty("/detailBusy", false);
 				this._resetPictureUploader();
@@ -778,11 +775,7 @@ sap.ui.define([
 		 * @returns {Promise} resolved once saved
 		 */
 		_saveJobTitle: function (sEmpId, sJobTitle) {
-			var oModel = this.getOwnerComponent().getModel();
-
-			return oModel.metadataLoaded().then(function () {
-				return this._read("/" + oModel.createKey("Resources", { EmpID: sEmpId }));
-			}.bind(this)).then(function (oResource) {
+			return this._read(Backend.keyPath("Resources", { EmpID: sEmpId })).then(function (oResource) {
 				var oDetail = this._toDetail(oResource);
 				oDetail.JobTitle = sJobTitle;
 				return this._postJson(USERS_SERVICE + "?cmd=update&visitorx=", this._toUpdatePayload(oDetail));

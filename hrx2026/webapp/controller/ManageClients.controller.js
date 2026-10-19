@@ -157,7 +157,6 @@ sap.ui.define([
 		 */
 		_showClient: function (sClientKey) {
 			var oViewModel = this.getModel("mcView");
-			var oModel = this.getOwnerComponent().getModel();
 
 			oViewModel.setProperty("/selectedId", sClientKey);
 			oViewModel.setProperty("/selectedTab", "basic");
@@ -165,12 +164,10 @@ sap.ui.define([
 			oViewModel.setProperty("/detailBusy", true);
 			this.getModel("mcTabs").setData(this._emptyTabs());
 
-			return oModel.metadataLoaded().then(function () {
-				return this._read("/" + oModel.createKey("Clients", {
-					OrgID: this._sOrgId,
-					ClientKey: sClientKey
-				}));
-			}.bind(this)).then(function (oClient) {
+			return this._read(Backend.keyPath("Clients", {
+				OrgID: this._sOrgId,
+				ClientKey: sClientKey
+			})).then(function (oClient) {
 				this.getModel("mcDetail").setData(this._toDetail(oClient));
 				oViewModel.setProperty("/detailBusy", false);
 				this._resetLogoUploader();

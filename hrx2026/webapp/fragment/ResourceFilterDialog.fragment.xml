@@ -34,7 +34,8 @@
 						selectedKey="{mrView>/filterDraft/site}"
 						items="{path: 'mr>/sites', templateShareable: false}"
 						width="100%"
-						placeholder="{i18n>mrFilterAllLocations}">
+						placeholder="{i18n>mrFilterAllLocations}"
+						class="hrxMrAllLocations">
 						<core:ListItem key="{mr>SiteID}" text="{mr>SiteLabel}" additionalText="{mr>SiteLocation}" />
 					</ComboBox>
 				</VBox>

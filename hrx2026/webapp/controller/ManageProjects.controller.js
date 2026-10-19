@@ -212,7 +212,6 @@ sap.ui.define([
 		 */
 		_showProject: function (oKeys) {
 			var oViewModel = this.getModel("mpView");
-			var oModel = this.getOwnerComponent().getModel();
 
 			oViewModel.setProperty("/selectedId", oKeys.ProjectKey);
 			oViewModel.setProperty("/selectedClientKey", oKeys.ClientKey);
@@ -221,18 +220,16 @@ sap.ui.define([
 			oViewModel.setProperty("/detailBusy", true);
 			this.getModel("mpTabs").setData(this._emptyTabs());
 
-			return oModel.metadataLoaded().then(function () {
-				return Promise.all([
-					this._read("/" + oModel.createKey("ProjectsData", {
-						OrgID: this._sOrgId,
-						ProjectKey: oKeys.ProjectKey,
-						ClientKey: oKeys.ClientKey
-					})),
-					this._readOptional("/Proj_Task_Assign_Text", {
-						filters: [new Filter("ProjectKey", FilterOperator.EQ, oKeys.ProjectKey)]
-					})
-				]);
-			}.bind(this)).then(function (aResults) {
+			return Promise.all([
+				this._read(Backend.keyPath("ProjectsData", {
+					OrgID: this._sOrgId,
+					ProjectKey: oKeys.ProjectKey,
+					ClientKey: oKeys.ClientKey
+				})),
+				this._readOptional("/Proj_Task_Assign_Text", {
+					filters: [new Filter("ProjectKey", FilterOperator.EQ, oKeys.ProjectKey)]
+				})
+			]).then(function (aResults) {
 				this.getModel("mpDetail").setData(this._toDetail(aResults[0], this._strip(aResults[1])));
 				oViewModel.setProperty("/detailBusy", false);
 			}.bind(this)).catch(function (oError) {

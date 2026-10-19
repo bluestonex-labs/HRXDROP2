@@ -21,6 +21,12 @@
 	min-height: 520px;
 }
 
+/* While a card is busy, UI5 puts a focus-keeping span either side of it; out of
+   the flow, they do not take a slot (and a 16px gap) in the row. */
+.hrxApp .hrxManageResources .hrxMrMd > .sapUiBlockLayerTabbable {
+	position: absolute;
+}
+
 /* (.card) */
 .hrxApp .hrxManageResources .hrxMrCard {
 	display: flex;
@@ -1231,4 +1237,10 @@
 .hrxApp .hrxMrStrip.sapMMsgStripWarning .sapMText,
 .hrxApp .hrxMrStrip.sapMMsgStripWarning .sapMMsgStripIcon {
 	color: #92400E;
+}
+
+/* Filter: Location left empty means every location. The design shows that as its
+   chosen option, "All locations", so the placeholder is drawn in the text colour. */
+.hrxApp .hrxMrAllLocations .sapMInputBaseInner::placeholder {
+	color: var(--ink);
 }

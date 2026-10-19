@@ -114,6 +114,21 @@ sap.ui.define([
 		},
 
 		/**
+		 * The path of one entity, as ODataModel.createKey writes it, without waiting
+		 * for the service metadata: read() answers most entity sets from the HRX
+		 * service, where the original service's metadata need never load.
+		 * @param {string} sEntitySet e.g. "Resources"
+		 * @param {object} mKeys key name -> value, in the entity's key order
+		 * @returns {string} e.g. "/Resources(EmpID='S000000010')"
+		 */
+		keyPath: function (sEntitySet, mKeys) {
+			var aKeys = Object.keys(mKeys).map(function (sName) {
+				return sName + "='" + encodeURIComponent(mKeys[sName]) + "'";
+			});
+			return "/" + sEntitySet + "(" + aKeys.join(",") + ")";
+		},
+
+		/**
 		 * Reads an entity set, waiting for the model's metadata first.
 		 *
 		 * An ODataModel read issued before $metadata has landed - or after that one

@@ -2,7 +2,6 @@
 	controllerName="bsx.hrx.hrx2026.controller.ManageResources"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
 	xmlns:u="sap.ui.unified"
 	xmlns:core="sap.ui.core"
 	displayBlock="true"
@@ -78,7 +77,7 @@
 							selected="{= ${mr>EmpID} === ${mrView>/selectedId} }"
 							class="hrxMrRowItem">
 							<HBox renderType="Bare" class="hrxMrRow">
-								<f:Avatar
+								<Avatar
 									displaySize="Custom"
 									customDisplaySize="38px"
 									customFontSize="12.5px"
@@ -118,7 +117,7 @@
 			<!-- Head: picture or initials, the name with its Active / Inactive pill,
 			     type · site · job title, then full screen and close -->
 			<HBox renderType="Bare" class="hrxMrHead">
-				<f:Avatar
+				<Avatar
 					id="resourceDetailAvatar"
 					displaySize="Custom"
 					customDisplaySize="42px"
