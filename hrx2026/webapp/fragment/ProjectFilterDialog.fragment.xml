@@ -1,55 +1,45 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:grid="sap.ui.layout.cssgrid">
 
+	<!-- Filter projects by client and by whether time can be booked to them -->
 	<Dialog
 		id="projectFilterDialog"
 		title="{i18n>mpFilterTitle}"
-		contentWidth="32rem">
+		class="hrxModal hrxMpDialog">
 		<content>
-			<form:SimpleForm
-				id="projectFilterForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="5"
-				labelSpanL="5"
-				labelSpanM="5"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mpFilterClient}" />
-					<ComboBox
+			<grid:CSSGrid id="projectFilterGrid" class="hrxMpGrid hrxMpGridOne">
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFilterClient}" labelFor="filterProjectClient" class="hrxModalLabel" />
+					<Select
 						id="filterProjectClient"
 						selectedKey="{mpView>/filterDraft/client}"
-						items="{mp>/clients}"
+						items="{mp>/filterClients}"
 						width="100%"
-						showSecondaryValues="true"
-						placeholder="{i18n>mpFilterAllClients}">
-						<core:ListItem key="{mp>ClientKey}" text="{mp>ClientDesc}" additionalText="{mp>ClientLocation}" />
-					</ComboBox>
-
-					<Label text="{i18n>mpFilterTimeBooking}" />
-					<Select id="filterProjectTimeBooking" selectedKey="{mpView>/filterDraft/timeBooking}" width="100%">
-						<core:Item key="Y" text="{i18n>mpStatusOpen}" />
-						<core:Item key="N" text="{i18n>mpStatusClosed}" />
-						<core:Item key="A" text="{i18n>mpFilterAll}" />
+						class="hrxMpInput hrxMpSelect">
+						<core:Item key="{mp>ClientKey}" text="{mp>ClientDesc}" />
 					</Select>
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFilterTimeBooking}" labelFor="filterProjectTimeBooking" class="hrxModalLabel" />
+					<Select
+						id="filterProjectTimeBooking"
+						selectedKey="{mpView>/filterDraft/timeBooking}"
+						width="100%"
+						class="hrxMpInput hrxMpSelect">
+						<core:Item key="A" text="{i18n>mpFilterAll}" />
+						<core:Item key="Y" text="{i18n>mpFilterOpen}" />
+						<core:Item key="N" text="{i18n>mpFilterClosed}" />
+					</Select>
+				</VBox>
+			</grid:CSSGrid>
 		</content>
-		<buttons>
-			<Button id="projectFilterConfirm" text="{i18n>mpFilterConfirm}" type="Emphasized" press=".onConfirmFilter" />
-			<Button id="projectFilterReset" text="{i18n>mpFilterReset}" press=".onClearFilter" />
-			<Button id="projectFilterCancel" text="{i18n>mpCancel}" press=".onCancelFilter" />
-		</buttons>
+		<beginButton>
+			<Button id="projectFilterConfirm" text="{i18n>mpFilterConfirm}" type="Emphasized" press=".onConfirmFilter" class="hrxModalBtn hrxModalBtnPrimary" />
+		</beginButton>
+		<endButton>
+			<Button id="projectFilterCancel" text="{i18n>mpCancel}" press=".onCancelFilter" class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

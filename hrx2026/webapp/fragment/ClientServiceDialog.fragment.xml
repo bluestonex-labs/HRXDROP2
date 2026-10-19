@@ -1,66 +1,54 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- New / Edit App Service. The design's modal has the app and the service; the
+	     validity the Application Details table shows is entered here too, under them. -->
 	<Dialog
 		id="clientServiceDialog"
-		title="{i18n>mcAddServiceTitle}"
-		contentWidth="32rem"
+		title="{= ${mcForm>/mode} === 'edit' ? ${i18n>mcEditServiceTitle} : ${i18n>mcAddServiceTitle} }"
 		busy="{mcView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxManageClientsDialog">
 		<content>
-			<form:SimpleForm
-				id="clientServiceForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mcFieldApp}" required="true" />
+			<VBox renderType="Bare" class="hrxMcGrid">
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldApp}" required="true" labelFor="serviceApp" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="serviceApp"
 						selectedKey="{mcForm>/AppID}"
 						items="{mc>/apps}"
-						showSecondaryValues="true"
+						width="100%"
 						placeholder="{i18n>mcFieldAppPlaceholder}">
-						<core:ListItem key="{mc>AppID}" text="{mc>AppDesc}" additionalText="{mc>AppType}" />
+						<core:ListItem key="{mc>AppID}" text="{mc>AppDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldService}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldService}" required="true" labelFor="serviceService" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="serviceService"
 						selectedKey="{mcForm>/ServiceID}"
 						items="{mc>/services}"
-						showSecondaryValues="true"
+						width="100%"
 						placeholder="{i18n>mcFieldServicePlaceholder}">
-						<core:ListItem key="{mc>ServiceID}" text="{mc>ServiceDesc}" additionalText="{mc>ServiceID}" />
+						<core:ListItem key="{mc>ServiceID}" text="{mc>ServiceDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldValidFrom}" />
-					<DatePicker id="serviceValidFrom" dateValue="{mcForm>/ValidFrom}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mcFieldValidTill}" />
-					<DatePicker id="serviceValidTill" dateValue="{mcForm>/ValidTill}" valueFormat="yyyy-MM-dd" />
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldValidFrom}" labelFor="serviceValidFrom" class="hrxModalLabel hrxMcLbl" />
+					<DatePicker id="serviceValidFrom" dateValue="{mcForm>/ValidFrom}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="dd/mm/yyyy" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldValidTill}" labelFor="serviceValidTill" class="hrxModalLabel hrxMcLbl" />
+					<DatePicker id="serviceValidTill" dateValue="{mcForm>/ValidTill}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="dd/mm/yyyy" />
+				</VBox>
+			</VBox>
 		</content>
 		<beginButton>
-			<Button id="serviceConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveService" />
+			<Button id="serviceConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveService" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="serviceCancel" text="{i18n>mcCancel}" press=".onCancelService" />
+			<Button id="serviceCancel" text="{i18n>mcCancel}" press=".onCancelService" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

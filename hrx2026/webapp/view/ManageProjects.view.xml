@@ -2,469 +2,485 @@
 	controllerName="bsx.hrx.hrx2026.controller.ManageProjects"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
-	xmlns:form="sap.ui.layout.form"
-	xmlns:u="sap.ui.unified"
 	xmlns:core="sap.ui.core"
+	xmlns:grid="sap.ui.layout.cssgrid"
+	xmlns:u="sap.ui.unified"
 	displayBlock="true"
 	height="100%"
 	class="hrxManageProjects">
 
-	<f:FlexibleColumnLayout
-		id="projectsLayout"
-		layout="{mpView>/layout}"
-		backgroundDesign="Solid">
+	<!-- The design's master / detail (.md): the project list card, and beside it the
+	     open project's card. data-mode on the wrapper is "list" (nothing open, the list
+	     takes the full width), "open" (list 360px + detail) or "full" (detail only). -->
+	<HBox id="projectsLayout" renderType="Bare" class="hrxMpMd">
+		<customData>
+			<core:CustomData key="mode" value="{mpView>/layout}" writeToDom="true" />
+		</customData>
 
-		<!-- ============================= list column ============================= -->
-		<f:beginColumnPages>
-			<Page id="projectListPage" title="{mpView>/title}" showNavButton="false">
-				<subHeader>
-					<OverflowToolbar id="projectListToolbar">
-						<SearchField
-							id="projectSearch"
-							value="{mpView>/searchQuery}"
-							liveChange=".onSearch"
-							search=".onSearch"
-							placeholder="{i18n>mpSearchPlaceholder}"
-							width="100%">
-							<layoutData>
-								<OverflowToolbarLayoutData minWidth="140px" shrinkable="true" priority="NeverOverflow" />
-							</layoutData>
-						</SearchField>
-						<Button
-							id="projectFilterButton"
-							icon="sap-icon://filter"
-							type="Transparent"
-							tooltip="{i18n>mpFilterTooltip}"
-							press=".onOpenFilter" />
-						<Button
-							id="projectAddButton"
-							icon="sap-icon://add"
-							type="Transparent"
-							tooltip="{i18n>mpAddTooltip}"
-							press=".onOpenAddProject" />
-						<Button
-							id="projectRefreshButton"
-							icon="sap-icon://refresh"
-							type="Transparent"
-							tooltip="{i18n>mpRefreshTooltip}"
-							press=".onRefresh" />
-					</OverflowToolbar>
-				</subHeader>
+		<!-- ============================= list card ============================= -->
+		<VBox id="projectListCard" renderType="Bare" class="hrxMpCard hrxMpList">
+			<HBox renderType="Bare" class="hrxMpCardHead">
+				<Title id="projectListTitle" text="{mpView>/title}" level="H2" class="hrxMpCardTitle" />
+			</HBox>
 
+			<HBox renderType="Bare" class="hrxMpTools">
+				<SearchField
+					id="projectSearch"
+					value="{mpView>/searchQuery}"
+					liveChange=".onSearch"
+					search=".onSearch"
+					placeholder="{i18n>mpSearchPlaceholder}"
+					width="auto"
+					class="hrxMpSearch" />
+				<Button
+					id="projectFilterButton"
+					icon="sap-icon://filter"
+					tooltip="{i18n>mpFilterTooltip}"
+					press=".onOpenFilter"
+					class="hrxMpIconBtn hrxMpIcoFilter" />
+				<Button
+					id="projectAddButton"
+					icon="sap-icon://add"
+					tooltip="{i18n>mpAddTooltip}"
+					press=".onOpenAddProject"
+					class="hrxMpIconBtn hrxMpIcoPlus" />
+				<Button
+					id="projectRefreshButton"
+					icon="sap-icon://refresh"
+					tooltip="{i18n>mpRefreshTooltip}"
+					press=".onRefresh"
+					class="hrxMpIconBtn hrxMpIcoRefresh" />
+			</HBox>
+
+			<ScrollContainer id="projectListScroll" vertical="true" horizontal="false" class="hrxMpRows">
 				<List
 					id="projectList"
-					class="hrxResourceListPad"
 					items="{mp>/projects}"
 					mode="SingleSelectMaster"
+					showSeparators="None"
 					busy="{mpView>/listBusy}"
 					busyIndicatorDelay="0"
 					noDataText="{i18n>mpListNoData}"
 					growing="true"
 					growingThreshold="40"
 					growingScrollToLoad="true"
-					selectionChange=".onProjectSelect">
+					selectionChange=".onProjectSelect"
+					class="hrxMpRowList">
 					<items>
 						<CustomListItem
 							type="Active"
-							press=".onProjectPress"
-							selected="{= ${mp>ProjectKey} === ${mpView>/selectedId} }">
-							<HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="hrxResourceRow">
-								<VBox>
-									<Text text="{mp>ProjectDesc}" class="hrxResourceName" />
-									<Text text="{mp>ClientDesc}" class="hrxResourceMeta" />
-									<Text text="{mp>ProjectKey}" class="hrxResourceMeta" />
+							selected="{= ${mp>ProjectKey} === ${mpView>/selectedId} }"
+							class="hrxMpRow">
+							<HBox renderType="Bare" class="hrxMpRowInner">
+								<VBox renderType="Bare" class="hrxMpRowMain">
+									<Text text="{mp>ProjectDesc}" wrapping="false" class="hrxMpRowTitle" />
+									<Text text="{mp>ClientDesc}" wrapping="false" class="hrxMpRowSub" />
+									<Text text="{mp>ProjectKey}" wrapping="false" class="hrxMpRowSub" />
 								</VBox>
-								<VBox alignItems="End" class="sapUiTinyMarginBegin">
-									<ObjectStatus
-										text="{= ${mp>IsTimeBookingAllowed} === 'Y' ? ${i18n>mpStatusOpen} : ${i18n>mpStatusClosed} }"
-										state="{= ${mp>IsTimeBookingAllowed} === 'Y' ? 'Success' : 'Warning' }" />
+								<VBox renderType="Bare" class="hrxMpRowSide">
+									<HBox renderType="Bare" class="hrxMpRowPill">
+										<Text
+											text="{= ${mp>IsTimeBookingAllowed} === 'Y' ? ${i18n>mpStatusOpen} : ${i18n>mpStatusClosed} }"
+											wrapping="false"
+											class="hrxMpPill">
+											<customData>
+												<core:CustomData
+													key="tone"
+													value="{= ${mp>IsTimeBookingAllowed} === 'Y' ? 'ok' : 'warn' }"
+													writeToDom="true" />
+											</customData>
+										</Text>
+									</HBox>
 									<Text
-										class="hrxResourceMeta"
-										text="{parts: ['mp>StartDate', 'mp>EndDate'], formatter: '.formatter.dateRange'}" />
+										text="{parts: ['mp>StartDate', 'mp>EndDate'], formatter: '.formatDateRange'}"
+										wrapping="false"
+										class="hrxMpRowDates" />
 								</VBox>
 							</HBox>
 						</CustomListItem>
 					</items>
 				</List>
-			</Page>
-		</f:beginColumnPages>
+			</ScrollContainer>
+		</VBox>
 
-		<!-- ============================ detail column ============================ -->
-		<f:midColumnPages>
-			<Page
-				id="projectDetailPage"
-				busy="{= ${mpView>/detailBusy} || ${mpView>/saving} }"
-				busyIndicatorDelay="0">
-				<customHeader>
-					<Bar>
-						<contentLeft>
-							<Button
-								icon="sap-icon://nav-back"
-								type="Transparent"
-								tooltip="{i18n>mpCloseTooltip}"
-								press=".onCloseDetail"
-								visible="{device>/system/phone}" />
-						</contentLeft>
-						<contentMiddle>
-							<Title text="{mpDetail>/ProjectDesc}" level="H2" />
-						</contentMiddle>
-						<contentRight>
-							<Button
-								icon="{= ${mpView>/fullScreen} ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen' }"
-								type="Transparent"
-								tooltip="{i18n>mpFullScreenTooltip}"
-								press=".onToggleFullScreen"
-								visible="{= !${device>/system/phone} }" />
-							<Button
-								icon="sap-icon://decline"
-								type="Transparent"
-								tooltip="{i18n>mpCloseTooltip}"
-								press=".onCloseDetail"
-								visible="{= !${device>/system/phone} }" />
-						</contentRight>
-					</Bar>
-				</customHeader>
+		<!-- ============================ detail card ============================ -->
+		<VBox
+			id="projectDetailCard"
+			renderType="Bare"
+			visible="{= !!${mpView>/selectedId} }"
+			busy="{= ${mpView>/detailBusy} || ${mpView>/saving} }"
+			busyIndicatorDelay="0"
+			class="hrxMpCard hrxMpDetail">
 
-				<content>
-					<HBox alignItems="Center" class="sapUiSmallMargin">
-						<core:Icon src="sap-icon://project-definition-triangle-2" size="2rem" class="sapUiMediumMarginEnd hrxProjectIcon" />
-						<VBox>
-							<!-- The name with its booking pill beside it, then the client and the project ID -->
-							<HBox alignItems="Center" wrap="Wrap" class="hrxNameRow">
-								<Title text="{mpDetail>/ProjectDesc}" level="H3" class="sapUiSmallMarginEnd" />
-								<ObjectStatus
-									text="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? ${i18n>mpStatusOpen} : ${i18n>mpStatusClosed} }"
-									state="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? 'Success' : 'Warning' }"
-									inverted="true"
-									class="hrxSkPill" />
-							</HBox>
-							<Text text="{mpDetail>/ClientDesc} · {mpDetail>/ProjectKey}" class="hrxResourceMeta" />
-						</VBox>
+			<!-- Head: the project's initials, its name with the booking pill, client · ID -->
+			<HBox renderType="Bare" class="hrxMpHead">
+				<Text
+					text="{path: 'mpDetail>/ProjectDesc', formatter: '.formatter.nameInitials'}"
+					wrapping="false"
+					class="hrxMpLogo" />
+				<VBox renderType="Bare" class="hrxMpHeadText">
+					<HBox renderType="Bare" class="hrxMpNameRow">
+						<Title text="{mpDetail>/ProjectDesc}" level="H2" wrapping="true" class="hrxMpName" />
+						<Text
+							text="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? ${i18n>mpStatusOpen} : ${i18n>mpStatusClosed} }"
+							wrapping="false"
+							class="hrxMpPill">
+							<customData>
+								<core:CustomData
+									key="tone"
+									value="{= ${mpDetail>/IsTimeBookingAllowed} === 'Y' ? 'ok' : 'warn' }"
+									writeToDom="true" />
+							</customData>
+						</Text>
 					</HBox>
+					<Text text="{mpDetail>/ClientDesc} · {mpDetail>/ProjectKey}" class="hrxMpHeadSub" />
+				</VBox>
+				<HBox renderType="Bare" class="hrxMpHeadActs">
+					<Button
+						id="projectFullScreenButton"
+						icon="sap-icon://full-screen"
+						tooltip="{i18n>mpFullScreenTooltip}"
+						press=".onToggleFullScreen"
+						class="hrxMpIconBtn hrxMpIcoExpand" />
+					<Button
+						id="projectCloseButton"
+						icon="sap-icon://decline"
+						tooltip="{i18n>mpCloseTooltip}"
+						press=".onCloseDetail"
+						class="hrxMpIconBtn hrxMpIcoX" />
+				</HBox>
+			</HBox>
 
-					<IconTabBar
-						id="projectTabs"
-						expandable="false"
-						selectedKey="{mpView>/selectedTab}"
-						select=".onTabSelect"
-						class="sapUiResponsiveContentPadding">
+			<!-- Tabs -->
+			<IconTabHeader
+				id="projectTabs"
+				selectedKey="{mpView>/selectedTab}"
+				select=".onTabSelect"
+				class="hrxMpTabs">
+				<items>
+					<IconTabFilter key="info" text="{i18n>mpTabInfo}" />
+					<IconTabFilter key="resourcing" text="{i18n>mpTabResourcing}" />
+					<IconTabFilter key="contacts" text="{i18n>mpTabContacts}" />
+					<IconTabFilter key="attachments" text="{i18n>mpTabAttachments}" />
+				</items>
+			</IconTabHeader>
+
+			<ScrollContainer id="projectDetailScroll" vertical="true" horizontal="false" class="hrxMpBody">
+
+				<!-- tab: info -->
+				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'info' }">
+					<MessageStrip
+						text="{i18n>serviceNeededProjectAreas}"
+						visible="{= !${services>/projectAreas} }"
+						type="Warning"
+						showIcon="true"
+						enableFormattedText="true"
+						class="hrxMpStrip" />
+
+					<Title text="{i18n>mpSectionBasic}" level="H3" class="hrxMpSection" />
+					<grid:CSSGrid id="projectInfoGrid" class="hrxMpGrid">
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldKey}" class="hrxMpLabel" />
+							<Text id="projectKey" text="{mpDetail>/ProjectKey}" class="hrxMpReadOnly" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldDesc}" labelFor="projectDesc" required="true" class="hrxMpLabel" />
+							<Input id="projectDesc" value="{mpDetail>/ProjectDesc}" class="hrxMpInput" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldClient}" class="hrxMpLabel" />
+							<Text id="projectClient" text="{mpDetail>/ClientDesc}" class="hrxMpReadOnly" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldType}" labelFor="projectType" class="hrxMpLabel" />
+							<ComboBox
+								id="projectType"
+								selectedKey="{mpDetail>/ProjectTypeKey}"
+								items="{mp>/projectTypes}"
+								width="100%"
+								placeholder="{i18n>mpFieldTypePlaceholder}"
+								class="hrxMpInput hrxMpSelect">
+								<core:ListItem key="{mp>ProjectTypeKey}" text="{mp>ProjectTypeDesc}" />
+							</ComboBox>
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldPriority}" labelFor="projectPriority" class="hrxMpLabel" />
+							<ComboBox
+								id="projectPriority"
+								selectedKey="{mpDetail>/PriorityKey}"
+								items="{mp>/priorities}"
+								width="100%"
+								placeholder="{i18n>mpFieldPriorityPlaceholder}"
+								class="hrxMpInput hrxMpSelect">
+								<core:ListItem key="{mp>PriorityKey}" text="{mp>PriorityDesc}" />
+							</ComboBox>
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldManager}" labelFor="projectManager" class="hrxMpLabel" />
+							<ComboBox
+								id="projectManager"
+								selectedKey="{mpDetail>/ProjectManagerID}"
+								items="{mp>/managers}"
+								width="100%"
+								placeholder="{i18n>mpFieldManagerPlaceholder}"
+								class="hrxMpInput hrxMpSelect">
+								<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" />
+							</ComboBox>
+						</VBox>
+						<!-- Project areas: one chip per area, on when the project covers it -->
+						<VBox renderType="Bare" visible="{mp>/tasksAvailable}" class="hrxMpField">
+							<layoutData>
+								<grid:GridItemLayoutData gridColumn="1 / -1" />
+							</layoutData>
+							<Label text="{i18n>mpFieldAreas}" class="hrxMpLabel" />
+							<HBox
+								id="projectAreas"
+								renderType="Bare"
+								class="hrxMpChips"
+								items="{path: 'mp>/tasks', templateShareable: false}">
+								<ToggleButton
+									text="{mp>TaskDesc}"
+									pressed="{parts: ['mp>TaskKey', 'mpDetail>/taskKeys'], formatter: '.isAreaSelected'}"
+									press=".onToggleProjectArea"
+									class="hrxMpChip" />
+							</HBox>
+						</VBox>
+					</grid:CSSGrid>
+
+					<Title text="{i18n>mpSectionCommercials}" level="H3" class="hrxMpSection hrxMpSectionRule" />
+					<grid:CSSGrid id="projectCommercialsGrid" class="hrxMpGrid">
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldPoNumber}" labelFor="projectPoNumber" class="hrxMpLabel" />
+							<Input id="projectPoNumber" value="{mpDetail>/PONumber}" class="hrxMpInput" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldPoValue}" labelFor="projectPoValue" class="hrxMpLabel" />
+							<HBox renderType="Bare" class="hrxMpSuffixRow">
+								<Input id="projectPoValue" value="{mpDetail>/POValue}" type="Number" class="hrxMpInput" />
+								<Text text="{i18n>mpCurrencyGbp}" class="hrxMpSuffix" />
+							</HBox>
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldBillableDays}" labelFor="projectBillableDays" class="hrxMpLabel" />
+							<Input id="projectBillableDays" value="{mpDetail>/TotBillableDays}" type="Number" class="hrxMpInput" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldStartDate}" labelFor="projectStartDate" class="hrxMpLabel" />
+							<DatePicker
+								id="projectStartDate"
+								dateValue="{mpDetail>/StartDate}"
+								displayFormat="dd/MM/yyyy"
+								valueFormat="yyyy-MM-dd"
+								class="hrxMpInput hrxMpDate" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldEndDate}" labelFor="projectEndDate" class="hrxMpLabel" />
+							<DatePicker
+								id="projectEndDate"
+								dateValue="{mpDetail>/EndDate}"
+								displayFormat="dd/MM/yyyy"
+								valueFormat="yyyy-MM-dd"
+								class="hrxMpInput hrxMpDate" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxMpField">
+							<Label text="{i18n>mpFieldTimeBooking}" labelFor="projectTimeBooking" class="hrxMpLabel" />
+							<Switch
+								id="projectTimeBooking"
+								state="{mpDetail>/TimeBooking}"
+								customTextOn=" "
+								customTextOff=" "
+								class="hrxMpSwitch" />
+						</VBox>
+					</grid:CSSGrid>
+				</VBox>
+
+				<!-- tab: resourcing -->
+				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'resourcing' }">
+					<HBox renderType="Bare" class="hrxMpSectHead">
+						<Title text="{i18n>mpAssignmentsTitle}" level="H3" class="hrxMpSectTitle" />
+						<Button
+							id="projectAssignButton"
+							text="{i18n>mpAddAssignment}"
+							icon="sap-icon://add-employee"
+							press=".onAddAssignment"
+							class="hrxMpBtnGhost hrxMpBtnSm hrxMpIcoUserPlus" />
+					</HBox>
+					<Table
+						id="projectAssignmentTable"
+						items="{mpTabs>/assignments}"
+						busy="{mpView>/tabBusy}"
+						busyIndicatorDelay="0"
+						noDataText="{i18n>mpNoAssignments}"
+						fixedLayout="false"
+						class="hrxMpTable">
+						<columns>
+							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColResource}" /></Column>
+							<Column><Text text="{i18n>mpColAreas}" /></Column>
+							<Column hAlign="End"><Text text="{i18n>mpColRate}" /></Column>
+							<Column hAlign="End"><Text text="{i18n>mpColCost}" /></Column>
+							<Column><Text text="{i18n>mpColStatus}" /></Column>
+							<Column hAlign="End" styleClass="hrxMpColLast"><Text text="" /></Column>
+						</columns>
 						<items>
-
-							<!-- tab: info -->
-							<IconTabFilter
-								key="info"
-								text="{i18n>mpTabInfo}"
-								icon="sap-icon://hint"
-								tooltip="{i18n>mpTabInfo}">
-								<MessageStrip
-									text="{i18n>serviceNeededProjectAreas}"
-									visible="{= !${services>/projectAreas} }"
-									type="Warning"
-									showIcon="true"
-									enableFormattedText="true"
-									class="sapUiSmallMarginBottom" />
-								<form:SimpleForm
-									id="projectInfoForm"
-									editable="true"
-									layout="ResponsiveGridLayout"
-									labelSpanXL="4"
-									labelSpanL="4"
-									labelSpanM="4"
-									labelSpanS="12"
-									adjustLabelSpan="false"
-									emptySpanXL="0"
-									emptySpanL="1"
-									emptySpanM="0"
-									emptySpanS="0"
-									columnsXL="2"
-									columnsL="1"
-									columnsM="1"
-									singleContainerFullSize="false">
-									<form:content>
-										<core:Title text="{i18n>mpSectionBasic}" />
-
-										<Label text="{i18n>mpFieldKey}" />
-										<Text id="projectKey" text="{mpDetail>/ProjectKey}" />
-
-										<Label text="{i18n>mpFieldDesc}" required="true" />
-										<Input id="projectDesc" value="{mpDetail>/ProjectDesc}" />
-
-										<Label text="{i18n>mpFieldClient}" />
-										<Text id="projectClient" text="{mpDetail>/ClientDesc}" />
-
-										<Label text="{i18n>mpFieldType}" />
-										<ComboBox
-											id="projectType"
-											selectedKey="{mpDetail>/ProjectTypeKey}"
-											items="{mp>/projectTypes}"
-											placeholder="{i18n>mpFieldTypePlaceholder}">
-											<core:ListItem key="{mp>ProjectTypeKey}" text="{mp>ProjectTypeDesc}" />
-										</ComboBox>
-
-										<Label text="{i18n>mpFieldPriority}" />
-										<ComboBox
-											id="projectPriority"
-											selectedKey="{mpDetail>/PriorityKey}"
-											items="{mp>/priorities}"
-											showSecondaryValues="true"
-											placeholder="{i18n>mpFieldPriorityPlaceholder}">
-											<core:ListItem key="{mp>PriorityKey}" text="{mp>PriorityDesc}" additionalText="{mp>PriorityKey}" />
-										</ComboBox>
-
-										<Label text="{i18n>mpFieldManager}" />
-										<ComboBox
-											id="projectManager"
-											selectedKey="{mpDetail>/ProjectManagerID}"
-											items="{mp>/managers}"
-											showSecondaryValues="true"
-											placeholder="{i18n>mpFieldManagerPlaceholder}">
-											<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" additionalText="{mp>EmpID}" />
-										</ComboBox>
-
-										<Label text="{i18n>mpFieldAreas}" visible="{mp>/tasksAvailable}" />
-										<MultiComboBox
-											id="projectAreas"
-											visible="{mp>/tasksAvailable}"
-											selectedKeys="{mpDetail>/taskKeys}"
-											items="{mp>/tasks}"
-											placeholder="{i18n>mpFieldAreasPlaceholder}">
-											<core:Item key="{mp>TaskKey}" text="{mp>TaskDesc}" />
-										</MultiComboBox>
-
-										<core:Title text="{i18n>mpSectionCommercials}" />
-
-										<Label text="{i18n>mpFieldPoNumber}" />
-										<Input id="projectPoNumber" value="{mpDetail>/PONumber}" />
-
-										<Label text="{i18n>mpFieldPoValue}" />
-										<Input id="projectPoValue" value="{mpDetail>/POValue}" type="Number" description="GBP" />
-
-										<Label text="{i18n>mpFieldBillableDays}" />
-										<Input id="projectBillableDays" value="{mpDetail>/TotBillableDays}" type="Number" />
-
-										<Label text="{i18n>mpFieldStartDate}" />
-										<DatePicker id="projectStartDate" dateValue="{mpDetail>/StartDate}" valueFormat="yyyy-MM-dd" />
-
-										<Label text="{i18n>mpFieldEndDate}" />
-										<DatePicker id="projectEndDate" dateValue="{mpDetail>/EndDate}" valueFormat="yyyy-MM-dd" />
-
-										<Label text="{i18n>mpFieldTimeBooking}" />
-										<Switch id="projectTimeBooking" state="{mpDetail>/TimeBooking}" type="AcceptReject" />
-									</form:content>
-								</form:SimpleForm>
-
-								<Toolbar design="Transparent">
-									<ToolbarSpacer />
-									<Button
-										id="projectSaveButton"
-										text="{i18n>mpSave}"
-										icon="sap-icon://save"
-										type="Emphasized"
-										press=".onSaveProject" />
-								</Toolbar>
-							</IconTabFilter>
-
-							<!-- tab: resourcing -->
-							<IconTabFilter
-								key="resourcing"
-								text="{i18n>mpTabResourcing}"
-								icon="sap-icon://group"
-								tooltip="{i18n>mpTabResourcing}">
-								<Table
-									id="projectAssignmentTable"
-									items="{mpTabs>/assignments}"
-									busy="{mpView>/tabBusy}"
-									busyIndicatorDelay="0"
-									noDataText="{i18n>mpNoAssignments}"
-									alternateRowColors="true"
-									growing="true"
-									growingScrollToLoad="true">
-									<headerToolbar>
-										<Toolbar>
-											<Title text="{i18n>mpAssignmentsTitle}" level="H3" />
-											<ToolbarSpacer />
-											<Button
-												icon="sap-icon://add-employee"
-												tooltip="{i18n>mpAddAssignment}"
-												press=".onAddAssignment" />
-										</Toolbar>
-									</headerToolbar>
-									<columns>
-										<Column><Text text="{i18n>mpColResource}" /></Column>
-										<Column minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>mpColAreas}" /></Column>
-										<Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColRate}" /></Column>
-										<Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColCost}" /></Column>
-										<Column hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColStatus}" /></Column>
-										<Column hAlign="End" width="10rem"><Text text="" /></Column>
-									</columns>
-									<items>
-										<ColumnListItem>
-											<cells>
-												<HBox alignItems="Center">
-													<f:Avatar
-														displaySize="XS"
-														backgroundColor="Accent6"
-														src="{path: 'mpTabs>Pic', formatter: '.formatter.imageSrc'}"
-														initials="{parts: ['mpTabs>Fname', 'mpTabs>Lname'], formatter: '.formatter.initials'}"
-														class="sapUiTinyMarginEnd" />
-													<VBox>
-														<Text text="{mpTabs>FullName}" />
-														<Text text="{path: 'mpTabs>Email', formatter: '.formatter.clean'}" class="hrxResourceMeta" />
-													</VBox>
-												</HBox>
-												<HBox wrap="Wrap" items="{mpTabs>TaskAssigned}">
-													<ObjectStatus text="{mpTabs>TaskDesc}" class="sapUiTinyMarginEnd" />
-												</HBox>
-												<Text text="{mpTabs>BillableDays} × {path: 'mpTabs>DayRate', formatter: '.formatter.money'}" />
-												<VBox alignItems="End">
-													<Text text="{path: 'mpTabs>TotalCharge', formatter: '.formatter.money'}" />
-													<Text
-														text="{parts: ['i18n>mpDayCostLine', {path: 'mpTabs>DayCost', formatter: '.formatter.money'}], formatter: '.formatter.textWithValue'}"
-														visible="{= !!${mpTabs>DayCost} }"
-														class="hrxResourceMeta" />
-												</VBox>
-												<ObjectStatus
-													text="{= ${mpTabs>IsActive} === 'Y' ? ${i18n>mpAssigned} : ${i18n>mpReleased} }"
-													state="{= ${mpTabs>IsActive} === 'Y' ? 'Success' : 'None' }"
-													inverted="true"
-													class="hrxSkPill" />
-												<HBox justifyContent="End" alignItems="Center" class="hrxRowActions">
-													<Button
-														icon="sap-icon://edit"
-														type="Transparent"
-														tooltip="{i18n>mpEditAssignment}"
-														press=".onEditAssignment" />
-													<Button
-														text="{i18n>mpRelease}"
-														tooltip="{i18n>mpReleaseAssignment}"
-														press=".onReleaseAssignment"
-														visible="{= ${mpTabs>IsActive} === 'Y' }" />
-													<Button
-														text="{i18n>mpReassign}"
-														tooltip="{i18n>mpReassignAssignment}"
-														press=".onReassignAssignment"
-														visible="{= ${mpTabs>IsActive} !== 'Y' }" />
-												</HBox>
-											</cells>
-										</ColumnListItem>
-									</items>
-								</Table>
-							</IconTabFilter>
-
-							<!-- tab: the client's contacts for the project -->
-							<IconTabFilter
-								key="contacts"
-								text="{i18n>mpTabContacts}"
-								icon="sap-icon://customer"
-								tooltip="{i18n>mpTabContacts}">
-								<MessageStrip
-									text="{i18n>serviceNeededProjectContacts}"
-									visible="{= !${services>/projectContacts} }"
-									type="Warning"
-									showIcon="true"
-									enableFormattedText="true"
-									class="sapUiSmallMarginBottom" />
-								<Table
-									id="projectContactsTable"
-									items="{mpDetail>/contacts}"
-									alternateRowColors="true">
-									<headerToolbar>
-										<Toolbar>
-											<Title text="{i18n>mpContactsTitle}" level="H3" />
-											<ToolbarSpacer />
-											<Button
-												text="{= ${mpDetail>/hasContacts} ? ${i18n>mpEditContacts} : ${i18n>mpAddContacts} }"
-												icon="sap-icon://edit"
-												enabled="{services>/projectContacts}"
-												press=".onEditContacts" />
-										</Toolbar>
-									</headerToolbar>
-									<columns>
-										<Column><Text text="{i18n>mpColContact}" /></Column>
-										<Column><Text text="{i18n>mpColName}" /></Column>
-										<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColEmail}" /></Column>
-									</columns>
-									<items>
-										<ColumnListItem>
-											<cells>
-												<Text text="{mpDetail>role}" class="hrxResourceName" />
-												<Text text="{= ${mpDetail>name} || '—' }" />
-												<Text text="{= ${mpDetail>email} || '—' }" />
-											</cells>
-										</ColumnListItem>
-									</items>
-								</Table>
-							</IconTabFilter>
-
-							<!-- tab: attachments -->
-							<IconTabFilter
-								key="attachments"
-								text="{i18n>mpTabAttachments}"
-								icon="sap-icon://attachment"
-								tooltip="{i18n>mpTabAttachments}">
-								<MessageStrip
-									text="{i18n>serviceNeededProjectAttachments}"
-									visible="{= !${services>/projectDocuments} }"
-									type="Warning"
-									showIcon="true"
-									enableFormattedText="true"
-									class="sapUiSmallMarginBottom" />
-								<Table
-									id="projectAttachmentTable"
-									items="{mpTabs>/attachments}"
-									busy="{mpView>/tabBusy}"
-									busyIndicatorDelay="0"
-									noDataText="{i18n>mpNoAttachments}"
-									alternateRowColors="true">
-									<headerToolbar>
-										<Toolbar>
-											<Title text="{i18n>mpAttachmentsTitle}" level="H3" />
-											<ToolbarSpacer />
-											<u:FileUploader
-												id="projectAttachmentUploader"
-												name="projectAttachment"
-												uploadUrl=""
-												buttonOnly="true"
-												buttonText="{i18n>mpAddAttachment}"
-												icon="sap-icon://add"
-												change=".onAttachmentChange"
-												typeMissmatch=".onAttachmentTypeMismatch" />
-										</Toolbar>
-									</headerToolbar>
-									<columns>
-										<Column><Text text="{i18n>mpColFile}" /></Column>
-										<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mpColUploaded}" /></Column>
-										<Column hAlign="End" width="6rem"><Text text="" /></Column>
-									</columns>
-									<items>
-										<ColumnListItem>
-											<cells>
-												<ObjectIdentifier
-													title="{mpTabs>FileName}"
-													text="{path: 'mpTabs>FileType', formatter: '.formatter.clean'}" />
-												<Text text="{path: 'mpTabs>UploadedOn', formatter: '.formatter.date'}" />
-												<HBox>
-													<Button
-														icon="sap-icon://download"
-														type="Transparent"
-														tooltip="{i18n>mpDownloadAttachment}"
-														press=".onDownloadAttachment" />
-													<Button
-														icon="sap-icon://delete"
-														type="Transparent"
-														tooltip="{i18n>mpDeleteAttachment}"
-														press=".onDeleteAttachment" />
-												</HBox>
-											</cells>
-										</ColumnListItem>
-									</items>
-								</Table>
-							</IconTabFilter>
+							<ColumnListItem>
+								<cells>
+									<Text text="{mpTabs>FullName}" class="hrxMpStrong" />
+									<Text text="{path: 'mpTabs>TaskAssigned', formatter: '.formatAreaList'}" />
+									<Text text="{path: 'mpTabs>DayRate', formatter: '.formatPerDay'}" wrapping="false" />
+									<Text text="{path: 'mpTabs>DayCost', formatter: '.formatPerDay'}" wrapping="false" />
+									<HBox renderType="Bare">
+										<Text
+											text="{= ${mpTabs>IsActive} === 'Y' ? ${i18n>mpAssigned} : ${i18n>mpReleased} }"
+											wrapping="false"
+											class="hrxMpPill">
+											<customData>
+												<core:CustomData
+													key="tone"
+													value="{= ${mpTabs>IsActive} === 'Y' ? 'ok' : 'neu' }"
+													writeToDom="true" />
+											</customData>
+										</Text>
+									</HBox>
+									<HBox renderType="Bare" class="hrxMpRowActs">
+										<Button
+											icon="sap-icon://edit"
+											tooltip="{i18n>mpEditAssignment}"
+											press=".onEditAssignment"
+											class="hrxMpIconBtn hrxMpIcoEdit" />
+										<Button
+											text="{i18n>mpRelease}"
+											tooltip="{i18n>mpReleaseAssignment}"
+											press=".onReleaseAssignment"
+											visible="{= ${mpTabs>IsActive} === 'Y' }"
+											class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
+										<Button
+											text="{i18n>mpReassign}"
+											tooltip="{i18n>mpReassignAssignment}"
+											press=".onReassignAssignment"
+											visible="{= ${mpTabs>IsActive} !== 'Y' }"
+											class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
+									</HBox>
+								</cells>
+							</ColumnListItem>
 						</items>
-					</IconTabBar>
-				</content>
-			</Page>
-		</f:midColumnPages>
-	</f:FlexibleColumnLayout>
+					</Table>
+				</VBox>
+
+				<!-- tab: the client's contacts for the project -->
+				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'contacts' }">
+					<MessageStrip
+						text="{i18n>serviceNeededProjectContacts}"
+						visible="{= !${services>/projectContacts} }"
+						type="Warning"
+						showIcon="true"
+						enableFormattedText="true"
+						class="hrxMpStrip" />
+					<HBox renderType="Bare" class="hrxMpSectHead">
+						<Title text="{i18n>mpContactsTitle}" level="H3" class="hrxMpSectTitle" />
+						<Button
+							id="projectContactsButton"
+							text="{= ${mpDetail>/hasContacts} ? ${i18n>mpEditContacts} : ${i18n>mpAddContacts} }"
+							icon="sap-icon://edit"
+							enabled="{services>/projectContacts}"
+							press=".onEditContacts"
+							class="hrxMpBtnGhost hrxMpBtnSm hrxMpIcoEdit" />
+					</HBox>
+					<Table
+						id="projectContactsTable"
+						items="{mpDetail>/contacts}"
+						fixedLayout="false"
+						class="hrxMpTable">
+						<columns>
+							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColContact}" /></Column>
+							<Column><Text text="{i18n>mpColName}" /></Column>
+							<Column styleClass="hrxMpColLast"><Text text="{i18n>mpColEmail}" /></Column>
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<Text text="{mpDetail>role}" class="hrxMpStrong" />
+									<Text text="{= ${mpDetail>name} || '—' }" />
+									<Text text="{= ${mpDetail>email} || '—' }" />
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</VBox>
+
+				<!-- tab: attachments -->
+				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'attachments' }">
+					<MessageStrip
+						text="{i18n>serviceNeededProjectAttachments}"
+						visible="{= !${services>/projectDocuments} }"
+						type="Warning"
+						showIcon="true"
+						enableFormattedText="true"
+						class="hrxMpStrip" />
+					<HBox renderType="Bare" class="hrxMpSectHead">
+						<Title text="{i18n>mpAttachmentsTitle}" level="H3" class="hrxMpSectTitle" />
+						<u:FileUploader
+							id="projectAttachmentUploader"
+							name="projectAttachment"
+							uploadUrl=""
+							buttonOnly="true"
+							buttonText="{i18n>mpAddAttachment}"
+							icon="sap-icon://upload"
+							change=".onAttachmentChange"
+							typeMissmatch=".onAttachmentTypeMismatch"
+							class="hrxMpUpload" />
+					</HBox>
+					<Table
+						id="projectAttachmentTable"
+						items="{mpTabs>/attachments}"
+						busy="{mpView>/tabBusy}"
+						busyIndicatorDelay="0"
+						noDataText="{i18n>mpNoAttachments}"
+						fixedLayout="false"
+						class="hrxMpTable">
+						<columns>
+							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColFile}" /></Column>
+							<Column><Text text="{i18n>mpColUploaded}" /></Column>
+							<Column hAlign="End" styleClass="hrxMpColLast"><Text text="" /></Column>
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<VBox renderType="Bare">
+										<Text text="{mpTabs>FileName}" class="hrxMpStrong" />
+										<Text
+											text="{path: 'mpTabs>FileType', formatter: '.formatter.clean'}"
+											visible="{= !!${mpTabs>FileType} }"
+											class="hrxMpCellSub" />
+									</VBox>
+									<Text text="{path: 'mpTabs>UploadedOn', formatter: '.formatDay'}" wrapping="false" />
+									<HBox renderType="Bare" class="hrxMpRowActs">
+										<Button
+											icon="sap-icon://download"
+											tooltip="{i18n>mpDownloadAttachment}"
+											press=".onDownloadAttachment"
+											class="hrxMpIconBtn hrxMpIcoDownload" />
+										<Button
+											icon="sap-icon://delete"
+											tooltip="{i18n>mpDeleteAttachment}"
+											press=".onDeleteAttachment"
+											class="hrxMpIconBtn hrxMpIconBtnDel hrxMpIcoTrash" />
+									</HBox>
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</VBox>
+			</ScrollContainer>
+
+			<!-- Footer: Save, on the Info tab only -->
+			<HBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'info' }" class="hrxMpFoot">
+				<Button
+					id="projectSaveButton"
+					text="{i18n>mpSave}"
+					type="Emphasized"
+					press=".onSaveProject"
+					class="hrxMpBtnPrimary" />
+			</HBox>
+		</VBox>
+	</HBox>
 </mvc:View>

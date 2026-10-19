@@ -1,87 +1,70 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- Opened from a Leave Requests row that is still awaiting a decision. Laid out
+	     as the design's modal (.modal): head, padded body, frosted foot with the
+	     primary action first and Cancel beside it. -->
 	<Dialog
 		id="editLeaveDialog"
 		title="{i18n>mlEditTitle}"
-		contentWidth="30rem"
+		contentWidth="460px"
 		busy="{mlView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxMyLeaveDialog">
 		<content>
-			<form:SimpleForm
-				id="editLeaveForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mrLeaveColDate}" />
-					<Text id="editLeaveDate" text="{mlEdit>/DisplayDate}" />
+			<VBox renderType="Bare" class="hrxLeaveDialogBody">
+				<Label text="{i18n>mrLeaveColDate}" class="hrxModalLabel" />
+				<Text id="editLeaveDate" text="{mlEdit>/DisplayRange}" class="hrxLeaveDialogValue" />
 
-					<Label text="{i18n>mrLeaveColStatus}" />
+				<Label text="{i18n>mrLeaveColStatus}" class="hrxModalLabel hrxLeaveDialogGap" />
+				<HBox renderType="Bare" class="hrxLeaveDialogValue">
 					<ObjectStatus
 						text="{mlEdit>/Status}"
 						state="{path: 'mlEdit>/StatusID', formatter: '.formatter.leaveStatusState'}" />
+				</HBox>
 
-					<Label text="{i18n>fieldLeaveType}" />
-					<ComboBox
-						id="editLeaveType"
-						selectedKey="{mlEdit>/LeaveTypeID}"
-						items="{ml>/leaveTypes}"
-						enabled="{mlEdit>/editable}"
-						placeholder="{i18n>mlLeaveTypePlaceholder}">
-						<core:ListItem key="{ml>LeaveCategoryId}" text="{ml>LeaveCategoryDesc}" />
-					</ComboBox>
+				<Label text="{i18n>fieldLeaveType}" labelFor="editLeaveType" class="hrxModalLabel hrxLeaveDialogGap" />
+				<Select
+					id="editLeaveType"
+					width="100%"
+					forceSelection="false"
+					selectedKey="{mlEdit>/LeaveTypeID}"
+					items="{ml>/leaveTypes}"
+					enabled="{mlEdit>/editable}">
+					<core:Item key="{ml>LeaveCategoryId}" text="{ml>LeaveCategoryDesc}" />
+				</Select>
 
-					<Label text="{i18n>fieldDuration}" />
-					<SegmentedButton
-						id="editLeaveAbsence"
-						selectedKey="{mlEdit>/Absence}"
-						enabled="{mlEdit>/editable}"
-						width="100%">
-						<items>
-							<SegmentedButtonItem text="{i18n>mlFullDay}" key="Full Day" />
-							<SegmentedButtonItem text="{i18n>mlAm}" key="AM" />
-							<SegmentedButtonItem text="{i18n>mlPm}" key="PM" />
-						</items>
-					</SegmentedButton>
+				<Label text="{i18n>fieldDuration}" labelFor="editLeaveAbsence" class="hrxModalLabel hrxLeaveDialogGap" />
+				<Select
+					id="editLeaveAbsence"
+					width="100%"
+					selectedKey="{mlEdit>/Absence}"
+					enabled="{mlEdit>/editable}">
+					<core:Item key="Full Day" text="{i18n>mlDurationFullSingle}" />
+					<core:Item key="AM" text="{i18n>mlDurationAm}" />
+					<core:Item key="PM" text="{i18n>mlDurationPm}" />
+				</Select>
 
-					<Label text="" visible="{= !${mlEdit>/editable} }" />
-					<MessageStrip
-						text="{i18n>mlDecidedNote}"
-						type="Information"
-						showIcon="true"
-						visible="{= !${mlEdit>/editable} }" />
-				</form:content>
-			</form:SimpleForm>
+				<!-- The update service sets one date, so a request over several days can
+				     only be cancelled and booked again. -->
+				<Text
+					text="{i18n>mlMultiDayNote}"
+					visible="{= !${mlEdit>/editable} }"
+					class="hrxLeaveDialogNote" />
+			</VBox>
 		</content>
-		<buttons>
+		<beginButton>
 			<Button
 				id="editLeaveSave"
 				text="{i18n>mlSave}"
 				type="Emphasized"
 				enabled="{mlEdit>/editable}"
-				press=".onUpdateLeave" />
-			<Button
-				id="editLeaveDelete"
-				text="{i18n>mlDelete}"
-				type="Reject"
-				enabled="{mlEdit>/editable}"
-				press=".onDeleteLeave" />
-			<Button id="editLeaveClose" text="{i18n>mlClose}" press=".onCloseEditLeave" />
-		</buttons>
+				press=".onUpdateLeave"
+				class="hrxModalBtn hrxModalBtnPrimary" />
+		</beginButton>
+		<endButton>
+			<Button id="editLeaveClose" text="{i18n>mlCancel}" press=".onCloseEditLeave" class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

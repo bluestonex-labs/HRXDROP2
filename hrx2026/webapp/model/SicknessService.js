@@ -76,8 +76,8 @@ sap.ui.define([
 		 * @param {string} sFrom the first day, "yyyy-MM-dd"
 		 * @param {string} sTo the last day, "yyyy-MM-dd"
 		 * @returns {Promise<Array<object>>} absences: AbsenceID, EmpID, Name, Email,
-		 * StartDate and EndDate ("yyyy-MM-dd"), Days (working days), Reason, Notes and
-		 * FitNote ("Y"/"N")
+		 * StartDate and EndDate ("yyyy-MM-dd"), Days (working days), Reason, Notes,
+		 * FitNote ("Y"/"N") and RecordedOn (when it was recorded, a timestamp)
 		 */
 		getAbsences: function (sOrgId, sFrom, sTo) {
 			return sickTypeId().then(function (sSickId) {
@@ -107,6 +107,10 @@ sap.ui.define([
 							SicknessPolicy.workingDays(SicknessPolicy.parseDay(o.StartDate), SicknessPolicy.parseDay(o.EndDate)));
 					}, 0);
 					var aComment = String(oFirst.RequesterComments || "").split(NOTES_SEPARATOR);
+					// When the absence was recorded: the first of its rows to be saved.
+					var sRecordedOn = aDays.reduce(function (s, o) {
+						return o.createdAt && (!s || o.createdAt < s) ? o.createdAt : s;
+					}, "");
 
 					return {
 						AbsenceID: sKey,
@@ -118,7 +122,8 @@ sap.ui.define([
 						Days: fDays,
 						Reason: aComment[0] || "",
 						Notes: aComment.slice(1).join(NOTES_SEPARATOR),
-						FitNote: "N"
+						FitNote: "N",
+						RecordedOn: sRecordedOn
 					};
 				});
 			});
@@ -235,7 +240,8 @@ sap.ui.define([
 		/**
 		 * Every return-to-work process still in progress.
 		 * @returns {Promise<Array<object>>} processes: RtwID, EmpID, Name, Email, Title
-		 * (job title) and Steps - an array of { StepNo, Text, Done ("Y"/"N") }
+		 * (job title), OpenedOn (a timestamp) and Steps - an array of { StepNo, Text,
+		 * Done ("Y"/"N") }
 		 */
 		getReturnsToWork: function () {
 			if (!isReviewBound()) {
@@ -254,6 +260,7 @@ sap.ui.define([
 						Name: fullName(oEmployee),
 						Email: String(oEmployee.WorkEmail || "").toLowerCase(),
 						Title: oEmployee.JobTitle || "",
+						OpenedOn: oProcess.OpenedOn || oProcess.createdAt || "",
 						Steps: (oProcess.Steps || []).map(function (oStep) {
 							return { StepNo: oStep.StepNo, Text: oStep.Text, Done: oStep.Done ? "Y" : "N" };
 						})

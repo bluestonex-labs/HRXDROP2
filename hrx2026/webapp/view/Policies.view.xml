@@ -3,13 +3,12 @@
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
 	displayBlock="true"
-	class="hrxPolicies">
+	class="hrxPolicies hrxPagePolicies">
 
 	<Page id="policiesPage" showHeader="false" title="{i18n>pdTitle}" showNavButton="false" class="hrxPageContent">
 		<content>
-			<VBox busy="{pdView>/busy}" busyIndicatorDelay="0">
+			<VBox busy="{pdView>/busy}" busyIndicatorDelay="0" renderType="Bare">
 
 				<MessageStrip
 					text="{i18n>serviceNeededPolicies}"
@@ -17,64 +16,76 @@
 					showIcon="true"
 					enableFormattedText="true"
 					visible="{= !${pdView>/bound} }"
-					class="sapUiSmallMarginBottom" />
+					class="hrxPdStrip" />
 
-				<layout:Grid defaultSpan="XL6 L6 M6 S12" hSpacing="1" vSpacing="1" class="hrxCardRow sapUiSmallMarginBottom">
-					<VBox class="hrxKpi">
-						<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
-						<core:Icon src="sap-icon://document-text" class="hrxKpiGlyph" />
-						<Text text="{i18n>pdKpiAvailable}" class="hrxKpiLabel" />
-						<Text text="{pd>/kpis/available}" class="hrxKpiNum" />
-						<Text text="{i18n>pdKpiAvailableSub}" class="hrxKpiSub" />
+				<!-- The design's two KPI tiles: what the employee can read, and how many
+				     of those need acknowledging -->
+				<HBox renderType="Bare" class="hrxPdKpis">
+					<VBox renderType="Bare" class="hrxPdKpi">
+						<HBox renderType="Bare" class="hrxPdGlyph">
+							<core:Icon src="sap-icon://document-text" />
+						</HBox>
+						<Text text="{i18n>pdKpiAvailable}" class="hrxPdKlab" />
+						<Text text="{pd>/kpis/available}" class="hrxPdKnum" />
+						<Text text="{i18n>pdKpiAvailableSub}" class="hrxPdKsub" />
 					</VBox>
-					<VBox class="hrxKpi">
-						<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
-						<core:Icon src="sap-icon://checklist-item" class="hrxKpiGlyph" />
-						<Text text="{i18n>pdKpiNeed}" class="hrxKpiLabel" />
-						<Text text="{pd>/kpis/need}" class="hrxKpiNum" />
-						<Text text="{i18n>pdKpiNeedSub}" class="hrxKpiSub" />
+					<VBox renderType="Bare" class="hrxPdKpi">
+						<HBox renderType="Bare" class="hrxPdGlyph">
+							<core:Icon src="sap-icon://task" />
+						</HBox>
+						<Text text="{i18n>pdKpiNeed}" class="hrxPdKlab" />
+						<Text text="{pd>/kpis/need}" class="hrxPdKnum" />
+						<Text text="{i18n>pdKpiNeedSub}" class="hrxPdKsub" />
 					</VBox>
-				</layout:Grid>
+				</HBox>
 
-				<VBox class="hrxSkCard hrxTrCard">
-					<HBox alignItems="Center" wrap="Wrap" class="hrxTrCardHead">
-						<VBox class="hrxTrCardHeadText">
-							<Title text="{i18n>pdListTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-							<Text text="{i18n>pdListHint}" class="hrxSkHint" />
+				<!-- Policies & documents: one row per document, newest first -->
+				<VBox renderType="Bare" class="hrxPdCard">
+					<HBox renderType="Bare" class="hrxPdCardHead">
+						<VBox renderType="Bare">
+							<Title text="{i18n>pdListTitle}" level="H3" class="hrxPdCardTitle" />
+							<Text text="{i18n>pdListHint}" class="hrxPdCardHint" />
 						</VBox>
 						<CheckBox
 							text="{i18n>pdOnlyOutstanding}"
 							selected="{pdView>/onlyOutstanding}"
-							select=".onFilterChange" />
+							select=".onFilterChange"
+							class="hrxPdCheck" />
 					</HBox>
 
-					<VBox visible="{= ${pd>/rows}.length === 0 }" class="hrxDocEmpty">
-						<Title text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstanding} : ${i18n>pdNoDocuments} }" level="H4" />
-						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstandingText} : ${i18n>pdNoDocumentsText} }" class="hrxResourceMeta" />
+					<VBox visible="{= ${pd>/rows}.length === 0 }" renderType="Bare" class="hrxPdEmpty">
+						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstanding} : ${i18n>pdNoDocuments} }" class="hrxPdEmptyTitle" />
+						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstandingText} : ${i18n>pdNoDocumentsText} }" class="hrxPdEmptyText" />
 					</VBox>
 
-					<VBox items="{path: 'pd>/rows', templateShareable: false}">
-						<HBox alignItems="Center" wrap="Wrap" class="hrxDocRow">
-							<VBox class="hrxDocMain">
-								<Text text="{pd>Name}" class="hrxDocName" />
-								<Text text="{pd>meta}" class="hrxResourceMeta" />
+					<VBox items="{path: 'pd>/rows', templateShareable: false}" renderType="Bare" class="hrxPdRows">
+						<HBox renderType="Bare" class="hrxPdRow">
+							<VBox renderType="Bare" class="hrxPdMain">
+								<Text text="{pd>Name}" class="hrxPdName" />
+								<Text text="{pd>meta}" class="hrxPdMeta" />
 							</VBox>
-							<HBox alignItems="Center" class="hrxDocStatus">
-								<ObjectStatus
-									text="{pd>statusText}"
-									state="{pd>statusState}"
-									inverted="{pd>AckRequired}"
-									class="hrxSkPill" />
+							<HBox renderType="Bare" class="hrxPdStatus">
+								<Text text="{pd>statusText}" visible="{= !${pd>AckRequired} }" class="hrxPdNoAck" />
+								<Text text="{pd>statusText}" visible="{pd>AckRequired}" class="hrxPdPill">
+									<customData>
+										<core:CustomData key="state" value="{pd>statusState}" writeToDom="true" />
+									</customData>
+								</Text>
 							</HBox>
-							<HBox alignItems="Center" class="hrxDocActs">
+							<HBox renderType="Bare" class="hrxPdActs">
 								<!-- Acknowledge first, where there is one to give, then Read -->
 								<Button
 									text="{i18n>pdAcknowledge}"
 									icon="sap-icon://accept"
 									type="Emphasized"
 									visible="{pd>outstanding}"
-									press=".onAcknowledge" />
-								<Button text="{i18n>pdRead}" icon="sap-icon://show" press=".onRead" />
+									press=".onAcknowledge"
+									class="hrxPdBtn hrxPdBtnAck" />
+								<Button
+									text="{i18n>pdRead}"
+									icon="sap-icon://show"
+									press=".onRead"
+									class="hrxPdBtn hrxPdBtnRead" />
 							</HBox>
 						</HBox>
 					</VBox>

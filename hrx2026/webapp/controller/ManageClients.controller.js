@@ -20,6 +20,8 @@ sap.ui.define([
 	var CLIENT_APPS_SERVICE = SERVICE_ROOT + "/hrx/manageClientApps.xsjs";
 	var CLIENT_USERS_SERVICE = SERVICE_ROOT + "/supportx/ManageClientUsers.xsjs";
 	var SLA_SERVICE = SERVICE_ROOT + "/supportx/ManageSLA.xsjs";
+	// Answered by the HRX service only (model/HrxLegacyClients.js) - see onSaveService.
+	var CLIENT_SERVICES_SERVICE = SERVICE_ROOT + "/hrx/manageClientServices.xsjs";
 
 	var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -61,6 +63,7 @@ sap.ui.define([
 			this.setModel(new JSONModel({}), "mcDetail");
 			this.setModel(new JSONModel(this._emptyTabs()), "mcTabs");
 			this.setModel(new JSONModel({}), "mcForm");
+			this.setModel(new JSONModel({ title: "", text: "" }), "mcConfirm");
 
 			this._pLookupsLoaded = this._loadLookups();
 
@@ -186,6 +189,7 @@ sap.ui.define([
 				ClientLocation: oClient.ClientLocation || "",
 				ClientLogo: oClient.ClientLogo || "",
 				NewLogo: "",
+				LogoFileName: "",
 				ClientContactName: oClient.ClientContactName || "",
 				ClientContactEmail: oClient.ClientContactEmail || "",
 				ClientContactMobile: oClient.ClientContactMobile || ""
@@ -328,6 +332,67 @@ sap.ui.define([
 		},
 
 		/* =========================================================== */
+		/* formatters                                                  */
+		/* =========================================================== */
+
+		/**
+		 * The detail head's second line: the client key, then its location when known.
+		 * @param {string} sClientKey the client key
+		 * @param {string} sLocation the client's location
+		 * @returns {string} e.g. "BSXCL0000000012 · UK"
+		 */
+		formatHeadSub: function (sClientKey, sLocation) {
+			return [sClientKey, sLocation].filter(Boolean).join(" · ");
+		},
+
+		/**
+		 * @param {string} sHours a response or resolution time
+		 * @param {string} sUnit its unit as the service sends it
+		 * @returns {string} e.g. "4 hrs"
+		 */
+		formatHours: function (sHours, sUnit) {
+			var sValue = formatter.clean(sHours);
+			if (!sValue) {
+				return "";
+			}
+			return sValue + " " + (formatter.clean(sUnit) || this.getText("mcHoursUnit"));
+		},
+
+		/**
+		 * The small line under a component's software: component, sub-component and
+		 * system number, whichever are held.
+		 * @param {string} sComponent the component
+		 * @param {string} sSubComponent the sub-component
+		 * @param {string} sSystemNo the system number
+		 * @returns {string} e.g. "MM · Inventory management · BAB-PRD-01"
+		 */
+		formatComponentSub: function (sComponent, sSubComponent, sSystemNo) {
+			return [sComponent, sSubComponent, sSystemNo].map(formatter.clean).filter(Boolean).join(" · ");
+		},
+
+		/**
+		 * @param {Date|string} vFrom validity start
+		 * @param {Date|string} vTill validity end
+		 * @returns {string} e.g. "1 Jan 2025 – 31 Dec 2026", with a dash for a missing end
+		 */
+		formatValidity: function (vFrom, vTill) {
+			var sFrom = formatter.date(vFrom) || "—";
+			var sTill = formatter.date(vTill) || "—";
+			return sFrom + " – " + sTill;
+		},
+
+		/**
+		 * @param {string} sObjectCost the object cost in GBP
+		 * @param {string} sSupportCost the support cost in GBP
+		 * @returns {string} e.g. "£12,000 / £3,500"
+		 */
+		formatCosts: function (sObjectCost, sSupportCost) {
+			var sObject = formatter.money(sObjectCost || 0);
+			var sSupport = formatter.money(sSupportCost || 0);
+			return (sObject || "£0") + " / " + (sSupport || "£0");
+		},
+
+		/* =========================================================== */
 		/* basic info                                                  */
 		/* =========================================================== */
 
@@ -339,6 +404,7 @@ sap.ui.define([
 			}
 
 			var oDetailModel = this.getModel("mcDetail");
+			oDetailModel.setProperty("/LogoFileName", oFile.name);
 			var oReader = new FileReader();
 			oReader.onload = function (oLoadEvent) {
 				oDetailModel.setProperty("/NewLogo", oLoadEvent.target.result);
@@ -353,6 +419,7 @@ sap.ui.define([
 		onRemoveLogo: function () {
 			this.getModel("mcDetail").setProperty("/NewLogo", "");
 			this.getModel("mcDetail").setProperty("/ClientLogo", "");
+			this.getModel("mcDetail").setProperty("/LogoFileName", "");
 			this._resetLogoUploader();
 		},
 
@@ -375,7 +442,7 @@ sap.ui.define([
 			if (!oDetail.ClientDesc) {
 				this.byId("clientName").setValueState("Error");
 				this.byId("clientName").setValueStateText(this.getText("mcMandatory"));
-				MessageBox.error(this.getText("mcErrorNameRequired"));
+				MessageToast.show(this.getText("mcErrorNameRequired"));
 				return;
 			}
 			this.byId("clientName").setValueState("None");
@@ -404,31 +471,15 @@ sap.ui.define([
 			this.getModel("mcForm").setData({
 				ClientDesc: "",
 				ClientLocation: "",
-				ClientContactName: "",
-				ClientContactEmail: "",
-				ClientContactMobile: "",
-				Logo: ""
+				ClientContactName: ""
 			});
-			this._openDialog("_pAddClientDialog", "bsx.hrx.hrx2026.fragment.AddClientDialog");
+			this._openDialog("_pAddClientDialog", "bsx.hrx.hrx2026.fragment.AddClientDialog").then(function () {
+				this.byId("newClientName").setValueState("None");
+			}.bind(this));
 		},
 
 		onCancelAddClient: function () {
 			this._closeDialog("_pAddClientDialog");
-		},
-
-		onNewLogoChange: function (oEvent) {
-			var aFiles = oEvent.getParameter("files");
-			var oFile = aFiles && aFiles[0];
-			if (!oFile) {
-				return;
-			}
-
-			var oFormModel = this.getModel("mcForm");
-			var oReader = new FileReader();
-			oReader.onload = function (oLoadEvent) {
-				oFormModel.setProperty("/Logo", oLoadEvent.target.result);
-			};
-			oReader.readAsDataURL(oFile);
 		},
 
 		onCreateClient: function () {
@@ -438,29 +489,29 @@ sap.ui.define([
 			if (!(oForm.ClientDesc || "").trim()) {
 				oNameInput.setValueState("Error");
 				oNameInput.setValueStateText(this.getText("mcMandatory"));
+				MessageToast.show(this.getText("mcErrorNameRequired"));
 				return;
 			}
 			oNameInput.setValueState("None");
 
-			if (oForm.ClientContactEmail && !EMAIL_PATTERN.test(oForm.ClientContactEmail)) {
-				this.byId("newClientEmail").setValueState("Error");
-				this.byId("newClientEmail").setValueStateText(this.getText("mcInvalidEmail"));
-				return;
-			}
-			this.byId("newClientEmail").setValueState("None");
-
+			// The logo and the contact's email and phone are added on the Basic Info tab,
+			// which is opened on the new client straight away (as in the design).
 			this._save(CLIENTS_SERVICE + "?cmd=new", {
 				orgID: this._sOrgId,
 				ClientKey: "",
 				ClientDesc: oForm.ClientDesc.trim(),
-				ClientLocation: oForm.ClientLocation || "",
-				ClientLogo: oForm.Logo || "",
-				ClientContactName: oForm.ClientContactName || "",
-				ClientContactMobile: oForm.ClientContactMobile || "",
-				ClientContactEmail: oForm.ClientContactEmail || ""
-			}, "mcCreated", "mcErrorCreate").then(function () {
+				ClientLocation: (oForm.ClientLocation || "").trim(),
+				ClientLogo: "",
+				ClientContactName: (oForm.ClientContactName || "").trim(),
+				ClientContactMobile: "",
+				ClientContactEmail: ""
+			}, "mcCreated", "mcErrorCreate").then(function (oResult) {
 				this._closeDialog("_pAddClientDialog");
-				return this._loadClients();
+				return this._loadClients().then(function () {
+					if (oResult && oResult.ClientKey) {
+						return this._showClient(oResult.ClientKey);
+					}
+				}.bind(this));
 			}.bind(this)).catch(function () { /* reported by _save */ });
 		},
 
@@ -479,7 +530,7 @@ sap.ui.define([
 				IsActive: true,
 				IsAdmin: false
 			});
-			this._openDialog("_pUserDialog", "bsx.hrx.hrx2026.fragment.ClientUserDialog");
+			this._openDialog("_pUserDialog", "bsx.hrx.hrx2026.fragment.ClientUserDialog").then(this._resetUserStates.bind(this));
 		},
 
 		onEditUser: function (oEvent) {
@@ -495,7 +546,13 @@ sap.ui.define([
 				IsActive: oUser.IsActive === "Y",
 				IsAdmin: oUser.IsAdmin === "Y"
 			});
-			this._openDialog("_pUserDialog", "bsx.hrx.hrx2026.fragment.ClientUserDialog");
+			this._openDialog("_pUserDialog", "bsx.hrx.hrx2026.fragment.ClientUserDialog").then(this._resetUserStates.bind(this));
+		},
+
+		_resetUserStates: function () {
+			["userFirstName", "userEmail"].forEach(function (sId) {
+				this.byId(sId).setValueState("None");
+			}, this);
 		},
 
 		onCancelUser: function () {
@@ -508,13 +565,15 @@ sap.ui.define([
 
 			if (!this._validateRequired([
 				{ id: "userFirstName", value: oForm.FName },
-				{ id: "userLastName", value: oForm.LName }
+				{ id: "userEmail", value: oForm.Email }
 			])) {
+				MessageToast.show(this.getText("mcMandatory"));
 				return;
 			}
-			if (!EMAIL_PATTERN.test(oForm.Email || "")) {
+			if (!EMAIL_PATTERN.test(oForm.Email.trim())) {
 				this.byId("userEmail").setValueState("Error");
 				this.byId("userEmail").setValueStateText(this.getText("mcInvalidEmail"));
+				MessageToast.show(this.getText("mcInvalidEmail"));
 				return;
 			}
 			this.byId("userEmail").setValueState("None");
@@ -524,23 +583,33 @@ sap.ui.define([
 				OrgID: sClientKey,
 				UserID: bEdit ? oForm.UserID : "",
 				FName: oForm.FName.trim(),
-				LName: oForm.LName.trim(),
+				LName: (oForm.LName || "").trim(),
 				Email: oForm.Email.trim(),
 				Mobile: oForm.Mobile || "",
 				IsActive: oForm.IsActive ? "Y" : "N",
+				IsAdmin: oForm.IsAdmin ? "Y" : "N",
 				Pic: ""
 			};
-
-			// Only the update call carries the admin flag, mirroring the service contract.
-			if (bEdit) {
-				oPayload.IsAdmin = oForm.IsAdmin ? "Y" : "N";
-			}
 
 			this._save(CLIENT_USERS_SERVICE + (bEdit ? "?cmd=update" : "?cmd=new"), oPayload,
 				bEdit ? "mcUserUpdated" : "mcUserCreated", "mcErrorUserSave").then(function () {
 					this._closeDialog("_pUserDialog");
 					return this._loadUsers(sClientKey);
 				}.bind(this)).catch(function () { /* reported by _save */ });
+		},
+
+		onDeleteUser: function (oEvent) {
+			var oUser = oEvent.getSource().getBindingContext("mcTabs").getObject();
+			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
+
+			this._confirmDelete("mcConfirmDeleteUserTitle", "mcConfirmDeleteUser", function () {
+				return this._save(CLIENT_USERS_SERVICE + "?cmd=delete", {
+					OrgID: sClientKey,
+					UserID: oUser.UserID
+				}, "mcUserDeleted", "mcErrorUserDelete").then(function () {
+					return this._loadUsers(sClientKey);
+				}.bind(this));
+			});
 		},
 
 		/* =========================================================== */
@@ -554,7 +623,7 @@ sap.ui.define([
 				ResponseSLA: "",
 				ResolutionSLA: ""
 			});
-			this._openDialog("_pSlaDialog", "bsx.hrx.hrx2026.fragment.SlaDialog");
+			this._openDialog("_pSlaDialog", "bsx.hrx.hrx2026.fragment.SlaDialog").then(this._resetSlaStates.bind(this));
 		},
 
 		onEditSla: function (oEvent) {
@@ -566,7 +635,13 @@ sap.ui.define([
 				ResponseSLA: formatter.clean(oSla.ResponseSLA),
 				ResolutionSLA: formatter.clean(oSla.ResolutionSLA)
 			});
-			this._openDialog("_pSlaDialog", "bsx.hrx.hrx2026.fragment.SlaDialog");
+			this._openDialog("_pSlaDialog", "bsx.hrx.hrx2026.fragment.SlaDialog").then(this._resetSlaStates.bind(this));
+		},
+
+		_resetSlaStates: function () {
+			["slaSeverity", "slaResponse", "slaResolution"].forEach(function (sId) {
+				this.byId(sId).setValueState("None");
+			}, this);
 		},
 
 		onCancelSla: function () {
@@ -578,17 +653,16 @@ sap.ui.define([
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
 			var oSeverity = this.byId("slaSeverity");
 
-			if (!oForm.PriorityID) {
-				oSeverity.setValueState("Error");
-				oSeverity.setValueStateText(this.getText("mcMandatory"));
-				return;
-			}
-			oSeverity.setValueState("None");
+			var bSeverity = !!oForm.PriorityID;
+			oSeverity.setValueState(bSeverity ? "None" : "Error");
+			oSeverity.setValueStateText(this.getText("mcMandatory"));
 
-			if (!this._validateRequired([
+			var bHours = this._validateRequired([
 				{ id: "slaResponse", value: oForm.ResponseSLA },
 				{ id: "slaResolution", value: oForm.ResolutionSLA }
-			])) {
+			]);
+			if (!bSeverity || !bHours) {
+				MessageToast.show(this.getText("mcMandatory"));
 				return;
 			}
 
@@ -612,6 +686,20 @@ sap.ui.define([
 					this._closeDialog("_pSlaDialog");
 					return this._loadSla(sClientKey);
 				}.bind(this)).catch(function () { /* reported by _save */ });
+		},
+
+		onDeleteSla: function (oEvent) {
+			var oSla = oEvent.getSource().getBindingContext("mcTabs").getObject();
+			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
+
+			this._confirmDelete("mcConfirmDeleteSlaTitle", "mcConfirmDeleteSla", function () {
+				return this._save(SLA_SERVICE + "?cmd=delete", {
+					OrgID: sClientKey,
+					PriorityID: oSla.PriorityID
+				}, "mcSlaDeleted", "mcErrorSlaDelete").then(function () {
+					return this._loadSla(sClientKey);
+				}.bind(this));
+			});
 		},
 
 		/* =========================================================== */
@@ -639,7 +727,7 @@ sap.ui.define([
 				HardMessage: ""
 			});
 			this._refreshComponentValueHelps();
-			this._openDialog("_pComponentDialog", "bsx.hrx.hrx2026.fragment.ClientComponentDialog");
+			this._openDialog("_pComponentDialog", "bsx.hrx.hrx2026.fragment.ClientComponentDialog").then(this._resetComponentStates.bind(this));
 		},
 
 		onEditComponent: function (oEvent) {
@@ -665,7 +753,13 @@ sap.ui.define([
 				HardMessage: formatter.clean(oComponent.HardMessage)
 			});
 			this._refreshComponentValueHelps();
-			this._openDialog("_pComponentDialog", "bsx.hrx.hrx2026.fragment.ClientComponentDialog");
+			this._openDialog("_pComponentDialog", "bsx.hrx.hrx2026.fragment.ClientComponentDialog").then(this._resetComponentStates.bind(this));
+		},
+
+		_resetComponentStates: function () {
+			["componentSoftware", "componentComponent"].forEach(function (sId) {
+				this.byId(sId).setValueState("None");
+			}, this);
 		},
 
 		onCancelComponent: function () {
@@ -702,7 +796,6 @@ sap.ui.define([
 		onSaveComponent: function () {
 			var oForm = this.getModel("mcForm").getData();
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
-			var oSoftware = this.byId("componentSoftware");
 
 			// The HRX service keeps names, so one typed in (not in the list yet) is kept too.
 			if (HrxServices.has("ClientComponents")) {
@@ -711,12 +804,17 @@ sap.ui.define([
 				oForm.SubComponent = this._pickedOrTyped("componentSubComponent", oForm.SubComponent);
 			}
 
-			if (!oForm.Software) {
-				oSoftware.setValueState("Error");
-				oSoftware.setValueStateText(this.getText("mcMandatory"));
+			// Software and component are both required, as in the design.
+			var bSoftware = !!oForm.Software;
+			var bComponent = !!oForm.Component && oForm.Component !== "NA";
+			this.byId("componentSoftware").setValueState(bSoftware ? "None" : "Error");
+			this.byId("componentSoftware").setValueStateText(this.getText("mcMandatory"));
+			this.byId("componentComponent").setValueState(bComponent ? "None" : "Error");
+			this.byId("componentComponent").setValueStateText(this.getText("mcMandatory"));
+			if (!bSoftware || !bComponent) {
+				MessageToast.show(this.getText("mcMandatory"));
 				return;
 			}
-			oSoftware.setValueState("None");
 
 			var bEdit = oForm.mode === "edit";
 			var oPayload = {
@@ -754,20 +852,12 @@ sap.ui.define([
 			var oComponent = oEvent.getSource().getBindingContext("mcTabs").getObject();
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
 
-			MessageBox.confirm(this.getText("mcConfirmDeleteComponent", [oComponent.AppName || oComponent.Software]), {
-				title: this.getText("mcConfirmDeleteComponentTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
-					}
-					this._save(CLIENT_APPS_SERVICE + "?cmd=delete", {
-						SoftwareRecID: oComponent.SoftwareRecID
-					}, "mcComponentDeleted", "mcErrorComponentDelete").then(function () {
-						return this._loadComponents(sClientKey);
-					}.bind(this)).catch(function () { /* reported by _save */ });
-				}.bind(this)
+			this._confirmDelete("mcConfirmDeleteComponentTitle", "mcConfirmDeleteComponent", function () {
+				return this._save(CLIENT_APPS_SERVICE + "?cmd=delete", {
+					SoftwareRecID: oComponent.SoftwareRecID
+				}, "mcComponentDeleted", "mcErrorComponentDelete").then(function () {
+					return this._loadComponents(sClientKey);
+				}.bind(this));
 			});
 		},
 
@@ -777,12 +867,52 @@ sap.ui.define([
 
 		onAddService: function () {
 			this.getModel("mcForm").setData({
+				mode: "new",
+				RecordID: "",
 				AppID: "",
 				ServiceID: "",
 				ValidFrom: null,
 				ValidTill: null
 			});
-			this._openDialog("_pServiceDialog", "bsx.hrx.hrx2026.fragment.ClientServiceDialog");
+			this._openDialog("_pServiceDialog", "bsx.hrx.hrx2026.fragment.ClientServiceDialog").then(this._resetServiceStates.bind(this));
+		},
+
+		/**
+		 * Editing and deleting an app service are offered once the HRX service holds
+		 * them (ClientApplications); the original service only ever added them.
+		 * @param {sap.ui.base.Event} oEvent the edit button's press
+		 */
+		onEditService: function (oEvent) {
+			var oService = oEvent.getSource().getBindingContext("mcTabs").getObject();
+
+			this.getModel("mcForm").setData({
+				mode: "edit",
+				RecordID: oService.RecordID,
+				AppID: oService.AppID || "",
+				ServiceID: oService.ServiceID || "",
+				ValidFrom: formatter.toDate(oService.ValidFrom),
+				ValidTill: formatter.toDate(oService.ValidTill)
+			});
+			this._openDialog("_pServiceDialog", "bsx.hrx.hrx2026.fragment.ClientServiceDialog").then(this._resetServiceStates.bind(this));
+		},
+
+		onDeleteService: function (oEvent) {
+			var oService = oEvent.getSource().getBindingContext("mcTabs").getObject();
+			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
+
+			this._confirmDelete("mcConfirmDeleteServiceTitle", "mcConfirmDeleteService", function () {
+				return this._save(CLIENT_SERVICES_SERVICE + "?cmd=delete", {
+					RecordID: oService.RecordID
+				}, "mcServiceDeleted", "mcErrorServiceDelete").then(function () {
+					return this._loadServices(sClientKey);
+				}.bind(this));
+			});
+		},
+
+		_resetServiceStates: function () {
+			["serviceApp", "serviceService"].forEach(function (sId) {
+				this.byId(sId).setValueState("None");
+			}, this);
 		},
 
 		onCancelService: function () {
@@ -806,24 +936,20 @@ sap.ui.define([
 				oForm.ServiceID = this._pickedOrTyped("serviceService", oForm.ServiceID);
 			}
 
-			if (!oForm.AppID) {
-				oApp.setValueState("Error");
-				oApp.setValueStateText(this.getText("mcMandatory"));
+			oApp.setValueState(oForm.AppID ? "None" : "Error");
+			oApp.setValueStateText(this.getText("mcMandatory"));
+			oService.setValueState(oForm.ServiceID ? "None" : "Error");
+			oService.setValueStateText(this.getText("mcMandatory"));
+			if (!oForm.AppID || !oForm.ServiceID) {
+				MessageToast.show(this.getText("mcMandatory"));
 				return;
 			}
-			oApp.setValueState("None");
-
-			if (!oForm.ServiceID) {
-				oService.setValueState("Error");
-				oService.setValueStateText(this.getText("mcMandatory"));
-				return;
-			}
-			oService.setValueState("None");
 
 			var oServiceEntry = (this.getModel("mc").getProperty("/services") || []).filter(function (oEntry) {
 				return oEntry.ServiceID === oForm.ServiceID;
 			})[0];
 
+			var bEdit = oForm.mode === "edit";
 			var oViewModel = this.getModel("mcView");
 			oViewModel.setProperty("/saving", true);
 
@@ -837,14 +963,15 @@ sap.ui.define([
 				ServiceDesc: oServiceEntry ? oServiceEntry.ServiceDesc : ""
 			};
 			var pSave = bOnHrx
-				? Backend.postJson(Backend.SERVICE_ROOT + "/hrx/manageClientServices.xsjs?cmd=new", Object.assign({}, oNewService, {
+				? Backend.postJson(CLIENT_SERVICES_SERVICE + (bEdit ? "?cmd=update" : "?cmd=new"), Object.assign({}, oNewService, {
+					RecordID: oForm.RecordID,
 					ValidFrom: this._isoDate(oForm.ValidFrom),
 					ValidTill: this._isoDate(oForm.ValidTill)
 				}))
 				: this._create("/ClientAppServices", oNewService);
 			pSave.then(function () {
 				oViewModel.setProperty("/saving", false);
-				MessageToast.show(this.getText("mcServiceCreated"));
+				MessageToast.show(this.getText(bEdit ? "mcServiceUpdated" : "mcServiceCreated"));
 				this._closeDialog("_pServiceDialog");
 				return this._loadServices(sClientKey);
 			}.bind(this)).catch(function (oError) {
@@ -980,6 +1107,41 @@ sap.ui.define([
 				oDialog.open();
 				return oDialog;
 			});
+		},
+
+		/**
+		 * Asks before deleting, in the design's confirmation modal.
+		 * @param {string} sTitleKey i18n key of the modal title, e.g. "Delete user"
+		 * @param {string} sTextKey i18n key of the question
+		 * @param {function} fnDelete does the delete (bound to this controller) and
+		 *   returns a promise; the modal closes once it settles
+		 */
+		_confirmDelete: function (sTitleKey, sTextKey, fnDelete) {
+			this.getModel("mcConfirm").setData({
+				title: this.getText(sTitleKey),
+				text: this.getText(sTextKey)
+			});
+			this._fnPendingDelete = fnDelete.bind(this);
+			this._openDialog("_pConfirmDialog", "bsx.hrx.hrx2026.fragment.ClientConfirmDialog");
+		},
+
+		onConfirmDelete: function () {
+			var fnDelete = this._fnPendingDelete;
+			this._fnPendingDelete = null;
+			if (!fnDelete) {
+				return;
+			}
+			fnDelete().then(function () {
+				this._closeDialog("_pConfirmDialog");
+			}.bind(this)).catch(function () {
+				// reported by _save; the modal closes so the error can be read
+				this._closeDialog("_pConfirmDialog");
+			}.bind(this));
+		},
+
+		onCancelDelete: function () {
+			this._fnPendingDelete = null;
+			this._closeDialog("_pConfirmDialog");
 		},
 
 		_closeDialog: function (sCacheKey) {

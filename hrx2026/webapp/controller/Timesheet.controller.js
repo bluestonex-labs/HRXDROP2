@@ -7,10 +7,14 @@ sap.ui.define([
 	"sap/ui/model/Sorter",
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
+	"sap/m/GroupHeaderListItem",
+	"sap/m/Dialog",
+	"sap/m/Button",
+	"sap/m/Text",
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, GroupHeaderListItem, Dialog, Button, Text, Backend, CurrentUser, formatter) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -74,11 +78,12 @@ sap.ui.define([
 				userId: "",
 				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
-					return { label: oDay.label, date: "", total: "0:00", working: true };
+					return { label: oDay.label };
 				}),
-				weekBooked: "0:00",
-				weekTarget: "0:00",
+				weekBooked: "00:00",
+				weekTarget: "00:00",
 				weekPercent: 0,
+				weekOver: false,
 				kpis: this._emptyKpis()
 			}), "tsView");
 
@@ -91,6 +96,10 @@ sap.ui.define([
 			this._applyRowsGrouping();
 
 			this.setModel(new JSONModel({ comment: "", label: "" }), "tsComment");
+
+			// Client groups the user has folded away, keyed by group (client) name. Kept
+			// for the session, so a folded group stays folded from week to week.
+			this._mCollapsedGroups = {};
 
 			this.getOwnerComponent().getRouter().getRoute("timesheet")
 				.attachPatternMatched(this._onRouteMatched, this);
@@ -229,7 +238,7 @@ sap.ui.define([
 			// var sorgid = 'BSX';
 
 			oViewModel.setProperty("/busy", true);
-			oViewModel.setProperty("/weekLabel", formatter.dateRange(aDates[0], aDates[6]));
+			oViewModel.setProperty("/weekLabel", this._weekLabel(aDates[0], aDates[6]));
 			oViewModel.setProperty("/selectedCount", 0);
 
 			return Promise.all([
@@ -340,7 +349,7 @@ sap.ui.define([
 					// BlueStoneX's own projects are pinned to every sheet by _defaultRows
 					// and are not the user's to remove, so they cannot be selected.
 					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
-					days: this._buildDays(aDates)
+					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				};
 			}, this);
 
@@ -427,7 +436,7 @@ sap.ui.define([
 					Overbooked: false,
 					readOnly: true,
 					deletable: false,
-					days: this._buildDays(aDates)
+					days: this._buildDays(aDates, false)
 				};
 
 				// Nothing on a leave or bank holiday row is bookable.
@@ -450,7 +459,12 @@ sap.ui.define([
 			return aRows;
 		},
 
-		_buildDays: function (aDates) {
+		/**
+		 * @param {Array<Date>} aDates the seven days of the week
+		 * @param {boolean} bCommentRequired whether a booking on this row needs a work description
+		 * @returns {Array<object>} one cell per day
+		 */
+		_buildDays: function (aDates, bCommentRequired) {
 			var mNonWorkingDates = this._oNonWorkingDates || {};
 
 			return DAYS.map(function (oDay, iIndex) {
@@ -464,6 +478,7 @@ sap.ui.define([
 					recId: "",
 					serviceTime: "",
 					serviceComment: "",
+					commentRequired: !!bCommentRequired,
 					working: this._isWorkingDay(oDay.schedule),
 					// A project row's own cell is locked on any day that is fully covered by
 					// leave or a bank holiday, same as the dedicated absence rows, and on any
@@ -559,11 +574,13 @@ sap.ui.define([
 			// The service sends the days unrounded (2.1666...), so they are shown to at
 			// most two decimal places. The state and the utilisation above still work
 			// from the exact figures.
+			// The design shows the days to two decimal places ("2.94") and the
+			// utilisation as a whole percentage.
 			oViewModel.setProperty("/kpis", {
-				targetDays: this._roundTo2(fTargetDays),
-				actualDays: this._roundTo2(fActualDays),
+				targetDays: this._roundTo2(fTargetDays).toFixed(2),
+				actualDays: this._roundTo2(fActualDays).toFixed(2),
 				actualState: fActualDays >= fTargetDays ? "Good" : "Critical",
-				utilisation: fUtilisation,
+				utilisation: Math.round(fUtilisation),
 				month: aDates[0].toLocaleDateString("en-GB", { month: "long", year: "numeric" })
 			});
 		},
@@ -595,21 +612,17 @@ sap.ui.define([
 				return !oRow.readOnly;
 			});
 
+			// Column titles as the design writes them: "Mon 13"
 			var aHeaders = DAYS.map(function (oDay, iIndex) {
-				var iMinutes = aBookableRows.reduce(function (iTotal, oRow) {
-					return iTotal + this._toMinutes(oRow.days[iIndex].time);
-				}.bind(this), 0);
-
 				return {
-					label: oDay.label,
-					date: aDates[iIndex].getDate() + " " + aDates[iIndex].toLocaleDateString("en-GB", { month: "short" }),
-					total: this._fromMinutes(iMinutes),
-					working: this._isWorkingDay(oDay.schedule)
+					label: oDay.label + " " + aDates[iIndex].getDate()
 				};
-			}, this);
+			});
 
-			var iBooked = aHeaders.reduce(function (iTotal, oHeader) {
-				return iTotal + this._toMinutes(oHeader.total);
+			var iBooked = aBookableRows.reduce(function (iTotal, oRow) {
+				return iTotal + oRow.days.reduce(function (iRowTotal, oDay) {
+					return iRowTotal + this._toMinutes(oDay.time);
+				}.bind(this), 0);
 			}.bind(this), 0);
 			var iTarget = this._iWeekTargetMinutes || 0;
 
@@ -617,6 +630,8 @@ sap.ui.define([
 			oViewModel.setProperty("/weekBooked", this._fromMinutes(iBooked));
 			oViewModel.setProperty("/weekTarget", this._fromMinutes(iTarget));
 			oViewModel.setProperty("/weekPercent", iTarget ? Math.min(Math.round(iBooked * 100 / iTarget), 100) : 0);
+			// More booked than the week asks for turns the bar red, as in the design.
+			oViewModel.setProperty("/weekOver", iTarget > 0 && iBooked > iTarget);
 		},
 
 		/* =========================================================== */
@@ -631,11 +646,6 @@ sap.ui.define([
 			this._stepWeek(7);
 		},
 
-		onCurrentWeek: function () {
-			this.getModel("tsView").setProperty("/weekStart", this._mondayOf(new Date()));
-			this._loadWeek();
-		},
-
 		_stepWeek: function (iDays) {
 			var oViewModel = this.getModel("tsView");
 			var oMonday = formatter.toDate(oViewModel.getProperty("/weekStart")) || this._mondayOf(new Date());
@@ -648,7 +658,10 @@ sap.ui.define([
 		onOpenWeekPicker: function (oEvent) {
 			var oButton = oEvent.getSource();
 
-			this._openPopover("_pWeekPicker", "bsx.hrx.hrx2026.fragment.WeekPickerPopover", oButton).then(function () {
+			this._openPopover("_pWeekPicker", "bsx.hrx.hrx2026.fragment.WeekPickerPopover", oButton).then(function (oPopover) {
+				// The fragment is shared with Missing Timesheets, so this page's look is
+				// added here rather than in the fragment.
+				oPopover.addStyleClass("hrxTsPopover");
 				var oCalendar = this.byId("weekPickerCalendar");
 				if (oCalendar) {
 					oCalendar.removeAllSelectedDates();
@@ -799,8 +812,7 @@ sap.ui.define([
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 */
 		onOpenComment: function (oEvent) {
-			var oButton = oEvent.getSource();
-			var oContext = oButton.getBindingContext("ts");
+			var oContext = oEvent.getSource().getBindingContext("ts");
 			if (!oContext) {
 				return;
 			}
@@ -815,19 +827,27 @@ sap.ui.define([
 				editable: oDay.editable && !oRow.readOnly
 			});
 
-			this._openPopover("_pCommentPopover", "bsx.hrx.hrx2026.fragment.CommentPopover", oButton);
+			this._openDialog("_pCommentDialog", "bsx.hrx.hrx2026.fragment.CommentPopover");
 		},
 
 		/**
-		 * Writes the description back onto the cell when the popover closes.
+		 * Writes the description back onto the cell and closes the dialog.
 		 */
-		onCommentClosed: function () {
-			if (!this._sCommentPath) {
-				return;
+		onSaveComment: function () {
+			if (this._sCommentPath) {
+				this.getModel("ts").setProperty(this._sCommentPath + "/comment",
+					(this.getModel("tsComment").getProperty("/comment") || "").trim());
 			}
-			this.getModel("ts").setProperty(this._sCommentPath + "/comment",
-				this.getModel("tsComment").getProperty("/comment") || "");
 			this._sCommentPath = null;
+			this._closeDialog("_pCommentDialog");
+		},
+
+		/**
+		 * Closes the dialog and leaves the cell's description as it was.
+		 */
+		onCancelComment: function () {
+			this._sCommentPath = null;
+			this._closeDialog("_pCommentDialog");
 		},
 
 		/**
@@ -854,6 +874,105 @@ sap.ui.define([
 				oTable.removeSelections(true);
 			}
 			this.getModel("tsView").setProperty("/selectedCount", 0);
+		},
+
+		/* =========================================================== */
+		/* client groups                                               */
+		/* =========================================================== */
+
+		/**
+		 * Builds the row that heads each client's projects. Clicking it folds the
+		 * group away or opens it again, as the design's group rows do.
+		 * @param {object} oGroup the group the sorter produced
+		 * @returns {sap.m.GroupHeaderListItem} the group row
+		 */
+		createGroupHeader: function (oGroup) {
+			var oHeader = new GroupHeaderListItem({
+				title: oGroup.key,
+				type: "Active",
+				press: this.onToggleGroup.bind(this)
+			});
+
+			oHeader.data("groupKey", oGroup.key);
+			oHeader.toggleStyleClass("hrxTsGroupCollapsed", !!this._mCollapsedGroups[oGroup.key]);
+			return oHeader;
+		},
+
+		/**
+		 * Folds a client's projects away, or opens them again.
+		 * @param {sap.ui.base.Event} oEvent the group row's press event
+		 */
+		onToggleGroup: function (oEvent) {
+			var oHeader = oEvent.getSource();
+			var sGroupKey = oHeader.data("groupKey");
+			var bCollapsed = !this._mCollapsedGroups[sGroupKey];
+
+			this._mCollapsedGroups[sGroupKey] = bCollapsed;
+			oHeader.toggleStyleClass("hrxTsGroupCollapsed", bCollapsed);
+			this._applyCollapsedGroups();
+		},
+
+		/**
+		 * The rows are rebuilt whenever the week reloads or a project is added, so the
+		 * folded groups are applied again each time the table has updated.
+		 */
+		onTableUpdated: function () {
+			this._applyCollapsedGroups();
+		},
+
+		/**
+		 * Hides every project row that sits under a folded group row.
+		 */
+		_applyCollapsedGroups: function () {
+			var oTable = this.byId("timesheetTable");
+			var bInCollapsedGroup = false;
+
+			oTable.getItems().forEach(function (oItem) {
+				if (oItem instanceof GroupHeaderListItem) {
+					bInCollapsedGroup = !!this._mCollapsedGroups[oItem.data("groupKey")];
+					return;
+				}
+				oItem.setVisible(!bInCollapsedGroup);
+			}, this);
+		},
+
+		/* =========================================================== */
+		/* formatters                                                  */
+		/* =========================================================== */
+
+		/**
+		 * The state of a cell's work-description button, written to the DOM as
+		 * data-comment: "has" once there is a description, "missing" while a row that
+		 * needs one has none (the design marks these red), otherwise "none".
+		 * @param {string} sComment the work description
+		 * @param {boolean} bRequired whether the row needs a description
+		 * @returns {string} has, missing or none
+		 */
+		formatCommentState: function (sComment, bRequired) {
+			if (sComment) {
+				return "has";
+			}
+			return bRequired ? "missing" : "none";
+		},
+
+		/**
+		 * @param {string} sComment the work description
+		 * @param {boolean} bRequired whether the row needs a description
+		 * @returns {string} the description itself, or what the button is for
+		 */
+		formatCommentTooltip: function (sComment, bRequired) {
+			if (sComment) {
+				return sComment;
+			}
+			return this.getText(bRequired ? "tsCommentRequired" : "tsComment");
+		},
+
+		/**
+		 * @param {string} sTarget the week's target, hh:mm
+		 * @returns {string} "of 40:00 hrs this week"
+		 */
+		formatHoursOfTarget: function (sTarget) {
+			return this.getText("tsHoursOfTarget", [sTarget || "00:00"]);
 		},
 
 		/* =========================================================== */
@@ -937,7 +1056,7 @@ sap.ui.define([
 					Overbooked: false,
 					readOnly: false,
 					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
-					days: this._buildDays(aDates)
+					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				});
 			}, this);
 
@@ -990,54 +1109,79 @@ sap.ui.define([
 				return oRow.project;
 			}).join(", ");
 
-			MessageBox.confirm(this.getText("tsConfirmDelete", [aNames]), {
+			this._confirmDelete(aNames, function () {
+				var aRecIds = [];
+				aSelectedRows.forEach(function (oRow) {
+					oRow.days.forEach(function (oDay) {
+						if (oDay.recId) {
+							aRecIds.push({ RecID: oDay.recId });
+						}
+					});
+				});
+
+				var aRemaining = aRows.filter(function (oRow) {
+					return aSelectedRows.indexOf(oRow) === -1;
+				});
+
+				var fnFinish = function () {
+					this.getModel("ts").setProperty("/rows", aRemaining);
+					this._clearTableSelection();
+					this._recalculate();
+				}.bind(this);
+
+				if (!aRecIds.length) {
+					fnFinish();
+					return;
+				}
+
+				// Rows carrying booked time go through the service and come back via
+				// _loadWeek. That rebuilds the rows but leaves the table's own
+				// selection behind, so the ticks - and the count that enables the
+				// Delete button - have to be cleared here as well, on the way out
+				// whether the delete succeeded or not.
+				this._save(TIMESHEET_SERVICE + "?cmd=delete", {
+					OrgID: this._sOrgId,
+					UserID: this.getModel("tsView").getProperty("/userId"),
+					TimesheetListSet: aRecIds
+				}, "tsDeleted", "tsErrorDelete").then(function () {
+					return this._loadWeek();
+				}.bind(this)).catch(function () { /* reported by _save */ })
+					.then(this._clearTableSelection.bind(this));
+			}.bind(this));
+		},
+
+		/**
+		 * Asks before removing projects, in the design's modal with a red action
+		 * (the design's hrx.confirm).
+		 * @param {string} sNames the projects about to be removed
+		 * @param {function} fnConfirmed called once the user confirms
+		 */
+		_confirmDelete: function (sNames, fnConfirmed) {
+			var oDialog = new Dialog({
 				title: this.getText("tsConfirmDeleteTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
+				content: [
+					new Text({ text: this.getText("tsConfirmDelete", [sNames]) }).addStyleClass("hrxModalText")
+				],
+				beginButton: new Button({
+					text: this.getText("tsConfirmDeleteAction"),
+					press: function () {
+						oDialog.close();
+						fnConfirmed();
 					}
-
-					var aRecIds = [];
-					aSelectedRows.forEach(function (oRow) {
-						oRow.days.forEach(function (oDay) {
-							if (oDay.recId) {
-								aRecIds.push({ RecID: oDay.recId });
-							}
-						});
-					});
-
-					var aRemaining = aRows.filter(function (oRow) {
-						return aSelectedRows.indexOf(oRow) === -1;
-					});
-
-					var fnFinish = function () {
-						this.getModel("ts").setProperty("/rows", aRemaining);
-						this._clearTableSelection();
-						this._recalculate();
-					}.bind(this);
-
-					if (!aRecIds.length) {
-						fnFinish();
-						return;
+				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
+				endButton: new Button({
+					text: this.getText("tsCancel"),
+					press: function () {
+						oDialog.close();
 					}
+				}).addStyleClass("hrxModalBtn hrxModalBtnGhost"),
+				afterClose: function () {
+					oDialog.destroy();
+				}
+			}).addStyleClass("hrxModal");
 
-					// Rows carrying booked time go through the service and come back via
-					// _loadWeek. That rebuilds the rows but leaves the table's own
-					// selection behind, so the ticks - and the count that enables the
-					// Delete button - have to be cleared here as well, on the way out
-					// whether the delete succeeded or not.
-					this._save(TIMESHEET_SERVICE + "?cmd=delete", {
-						OrgID: this._sOrgId,
-						UserID: this.getModel("tsView").getProperty("/userId"),
-						TimesheetListSet: aRecIds
-					}, "tsDeleted", "tsErrorDelete").then(function () {
-						return this._loadWeek();
-					}.bind(this)).catch(function () { /* reported by _save */ })
-						.then(this._clearTableSelection.bind(this));
-				}.bind(this)
-			});
+			this.getView().addDependent(oDialog);
+			oDialog.open();
 		},
 
 		/* =========================================================== */
@@ -1276,8 +1420,57 @@ sap.ui.define([
 			return (parseInt(aParts[0], 10) || 0) * 60 + (parseInt(aParts[1], 10) || 0);
 		},
 
+		/**
+		 * @param {number} iMinutes a duration in minutes
+		 * @returns {string} the duration as hh:mm, e.g. "24:30" or "00:00"
+		 */
 		_fromMinutes: function (iMinutes) {
-			return Math.floor(iMinutes / 60) + ":" + String(iMinutes % 60).padStart(2, "0");
+			return String(Math.floor(iMinutes / 60)).padStart(2, "0") + ":" + String(iMinutes % 60).padStart(2, "0");
+		},
+
+		/**
+		 * The week as the design titles it: "13th - 19th July", "29th June - 5th July",
+		 * with the year added when the week runs into the next one.
+		 * @param {Date} oMonday the first day of the week
+		 * @param {Date} oSunday the last day of the week
+		 * @returns {string} the week title
+		 */
+		_weekLabel: function (oMonday, oSunday) {
+			var sFromMonth = oMonday.toLocaleDateString("en-GB", { month: "long" });
+			var sToMonth = oSunday.toLocaleDateString("en-GB", { month: "long" });
+			var sLabel;
+
+			if (oMonday.getMonth() === oSunday.getMonth()) {
+				sLabel = this._ordinal(oMonday.getDate()) + " - " + this._ordinal(oSunday.getDate()) + " " + sToMonth;
+			} else {
+				sLabel = this._ordinal(oMonday.getDate()) + " " + sFromMonth + " - " +
+					this._ordinal(oSunday.getDate()) + " " + sToMonth;
+			}
+
+			if (oMonday.getFullYear() !== oSunday.getFullYear()) {
+				sLabel += " " + oSunday.getFullYear();
+			}
+			return sLabel;
+		},
+
+		/**
+		 * @param {number} iDay a day of the month
+		 * @returns {string} the day with its English ordinal suffix, e.g. "1st", "13th", "22nd"
+		 */
+		_ordinal: function (iDay) {
+			if (iDay >= 11 && iDay <= 13) {
+				return iDay + "th";
+			}
+			switch (iDay % 10) {
+				case 1:
+					return iDay + "st";
+				case 2:
+					return iDay + "nd";
+				case 3:
+					return iDay + "rd";
+				default:
+					return iDay + "th";
+			}
 		},
 
 		/**

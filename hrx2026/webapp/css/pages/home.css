@@ -1,1 +1,1446 @@
-/* home - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* home - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+
+   Home is the design's dashboard view: the manager's KPI tiles, Team today,
+   Pending approvals and Billable utilisation, then "For you" with Quick Leave and
+   Quick Timesheet, then the week's Timesheet rings. Everything is scoped under the
+   view's root class .hrxHomePage, apart from the date picker, which UI5 renders
+   outside the page (.hrxHomeDatePop). The view's containers are renderType="Bare"
+   flex boxes, so the rules here act on the controls themselves. */
+
+/* ── CARDS ────────────────────────────────────────────────────────────────── */
+
+/* The design's .card: white, a hairline border, 16px corners and the soft shadow */
+.hrxHomePage .hrxHomeCard.sapMFlexBox {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+	box-sizing: border-box;
+	/* style.css still sizes an older .hrxHomeCard to 100% */
+	height: auto;
+}
+
+/* .card-head: the title on the left, a hint (and a button) on the right */
+.hrxHomePage .hrxHomeCardHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxHomePage .hrxHomeCardHeadEnd {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+/* .card-title: 14px League Spartan capitals */
+.hrxHomePage .hrxHomeCardTitle.sapMTitle,
+.hrxHomePage .hrxHomeCardTitle.sapMTitle > span {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0;
+	line-height: 13px;
+	color: var(--ink);
+}
+
+/* .card-hint */
+.hrxHomePage .hrxHomeCardHint.sapMText,
+.hrxHomePage .hrxHomeCardHint.sapMLnk {
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 400;
+	line-height: 14px;
+	color: var(--txt-3);
+	white-space: nowrap;
+}
+
+/* The Quick Timesheet "Today" is a link to another day; it reads as the hint */
+.hrxHomePage .hrxHomeDayLink.sapMLnk:not(.sapMLnkDsbl) {
+	color: var(--txt-3);
+	text-decoration: none;
+}
+
+.hrxHomePage .hrxHomeDayLink.sapMLnk:hover {
+	color: var(--ice-deep);
+	text-decoration: underline;
+}
+
+/* .card-body--padded */
+.hrxHomePage .hrxHomeCardBody {
+	display: flex;
+	flex-direction: column;
+	padding: 18px 20px;
+	min-width: 0;
+}
+
+/* ── BUTTONS ──────────────────────────────────────────────────────────────── */
+
+/* The design's .btn: League Spartan capitals, 11px corners, the text set .12em
+   low in its padding. sap.m.Button draws the box on its inner span. */
+.hrxHomePage .hrxHomeBtn.sapMBtn,
+.hrxHomeDatePop .hrxHomeDpNav.sapMBtn {
+	height: auto;
+	min-width: 0;
+	padding: 0;
+	vertical-align: top;
+}
+
+.hrxHomePage .hrxHomeBtn.sapMBtn .sapMBtnInner {
+	--hrxPy: 10px;
+	--hrxPx: 18px;
+	height: auto;
+	min-height: 0;
+	min-width: 0;
+	padding: calc(var(--hrxPy) + .12em) var(--hrxPx) calc(var(--hrxPy) - .12em);
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	font-family: var(--disp);
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	/* The design's capitals sit in a line box of .92em (11px at 12px, 9px at
+	   10.5px); the theme's 14px line box would make every button 3px taller. */
+	line-height: 11px;
+	text-shadow: none;
+}
+
+.hrxHomePage .hrxHomeBtn.sapMBtn .sapMBtnContent,
+.hrxHomePage .hrxHomeBtn.sapMBtn .sapMBtnContent > bdi {
+	padding: 0;
+	font: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	color: inherit;
+}
+
+/* .btn.sm */
+.hrxHomePage .hrxHomeBtnSm.sapMBtn .sapMBtnInner {
+	--hrxPy: 6px;
+	--hrxPx: 12px;
+	font-size: 10.5px;
+	line-height: 9px;
+}
+
+/* .btn.ghost */
+.hrxHomePage .hrxHomeBtnGhost.sapMBtn .sapMBtnInner {
+	background: var(--surface);
+	border-color: var(--line);
+	color: var(--txt);
+}
+
+.hrxHomePage .hrxHomeBtnGhost.sapMBtn:hover .sapMBtnInner {
+	background: var(--surface);
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+/* .btn.primary */
+.hrxHomePage .hrxHomeBtnPrimary.sapMBtn .sapMBtnInner {
+	background: var(--ice);
+	border-color: transparent;
+	color: #FFFFFF;
+}
+
+.hrxHomePage .hrxHomeBtnPrimary.sapMBtn:hover .sapMBtnInner {
+	background: var(--ice-deep);
+}
+
+.hrxHomePage .hrxHomeBtnPrimary.sapMBtn.sapMBtnDisabled {
+	opacity: .6;
+}
+
+/* .btn.approve / .btn.reject */
+.hrxHomePage .hrxHomeBtnApprove.sapMBtn .sapMBtnInner {
+	background: var(--mint-soft);
+	border-color: #B7E3CF;
+	color: #0F7B4F;
+}
+
+.hrxHomePage .hrxHomeBtnApprove.sapMBtn:hover .sapMBtnInner {
+	background: var(--mint);
+	border-color: var(--mint);
+	color: #FFFFFF;
+}
+
+.hrxHomePage .hrxHomeBtnReject.sapMBtn .sapMBtnInner {
+	background: var(--signal-soft);
+	border-color: #F3C4C6;
+	color: #991B1B;
+}
+
+.hrxHomePage .hrxHomeBtnReject.sapMBtn:hover .sapMBtnInner {
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #FFFFFF;
+}
+
+/* The design draws its own 14px line icons (arrow, check, cross). The SAP glyph
+   stays in the DOM for its meaning; its shape is replaced by the design's SVG,
+   drawn in the text colour through a mask. */
+.hrxHomePage .hrxHomeBtn.sapMBtn .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	min-width: 0;
+	margin: 0 5px 0 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+	position: relative;
+	top: -.12em;
+}
+
+.hrxHomePage .hrxHomeBtn.sapMBtn .sapMBtnIcon::before {
+	content: "";
+	display: block;
+	width: 14px;
+	height: 14px;
+	background: currentColor;
+	-webkit-mask: var(--hrxIcon) center / 14px 14px no-repeat;
+	mask: var(--hrxIcon) center / 14px 14px no-repeat;
+}
+
+.hrxHomePage .hrxHomeBtnArrow.sapMBtn .sapMBtnIcon {
+	--hrxIcon: url(../../img/icons/home-arrow.svg);
+	margin: 0 0 0 6px;
+}
+
+.hrxHomePage .hrxHomeBtnApprove.sapMBtn .sapMBtnIcon {
+	--hrxIcon: url(../../img/icons/home-check.svg);
+}
+
+.hrxHomePage .hrxHomeBtnReject.sapMBtn .sapMBtnIcon {
+	--hrxIcon: url(../../img/icons/home-x.svg);
+}
+
+/* ── MANAGER DASHBOARD ────────────────────────────────────────────────────── */
+
+/* A plain block: as a flex column it let the page squeeze the cards in it */
+.hrxHomePage .hrxHomeMgrDash.sapMFlexBox {
+	display: block;
+}
+
+/* ── KPI TILES ────────────────────────────────────────────────────────────── */
+
+.hrxHomePage .hrxHomeKpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+/* .kpi: the top border carries the tile's state */
+.hrxHomePage .hrxHomeKpi {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 0;
+	padding: 18px 20px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top: 2px solid var(--ice);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	box-sizing: border-box;
+}
+
+.hrxHomePage .hrxHomeKpi[data-state="Good"] { border-top-color: var(--mint); }
+.hrxHomePage .hrxHomeKpi[data-state="Warning"] { border-top-color: var(--amber); }
+.hrxHomePage .hrxHomeKpi[data-state="Critical"] { border-top-color: var(--signal); }
+
+/* .glyph: a 34px rounded square in the tile's top right corner */
+.hrxHomePage .hrxHomeKpiGlyph {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: grid;
+	place-items: center;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+}
+
+.hrxHomePage .hrxHomeKpiGlyph .sapUiIcon {
+	font-size: 17px;
+	color: inherit;
+}
+
+.hrxHomePage .hrxHomeKpi[data-state="Good"] .hrxHomeKpiGlyph { background: var(--mint-soft); color: var(--mint); }
+.hrxHomePage .hrxHomeKpi[data-state="Warning"] .hrxHomeKpiGlyph { background: var(--amber-soft); color: var(--amber); }
+.hrxHomePage .hrxHomeKpi[data-state="Critical"] .hrxHomeKpiGlyph { background: var(--signal-soft); color: var(--signal); }
+
+/* .klab: clear of the glyph, and two lines' room so the figures line up */
+.hrxHomePage .hrxHomeKpiLabel.sapMText {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 26px;
+	padding-right: 44px;
+	margin-bottom: 4px;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 600;
+	line-height: 13px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* .knum with its .kunit on the same baseline */
+.hrxHomePage .hrxHomeKpiFigure {
+	display: flex;
+	align-items: baseline;
+}
+
+.hrxHomePage .hrxHomeKpiNum.sapMText {
+	font-family: var(--disp);
+	font-size: 36px;
+	font-weight: 800;
+	line-height: 1.05;
+	letter-spacing: -1px;
+	text-transform: uppercase;
+	color: var(--ink);
+	overflow: visible;
+}
+
+.hrxHomePage .hrxHomeKpiUnit.sapMText {
+	margin-left: 6px;
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 16px;
+	color: var(--txt-3);
+}
+
+.hrxHomePage .hrxHomeKpiSub.sapMText {
+	margin-top: 4px;
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* .klink: a small ghost button under the figure */
+.hrxHomePage .hrxHomeKpiLink.sapMBtn {
+	margin-top: 12px;
+}
+
+/* ── MANAGER GRID ─────────────────────────────────────────────────────────── */
+
+/* .dash-grid: Team today, then the stack of Pending approvals and Utilisation.
+   The design's 32px before "For you" is the section head's own top margin. */
+.hrxHomePage .hrxHomeDashGrid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+	gap: 16px;
+	align-items: stretch;
+	margin-bottom: 32px;
+}
+
+.hrxHomePage .hrxHomeDashStack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
+}
+
+/* The two cards keep their own height; the stack never squeezes them */
+.hrxHomePage .hrxHomeDashStack > .hrxHomeCard {
+	flex-shrink: 0;
+}
+
+/* ── TEAM TODAY ───────────────────────────────────────────────────────────── */
+
+/* .tt-scroll: the table scrolls past 560px, its column headers staying put */
+.hrxHomePage .hrxHomeTeamScroll.sapMScrollCont {
+	max-height: 560px;
+	height: auto !important;
+}
+
+.hrxHomePage .hrxHomeTeamScroll > .sapMScrollContScroll {
+	display: block;
+}
+
+.hrxHomePage .hrxHomeTeamTable.sapMListTbl,
+.hrxHomePage .hrxHomeTeamTable .sapMListTbl {
+	background: var(--surface);
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+}
+
+/* thead th: 10px capitals on the frost band */
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHeader {
+	border-bottom: 1px solid var(--line);
+	height: auto;
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHeaderCell {
+	padding: 9px 18px;
+	height: auto;
+	background: var(--frost);
+	vertical-align: middle;
+	border: none;
+}
+
+/* First and last real columns: 20px from the card's edges (the hidden highlight
+   and navigated cells sit either side of them) */
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHighlightCol + .sapMListTblHeaderCell,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHighlightCell + .sapMListTblCell {
+	padding-left: 20px;
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHeaderCell:nth-last-child(2),
+.hrxHomePage .hrxHomeTeamTable .sapMListTblCell:nth-last-child(2) {
+	padding-right: 20px;
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHeaderCell .sapMColumnHeader {
+	padding: 0;
+	min-height: 0;
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHeaderCell .sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 11.5px;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+	white-space: nowrap;
+}
+
+/* The table's own spare cells (row highlight, navigated marker, popin filler)
+   take no room, in the header and in every row alike */
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHighlightCol,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblHighlightCell,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblNavigatedCol,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblNavigatedCell,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblNavCol,
+.hrxHomePage .hrxHomeTeamTable .sapMListTblDummyCell {
+	display: none;
+}
+
+/* tbody rows: 47px, a soft line between them */
+.hrxHomePage .hrxHomeTeamTable .sapMListTblRow {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+	background: var(--surface);
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblRow:last-child {
+	border-bottom: none;
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblRow:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblCell {
+	padding: 9px 18px;
+	vertical-align: middle;
+	border: none;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeTeamTable .sapMListTblCell > .sapMText {
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+/* .tt-person: a 28px initials disc and the name */
+.hrxHomePage .hrxHomePerson {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxHomePage .hrxHomeAvatar.sapMText {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.hrxHomePage .hrxHomePersonName.sapMText {
+	white-space: nowrap;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+/* .pill: Working (ok), On leave (info); a day off or a bank holiday reads neutral */
+.hrxHomePage .hrxHomeTeamTable .hrxHomePill.sapMText {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+	white-space: nowrap;
+	background: var(--frost-2);
+	color: var(--txt-2);
+}
+
+.hrxHomePage .hrxHomeTeamTable .hrxHomePill.sapMText[data-state="Success"] {
+	background: var(--mint-soft);
+	color: #0F7B4F;
+}
+
+.hrxHomePage .hrxHomeTeamTable .hrxHomePill.sapMText[data-state="Information"] {
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+}
+
+/* ── PENDING APPROVALS ────────────────────────────────────────────────────── */
+
+/* .rows */
+.hrxHomePage .hrxHomeApprRows {
+	display: flex;
+	flex-direction: column;
+	padding: 6px 0;
+}
+
+/* .appr-row */
+.hrxHomePage .hrxHomeApprRow {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxHomePage .hrxHomeApprRow:last-child {
+	border-bottom: none;
+}
+
+/* .appr-row .a: 38px, the ice-to-violet gradient */
+.hrxHomePage .hrxHomeApprAvatar.sapMText {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--ice), #756EE5);
+	color: #FFFFFF;
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.hrxHomePage .hrxHomeApprMain {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxHomePage .hrxHomeApprName.sapMText {
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 700;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeApprMeta.sapMText {
+	margin-top: 1px;
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+.hrxHomePage .hrxHomeApprDays.sapMText {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 13px;
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.hrxHomePage .hrxHomeApprActions {
+	display: flex;
+	gap: 8px;
+}
+
+/* .appr-empty */
+.hrxHomePage .hrxHomeApprEmpty.sapMText {
+	display: block;
+	padding: 28px 20px;
+	text-align: center;
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--txt-3);
+}
+
+/* Somebody else's approvals, on their own row above "For you" */
+.hrxHomePage .hrxHomeOwnApprovals {
+	margin-bottom: 16px;
+}
+
+/* ── BILLABLE UTILISATION ─────────────────────────────────────────────────── */
+
+/* .util-top: the team's figure and what it covers */
+.hrxHomePage .hrxHomeUtilTop {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin-bottom: 6px;
+}
+
+.hrxHomePage .hrxHomeUtilBig.sapMText {
+	font-family: var(--disp);
+	font-size: 34px;
+	font-weight: 800;
+	line-height: 31px;
+	letter-spacing: -1px;
+	color: var(--ink);
+	overflow: visible;
+}
+
+.hrxHomePage .hrxHomeUtilCap.sapMText {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-2);
+}
+
+.hrxHomePage .hrxHomeEmpty.sapMText {
+	display: block;
+	padding: 12px 0;
+	font-family: var(--sans);
+	font-size: 12.5px;
+	color: var(--txt-3);
+}
+
+/* .ub-row: the person, then their bar on the right */
+.hrxHomePage .hrxHomeUtilRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 0;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxHomePage .hrxHomeUtilWho {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.hrxHomePage .hrxHomeUtilName.sapMText {
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 700;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeUtilSub.sapMText {
+	margin-top: 1px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* .ub-bar: 180px - the figure over a 7px track and the state icon */
+.hrxHomePage .hrxHomeUtilBar {
+	display: flex;
+	flex-direction: column;
+	width: 180px;
+	flex-shrink: 0;
+}
+
+.hrxHomePage .hrxHomeUtilPct.sapMText {
+	margin-bottom: 4px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 700;
+	line-height: 14px;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeUtilLine {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* A ProgressIndicator pared down to the design's .ub-track / .ub-fill */
+.hrxHomePage .hrxHomeUtilTrack.sapMPI {
+	flex: 1;
+	height: 7px;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: var(--line-soft);
+	border: none;
+	border-radius: 5px;
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBar {
+	height: 100%;
+	border-radius: 5px;
+	border: none;
+	box-shadow: none;
+}
+
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBarRemaining {
+	background: transparent;
+	border: none;
+}
+
+.hrxHomePage .hrxHomeUtilTrack .sapMPIText,
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBar::before,
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBar::after {
+	display: none;
+}
+
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBarPositive { background: var(--mint); }
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBarCritical { background: var(--amber); }
+.hrxHomePage .hrxHomeUtilTrack .sapMPIBarNegative { background: var(--signal); }
+
+/* .ub-ico: the design's circle-tick, triangle and circle-cross (img/icons) */
+.hrxHomePage .hrxHomeStateIcon {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	background: var(--signal);
+	-webkit-mask: url(../../img/icons/home-xc.svg) center / 18px 18px no-repeat;
+	mask: url(../../img/icons/home-xc.svg) center / 18px 18px no-repeat;
+}
+
+.hrxHomePage .hrxHomeStateIcon[data-state="Success"] {
+	background: var(--mint);
+	-webkit-mask-image: url(../../img/icons/home-okc.svg);
+	mask-image: url(../../img/icons/home-okc.svg);
+}
+
+.hrxHomePage .hrxHomeStateIcon[data-state="Warning"] {
+	background: var(--amber);
+	-webkit-mask-image: url(../../img/icons/home-tri.svg);
+	mask-image: url(../../img/icons/home-tri.svg);
+}
+
+/* ── SECTION HEAD: "For you" ──────────────────────────────────────────────── */
+
+.hrxHomePage .hrxHomeSectionHead {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 16px;
+}
+
+.hrxHomePage .hrxHomeSectionEyebrow.sapMText {
+	margin-bottom: 2px;
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 11px;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxHomePage .hrxHomeSectionTitle.sapMTitle,
+.hrxHomePage .hrxHomeSectionTitle.sapMTitle > span {
+	font-family: var(--disp);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 16px;
+	letter-spacing: -.3px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+/* ── QUICK LEAVE / QUICK TIMESHEET ────────────────────────────────────────── */
+
+/* The design's .grid-3 with auto-fit 320px columns: two equal cards here */
+.hrxHomePage .hrxHomeActionRow {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+/* .has-action: the body fills the card and its button sits at the foot, so the
+   two cards' buttons line up whatever the fields above them */
+.hrxHomePage .hrxHomeFormBody {
+	flex: 1 1 auto;
+}
+
+.hrxHomePage .hrxHomeFormFill {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+}
+
+.hrxHomePage .hrxHomeFormSubmit.sapMBtn {
+	margin-top: auto;
+	width: 100%;
+}
+
+/* Quick Timesheet's Save keeps 14px from the comment above it, as in the design */
+.hrxHomePage .hrxHomeFormFill > .hrxHomeField.sapMTextArea {
+	margin-bottom: 14px;
+}
+
+/* label.f: 10.5px capitals; 14px above, 6px below, none above the first */
+.hrxHomePage .hrxHomeLabel.sapMLabel {
+	display: block;
+	margin: 14px 0 6px;
+	padding: 0;
+	height: auto;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxHomePage .hrxHomeLabel.sapMLabel .sapMLabelTextWrapper,
+.hrxHomePage .hrxHomeLabel.sapMLabel bdi {
+	font: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+}
+
+.hrxHomePage .hrxHomeFormBody > .hrxHomeLabel.sapMLabel:first-child,
+.hrxHomePage .hrxHomeFormFill > .hrxHomeLabel.sapMLabel:first-of-type {
+	margin-top: 0;
+}
+
+/* The design's fields: 35px, a hairline, 11px corners, 9px 12px padding */
+.hrxHomePage .hrxHomeField.sapMInputBase,
+.hrxHomePage .hrxHomeField.sapMSlt {
+	width: 100%;
+	height: 35px;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+.hrxHomePage .hrxHomeField.sapMInputBase .sapMInputBaseContentWrapper,
+.hrxHomePage .hrxHomeField.sapMTextArea .sapMInputBaseContentWrapper {
+	height: 100%;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+	box-sizing: border-box;
+}
+
+.hrxHomePage .hrxHomeField.sapMInputBase:not(.sapMInputBaseDisabled) .sapMInputBaseContentWrapper:hover,
+.hrxHomePage .hrxHomeField.sapMFocus .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+}
+
+.hrxHomePage .hrxHomeField .sapMInputBaseContentWrapper.sapMInputBaseContentWrapperError {
+	border-color: var(--signal);
+	background: var(--surface);
+}
+
+.hrxHomePage .hrxHomeField .sapMInputBaseInner {
+	height: 100%;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxHomePage .hrxHomeField .sapMInputBaseInner::placeholder {
+	font-style: normal;
+	color: #757575;
+}
+
+/* A text area: two lines, 50px */
+.hrxHomePage .hrxHomeField.sapMTextArea {
+	height: 50px;
+}
+
+.hrxHomePage .hrxHomeField.sapMTextArea .sapMInputBaseContentWrapper {
+	padding: 0;
+}
+
+.hrxHomePage .hrxHomeField.sapMTextArea .sapMTextAreaInner {
+	padding: 9px 12px;
+	line-height: 15px;
+	resize: vertical;
+}
+
+/* Dates: the whole field opens the picker, with no value-help glyph */
+.hrxHomePage .hrxHomeDateField .sapMInputBaseIconContainer {
+	display: none;
+}
+
+.hrxHomePage .hrxHomeDateField .sapMInputBaseInner {
+	cursor: pointer;
+}
+
+/* A Select drawn as the design's <select>: its own chevron at 12px from the
+   right, the theme's arrow button hidden */
+.hrxHomePage .hrxHomeField.sapMSlt {
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236D6E72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
+	box-shadow: none;
+}
+
+.hrxHomePage .hrxHomeField.sapMSlt:not(.sapMSltDisabled):hover,
+.hrxHomePage .hrxHomeField.sapMSlt.sapMSltFocused {
+	border-color: var(--ice);
+	box-shadow: none;
+	background-color: var(--surface);
+}
+
+.hrxHomePage .hrxHomeField.sapMSlt .sapMSltArrow,
+.hrxHomePage .hrxHomeField.sapMSlt .sapMSltIconCont,
+.hrxHomePage .hrxHomeField.sapMSlt .sapMSltIcon {
+	display: none;
+}
+
+.hrxHomePage .hrxHomeField.sapMSlt .sapMSltLabel {
+	height: 100%;
+	padding: 0 40px 0 12px;
+	display: flex;
+	align-items: center;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxHomePage .hrxHomeField.sapMSlt.sapMSltDisabled {
+	opacity: .6;
+}
+
+/* Approver: 13px semi-bold, 14px clear of the button */
+.hrxHomePage .hrxHomeApprover.sapMText {
+	margin-bottom: 14px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+/* A day that cannot be booked says so above the form */
+.hrxHomePage .hrxHomeStrip.sapMMsgStrip {
+	margin: 0 0 14px;
+}
+
+/* .qt-logged: the day's bookings once something is logged */
+.hrxHomePage .hrxHomeLogged {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 10px 4px 4px;
+}
+
+.hrxHomePage .hrxHomeLoggedIcon {
+	width: 40px;
+	height: 40px;
+	margin-bottom: 12px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	background: var(--mint-soft);
+	color: var(--mint);
+}
+
+.hrxHomePage .hrxHomeLoggedIcon .sapUiIcon {
+	font-size: 20px;
+	color: inherit;
+}
+
+.hrxHomePage .hrxHomeLoggedTitle.sapMText {
+	margin-bottom: 4px;
+	font-family: var(--disp);
+	font-size: 13px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeLoggedSub.sapMText {
+	margin-bottom: 16px;
+	font-family: var(--sans);
+	font-size: 12px;
+	color: var(--txt-3);
+}
+
+/* .qt-summary: Project / Time logged / Comment, one block per booking */
+.hrxHomePage .hrxHomeSummary {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	text-align: left;
+	border-top: 1px solid var(--line-soft);
+	padding-top: 14px;
+}
+
+.hrxHomePage .hrxHomeSummaryEntry + .hrxHomeSummaryEntry {
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxHomePage .hrxHomeSummaryRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 5px 0;
+}
+
+.hrxHomePage .hrxHomeSummaryKey.sapMText,
+.hrxHomePage .hrxHomeSummaryValue.sapMText {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	color: var(--ink);
+}
+
+.hrxHomePage .hrxHomeSummaryKey.sapMText {
+	flex-shrink: 0;
+	color: var(--txt-3);
+}
+
+.hrxHomePage .hrxHomeSummaryValue.sapMText {
+	text-align: right;
+}
+
+/* .qt-reset-link: small and quiet, under the summary */
+.hrxHomePage .hrxHomeResetLink.sapMLnk {
+	margin-top: 14px;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	color: var(--txt-3);
+	text-decoration: underline;
+}
+
+.hrxHomePage .hrxHomeResetLink.sapMLnk:hover {
+	color: var(--ice-deep);
+}
+
+/* ── TIMESHEET: THIS WEEK ─────────────────────────────────────────────────── */
+
+.hrxHomePage .hrxHomeWeekCard {
+	margin-bottom: 16px;
+}
+
+/* One column per day, spread across at most 480px */
+.hrxHomePage .hrxHomeRings {
+	display: flex;
+	justify-content: space-between;
+	max-width: 480px;
+	text-align: center;
+}
+
+.hrxHomePage .hrxHomeRingDay {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 44px;
+}
+
+.hrxHomePage .hrxHomeRingDayName.sapMText {
+	margin-bottom: 6px;
+	font-family: var(--sans);
+	font-size: 13.5px;
+	line-height: 16px;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: visible;
+}
+
+/* The 2px under the ring is the gap the design's inline SVG leaves below it */
+.hrxHomePage .hrxHomeRing {
+	display: block;
+	width: 44px;
+	height: 44px;
+	margin-bottom: 2px;
+}
+
+.hrxHomePage .hrxHomeRingTrack,
+.hrxHomePage .hrxHomeRingArc {
+	fill: none;
+	stroke-width: 5;
+}
+
+.hrxHomePage .hrxHomeRingArc {
+	stroke-linecap: round;
+}
+
+.hrxHomePage .hrxHomeRingText {
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+/* Tones: Missing, Action needed, Complete, Overbooked, Not due yet */
+.hrxHomePage .hrxHomeRing[data-tone="missing"] .hrxHomeRingTrack { stroke: var(--signal-soft); }
+.hrxHomePage .hrxHomeRing[data-tone="missing"] .hrxHomeRingArc { stroke: var(--signal); }
+.hrxHomePage .hrxHomeRing[data-tone="missing"] .hrxHomeRingText { fill: var(--signal); }
+
+.hrxHomePage .hrxHomeRing[data-tone="short"] .hrxHomeRingTrack { stroke: var(--amber-soft); }
+.hrxHomePage .hrxHomeRing[data-tone="short"] .hrxHomeRingArc { stroke: var(--amber); }
+.hrxHomePage .hrxHomeRing[data-tone="short"] .hrxHomeRingText { fill: var(--amber); }
+
+.hrxHomePage .hrxHomeRing[data-tone="complete"] .hrxHomeRingTrack { stroke: var(--mint-soft); }
+.hrxHomePage .hrxHomeRing[data-tone="complete"] .hrxHomeRingArc { stroke: var(--mint); }
+.hrxHomePage .hrxHomeRing[data-tone="complete"] .hrxHomeRingText { fill: var(--mint); }
+
+.hrxHomePage .hrxHomeRing[data-tone="over"] .hrxHomeRingTrack { stroke: #ECE6FA; }
+.hrxHomePage .hrxHomeRing[data-tone="over"] .hrxHomeRingArc { stroke: var(--over); }
+.hrxHomePage .hrxHomeRing[data-tone="over"] .hrxHomeRingText { fill: var(--over); }
+
+.hrxHomePage .hrxHomeRing[data-tone="notdue"] .hrxHomeRingTrack { stroke: var(--line-soft); }
+.hrxHomePage .hrxHomeRing[data-tone="notdue"] .hrxHomeRingArc { stroke: var(--txt-3); }
+.hrxHomePage .hrxHomeRing[data-tone="notdue"] .hrxHomeRingText { fill: var(--txt-3); }
+
+/* On leave: a filled ice disc with a white tick, and "Leave" under it */
+.hrxHomePage .hrxHomeRingFill {
+	fill: var(--ice);
+}
+
+.hrxHomePage .hrxHomeRingTick {
+	fill: none;
+	stroke: #FFFFFF;
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.hrxHomePage .hrxHomeRingLeave.sapMText {
+	margin-top: 2px;
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 12px;
+	color: var(--ice-deep);
+}
+
+/* .legend: 9px rounded squares, 12px apart */
+.hrxHomePage .hrxHomeLegend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 16px;
+}
+
+.hrxHomePage .hrxHomeLegendItem {
+	display: flex;
+	align-items: center;
+}
+
+.hrxHomePage .hrxHomeLegendItem > .sapMText {
+	font-family: var(--sans);
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+.hrxHomePage .hrxHomeLegendDot {
+	width: 9px;
+	height: 9px;
+	margin-right: 5px;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+
+.hrxHomePage .hrxHomeDotMissing { background: var(--signal); }
+.hrxHomePage .hrxHomeDotShort { background: var(--amber); }
+.hrxHomePage .hrxHomeDotComplete { background: var(--mint); }
+.hrxHomePage .hrxHomeDotOver { background: var(--over); }
+.hrxHomePage .hrxHomeDotLeave { background: var(--ice); }
+.hrxHomePage .hrxHomeDotNotDue { background: var(--line-soft); }
+
+/* ── DATE PICKER (fragment/HomeDatePopover) ───────────────────────────────── */
+
+/* .date-popover: rendered by UI5 outside the page, so scoped on its own class */
+.hrxHomeDatePop.sapMPopover {
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.hrxHomeDatePop .sapMPopoverCont {
+	background: var(--surface);
+	margin: 0;
+}
+
+.hrxHomeDatePop .hrxHomeDp {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	box-sizing: border-box;
+}
+
+/* .dp-head: arrows either side of the month */
+.hrxHomeDatePop .hrxHomeDpHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.hrxHomeDatePop .hrxHomeDpTitle.sapMText {
+	font-family: var(--disp);
+	font-size: 12.5px;
+	font-weight: 800;
+	line-height: 12px;
+	letter-spacing: .02em;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+/* .dp-nav: 26px, bordered, the design's chevrons */
+.hrxHomeDatePop .hrxHomeDpNav.sapMBtn .sapMBtnInner {
+	width: 26px;
+	height: 26px;
+	min-width: 0;
+	min-height: 0;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hrxHomeDatePop .hrxHomeDpNav.sapMBtn:hover .sapMBtnInner {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxHomeDatePop .hrxHomeDpNav.sapMBtn .sapMBtnIcon {
+	width: 13px;
+	height: 13px;
+	margin: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+}
+
+.hrxHomeDatePop .hrxHomeDpNav.sapMBtn .sapMBtnIcon::before {
+	content: "";
+	display: block;
+	width: 13px;
+	height: 13px;
+	background: currentColor;
+	-webkit-mask: url(../../img/icons/home-chevron-left.svg) center / 13px 13px no-repeat;
+	mask: url(../../img/icons/home-chevron-left.svg) center / 13px 13px no-repeat;
+}
+
+.hrxHomeDatePop .hrxHomeDpNext.sapMBtn .sapMBtnIcon::before {
+	-webkit-mask-image: url(../../img/icons/home-chevron-right.svg);
+	mask-image: url(../../img/icons/home-chevron-right.svg);
+}
+
+/* .dp-grid: seven columns, 3px apart */
+.hrxHomeDatePop .hrxHomeDpGrid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 3px;
+}
+
+/* The headings and the days are two grids; 3px between them as between rows */
+.hrxHomeDatePop .hrxHomeDpGrid + .hrxHomeDpGrid {
+	margin-top: 3px;
+}
+
+.hrxHomeDatePop .hrxHomeDpDow.sapMText {
+	display: block;
+	padding-bottom: 4px;
+	text-align: center;
+	font-family: var(--sans);
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 10px;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+/* .dp-day: a bordered 30px cell */
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn {
+	width: 100%;
+	height: auto;
+	min-width: 0;
+	padding: 0;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn .sapMBtnInner {
+	width: 100%;
+	height: 30px;
+	min-width: 0;
+	min-height: 0;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: var(--surface);
+	box-shadow: none;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	line-height: 14px;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 14px;
+	letter-spacing: 0;
+	text-transform: none;
+	color: inherit;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn:not(.sapMBtnDisabled):hover .sapMBtnInner {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+/* .muted: a day from the month either side */
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-muted="true"] .sapMBtnInner {
+	border-color: var(--line-soft);
+	color: var(--txt-3);
+}
+
+/* .disabled: a day before today */
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn.sapMBtnDisabled {
+	opacity: 1;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn.sapMBtnDisabled .sapMBtnInner {
+	border-color: var(--line-soft);
+	color: var(--txt-3);
+	background: none;
+	opacity: .4;
+	cursor: not-allowed;
+}
+
+/* The range: .in-range between, .range-start / .range-end at its ends */
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="in"] .sapMBtnInner {
+	background: var(--ice-glow);
+	border-color: #85B7EB;
+	color: var(--ice-deep);
+	border-radius: 0;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="start"] .sapMBtnInner,
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="end"] .sapMBtnInner,
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="single"] .sapMBtnInner {
+	background: var(--ice);
+	border-color: var(--ice);
+	color: #FFFFFF;
+}
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="start"] .sapMBtnInner { border-radius: 7px 0 0 7px; }
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="end"] .sapMBtnInner { border-radius: 0 7px 7px 0; }
+
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="start"] .sapMBtnContent,
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="end"] .sapMBtnContent,
+.hrxHomeDatePop .hrxHomeDpDay.sapMBtn[data-range="single"] .sapMBtnContent {
+	font-weight: 700;
+}
+
+/* .dp-foot */
+.hrxHomeDatePop .hrxHomeDpFoot.sapMText {
+	display: block;
+	width: 100%;
+	margin-top: 10px;
+	text-align: center;
+	font-family: var(--sans);
+	font-size: 11px;
+	line-height: 13px;
+	color: var(--txt-3);
+}
+
+/* ── NARROW SCREENS ───────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+	.hrxHomePage .hrxHomeKpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.hrxHomePage .hrxHomeDashGrid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 600px) {
+	.hrxHomePage .hrxHomeKpis {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.hrxHomePage .hrxHomeApprRow {
+		flex-wrap: wrap;
+	}
+}
+
+/* ── BUSY STATE ───────────────────────────────────────────────────────────── */
+
+/* While a card or tile is busy, UI5 puts a focus-trap span either side of it.
+   In the page's CSS grids those spans would take a grid cell each and push the
+   tiles out of their columns, so they are taken out of the flow. */
+.hrxHomePage .hrxHomeKpis > .sapUiBlockLayerTabbable,
+.hrxHomePage .hrxHomeDashGrid > .sapUiBlockLayerTabbable,
+.hrxHomePage .hrxHomeDashStack > .sapUiBlockLayerTabbable,
+.hrxHomePage .hrxHomeActionRow .sapUiBlockLayerTabbable {
+	position: absolute;
+}

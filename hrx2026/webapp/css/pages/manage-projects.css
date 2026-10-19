@@ -1,1 +1,1198 @@
 /* manage-projects - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+
+/* ============================================================================
+   Manage Projects: the design's master / detail (.md). Everything is scoped
+   under the view's root class, .hrxManageProjects; the modals live in the
+   static area, outside the view, so they carry their own class, .hrxMpDialog.
+   ============================================================================ */
+
+/* ── PAGE ─────────────────────────────────────────────────────────────────── */
+
+/* The page has no sap.m.Page of its own, so it takes the design's .scroll
+   padding itself: 26px above, 28px either side. */
+.hrxApp .hrxManageProjects {
+	box-sizing: border-box;
+	padding: 26px 28px;
+	background: var(--frost);
+}
+
+/* The two cards sit side by side, 16px apart, and are as tall as the design's
+   .md-list (100vh - 250px): the page area less 182px, i.e. the 26px padding
+   above plus 156px left free below. */
+.hrxApp .hrxManageProjects .hrxMpMd {
+	display: flex;
+	gap: 16px;
+	align-items: stretch;
+	height: calc(100% - 130px);
+	min-height: 520px;
+}
+
+/* ── CARDS ────────────────────────────────────────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpCard {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxManageProjects .hrxMpList {
+	flex: 1 1 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpDetail {
+	flex: 1 1 0;
+}
+
+/* A project open: the list narrows to 360px; full screen hides it */
+.hrxApp .hrxManageProjects .hrxMpMd[data-mode="open"] .hrxMpList {
+	flex: 0 0 360px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpMd[data-mode="full"] .hrxMpList {
+	display: none;
+}
+
+/* On a narrow window the open project takes the whole width, as in the design */
+@media (max-width: 1100px) {
+	.hrxApp .hrxManageProjects .hrxMpMd[data-mode="open"] .hrxMpList {
+		display: none;
+	}
+}
+
+/* card head: "Projects (n)" */
+.hrxApp .hrxManageProjects .hrxMpCardHead {
+	display: flex;
+	align-items: center;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpCardTitle.sapMTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	color: var(--ink);
+	line-height: 13px;
+}
+
+/* ── LIST TOOLS: search, filter, add, reload ─────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpTools {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch.sapMSF {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 35px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFF {
+	position: relative;
+	height: 35px;
+	box-sizing: border-box;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch.sapMFocus .sapMSFF {
+	border-color: var(--ice);
+}
+
+/* the magnifier on the left, as .md-search .si */
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFF::before {
+	content: "";
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	width: 15px;
+	height: 15px;
+	transform: translateY(-50%);
+	background-color: var(--txt-3);
+	-webkit-mask: url("../../img/icons/projects-search.svg") center / 15px 15px no-repeat;
+	mask: url("../../img/icons/projects-search.svg") center / 15px 15px no-repeat;
+	pointer-events: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFI {
+	width: 100%;
+	height: 33px;
+	padding: 0 12px 0 36px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFI::placeholder {
+	color: #757575;
+	font-style: normal;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFS {
+	display: none;
+}
+
+/* the clear button floats over the right end of the field, so the field keeps
+   the design's full width for its text */
+.hrxApp .hrxManageProjects .hrxMpSearch .sapMSFR {
+	position: absolute;
+	right: 0;
+	top: 0;
+	height: 33px;
+}
+
+/* ── ICON BUTTONS (.icon-btn.sm): 30px squares, the design's own glyphs ───── */
+
+.hrxApp .hrxManageProjects .hrxMpIconBtn.sapMBtn {
+	height: 30px;
+	min-width: 30px;
+	width: 30px;
+	padding: 0;
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpIconBtn .sapMBtnInner {
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpIconBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+	background: var(--surface);
+}
+
+.hrxApp .hrxManageProjects .hrxMpIconBtnDel .sapMBtnInner:hover {
+	border-color: var(--signal);
+	color: var(--signal);
+}
+
+/* A glyph drawn with the design's SVG as a mask, in the button's text colour */
+.hrxApp .hrxManageProjects .hrxMpIconBtn .sapMBtnIcon,
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnIcon,
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnIcon {
+	width: 15px;
+	height: 15px;
+	margin: 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-mp-icon) center / 15px 15px no-repeat;
+	mask: var(--hrx-mp-icon) center / 15px 15px no-repeat;
+}
+
+.hrxApp .hrxManageProjects .hrxMpIconBtn .sapMBtnIcon::before,
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnIcon::before,
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnIcon::before {
+	content: none !important;
+}
+
+.hrxApp .hrxManageProjects .hrxMpIcoFilter { --hrx-mp-icon: url("../../img/icons/projects-filter.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoPlus { --hrx-mp-icon: url("../../img/icons/projects-plus.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoRefresh { --hrx-mp-icon: url("../../img/icons/projects-refresh.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoExpand { --hrx-mp-icon: url("../../img/icons/projects-expand.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoX { --hrx-mp-icon: url("../../img/icons/projects-x.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoEdit { --hrx-mp-icon: url("../../img/icons/projects-edit.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoUserPlus { --hrx-mp-icon: url("../../img/icons/projects-userplus.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoDownload { --hrx-mp-icon: url("../../img/icons/projects-download.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoTrash { --hrx-mp-icon: url("../../img/icons/projects-trash.svg"); }
+.hrxApp .hrxManageProjects .hrxMpUpload { --hrx-mp-icon: url("../../img/icons/projects-upload.svg"); }
+
+/* ── PROJECT ROWS (.md-row) ───────────────────────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpRows {
+	flex: 1 1 0;
+	min-height: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowList,
+.hrxApp .hrxManageProjects .hrxMpRowList .sapMListUl {
+	padding: 0;
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRow.sapMLIB {
+	height: auto;
+	min-height: 0;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line-soft);
+	background: var(--surface);
+	cursor: pointer;
+	transition: background .12s;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRow.sapMLIB:hover {
+	background: var(--frost);
+}
+
+/* the open project */
+.hrxApp .hrxManageProjects .hrxMpRow.sapMLIB.sapMLIBSelected {
+	background: #EAF5FB;
+	box-shadow: inset 3px 0 0 var(--ice);
+}
+
+.hrxApp .hrxManageProjects .hrxMpRow .sapMLIBContent,
+.hrxApp .hrxManageProjects .hrxMpRow .sapMCLIContent {
+	width: 100%;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowInner {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowMain {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowTitle.sapMText {
+	font-size: 13.5px;
+	font-weight: 700;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowSub.sapMText {
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* the booking pill and the dates, hidden while a project is open */
+.hrxApp .hrxManageProjects .hrxMpRowSide {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	flex-shrink: 0;
+	max-width: 44%;
+	text-align: right;
+}
+
+.hrxApp .hrxManageProjects .hrxMpMd:not([data-mode="list"]) .hrxMpRowSide {
+	display: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpRowDates.sapMText {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+/* ── PILLS (.pill) ────────────────────────────────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpPill.sapMText {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpPill[data-tone="ok"] {
+	background: var(--mint-soft);
+	color: #0F7B4F;
+}
+
+.hrxApp .hrxManageProjects .hrxMpPill[data-tone="warn"] {
+	background: var(--amber-soft);
+	color: #92400E;
+}
+
+.hrxApp .hrxManageProjects .hrxMpPill[data-tone="neu"] {
+	background: var(--frost-2);
+	color: var(--txt-2);
+}
+
+/* ── DETAIL HEAD (.md-head) ───────────────────────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpHead {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 18px 22px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+/* the project's initials in the gradient disc (.logo-c.big.grad-av) */
+.hrxApp .hrxManageProjects .hrxMpLogo.sapMText {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	width: 52px;
+	height: 52px;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--ice), #756EE5);
+	color: #FFFFFF;
+	font-family: var(--sans);
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.hrxApp .hrxManageProjects .hrxMpHeadText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpNameRow {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpName.sapMTitle {
+	font-family: var(--disp);
+	font-size: 17px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+	text-transform: uppercase;
+	color: var(--ink);
+	line-height: 16px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpHeadSub.sapMText {
+	margin-top: 2px;
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageProjects .hrxMpHeadActs {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+/* ── TABS (.tabs / .tab) ──────────────────────────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpTabs.sapMITH {
+	flex-shrink: 0;
+	margin: 10px 22px 16px;
+	padding: 0;
+	height: auto;
+	background: transparent;
+	box-shadow: none;
+	border-bottom: 1px solid var(--line);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBHead {
+	display: flex;
+	gap: 4px;
+	height: 33px;
+	min-height: 0;
+	overflow: visible;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBFilter {
+	height: 33px;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBFilterWrapper {
+	position: relative;
+	box-sizing: border-box;
+	height: 33px;
+	min-height: 0;
+	padding: 12.44px 16px 9.56px;
+	margin: 0;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBText,
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBFilter .sapMITBText {
+	height: auto;
+	margin: 0;
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	line-height: 11px;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBFilter:hover .sapMITBText {
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBSelected .sapMITBText,
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBSelected:hover .sapMITBText {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBContentArrow,
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBFilterWrapper::after {
+	display: none;
+}
+
+/* the 2px underline of the open tab, 12px in from either side */
+.hrxApp .hrxManageProjects .hrxMpTabs .sapMITBSelected .sapMITBFilterWrapper::after {
+	content: "";
+	display: block;
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	top: auto;
+	bottom: -1px;
+	width: auto;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--ice);
+}
+
+/* ── DETAIL BODY (.md-body) AND FOOT (.md-foot) ───────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpBody {
+	flex: 1 1 0;
+	min-height: 0;
+	box-sizing: border-box;
+	padding: 18px 22px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpFoot {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	padding: 12px 22px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpStrip,
+.hrxApp .hrxMpDialog .hrxMpStrip {
+	margin-bottom: 16px;
+}
+
+/* section heading inside a tab (.fsec), ruled off from the one before */
+.hrxApp .hrxManageProjects .hrxMpSection.sapMTitle,
+.hrxApp .hrxMpDialog .hrxMpSection.sapMTitle {
+	display: block;
+	margin: 6px 0 14px;
+	padding-top: 6px;
+	font-family: var(--disp);
+	font-size: 12.5px;
+	font-weight: 800;
+	letter-spacing: .04em;
+	line-height: 12px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpSection.hrxMpSectionRule.sapMTitle,
+.hrxApp .hrxMpDialog .hrxMpSection.hrxMpSectionRule.sapMTitle {
+	margin-top: 22px;
+	padding-top: 20px;
+	border-top: 1px solid var(--line-soft);
+}
+
+/* ── FORM FIELDS (.fgrid / .fld) - the tab and every modal ────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpGrid,
+.hrxApp .hrxMpDialog .hrxMpGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: 20px;
+	row-gap: 0;
+}
+
+.hrxApp .hrxMpDialog .hrxMpGrid.hrxMpGridOne {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.hrxApp .hrxManageProjects .hrxMpField,
+.hrxApp .hrxMpDialog .hrxMpField {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	margin-bottom: 16px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpLabel.sapMLabel {
+	display: block;
+	margin: 0 0 6px;
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	line-height: 12px;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* the required star (.req) */
+.hrxApp .hrxManageProjects .hrxMpLabel.sapMLabelRequired .sapMLabelColonAndRequired::after,
+.hrxApp .hrxManageProjects .hrxMpLabel.sapMLabelRequired::after {
+	color: var(--signal);
+	font-size: 10.5px;
+	margin-left: 3px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpReadOnly.sapMText {
+	padding: 9px 0;
+	font-size: 13.5px;
+	font-weight: 500;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* inputs, combo boxes, selects and date pickers: 35px, 11px corners */
+.hrxApp .hrxManageProjects .hrxMpInput.sapMInputBase,
+.hrxApp .hrxMpDialog .hrxMpInput.sapMInputBase,
+.hrxApp .hrxMpDialog .hrxMpInput.sapMSlt {
+	width: 100%;
+	height: 35px;
+	min-height: 35px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseContentWrapper,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseContentWrapper {
+	height: 35px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseContentWrapper:hover,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseContentWrapper:hover,
+.hrxApp .hrxManageProjects .hrxMpInput.sapMFocus .sapMInputBaseContentWrapper,
+.hrxApp .hrxMpDialog .hrxMpInput.sapMFocus .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+}
+
+/* a field left empty that must be filled (.err) */
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseContentWrapperError,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseContentWrapperError {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseInner,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseInner {
+	height: 33px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseInner::placeholder,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseInner::placeholder {
+	color: #757575;
+	font-style: normal;
+}
+
+/* A choice list reads as the design's select: its value in ink, a chevron 12px
+   in from the right */
+.hrxApp .hrxManageProjects .hrxMpSelect .sapMInputBaseInner::placeholder,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMInputBaseInner::placeholder {
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseIconContainer,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseIconContainer {
+	height: 33px;
+	padding: 0 12px 0 0;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseIcon,
+.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseIcon {
+	width: 16px;
+	min-width: 16px;
+	height: 33px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--txt-2);
+	font-size: 15px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSelect .sapMInputBaseIcon,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMInputBaseIcon {
+	height: 16px;
+	font-size: 0;
+	background-color: var(--txt-2);
+	-webkit-mask: url("../../img/icons/projects-chevron.svg") center / 16px 16px no-repeat;
+	mask: url("../../img/icons/projects-chevron.svg") center / 16px 16px no-repeat;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSelect .sapMInputBaseIcon::before,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMInputBaseIcon::before {
+	content: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpDate .sapMInputBaseIcon,
+.hrxApp .hrxMpDialog .hrxMpDate .sapMInputBaseIcon {
+	color: var(--ink);
+}
+
+/* sap.m.Select (the filter modal) */
+.hrxApp .hrxMpDialog .hrxMpSelect.sapMSlt {
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMpDialog .hrxMpSelect.sapMSlt:hover,
+.hrxApp .hrxMpDialog .hrxMpSelect.sapMSltFocused {
+	border-color: var(--ice);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltLabel {
+	height: 33px;
+	padding: 0 40px 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 33px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltIconWrapper,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltArrow {
+	position: absolute;
+	right: 12px;
+	top: 0;
+	width: 16px;
+	height: 33px;
+	padding: 0;
+	border: none;
+	background: transparent;
+}
+
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltIcon,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltArrow {
+	width: 16px;
+	height: 33px;
+	font-size: 0;
+	background-color: var(--txt-2);
+	-webkit-mask: url("../../img/icons/projects-chevron.svg") center / 16px 16px no-repeat;
+	mask: url("../../img/icons/projects-chevron.svg") center / 16px 16px no-repeat;
+}
+
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltIcon::before,
+.hrxApp .hrxMpDialog .hrxMpSelect .sapMSltArrow::before {
+	content: none;
+}
+
+/* an amount with its currency beside it (.sfx) */
+.hrxApp .hrxManageProjects .hrxMpSuffixRow,
+.hrxApp .hrxMpDialog .hrxMpSuffixRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSuffixRow .hrxMpInput,
+.hrxApp .hrxMpDialog .hrxMpSuffixRow .hrxMpInput {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSuffix.sapMText,
+.hrxApp .hrxMpDialog .hrxMpSuffix.sapMText {
+	flex-shrink: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMpDialog .hrxMpHint.sapMText {
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+/* the time booking switch (.sw): 42 x 24, mint when on */
+.hrxApp .hrxManageProjects .hrxMpSwitch.sapMSwtCont {
+	width: 42px;
+	height: 24px;
+	padding: 0;
+	margin: 0;
+	line-height: normal;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt {
+	position: relative;
+	width: 42px;
+	height: 24px;
+	min-width: 0;
+	box-sizing: border-box;
+	border: none;
+	border-radius: 14px;
+	background: var(--line);
+	box-shadow: none;
+	transition: background .18s;
+	overflow: hidden;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt.sapMSwtOn {
+	background: var(--mint);
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtInner {
+	position: absolute;
+	inset: 0;
+	width: auto;
+	left: 0 !important;
+	transform: none !important;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtText {
+	display: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	box-sizing: border-box;
+	border: none;
+	border-radius: 50%;
+	background: #FFFFFF;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+	transition: left .18s;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtOn .sapMSwtHandle {
+	left: 21px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle::before,
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle::after {
+	content: none;
+}
+
+/* area chips (.chips / .chip) */
+.hrxApp .hrxManageProjects .hrxMpChips,
+.hrxApp .hrxMpDialog .hrxMpChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpChip.sapMBtn,
+.hrxApp .hrxMpDialog .hrxMpChip.sapMBtn {
+	height: 31px;
+	padding: 0;
+	margin: 0;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpChip .sapMBtnInner,
+.hrxApp .hrxMpDialog .hrxMpChip .sapMBtnInner {
+	height: 31px;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 0 14px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+	transition: .12s;
+}
+
+.hrxApp .hrxManageProjects .hrxMpChip .sapMBtnInner:hover,
+.hrxApp .hrxMpDialog .hrxMpChip .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+	background: var(--surface);
+}
+
+.hrxApp .hrxManageProjects .hrxMpChip .sapMBtnInner.sapMToggleBtnPressed,
+.hrxApp .hrxMpDialog .hrxMpChip .sapMBtnInner.sapMToggleBtnPressed {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxManageProjects .hrxMpChip .sapMBtnContent,
+.hrxApp .hrxMpDialog .hrxMpChip .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
+	color: inherit;
+}
+
+/* ── BUTTONS (.btn primary / ghost / danger, .sm) ─────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpBtnPrimary.sapMBtn,
+.hrxApp .hrxManageProjects .hrxMpBtnGhost.sapMBtn {
+	height: 33px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnPrimary .sapMBtnInner,
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnInner {
+	height: 33px;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 1.44px 18px 0;
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	text-shadow: none;
+	transition: .15s;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnPrimary .sapMBtnContent,
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnPrimary .sapMBtnInner {
+	background: var(--ice);
+	border-color: var(--ice);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnPrimary .sapMBtnInner:hover {
+	background: var(--ice-deep);
+	border-color: var(--ice-deep);
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnInner {
+	background: var(--surface);
+	border-color: var(--line);
+	color: var(--txt);
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnGhost .sapMBtnInner:hover {
+	background: var(--surface);
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+/* .btn.sm: 10.5px, 12px either side; 28px with an icon, 23px without */
+.hrxApp .hrxManageProjects .hrxMpBtnSm.sapMBtn,
+.hrxApp .hrxManageProjects .hrxMpBtnSm .sapMBtnInner {
+	height: 28px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnSm .sapMBtnInner {
+	padding: 1.26px 12px 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnSm .sapMBtnContent {
+	font-size: 10.5px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnSm .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	margin-right: 5px;
+	-webkit-mask-size: 14px 14px;
+	mask-size: 14px 14px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpBtnRow.sapMBtn,
+.hrxApp .hrxManageProjects .hrxMpBtnRow .sapMBtnInner {
+	height: 23px;
+	min-width: 92px;
+}
+
+/* the Upload button (a FileUploader drawn as .btn.ghost.sm) */
+.hrxApp .hrxManageProjects .hrxMpUpload.sapUiFup,
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtn {
+	height: 28px;
+	margin: 0;
+	padding: 0;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnInner {
+	height: 28px;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 1.26px 12px 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	color: var(--txt);
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	margin-right: 5px;
+	-webkit-mask-size: 14px 14px;
+	mask-size: 14px 14px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpUpload .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+/* ── SECTION HEAD + TABLES (.sect-head, table) ────────────────────────────── */
+
+.hrxApp .hrxManageProjects .hrxMpSectHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 28px;
+	margin-bottom: 12px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpSectTitle.sapMTitle {
+	font-family: var(--disp);
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 0;
+	line-height: 12px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable.sapMList,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTbl {
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTbl {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+/* the table's own extra columns (highlight, navigation, filler) take no room */
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHighlightCol,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHighlightCell,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblNavCol,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblNavigatedCol,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblNavigatedCell,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblDummyCell,
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblSubRow {
+	display: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHeader {
+	height: auto;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHeader .sapMListTblCell {
+	height: auto;
+	padding: 9px 18px;
+	border: none;
+	background: var(--frost);
+	vertical-align: middle;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHeader .sapMListTblCell .sapMColumnHeader {
+	padding: 0;
+	min-height: 0;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblHeader .sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	line-height: 11.5px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+	background: transparent;
+	transition: .12s;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow > .sapMListTblCell {
+	height: auto;
+	padding: 12px 18px;
+	border: none;
+	vertical-align: middle;
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblRow > .sapMListTblCell .sapMText {
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* the first and last columns sit 20px in from the edges */
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblCell.hrxMpColFirst {
+	padding-left: 20px;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblCell.hrxMpColLast {
+	padding-right: 20px;
+}
+
+/* the empty-table row (.tbl-empty) */
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListNoData {
+	border: none;
+	background: transparent;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .sapMListTblCellNoData {
+	height: auto;
+	padding: 26px 20px;
+	text-align: center;
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15.5px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .hrxMpStrong.sapMText {
+	font-weight: 700;
+}
+
+.hrxApp .hrxManageProjects .hrxMpTable .hrxMpCellSub.sapMText {
+	display: block;
+	margin-top: 1px;
+	font-size: 11.5px;
+	font-weight: 500;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* row buttons (.rowacts) */
+.hrxApp .hrxManageProjects .hrxMpRowActs {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+}
+
+/* ── MODALS ───────────────────────────────────────────────────────────────── */
+
+/* The modal itself is the shared hrxModal (css/style.css); only its contents are
+   styled here. The design's question sits straight on the body padding. */
+.hrxApp .hrxMpDialog .sapMText.hrxModalText {
+	margin-bottom: 0;
+}
+
+/* the required star (.req) on a modal's labels */
+.hrxApp .hrxMpDialog .hrxModalLabel.sapMLabelRequired .sapMLabelColonAndRequired::after,
+.hrxApp .hrxMpDialog .hrxModalLabel.sapMLabelRequired::after {
+	color: var(--signal);
+	font-size: 10.5px;
+	margin-left: 3px;
+}
+
+.hrxApp .hrxMpDialog .sapMLabel.hrxModalLabel {
+	line-height: 12px;
+}

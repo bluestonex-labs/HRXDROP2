@@ -2,546 +2,411 @@
 	controllerName="bsx.hrx.hrx2026.controller.Home"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
-	xmlns:card="sap.f.cards"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
-	xmlns:micro="sap.suite.ui.microchart"
 	displayBlock="true">
+	<!-- Home, laid out as the 15.10.26 design's dashboard view: the manager's tiles
+	     and team cards on top, then "For you" (Quick Leave, Quick Timesheet) and the
+	     week's timesheet rings. Every class used here is styled in css/pages/home.css,
+	     under the page's root class hrxHomePage. -->
 	<Page id="homePage" showHeader="false" showNavButton="false" class="hrxPageContent hrxHomePage">
 
-		<!-- Manager dashboard: managers and admins only, above the employee's own cards.
-		     Keyed off the profile's isManager flag, so "View as (demo)" applies to it. -->
-		<VBox id="managerDash" visible="{app>/user/isManager}" class="hrxMgrDash">
+		<!-- ═════════ Manager dashboard ═════════
+		     Managers and admins only. Keyed off the profile's isManager flag, so the
+		     shell's "View as (demo)" switch applies to it, as the design's role switch
+		     hides #managerDash for an employee. -->
+		<VBox id="managerDash" renderType="Bare" visible="{app>/user/isManager}" class="hrxHomeMgrDash">
 
-			<!-- Plain CSS grids (style.css) rather than layout:Grid, so the gutter between
-			     the two cards below lines up exactly with the middle gutter of the tiles. -->
-			<HBox class="hrxMgrKpis">
-				<VBox class="hrxKpi" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
+			<!-- Four KPI tiles: a CSS grid of four equal columns -->
+			<HBox renderType="Bare" class="hrxHomeKpis">
+
+				<!-- Team in / working today -->
+				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
-					<core:Icon src="sap-icon://group" class="hrxKpiGlyph" />
-					<Text text="{i18n>mgrKpiTeam}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{home>/dash/team/working}" class="hrxKpiNum" />
-						<Text text="{home>/dash/team/unit}" class="hrxKpiUnit" />
+					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
+						<core:Icon src="sap-icon://group" />
 					</HBox>
-					<Text text="{home>/dash/team/sub}" class="hrxKpiSub" />
-					<Button text="{i18n>mgrFullView}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
-						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+					<Text text="{i18n>mgrKpiTeam}" class="hrxHomeKpiLabel" />
+					<HBox renderType="Bare" class="hrxHomeKpiFigure">
+						<Text text="{home>/dash/team/working}" class="hrxHomeKpiNum" />
+						<Text text="{home>/dash/team/unit}" class="hrxHomeKpiUnit" visible="{= !!${home>/dash/team/unit} }" />
+					</HBox>
+					<Text text="{home>/dash/team/sub}" class="hrxHomeKpiSub" />
+					<Button text="{i18n>mgrFullView}" icon="sap-icon://arrow-right" iconFirst="false"
+						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="teamcal" /></customData>
 					</Button>
 				</VBox>
-				<VBox class="hrxKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
+
+				<!-- Timesheet compliance -->
+				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
-					<core:Icon src="sap-icon://activity-items" class="hrxKpiGlyph" />
-					<Text text="{i18n>mgrKpiCompliance}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{home>/dash/compliance/pct}" class="hrxKpiNum" />
-						<Text text="%" class="hrxKpiUnit" visible="{= ${home>/dash/compliance/pct} !== '—' }" />
+					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
+						<core:Icon src="sap-icon://activity-items" />
 					</HBox>
-					<Text text="{home>/dash/compliance/sub}" class="hrxKpiSub" />
-					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
-						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+					<Text text="{i18n>mgrKpiCompliance}" class="hrxHomeKpiLabel" />
+					<HBox renderType="Bare" class="hrxHomeKpiFigure">
+						<Text text="{home>/dash/compliance/pct}" class="hrxHomeKpiNum" />
+						<Text text="%" class="hrxHomeKpiUnit" visible="{= ${home>/dash/compliance/pct} !== '—' }" />
+					</HBox>
+					<Text text="{home>/dash/compliance/sub}" class="hrxHomeKpiSub" />
+					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false"
+						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="timesheetreport:sub" /></customData>
 					</Button>
 				</VBox>
-				<VBox class="hrxKpi" busy="{home>/dash/loadingTriggers}" busyIndicatorDelay="0">
+
+				<!-- Policy triggers -->
+				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingTriggers}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/triggers/state}" writeToDom="true" /></customData>
-					<core:Icon src="sap-icon://alert" class="hrxKpiGlyph" />
-					<Text text="{i18n>mgrKpiTriggers}" class="hrxKpiLabel" />
-					<Text text="{home>/dash/triggers/count}" class="hrxKpiNum" />
-					<Text text="{home>/dash/triggers/sub}" class="hrxKpiSub" />
-					<Button text="{i18n>mgrReview}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
-						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
+						<core:Icon src="sap-icon://warning2" />
+					</HBox>
+					<Text text="{i18n>homeKpiTriggers}" class="hrxHomeKpiLabel" />
+					<HBox renderType="Bare" class="hrxHomeKpiFigure">
+						<Text text="{home>/dash/triggers/count}" class="hrxHomeKpiNum" />
+					</HBox>
+					<Text text="{home>/dash/triggers/sub}" class="hrxHomeKpiSub" />
+					<Button text="{i18n>mgrReview}" icon="sap-icon://arrow-right" iconFirst="false"
+						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="sickness" /></customData>
 					</Button>
 				</VBox>
-				<VBox class="hrxKpi" busy="{home>/dash/loadingDocs}" busyIndicatorDelay="0">
+
+				<!-- Documents awaiting acknowledgement -->
+				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingDocs}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/docs/state}" writeToDom="true" /></customData>
-					<core:Icon src="sap-icon://document-text" class="hrxKpiGlyph" />
-					<Text text="{i18n>mgrKpiDocs}" class="hrxKpiLabel" />
-					<Text text="{home>/dash/docs/count}" class="hrxKpiNum" />
-					<Text text="{home>/dash/docs/sub}" class="hrxKpiSub" />
-					<Button text="{i18n>mgrReview}" icon="sap-icon://navigation-right-arrow" iconFirst="false"
-						type="Transparent" press=".onDashGo" class="hrxKpiLink">
+					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
+						<core:Icon src="sap-icon://document-text" />
+					</HBox>
+					<Text text="{i18n>mgrKpiDocs}" class="hrxHomeKpiLabel" />
+					<HBox renderType="Bare" class="hrxHomeKpiFigure">
+						<Text text="{home>/dash/docs/count}" class="hrxHomeKpiNum" />
+					</HBox>
+					<Text text="{home>/dash/docs/sub}" class="hrxHomeKpiSub" />
+					<Button text="{i18n>mgrReview}" icon="sap-icon://arrow-right" iconFirst="false"
+						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="documents" /></customData>
 					</Button>
 				</VBox>
 			</HBox>
 
-			<!-- The row has a fixed height on a wide screen (style.css), and each card's
-			     list scrolls inside it - more people, approvals or bookings never
-			     push the cards out of line with each other or with the tiles. -->
-			<HBox class="hrxMgrGrid">
+			<!-- Team today on the left; Pending approvals over Billable utilisation on
+			     the right (the design's .dash-grid, 1fr / 1.15fr) -->
+			<HBox renderType="Bare" class="hrxHomeDashGrid">
 
 				<!-- Team today -->
-				<VBox class="hrxSkCard hrxTrCard hrxMgrTeam" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
-					<HBox alignItems="Center" class="hrxTrCardHead">
-						<VBox class="hrxTrCardHeadText">
-							<Title text="{i18n>mgrTeamToday}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-							<Text text="{home>/dash/todayLabel}" class="hrxSkHint" />
-						</VBox>
-						<Button text="{i18n>mgrFullView}" type="Transparent" press=".onDashGo">
-							<customData><core:CustomData key="go" value="teamcal" /></customData>
-						</Button>
+				<VBox renderType="Bare" class="hrxHomeCard hrxHomeTeamCard" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
+					<HBox renderType="Bare" class="hrxHomeCardHead">
+						<Title text="{i18n>mgrTeamToday}" level="H3" class="hrxHomeCardTitle" />
+						<HBox renderType="Bare" class="hrxHomeCardHeadEnd">
+							<Text text="{home>/dash/todayLabel}" class="hrxHomeCardHint" />
+							<Button text="{i18n>mgrFullView}" press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm">
+								<customData><core:CustomData key="go" value="teamcal" /></customData>
+							</Button>
+						</HBox>
 					</HBox>
-					<Table
+					<!-- Scrolls past 560px, with the column headers kept in view -->
+					<ScrollContainer vertical="true" horizontal="false" class="hrxHomeTeamScroll">
+						<Table
 							items="{path: 'home>/dash/today', templateShareable: false}"
+							fixedLayout="false"
+							sticky="ColumnHeaders"
+							showSeparators="Inner"
 							noDataText="{i18n>mgrNoTeam}"
-							class="hrxSkTable">
-							<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
+							class="hrxHomeTeamTable">
 							<columns>
 								<Column><Text text="{i18n>mgrColEmployee}" /></Column>
-								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mgrColSite}" /></Column>
-								<Column hAlign="End"><Text text="{i18n>mgrColStatus}" /></Column>
+								<Column><Text text="{i18n>mgrColSite}" /></Column>
+								<Column><Text text="{i18n>mgrColStatus}" /></Column>
 							</columns>
 							<items>
 								<ColumnListItem>
 									<cells>
-										<HBox alignItems="Center">
-											<Avatar initials="{home>initials}" displaySize="XS" class="sapUiTinyMarginEnd" />
-											<Text text="{home>Name}" class="hrxResourceName" />
+										<HBox renderType="Bare" class="hrxHomePerson">
+											<Text text="{home>initials}" class="hrxHomeAvatar" />
+											<Text text="{home>Name}" class="hrxHomePersonName" />
 										</HBox>
 										<Text text="{home>site}" />
-										<ObjectStatus text="{home>statusText}" state="{home>statusState}" inverted="true" class="hrxSkPill" />
+										<Text text="{home>statusText}" class="hrxHomePill">
+											<customData><core:CustomData key="state" value="{home>statusState}" writeToDom="true" /></customData>
+										</Text>
 									</cells>
 								</ColumnListItem>
 							</items>
 						</Table>
+					</ScrollContainer>
 				</VBox>
 
-				<VBox class="hrxMgrStack">
+				<VBox renderType="Bare" class="hrxHomeDashStack">
 
-					<!-- Pending approvals -->
-					<VBox class="hrxSkCard hrxTrCard hrxMgrApprCard" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
-						<!-- At most half the column; past that its list scrolls. -->
-						<layoutData><FlexItemData shrinkFactor="1" maxHeight="50%" minHeight="0" /></layoutData>
-						<HBox alignItems="Center" class="hrxTrCardHead">
-							<VBox class="hrxTrCardHeadText">
-								<Title text="{i18n>mgrPendingTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-							</VBox>
-							<Text text="{path: 'home>/approvals', formatter: '.formatPendingCount'}" class="hrxSkHint" />
-						</HBox>
-						<VBox visible="{= ${home>/approvals}.length === 0 }" class="hrxDocEmpty">
-							<Text text="{i18n>homeNoApprovals}" class="hrxResourceMeta" />
-						</VBox>
-						<VBox items="{path: 'home>/approvals', templateShareable: false}">
-							<layoutData><FlexItemData shrinkFactor="1" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
-							<HBox alignItems="Center" class="hrxMgrApprRow">
-								<Avatar initials="{home>initials}" displaySize="S" class="sapUiTinyMarginEnd" />
-								<VBox class="hrxMgrApprMain">
-									<Text text="{home>RequesterName}" class="hrxResourceName" />
-									<Text text="{home>range}" class="hrxResourceMeta" />
-									<Text text="{home>LeaveType}" class="hrxResourceMeta" />
-								</VBox>
-								<Text text="{home>daysText}" class="hrxMgrApprDays" />
-								<HBox class="hrxMgrApprActs">
-									<Button text="{i18n>btnApprove}" icon="sap-icon://accept" type="Accept"
-										press=".onApproveLeave" class="sapUiTinyMarginEnd" />
-									<Button text="{i18n>btnReject}" icon="sap-icon://decline" type="Reject"
-										press=".onRejectLeave" />
-								</HBox>
-							</HBox>
-						</VBox>
-					</VBox>
+					<!-- Pending approvals: the manager's own team only (HrxLegacy pendingApproval) -->
+					<core:Fragment fragmentName="bsx.hrx.hrx2026.fragment.HomePendingApprovals" type="XML" />
 
 					<!-- Billable utilisation, financial year to date -->
-					<VBox class="hrxSkCard hrxTrCard hrxMgrUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
-						<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" /></layoutData>
-						<HBox alignItems="Center" class="hrxTrCardHead">
-							<VBox class="hrxTrCardHeadText">
-								<Title text="{i18n>mgrUtilTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-								<Text text="{i18n>mgrUtilHint}" class="hrxSkHint" />
-							</VBox>
-							<Button text="{i18n>mgrFullReport}" type="Transparent" press=".onDashGo">
-								<customData><core:CustomData key="go" value="timesheetreport:util" /></customData>
-							</Button>
+					<VBox renderType="Bare" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+						<HBox renderType="Bare" class="hrxHomeCardHead">
+							<Title text="{i18n>mgrUtilTitle}" level="H3" class="hrxHomeCardTitle" />
+							<HBox renderType="Bare" class="hrxHomeCardHeadEnd">
+								<Text text="{i18n>homeUtilHint}" class="hrxHomeCardHint" />
+								<Button text="{i18n>mgrFullReport}" press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm">
+									<customData><core:CustomData key="go" value="timesheetreport:util" /></customData>
+								</Button>
+							</HBox>
 						</HBox>
-						<HBox alignItems="Baseline" class="hrxMgrUtilTop">
-							<Text text="{home>/dash/util/pctText}" class="hrxMgrUtilBig" />
-							<Text text="{home>/dash/util/cap}" class="hrxResourceMeta" />
-						</HBox>
-						<VBox visible="{= ${home>/dash/util/rows}.length === 0 }" class="hrxDocEmpty">
-							<Text text="{i18n>mgrNoUtil}" class="hrxResourceMeta" />
-						</VBox>
-							<VBox items="{path: 'home>/dash/util/rows', templateShareable: false}">
-								<layoutData><FlexItemData growFactor="1" shrinkFactor="1" baseSize="0" minHeight="0" styleClass="hrxMgrScrollItem" /></layoutData>
-								<HBox alignItems="Center" class="hrxMgrUtilRow">
-									<VBox class="hrxMgrUtilName">
-										<Text text="{home>Name}" class="hrxResourceName" />
-										<Text text="{home>sub}" class="hrxResourceMeta" />
+						<VBox renderType="Bare" class="hrxHomeCardBody">
+							<HBox renderType="Bare" class="hrxHomeUtilTop">
+								<Text text="{home>/dash/util/pctText}" class="hrxHomeUtilBig" />
+								<Text text="{home>/dash/util/cap}" class="hrxHomeUtilCap" />
+							</HBox>
+							<Text text="{i18n>mgrNoUtil}" visible="{= ${home>/dash/util/rows}.length === 0 }" class="hrxHomeEmpty" />
+							<VBox renderType="Bare" items="{path: 'home>/dash/util/rows', templateShareable: false}">
+								<HBox renderType="Bare" class="hrxHomeUtilRow">
+									<VBox renderType="Bare" class="hrxHomeUtilWho">
+										<Text text="{home>Name}" class="hrxHomeUtilName" />
+										<Text text="{home>sub}" class="hrxHomeUtilSub" />
 									</VBox>
-									<HBox alignItems="Center" class="hrxTrUtilBar hrxMgrUtilBar">
-										<core:HTML content="{home>barHtml}" />
-										<Text text="{home>pctText}" class="hrxTrStrong" />
-									</HBox>
+									<VBox renderType="Bare" class="hrxHomeUtilBar">
+										<Text text="{home>pctText}" class="hrxHomeUtilPct" />
+										<HBox renderType="Bare" class="hrxHomeUtilLine">
+											<ProgressIndicator
+												percentValue="{home>barPct}"
+												showValue="false"
+												displayOnly="true"
+												state="{home>state}"
+												class="hrxHomeUtilTrack" />
+											<!-- The design's own state icon, drawn with a CSS mask -->
+											<HBox renderType="Bare" class="hrxHomeStateIcon">
+												<customData><core:CustomData key="state" value="{home>state}" writeToDom="true" /></customData>
+											</HBox>
+										</HBox>
+									</VBox>
 								</HBox>
 							</VBox>
+						</VBox>
 					</VBox>
 				</VBox>
 			</HBox>
 
-			<VBox class="hrxMgrOwnHead">
-				<Text text="{i18n>mgrOwnEyebrow}" class="hrxEyebrow" />
-				<Title text="{i18n>mgrOwnTitle}" level="H2" class="hrxMgrOwnTitle" />
+			<!-- For you: the manager's own leave and time -->
+			<VBox renderType="Bare" class="hrxHomeSectionHead">
+				<Text text="{i18n>mgrOwnEyebrow}" class="hrxHomeSectionEyebrow" />
+				<Title text="{i18n>mgrOwnTitle}" level="H2" class="hrxHomeSectionTitle" />
 			</VBox>
 		</VBox>
 
-		<!-- Action row. A responsive grid keeps the three cards in their own columns
-		     whatever their height, so they cannot overlap. -->
-		<!-- A flex row rather than a grid: when the approvals card is hidden for
-		     somebody who manages nobody, the remaining cards close the gap instead of
-		     leaving an empty column behind. -->
-		<HBox wrap="Wrap" alignItems="Stretch" class="hrxActionRow sapUiSmallMarginBottom">
+		<!-- Somebody the profile does not flag as a manager can still have requests
+		     waiting on them (the team calendar lists them too). They get the same card,
+		     on its own row, only while there is something in it. -->
+		<VBox id="ownApprovals" renderType="Bare" class="hrxHomeOwnApprovals"
+			visible="{= !${app>/user/isManager} &amp;&amp; ${home>/approvals}.length > 0 }">
+			<core:Fragment fragmentName="bsx.hrx.hrx2026.fragment.HomePendingApprovals" type="XML" />
+		</VBox>
 
-			<!-- Approvals: shown to whoever actually has something waiting on them.
-			     Keying this off the profile's isManager flag instead left the card
-			     hidden on the home page while the very same requests were listed in the
-			     team calendar. A manager sees them in the dashboard above instead, so
-			     this one stays for anyone else who has requests waiting on them. -->
-			<f:Card
-				id="approvalsCard"
-				visible="{= !${app>/user/isManager} &amp;&amp; ${home>/approvals}.length > 0 }"
-				class="hrxHomeCard">
-				<f:header>
-					<card:Header
-						title="{i18n>approvalsTitle}"
-						subtitle="{path: 'home>/approvals', formatter: '.formatPendingCount'}" />
-				</f:header>
-				<f:content>
-					<VBox width="100%" busy="{home>/loadingApprovals}" busyIndicatorDelay="0">
-						<List
-							items="{home>/approvals}"
-							showSeparators="Inner"
-							noDataText="{i18n>homeNoApprovals}">
-							<CustomListItem>
-								<HBox
-									alignItems="Center"
-									justifyContent="SpaceBetween"
-									class="hrxResourceRow">
-									<HBox alignItems="Center">
-										<Avatar
-											initials="{home>initials}"
-											displaySize="S"
-											class="sapUiTinyMarginEnd" />
-										<VBox>
-											<Text text="{home>title}" class="hrxResourceName" />
-											<Text text="{home>meta}" class="hrxResourceMeta" />
-										</VBox>
-									</HBox>
-									<HBox>
-										<Button
-											icon="sap-icon://accept"
-											type="Accept"
-											tooltip="{i18n>btnApprove}"
-											press=".onApproveLeave"
-											class="sapUiTinyMarginEnd" />
-										<Button
-											icon="sap-icon://decline"
-											type="Reject"
-											tooltip="{i18n>btnReject}"
-											press=".onRejectLeave" />
-									</HBox>
-								</HBox>
-							</CustomListItem>
-						</List>
-					</VBox>
-				</f:content>
-			</f:Card>
+		<!-- ═════════ Quick Leave and Quick Timesheet ═════════ -->
+		<HBox renderType="Bare" class="hrxHomeActionRow">
 
 			<!-- Quick Leave -->
-			<f:Card id="quickLeaveCard" class="hrxHomeCard">
-				<f:header>
-					<card:Header title="{i18n>quickLeaveTitle}" />
-				</f:header>
-				<f:content>
-					<VBox class="hrxCardBody hrxQuickCardBody" width="100%" busy="{home>/savingLeave}" busyIndicatorDelay="0">
-						<Label text="{i18n>fieldDates}" required="true" />
-						<DateRangeSelection
-							id="qlDateRange"
-							width="100%"
-							valueFormat="yyyy-MM-dd"
-							change=".onQuickLeaveDatesChange"
-							placeholder="{i18n>mlDatesPlaceholder}"
-							class="sapUiTinyMarginBottom" />
+			<VBox id="quickLeaveCard" renderType="Bare" class="hrxHomeCard">
+				<HBox renderType="Bare" class="hrxHomeCardHead">
+					<Title text="{i18n>quickLeaveTitle}" level="H3" class="hrxHomeCardTitle" />
+				</HBox>
+				<VBox renderType="Bare" class="hrxHomeCardBody hrxHomeFormBody" busy="{home>/savingLeave}" busyIndicatorDelay="0">
+					<Label text="{i18n>fieldDates}" labelFor="qlDates" class="hrxHomeLabel" />
+					<!-- Opens the design's own range picker (fragment/HomeDatePopover) -->
+					<Input
+						id="qlDates"
+						value="{home>/quickLeave/rangeText}"
+						placeholder="{i18n>homeDatesPlaceholder}"
+						showValueHelp="true"
+						valueHelpOnly="true"
+						valueHelpRequest=".onOpenQuickLeaveCalendar"
+						class="hrxHomeField hrxHomeDateField" />
 
-						<Label text="{i18n>fieldLeaveType}" />
-						<Select
-							id="qlType"
-							width="100%"
-							selectedKey="{home>/quickLeave/LeaveCategoryId}"
-							items="{home>/leaveTypes}"
-							class="sapUiTinyMarginBottom">
-							<core:Item key="{home>LeaveCategoryId}" text="{home>LeaveCategoryDesc}" />
-						</Select>
+					<Label text="{i18n>fieldLeaveType}" labelFor="qlType" class="hrxHomeLabel" />
+					<Select
+						id="qlType"
+						width="100%"
+						selectedKey="{home>/quickLeave/LeaveCategoryId}"
+						items="{home>/leaveTypes}"
+						class="hrxHomeField">
+						<core:Item key="{home>LeaveCategoryId}" text="{home>LeaveCategoryDesc}" />
+					</Select>
 
-						<Label text="{i18n>fieldDuration}" />
-						<Select
-							id="qlDuration"
-							width="100%"
-							selectedKey="{home>/quickLeave/DayTime}"
-							change=".onQuickLeaveDurationChange"
-							class="sapUiTinyMarginBottom">
-							<core:Item key="Full Day" text="{i18n>durationFullDay}" />
-							<core:Item key="AM" text="{i18n>durationHalfAM}" />
-							<core:Item key="PM" text="{i18n>durationHalfPM}" />
-						</Select>
+					<Label text="{i18n>fieldDuration}" labelFor="qlDuration" class="hrxHomeLabel" />
+					<Select
+						id="qlDuration"
+						width="100%"
+						selectedKey="{home>/quickLeave/DayTime}"
+						change=".onQuickLeaveDurationChange"
+						class="hrxHomeField">
+						<core:Item key="Full Day" text="{i18n>durationFullDay}" />
+						<core:Item key="AM" text="{i18n>durationHalfAM}" />
+						<core:Item key="PM" text="{i18n>durationHalfPM}" />
+					</Select>
 
-						<Label text="{i18n>fieldComments}" />
-						<TextArea
-							id="qlComments"
-							value="{home>/quickLeave/Comments}"
-							rows="2"
-							width="100%"
-							class="sapUiTinyMarginBottom"
-							placeholder="{i18n>mlOptional}" />
+					<Label text="{i18n>fieldComments}" labelFor="qlComments" class="hrxHomeLabel" />
+					<TextArea
+						id="qlComments"
+						value="{home>/quickLeave/Comments}"
+						rows="2"
+						width="100%"
+						placeholder="{i18n>mlOptional}"
+						class="hrxHomeField" />
 
-						<Label text="{i18n>fieldApprover}" />
-						<Text
-							text="{home>/user/managerName}"
-							class="hrxResourceName sapUiTinyMarginBottom" />
+					<Label text="{i18n>fieldApprover}" class="hrxHomeLabel" />
+					<Text text="{home>/user/managerName}" class="hrxHomeApprover" />
 
-						<HBox alignItems="Center" class="sapUiTinyMarginBottom">
-							<ObjectNumber
-								number="{home>/quickLeave/NoOfDays}"
-								unit="{i18n>mlDays}"
-								state="{= ${home>/quickLeave/NoOfDays} > 0 ? 'Success' : 'None' }" />
-						</HBox>
-
-						<!-- FlexBox wraps every child in a flex item of its own, so the class
-						     that pushes the button to the foot of the card has to land on that
-						     wrapper - a margin-top:auto on the button itself sits inside the
-						     wrapper and moves nothing. This is what keeps the two cards' submit
-						     buttons on one line despite their different number of fields. -->
-						<Button
-							id="qlSubmit"
-							text="{i18n>btnRequestLeave}"
-							type="Emphasized"
-							width="100%"
-							enabled="{= ${home>/quickLeave/NoOfDays} > 0 }"
-							press=".onRequestLeave">
-							<layoutData>
-								<FlexItemData styleClass="hrxCardFooterButton" />
-							</layoutData>
-						</Button>
-					</VBox>
-				</f:content>
-			</f:Card>
+					<Button
+						id="qlSubmit"
+						text="{i18n>btnRequestLeave}"
+						width="100%"
+						press=".onRequestLeave"
+						class="hrxHomeBtn hrxHomeBtnPrimary hrxHomeFormSubmit" />
+				</VBox>
+			</VBox>
 
 			<!-- Quick Timesheet -->
-			<f:Card id="quickTimesheetCard" class="hrxHomeCard">
-				<!-- No subtitle: the day is already the first field of the form, and a
-				     second line here is what pushed this card's fields out of line with
-				     Quick Leave's next to it. -->
-				<f:header>
-					<card:Header title="{i18n>quickTimesheetTitle}" />
-				</f:header>
-				<f:content>
-					<VBox class="hrxCardBody hrxQuickCardBody" width="100%" busy="{home>/loadingDay}" busyIndicatorDelay="0">
+			<VBox id="quickTimesheetCard" renderType="Bare" class="hrxHomeCard">
+				<HBox renderType="Bare" class="hrxHomeCardHead">
+					<Title text="{i18n>quickTimesheetTitle}" level="H3" class="hrxHomeCardTitle" />
+					<!-- The day being booked: "Today" as in the design. Pressing it opens the
+					     same picker as Quick Leave, so another day can be booked as before. -->
+					<Link
+						id="qtDay"
+						text="{home>/quick/dayLabel}"
+						tooltip="{i18n>homeChangeDay}"
+						press=".onOpenQuickDayCalendar"
+						class="hrxHomeCardHint hrxHomeDayLink" />
+				</HBox>
+				<VBox renderType="Bare" class="hrxHomeCardBody hrxHomeFormBody" busy="{home>/loadingDay}" busyIndicatorDelay="0">
 
-						<Label text="{i18n>fieldDay}" required="true" />
-						<DatePicker
-							id="qtDay"
+					<!-- Nothing booked yet for the chosen day: the entry form -->
+					<VBox renderType="Bare" visible="{= !${home>/quick/logged} }" class="hrxHomeFormFill">
+						<MessageStrip
+							text="{home>/quick/dayEditableReason}"
+							type="Information"
+							showIcon="true"
+							class="hrxHomeStrip"
+							visible="{= !${home>/quick/dayEditable} }" />
+
+						<Label text="{i18n>fieldProject}" labelFor="qtProject" class="hrxHomeLabel" />
+						<!-- The projects bookable on the chosen day, loaded by _loadDay; the
+						     first entry is the "Select a project…" prompt. -->
+						<Select
+							id="qtProject"
 							width="100%"
-							value="{home>/quick/day}"
-							valueFormat="yyyy-MM-dd"
-							displayFormat="EEE, d MMM yyyy"
-							change=".onQuickDayChange"
-							class="sapUiTinyMarginBottom" />
+							enabled="{home>/quick/dayEditable}"
+							selectedKey="{home>/quick/ProjectID}"
+							items="{home>/quick/projects}"
+							class="hrxHomeField">
+							<core:Item key="{home>ProjectID}" text="{home>label}" />
+						</Select>
 
-						<!-- Nothing booked yet for the chosen day: the entry form -->
-						<VBox visible="{= !${home>/quick/logged} }" class="hrxCardBodyFill">
-							<MessageStrip
-								text="{home>/quick/dayEditableReason}"
-								type="Information"
-								showIcon="true"
-								class="sapUiTinyMarginBottom"
-								visible="{= !${home>/quick/dayEditable} }" />
+						<Label text="{i18n>fieldTimeSpent}" labelFor="qtHours" class="hrxHomeLabel" />
+						<Input
+							id="qtHours"
+							enabled="{home>/quick/dayEditable}"
+							value="{home>/quick/hours}"
+							change=".onQuickHoursChange"
+							placeholder="{i18n>qtHoursPlaceholder}"
+							class="hrxHomeField" />
 
-							<Label text="{i18n>fieldProject}" required="true" />
-							<!-- The projects bookable on the chosen day, loaded by _loadDay.
-							     This used to bind /projectTypes, which nothing ever fills, so
-							     the list read "No data" - the controller worked around it by
-							     pushing items in by hand, which the (empty) binding then wiped
-							     again on the next model update. -->
-							<ComboBox
-								id="qtProject"
-								width="100%"
-								enabled="{home>/quick/dayEditable}"
-								selectedKey="{home>/quick/ProjectID}"
-								items="{home>/quick/projects}"
-								placeholder="{i18n>qtProjectPlaceholder}"
-								class="sapUiTinyMarginBottom">
-								<core:Item key="{home>ProjectID}" text="{home>label}" />
-							</ComboBox>
+						<Label text="{i18n>fieldComment}" labelFor="qtComment" class="hrxHomeLabel" />
+						<TextArea
+							id="qtComment"
+							value="{home>/quick/comment}"
+							enabled="{home>/quick/dayEditable}"
+							rows="2"
+							width="100%"
+							placeholder="{i18n>qtCommentPlaceholder}"
+							class="hrxHomeField" />
 
-							<Label text="{i18n>fieldTimeSpent}" required="true" />
-							<Input
-								id="qtHours"
-								width="100%"
-								enabled="{home>/quick/dayEditable}"
-								value="{home>/quick/hours}"
-								change=".onQuickHoursChange"
-								placeholder="{i18n>qtHoursPlaceholder}"
-								class="sapUiTinyMarginBottom" />
-
-							<Label text="{i18n>fieldComment}" required="true" />
-							<TextArea
-								id="qtComment"
-								value="{home>/quick/comment}"
-								enabled="{home>/quick/dayEditable}"
-								rows="2"
-								width="100%"
-								class="sapUiTinyMarginBottom hrxComment"
-								placeholder="{i18n>qtCommentPlaceholder}" />
-
-							<Button
-								id="qtSave"
-								text="{i18n>btnSave}"
-								type="Emphasized"
-								width="100%"
-								enabled="{home>/quick/dayEditable}"
-								press=".onSaveQuickTimesheet">
-								<layoutData>
-									<FlexItemData styleClass="hrxCardFooterButton" />
-								</layoutData>
-							</Button>
-						</VBox>
-
-						<!-- Already booked: what the day holds, straight from the service -->
-						<VBox visible="{home>/quick/logged}" class="hrxCardBodyFill">
-							<VBox alignItems="Center" class="sapUiSmallMarginTop">
-								<core:Icon src="sap-icon://message-success" class="hrxLoggedIcon" />
-								<Text
-									text="{parts: ['home>/quick/bookedTotal'], formatter: '.formatLoggedTitle'}"
-									class="hrxSectionTitle sapUiTinyMarginTop" />
-								<Text text="{home>/quick/dayFullLabel}" class="hrxResourceMeta" />
-							</VBox>
-							<List
-								items="{home>/quick/entries}"
-								showSeparators="Inner"
-								class="sapUiSmallMarginTop">
-								<CustomListItem>
-									<VBox class="hrxResourceRow" width="100%">
-										<HBox justifyContent="SpaceBetween" alignItems="Center" width="100%">
-											<Text text="{home>project}" class="hrxResourceName sapUiTinyMarginEnd" />
-											<Text text="{home>time}" class="hrxDayTotal" />
-										</HBox>
-										<Text text="{home>comment}" class="hrxResourceMeta" />
-									</VBox>
-								</CustomListItem>
-							</List>
-							<Button
-								id="qtLogMore"
-								text="{i18n>btnLogMoreTime}"
-								type="Transparent"
-								width="100%"
-								press=".onLogMoreTime"
-								class="sapUiTinyMarginTop">
-								<layoutData>
-									<FlexItemData styleClass="hrxCardFooterButton" />
-								</layoutData>
-							</Button>
-						</VBox>
+						<Button
+							id="qtSave"
+							text="{i18n>btnSave}"
+							width="100%"
+							enabled="{home>/quick/dayEditable}"
+							press=".onSaveQuickTimesheet"
+							class="hrxHomeBtn hrxHomeBtnPrimary hrxHomeFormSubmit hrxHomeSaveBtn" />
 					</VBox>
-				</f:content>
-			</f:Card>
+
+					<!-- Already booked: what the day holds, straight from the service -->
+					<VBox renderType="Bare" visible="{home>/quick/logged}" class="hrxHomeLogged">
+						<HBox renderType="Bare" class="hrxHomeLoggedIcon">
+							<core:Icon src="sap-icon://accept" />
+						</HBox>
+						<Text text="{home>/quick/loggedTitle}" class="hrxHomeLoggedTitle" />
+						<Text text="{home>/quick/loggedSub}" class="hrxHomeLoggedSub" />
+						<VBox renderType="Bare" items="{home>/quick/entries}" class="hrxHomeSummary">
+							<VBox renderType="Bare" class="hrxHomeSummaryEntry">
+								<HBox renderType="Bare" class="hrxHomeSummaryRow">
+									<Text text="{i18n>homeSummaryProject}" class="hrxHomeSummaryKey" />
+									<Text text="{home>project}" class="hrxHomeSummaryValue" />
+								</HBox>
+								<HBox renderType="Bare" class="hrxHomeSummaryRow">
+									<Text text="{i18n>homeSummaryTime}" class="hrxHomeSummaryKey" />
+									<Text text="{home>time}" class="hrxHomeSummaryValue" />
+								</HBox>
+								<HBox renderType="Bare" class="hrxHomeSummaryRow">
+									<Text text="{i18n>homeSummaryComment}" class="hrxHomeSummaryKey" />
+									<Text text="{home>comment}" class="hrxHomeSummaryValue" />
+								</HBox>
+							</VBox>
+						</VBox>
+						<!-- Where the design has its reset link: back to the form to book more -->
+						<Link id="qtLogMore" text="{i18n>btnLogMoreTime}" press=".onLogMoreTime" class="hrxHomeResetLink" />
+					</VBox>
+				</VBox>
+			</VBox>
 		</HBox>
 
-		<!-- This week's timesheet -->
-		<f:Card id="weekSummaryCard">
-			<f:header>
-				<card:Header
-					title="{i18n>timesheetCardTitle}"
-					subtitle="{home>/week/label}">
-					<!-- The hours still to book this week sit with the week they describe.
-					     They used to lead the strip beside the page title, where nothing said
-					     which week or which timesheet they belonged to. -->
-					<card:toolbar>
-						<ObjectStatus
-							id="weekStatus"
-							text="{home>/week/status/text}"
-							state="{home>/week/status/state}"
-							visible="{= !!${home>/week/status/text} }"
-							class="hrxPill" />
-					</card:toolbar>
-				</card:Header>
-			</f:header>
-			<f:content>
-				<VBox class="hrxCardBody" width="100%" busy="{home>/loadingWeek}" busyIndicatorDelay="0">
-					<!-- One column per day, all the same width, and the ring and the leave
-					     marker share a slot of one height so every label lines up. -->
-					<HBox class="hrxRingRow" justifyContent="SpaceBetween" items="{home>/weekRings}">
-						<!-- The hover text sits on the whole day column: RadialMicroChart
-						     turns its own tooltip into an aria-label only, never a title
-						     attribute, so a tooltip set on the ring would never show. -->
-						<VBox alignItems="Center" class="hrxRingDay" tooltip="{home>tooltip}">
-							<Text text="{home>day}" class="hrxRingDayName" />
-							<VBox alignItems="Center" justifyContent="Center" class="hrxRingSlot">
-								<VBox
-									alignItems="Center"
-									justifyContent="Center"
-									class="hrxLeaveRing"
-									visible="{home>onLeave}">
-									<core:Icon src="sap-icon://accept" />
-								</VBox>
-								<!-- Responsive so the ring takes the size of its slot: the fixed
-								     sizes render far wider than the day column and lapped over
-								     the days either side. -->
-								<micro:RadialMicroChart
-									size="Responsive"
-									width="64px"
-									height="64px"
-									visible="{= !${home>onLeave} }"
-									percentage="{home>percent}"
-									valueColor="{home>state}" />
-								<!-- Our own figure over the ring: the chart's built-in label
-								     stops at 100%, so it is hidden in style.css and this one
-								     states the real percentage, however far over it goes. -->
-								<!-- Centred by UI5's own flex classes on this VBox, exactly as
-								     the leave marker above is, rather than by CSS on the Text -
-								     the theme overrides text-align on .sapMText whatever the
-								     specificity. -->
-								<VBox
-									alignItems="Center"
-									justifyContent="Center"
-									class="hrxRingPercentBox"
-									visible="{= !${home>onLeave} }">
-									<Text text="{home>percentLabel}" class="hrxRingPercent" />
-								</VBox>
-							</VBox>
-							<Text text="{home>label}" class="hrxRingLabel" />
-						</VBox>
-					</HBox>
+		<!-- ═════════ This week's timesheet ═════════ -->
+		<VBox id="weekSummaryCard" renderType="Bare" class="hrxHomeCard hrxHomeWeekCard">
+			<HBox renderType="Bare" class="hrxHomeCardHead">
+				<Title text="{i18n>timesheetCardTitle}" level="H3" class="hrxHomeCardTitle" />
+				<Text text="{i18n>homeThisWeek}" tooltip="{home>/week/label}" class="hrxHomeCardHint" />
+			</HBox>
+			<VBox renderType="Bare" class="hrxHomeCardBody" busy="{home>/loadingWeek}" busyIndicatorDelay="0">
+				<!-- One column per day: the day, its ring and, on leave, the word "Leave".
+				     The hover text sits on the whole column and gives the exact hours. -->
+				<HBox renderType="Bare" items="{home>/weekRings}" class="hrxHomeRings">
+					<VBox renderType="Bare" tooltip="{home>tooltip}" class="hrxHomeRingDay">
+						<Text text="{home>day}" class="hrxHomeRingDayName" />
+						<!-- A 44px SVG ring built by Home.controller _ringSvg -->
+						<core:HTML content="{home>svg}" sanitizeContent="false" />
+						<Text text="{i18n>homeRingLeave}" visible="{home>onLeave}" class="hrxHomeRingLeave" />
+					</VBox>
+				</HBox>
 
-					<HBox wrap="Wrap" class="hrxLegend sapUiSmallMarginTop">
-						<HBox alignItems="Center" class="sapUiSmallMarginEnd">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotSignal" />
-							<Text text="{i18n>legendMissing}" />
-						</HBox>
-						<HBox alignItems="Center" class="sapUiSmallMarginEnd">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotAmber" />
-							<Text text="{i18n>legendActionNeeded}" />
-						</HBox>
-						<HBox alignItems="Center" class="sapUiSmallMarginEnd">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotMint" />
-							<Text text="{i18n>legendComplete}" />
-						</HBox>
-						<HBox alignItems="Center" class="sapUiSmallMarginEnd">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotOver" />
-							<Text text="{i18n>legendOverbooked}" />
-						</HBox>
-						<HBox alignItems="Center" class="sapUiSmallMarginEnd">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotIce" />
-							<Text text="{i18n>legendOnLeave}" />
-						</HBox>
-						<HBox alignItems="Center">
-							<core:Icon src="sap-icon://circle-task-2" class="hrxDot hrxDotLine" />
-							<Text text="{i18n>legendNotDue}" />
-						</HBox>
+				<HBox renderType="Bare" class="hrxHomeLegend">
+					<HBox renderType="Bare" class="hrxHomeLegendItem">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotMissing" />
+						<Text text="{i18n>legendMissing}" />
 					</HBox>
-				</VBox>
-			</f:content>
-		</f:Card>
+					<HBox renderType="Bare" class="hrxHomeLegendItem">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotShort" />
+						<Text text="{i18n>legendActionNeeded}" />
+					</HBox>
+					<HBox renderType="Bare" class="hrxHomeLegendItem">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotComplete" />
+						<Text text="{i18n>legendComplete}" />
+					</HBox>
+					<!-- Only in a week that has an overbooked day: the design has no such
+					     state, but the service can report one. -->
+					<HBox renderType="Bare" class="hrxHomeLegendItem" visible="{home>/weekHasOverbooked}">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotOver" />
+						<Text text="{i18n>legendOverbooked}" />
+					</HBox>
+					<HBox renderType="Bare" class="hrxHomeLegendItem">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotLeave" />
+						<Text text="{i18n>legendOnLeave}" />
+					</HBox>
+					<HBox renderType="Bare" class="hrxHomeLegendItem">
+						<HBox renderType="Bare" class="hrxHomeLegendDot hrxHomeDotNotDue" />
+						<Text text="{i18n>legendNotDue}" />
+					</HBox>
+				</HBox>
+			</VBox>
+		</VBox>
 	</Page>
 </mvc:View>

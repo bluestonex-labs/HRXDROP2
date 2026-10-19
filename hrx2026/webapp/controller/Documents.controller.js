@@ -1,6 +1,7 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Fragment",
+	"sap/ui/core/format/DateFormat",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
@@ -13,10 +14,26 @@ sap.ui.define([
 	"../model/Mail",
 	"../model/Reminders",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, Documents, DocumentService, Mail, Reminders, formatter) {
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, Documents, DocumentService, Mail, Reminders, formatter) {
 	"use strict";
 
 	var FILTERS = ["all", "attention", "complete", "none"];
+
+	// The icon after a document's acknowledgement bar, by the bar's state
+	var ACK_ICONS = { Success: "ok", Warning: "warn", Error: "crit" };
+
+	// The design's dates on a document: "8 Jul 2026"
+	var oPublishedDate = DateFormat.getDateInstance({ pattern: "d MMM yyyy" });
+	var oServiceDate = DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" });
+
+	/**
+	 * @param {string} sDate a service date, "yyyy-MM-dd"
+	 * @returns {string} the date as the design shows it, or "" when there is none
+	 */
+	function publishedText(sDate) {
+		var oDate = sDate ? oServiceDate.parse(String(sDate).slice(0, 10)) : null;
+		return oDate ? oPublishedDate.format(oDate) : "";
+	}
 
 	/*
 	 * Documents (admin): publish policies and other documents, see who has and has
@@ -44,7 +61,7 @@ sap.ui.define([
 					if (oEvent.target.closest(".sapMBtn")) {
 						return;
 					}
-					var oRow = oEvent.target.closest(".hrxDocRow2");
+					var oRow = oEvent.target.closest(".hrxDmRow");
 					if (oRow) {
 						this.getModel("dmView").setProperty("/selected", oRow.getAttribute("data-id"));
 						this._render();
@@ -138,16 +155,19 @@ sap.ui.define([
 
 			var aAll = (this._aDocuments || []).map(function (oDocument) {
 				var oProgress = Documents.progress(oDocument, aPeople, this._mAcks || {});
+				var sAckState = Documents.state(oProgress.pct);
 				return Object.assign({}, oDocument, {
 					progress: oProgress,
 					pct: oProgress.pct,
 					outstandingCount: oProgress.outstanding.length,
 					meta: this.getText("dmMeta", [oDocument.Category || "", this._visibilityText(oDocument.Visibility),
-						formatter.date(oDocument.PublishedOn)]),
+						publishedText(oDocument.PublishedOn)]),
 					ackText: oDocument.AckRequired ?
 						this.getText("dmAckCount", [oProgress.acknowledged.length, oProgress.audience.length]) :
 						this.getText("pdNoAckNeeded"),
-					barHtml: oDocument.AckRequired ? this._barHtml(oProgress.pct, Documents.state(oProgress.pct)) : ""
+					// the bar's colour (ProgressIndicator state) and the icon after it
+					ackState: sAckState,
+					ackIcon: ACK_ICONS[sAckState]
 				});
 			}, this);
 
@@ -203,9 +223,11 @@ sap.ui.define([
 					return {
 						key: sKey,
 						selected: sKey === sFilter,
-						text: this.getText("dmChip_" + sKey) + " (" + aAll.filter(function (oDocument) {
+						text: this.getText("dmChip_" + sKey),
+						// shown in the chip's count pill (see css/pages/policies-documents.css)
+						count: String(aAll.filter(function (oDocument) {
 							return Documents.matches(oDocument, oDocument.pct, sKey);
-						}).length + ")"
+						}).length)
 					};
 				}, this),
 				selected: oSelected || {},
@@ -217,11 +239,6 @@ sap.ui.define([
 
 		_visibilityText: function (sVisibility) {
 			return !sVisibility || sVisibility === "ALL" ? this.getText("dmAllEmployees") : ((this._mSites || {})[sVisibility] || sVisibility);
-		},
-
-		_barHtml: function (iPct, sState) {
-			return "<div class=\"hrxTrTrack hrxTrState" + sState + "\"><div class=\"hrxTrFill\" style=\"width:" +
-				Math.max(0, Math.min(100, iPct)) + "%\"></div></div>";
 		},
 
 		/* =========================================================== */
@@ -317,6 +334,15 @@ sap.ui.define([
 		/* upload                                                      */
 		/* =========================================================== */
 
+		/**
+		 * The shell's top-bar action on this route, "Upload document".
+		 */
+		onPageAction: function () {
+			if (this._oProfile && this._oProfile.isManager) {
+				this.onOpenUpload();
+			}
+		},
+
 		onOpenUpload: function () {
 			this.setModel(new JSONModel({
 				Name: "",
@@ -345,12 +371,14 @@ sap.ui.define([
 			}
 			this._pUploadDialog.then(function (oDialog) {
 				this.byId("documentUploadFile").clear();
+				this.byId("documentUploadName").setValueState("None");
 				oDialog.open();
 			}.bind(this));
 		},
 
 		onUploadInput: function () {
 			var oUpload = this.getModel("dmUpload");
+			this.byId("documentUploadName").setValueState("None");
 			oUpload.setProperty("/canSave", !!String(oUpload.getProperty("/Name") || "").trim() && !!oUpload.getProperty("/file"));
 		},
 
@@ -383,9 +411,24 @@ sap.ui.define([
 			this.onUploadInput();
 		},
 
+		/**
+		 * Publishes the document. As in the design, the button is always there to press:
+		 * a missing name or file is pointed out instead of the button being greyed out.
+		 */
 		onConfirmUpload: function () {
 			var oUpload = this.getModel("dmUpload");
 			var oForm = oUpload.getData();
+			var oNameInput = this.byId("documentUploadName");
+
+			if (!String(oForm.Name || "").trim()) {
+				oNameInput.setValueState("Error");
+				MessageToast.show(this.getText("dmNeedName"));
+				return;
+			}
+			if (!oForm.file) {
+				MessageToast.show(this.getText("dmNeedFile"));
+				return;
+			}
 
 			oUpload.setProperty("/saving", true);
 

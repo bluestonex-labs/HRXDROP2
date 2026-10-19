@@ -1,0 +1,23 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- The design's confirmation modal (Release resource, Delete attachment): a
+	     sentence, then a red action button beside Cancel. Filled and answered by
+	     ManageProjects._confirm. -->
+	<Dialog
+		id="projectConfirmDialog"
+		title="{mpConfirm>/title}"
+		afterClose=".onConfirmDialogClosed"
+		class="hrxModal hrxMpDialog">
+		<content>
+			<Text text="{mpConfirm>/text}" class="hrxModalText" />
+		</content>
+		<beginButton>
+			<Button id="projectConfirmAction" text="{mpConfirm>/action}" press=".onConfirmAction" class="hrxModalBtn hrxModalBtnDanger" />
+		</beginButton>
+		<endButton>
+			<Button id="projectConfirmCancel" text="{i18n>mpCancel}" press=".onConfirmCancel" class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

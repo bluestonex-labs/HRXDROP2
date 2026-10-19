@@ -3,11 +3,10 @@ sap.ui.define([
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast",
-	"sap/m/Column",
-	"sap/m/ColumnListItem",
 	"sap/m/Text",
 	"sap/m/HBox",
-	"sap/ui/core/Icon",
+	"sap/m/Button",
+	"sap/ui/core/CustomData",
 	"../model/CurrentUser",
 	"../model/SicknessPolicy",
 	"../model/TimesheetReport",
@@ -15,7 +14,7 @@ sap.ui.define([
 	"../model/formatter",
 	"../model/Mail",
 	"../model/Reminders"
-], function (Controller, JSONModel, MessageBox, MessageToast, Column, ColumnListItem, Text, HBox, Icon, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Text, HBox, Button, CustomData, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
 	"use strict";
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -31,6 +30,12 @@ sap.ui.define([
 	// A Select shows nothing for an item keyed "", so "All" has a key of its own.
 	var ALL = "__all";
 
+	// The Timesheet reporting tabs. Utilisation ("util") is a page of its own.
+	var REPORT_TABS = ["assign", "days", "break", "sub"];
+
+	// The design's colour bands, as the page's CSS names them.
+	var STATE_KEYS = { Success: "ok", Warning: "warn", Error: "crit" };
+
 	var iso = SicknessPolicy.isoDate;
 	var parseDay = SicknessPolicy.parseDay;
 
@@ -45,6 +50,7 @@ sap.ui.define([
 		onInit: function () {
 			this.setModel(new JSONModel({
 				tab: "assign",
+				utilMode: false,
 				loading: false,
 				weekLoading: false,
 				progressText: "",
@@ -79,22 +85,22 @@ sap.ui.define([
 			this.byId("trAssignList").addEventDelegate({
 				onclick: function (oEvent) {
 					var oTarget = oEvent.target;
-					if (oTarget.closest(".sapMBtn") || oTarget.closest(".hrxTrLogs")) {
+					if (oTarget.closest(".sapMBtn") || oTarget.closest(".hrxTsAsgSub")) {
 						return;
 					}
-					var oRow = oTarget.closest(".hrxTrAsg");
+					var oRow = oTarget.closest(".hrxTsAsg");
 					if (oRow) {
 						this._toggleAssign(oRow.getAttribute("data-key"));
 					}
 				}
 			}, this);
 
-			// A click on a pie wedge drills into it, as a click on its name does. Listened
-			// for on the card rather than the chart: the chart's markup is swapped out
-			// whenever its data changes, and a listener on it went with it.
+			// A click on a donut segment drills into it, as a click on its name does.
+			// Listened for on the card rather than the chart: the chart's markup is swapped
+			// out whenever its data changes, and a listener on it went with it.
 			this.byId("trPieCard").addEventDelegate({
 				onclick: function (oEvent) {
-					var oWedge = oEvent.target.closest && oEvent.target.closest(".hrxTrPie [data-i]");
+					var oWedge = oEvent.target.closest && oEvent.target.closest(".hrxTsDonut [data-i]");
 					if (oWedge) {
 						this._drill(parseInt(oWedge.getAttribute("data-i"), 10));
 					}
@@ -106,10 +112,19 @@ sap.ui.define([
 		},
 
 		_onRouteMatched: function (oEvent) {
-			// The home dashboard links straight to a tab (?tab=sub / ?tab=util).
+			// The side rail opens this view as Timesheet reporting (?tab=assign) or as
+			// Utilisation (?tab=util); the home dashboard links straight to a tab (?tab=sub).
 			var oQuery = oEvent.getParameter("arguments")["?query"] || {};
-			if (oQuery.tab) {
-				this.getModel("trView").setProperty("/tab", oQuery.tab);
+			var oViewModel = this.getModel("trView");
+			var bUtil = oQuery.tab === "util";
+
+			oViewModel.setProperty("/utilMode", bUtil);
+			if (bUtil) {
+				oViewModel.setProperty("/tab", "util");
+			} else if (REPORT_TABS.indexOf(oQuery.tab) !== -1) {
+				oViewModel.setProperty("/tab", oQuery.tab);
+			} else if (oViewModel.getProperty("/tab") === "util") {
+				oViewModel.setProperty("/tab", "assign");
 			}
 
 			CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
@@ -367,7 +382,7 @@ sap.ui.define([
 				return Object.assign(oRow, {
 					open: !!this._mOpenAssign[oRow.key],
 					bookingsText: iLogs ? this.getText(iLogs === 1 ? "trBooking" : "trBookings", [iLogs]) : this.getText("trNoBookingsShort"),
-					projectLine: oRow.ProjectDesc + " - " + (oRow.Billable && oRow.PONo ? oRow.PONo : this.getText("trNoPo")),
+					projectLine: oRow.ProjectDesc + " - " + (oRow.Billable && oRow.PONo ? this._poText(oRow.PONo) : this.getText("trNoPo")),
 					rateText: oRow.rate ? this._money(oRow.rate, oRow.Currency) : "—",
 					monthText: oRow.month !== null ? this._money(oRow.month, oRow.Currency) : "—",
 					totalText: oRow.total !== null ? this._money(oRow.total, oRow.Currency) : "—",
@@ -441,9 +456,9 @@ sap.ui.define([
 				var sColor = COLORS[iColour];
 				return Object.assign(oSlice, {
 					colourIndex: iColour,
+					colourKey: String(iColour),
 					color: sColor,
-					valueText: this._num(oSlice.value),
-					dotHtml: "<span class=\"hrxTrDot\" style=\"background:" + sColor + "\"></span>"
+					valueText: this._num(oSlice.value)
 				});
 			}, this);
 
@@ -463,27 +478,24 @@ sap.ui.define([
 				nonBillableText: this._num(oOverview.nonBillable),
 				title: sTitle,
 				hint: sDrill ?
-					this.getText(aSlices.length === 1 ? "trOneProject" : "trProjectsCount", [aSlices.length, this._num(fSliceTotal)]) :
-					this.getText("trDaysHint", [this._num(fSliceTotal)]),
+					this.getText(aSlices.length === 1 ? "trOneProject" : "trProjectsCount", [aSlices.length]) :
+					this.getText("trDaysHint"),
 				slices: aSlices,
 				pieHtml: this._pieHtml(aSlices, fSliceTotal, sTitle),
 				top: oOverview.top.map(function (oProject) {
 					return {
 						label: oProject.label,
 						valueText: this._num(oProject.value),
-						barHtml: "<div class=\"hrxTrTrack\"><div class=\"hrxTrFill\" style=\"width:" +
-							(oProject.value / fTop * 100).toFixed(1) + "%\"></div></div>"
+						width: this._width(oProject.value / fTop * 100)
 					};
 				}, this)
 			});
 		},
 
 		/**
-		 * The prototype's ring: one segment per slice from twelve o'clock, clockwise,
-		 * around the total days in the middle. Each segment is drawn as a solid ring
-		 * sector (not a dashed circle, which left a ragged edge where its dashes met at
-		 * the top), with a thin white edge between segments, and carries its index so a
-		 * click can drill into it.
+		 * The design's donut: a pale track with one arc per slice laid over it, from
+		 * twelve o'clock clockwise, and the total days in the middle. Each arc carries
+		 * its index so a click on it can drill into that customer.
 		 * @param {Array<object>} aSlices slices with label, value, valueText and color
 		 * @param {number} fTotal the sum of the slices
 		 * @param {string} sTitle what the chart shows, for screen readers
@@ -493,114 +505,113 @@ sap.ui.define([
 			if (!aSlices.length || !fTotal) {
 				return "<div></div>";
 			}
-			var C = 50;
-			var R = 48;
-			var r = 34;
-			var fnPoint = function (fFraction, fRadius) {
-				var fAngle = fFraction * 2 * Math.PI - Math.PI / 2;
-				return (C + fRadius * Math.cos(fAngle)).toFixed(3) + " " + (C + fRadius * Math.sin(fAngle)).toFixed(3);
-			};
 			var fnEscape = function (sText) {
 				return String(sText).replace(/[&<>"]/g, function (sChar) {
 					return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[sChar];
 				});
 			};
-			var fStart = 0;
+			var fCircumference = 2 * Math.PI * 42;
+			var fOffset = 0;
 			var bDrill = !!this.getModel("trView").getProperty("/drill");
 
-			var sSegments = aSlices.map(function (oSlice, iIndex) {
-				var fFraction = oSlice.value / fTotal;
-				var sTitle = "<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title>";
-				var sAttrs = " data-i=\"" + iIndex + "\" fill=\"" + oSlice.color + "\" class=\"hrxTrWedge" +
-					(bDrill ? "" : " hrxTrWedgeActive") + "\"";
-				var sPath;
-
-				if (fFraction >= 0.9999) {
-					// A whole ring: the outer circle with the inner one cut out of it.
-					sPath = "M" + (C - R) + " " + C + " A" + R + " " + R + " 0 1 1 " + (C + R) + " " + C +
-						" A" + R + " " + R + " 0 1 1 " + (C - R) + " " + C + " Z" +
-						" M" + (C - r) + " " + C + " A" + r + " " + r + " 0 1 0 " + (C + r) + " " + C +
-						" A" + r + " " + r + " 0 1 0 " + (C - r) + " " + C + " Z";
-					sAttrs += " fill-rule=\"evenodd\"";
-				} else {
-					var sLarge = fFraction > 0.5 ? "1" : "0";
-					sPath = "M" + fnPoint(fStart, R) +
-						" A" + R + " " + R + " 0 " + sLarge + " 1 " + fnPoint(fStart + fFraction, R) +
-						" L" + fnPoint(fStart + fFraction, r) +
-						" A" + r + " " + r + " 0 " + sLarge + " 0 " + fnPoint(fStart, r) + " Z";
-				}
-				fStart += fFraction;
-				return "<path d=\"" + sPath + "\"" + sAttrs + ">" + sTitle + "</path>";
+			var sArcs = aSlices.map(function (oSlice, iIndex) {
+				var fLength = oSlice.value / fTotal * fCircumference;
+				var sArc = "<circle data-i=\"" + iIndex + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
+					" cx=\"50\" cy=\"50\" r=\"42\" fill=\"none\" stroke=\"" + oSlice.color + "\" stroke-width=\"13\"" +
+					" stroke-dasharray=\"" + fLength + " " + (fCircumference - fLength) + "\"" +
+					" stroke-dashoffset=\"" + (-fOffset) + "\" transform=\"rotate(-90 50 50)\">" +
+					"<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title></circle>";
+				fOffset += fLength;
+				return sArc;
 			}).join("");
 
-			var sCentre = "<text x=\"50\" y=\"50\" text-anchor=\"middle\" class=\"hrxTrPieTotal\">" + fnEscape(this._num(fTotal)) + "</text>" +
-				"<text x=\"50\" y=\"60\" text-anchor=\"middle\" class=\"hrxTrPieUnit\">" + fnEscape(this.getText("trDaysUnit").toUpperCase()) + "</text>";
+			var sTrack = "<circle cx=\"50\" cy=\"50\" r=\"42\" fill=\"none\" class=\"hrxTsDonutTrack\" stroke-width=\"13\"/>";
+			var sCentre = "<text x=\"50\" y=\"49\" text-anchor=\"middle\" class=\"hrxTsDonutTotal\">" + fnEscape(this._num(fTotal)) + "</text>" +
+				"<text x=\"50\" y=\"62\" text-anchor=\"middle\" class=\"hrxTsDonutUnit\">" + fnEscape(this.getText("trDaysUnit").toUpperCase()) + "</text>";
 
-			return "<div class=\"hrxTrPieWrap\"><svg viewBox=\"0 0 100 100\" class=\"hrxTrPie\" role=\"img\" aria-label=\"" +
-				fnEscape(sTitle) + "\">" + sSegments + sCentre + "</svg></div>";
+			return "<div class=\"hrxTsDonutWrap\"><svg viewBox=\"0 0 100 100\" class=\"hrxTsDonut\" role=\"img\" aria-label=\"" +
+				fnEscape(sTitle) + "\">" + sTrack + sArcs + sCentre + "</svg></div>";
 		},
 
 		/**
 		 * Builds the customer/project by resource table. Its columns depend on who
-		 * booked time under the current filters, so it is put together here rather
-		 * than bound in the view.
+		 * booked time under the current filters, so its rows are put together here
+		 * rather than bound in the view: a customer row (click or chevron to open it),
+		 * its projects when open, and the totals row.
 		 */
 		_renderBreakdown: function () {
 			var oBreak = TimesheetReport.breakdown(this._filtered(), this.getModel("trView").getProperty("/period"));
 			var oTable = this.byId("trBreakTable");
 			var iProjects = 0;
-			var fnCell = function (fDays) {
-				return new Text({ text: fDays ? this._num(fDays) : "–" });
-			}.bind(this);
 
-			oTable.destroyColumns();
+			var fnCell = function (sText, sClass) {
+				var oText = new Text({ text: sText, wrapping: false, textAlign: "End" }).addStyleClass("hrxTsNum");
+				return sClass ? oText.addStyleClass(sClass) : oText;
+			};
+			var fnDays = function (fDays) {
+				return fDays ? this._num(fDays) : "–";
+			}.bind(this);
+			var fnRow = function (aCells, sClass) {
+				return new HBox({ renderType: "Bare", items: aCells }).addStyleClass("hrxTsTr hrxTsBrkRow " + sClass);
+			};
+
 			oTable.destroyItems();
 
-			oTable.addColumn(new Column({ header: new Text({ text: this.getText("trColCustomerProject") }) }));
-			oBreak.people.forEach(function (oPerson) {
-				oTable.addColumn(new Column({ hAlign: "End", header: new Text({ text: oPerson.label, wrapping: false }) }));
-			});
-			oTable.addColumn(new Column({ hAlign: "End", header: new Text({ text: this.getText("trColTotals") }) }));
+			// The header row: Customer / Project, one column per person, Totals.
+			oTable.addItem(fnRow([new Text({ text: this.getText("trColCustomerProject"), wrapping: false })]
+				.concat(oBreak.people.map(function (oPerson) {
+					return fnCell(oPerson.label);
+				}), [fnCell(this.getText("trColTotals"))]), "hrxTsTh"));
 
 			oBreak.customers.forEach(function (oCustomer) {
 				var bOpen = !!this._mOpenCustomer[oCustomer.key];
 				iProjects += oCustomer.projects.length;
 
-				var oGroup = new ColumnListItem({
-					type: "Active",
-					press: this._toggleCustomer.bind(this, oCustomer.key),
-					cells: [new HBox({
-						alignItems: "Center",
-						items: [
-							new Icon({ src: bOpen ? "sap-icon://slim-arrow-down" : "sap-icon://slim-arrow-right" }).addStyleClass("hrxTrGroupChev"),
-							new Text({ text: oCustomer.label }).addStyleClass("hrxTrStrong"),
-							new Text({
-								text: this.getText(oCustomer.projects.length === 1 ? "trProject1" : "trProjectsN", [oCustomer.projects.length])
-							}).addStyleClass("hrxTrGroupCount")
-						]
-					})].concat(oBreak.people.map(function (oPerson) {
-						return fnCell(oCustomer.byEmp[oPerson.EmpID]);
-					}), [new Text({ text: this._num(oCustomer.total) }).addStyleClass("hrxTrStrong")])
-				}).addStyleClass("hrxTrGroup");
+				var oChevron = new Button({
+					type: "Transparent",
+					tooltip: this.getText("trShowProjects"),
+					press: this._toggleCustomer.bind(this, oCustomer.key)
+				}).addStyleClass("hrxTsChev");
+
+				var oGroup = fnRow([new HBox({
+					renderType: "Bare",
+					items: [
+						oChevron,
+						new Text({ text: oCustomer.label }),
+						new Text({
+							text: this.getText(oCustomer.projects.length === 1 ? "trProject1" : "trProjectsN", [oCustomer.projects.length]),
+							wrapping: false
+						}).addStyleClass("hrxTsGrpCount")
+					]
+				}).addStyleClass("hrxTsGrpName")].concat(oBreak.people.map(function (oPerson) {
+					return fnCell(fnDays(oCustomer.byEmp[oPerson.EmpID]));
+				}), [fnCell(this._num(oCustomer.total))]), "hrxTsGrp");
+
+				oGroup.addCustomData(new CustomData({ key: "open", value: bOpen ? "yes" : "no", writeToDom: true }));
+				// A click anywhere on the customer's row opens it, as on the design.
+				oGroup.addEventDelegate({
+					onclick: function (oEvent) {
+						if (!oEvent.target.closest(".sapMBtn")) {
+							this._toggleCustomer(oCustomer.key);
+						}
+					}
+				}, this);
 				oTable.addItem(oGroup);
 
 				if (bOpen) {
 					oCustomer.projects.forEach(function (oProject) {
-						oTable.addItem(new ColumnListItem({
-							cells: [new Text({ text: oProject.label }).addStyleClass("hrxTrIndent")].concat(oBreak.people.map(function (oPerson) {
-								return fnCell(oProject.byEmp[oPerson.EmpID]);
-							}), [new Text({ text: this._num(oProject.total) })])
-						}));
+						oTable.addItem(fnRow([new Text({ text: oProject.label }).addStyleClass("hrxTsIndent")]
+							.concat(oBreak.people.map(function (oPerson) {
+								return fnCell(fnDays(oProject.byEmp[oPerson.EmpID]));
+							}), [fnCell(this._num(oProject.total))]), "hrxTsBrkProject"));
 					}, this);
 				}
 			}, this);
 
 			if (oBreak.customers.length) {
-				oTable.addItem(new ColumnListItem({
-					cells: [new Text({ text: this.getText("trColTotals") })].concat(oBreak.people.map(function (oPerson) {
-						return new Text({ text: this._num(oBreak.byEmp[oPerson.EmpID] || 0) });
-					}, this), [new Text({ text: this._num(oBreak.total) })])
-				}).addStyleClass("hrxTrTotals"));
+				oTable.addItem(fnRow([new Text({ text: this.getText("trColTotals") })].concat(oBreak.people.map(function (oPerson) {
+					return fnCell(this._num(oBreak.byEmp[oPerson.EmpID] || 0));
+				}, this), [fnCell(this._num(oBreak.total))]), "hrxTsBrkTotals"));
 			}
 
 			var bAllOpen = oBreak.customers.length > 0 && oBreak.customers.every(function (oCustomer) {
@@ -632,12 +643,12 @@ sap.ui.define([
 					nothingDue: bNothingDue,
 					complete: bComplete,
 					pct: fPct,
-					state: sState,
-					barHtml: this._barHtml(fPct, sState),
+					state: STATE_KEYS[sState],
+					width: this._width(fPct),
 					hoursText: this.getText("trHoursOf", [this._hours(oRow.bookedMinutes), this._hours(oRow.expectedMinutes)]),
 					statusText: this.getText(bNothingDue ? "trNothingDue" : bComplete ? "trFullyBooked" :
 						oRow.bookedMinutes ? "trUnderTarget" : "trNotStarted"),
-					statusState: bComplete ? "Success" : oRow.bookedMinutes ? "Warning" : "Error"
+					statusState: bComplete ? "ok" : oRow.bookedMinutes ? "warn" : "crit"
 				});
 			}, this);
 
@@ -658,7 +669,7 @@ sap.ui.define([
 			this.getModel("tr").setProperty("/sub", {
 				rows: aRows,
 				compliance: iCompliance,
-				complianceState: iCompliance >= 90 ? "Good" : "Critical",
+				complianceState: iCompliance >= 90 ? "ok" : "crit",
 				under: aDue.length - iFull,
 				full: iFull,
 				hint: this.getText("trWeekHint", [aAll.length, this._rangeText(this._oWeek.from, this._oWeek.to)])
@@ -667,15 +678,12 @@ sap.ui.define([
 
 		_renderUtil: function () {
 			var oViewModel = this.getModel("trView");
-			var sEmpId = this._filterValues().EmpID;
 			var sShow = oViewModel.getProperty("/util/show");
 
-			// Utilisation is a share of everything a person booked, so only the person
-			// filter applies - a customer or project would leave out their other time.
-			var aPeople = TimesheetReport.utilisation(
-				TimesheetReport.filter(this._oCache.bookings, { ClientKey: "", ProjectKey: "", EmpID: sEmpId }),
-				oViewModel.getProperty("/period")
-			).filter(function (oPerson) {
+			// Utilisation is a share of everything a person booked, so the customer,
+			// project and resource filters of Timesheet reporting do not apply here (the
+			// Utilisation page has only Period and Show, as on the design).
+			var aPeople = TimesheetReport.utilisation(this._oCache.bookings, oViewModel.getProperty("/period")).filter(function (oPerson) {
 				return sShow === "all" || (sShow === "bill" && oPerson.billable > 0) ||
 					(sShow === "u50" && oPerson.pct < 50) || (sShow === "u80" && oPerson.pct < 80);
 			});
@@ -693,7 +701,7 @@ sap.ui.define([
 
 			this.getModel("tr").setProperty("/util", {
 				team: iTeam,
-				teamState: !fTotal ? "Neutral" : { Success: "Good", Warning: "Warning", Error: "Critical" }[TimesheetReport.utilState(iTeam)],
+				teamState: iTeam ? STATE_KEYS[TimesheetReport.utilState(iTeam)] : "neu",
 				onBillable: iOnBillable + " / " + aPeople.length,
 				billable: this._num(fBillable),
 				total: this._num(fTotal),
@@ -704,8 +712,8 @@ sap.ui.define([
 						billableText: this._num(oPerson.billable),
 						totalText: this._num(oPerson.total),
 						pctText: oPerson.pct + "%",
-						state: TimesheetReport.utilState(oPerson.pct),
-						barHtml: this._barHtml(oPerson.pct, TimesheetReport.utilState(oPerson.pct)),
+						state: STATE_KEYS[TimesheetReport.utilState(oPerson.pct)],
+						width: this._width(oPerson.pct),
 						projectsCount: iCount === 0 ? this.getText("trNoBillableProject") :
 							this.getText(iCount === 1 ? "trOneBillableProject" : "trBillableProjects", [iCount]),
 						projectsText: oPerson.projects.join(", ") || "—"
@@ -731,7 +739,13 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		onTabSelect: function () {
+		/**
+		 * One of the Timesheet reporting tabs was pressed: its key is in the button's
+		 * "tab" custom data.
+		 * @param {sap.ui.base.Event} oEvent the button press event
+		 */
+		onTabPress: function (oEvent) {
+			this.getModel("trView").setProperty("/tab", oEvent.getSource().data("tab"));
 			this._render();
 		},
 
@@ -922,14 +936,19 @@ sap.ui.define([
 		},
 
 		/**
-		 * The prototype's progress bar: a thin track filled in the state's colour.
-		 * @param {number} fPct how full, 0 to 100
-		 * @param {string} sState "Success", "Warning" or "Error"
-		 * @returns {string} the bar's markup
+		 * @param {number} fPct how full a bar is, 0 to 100
+		 * @returns {string} the bar's fill width as CSS, e.g. "42.5%"
 		 */
-		_barHtml: function (fPct, sState) {
-			return "<div class=\"hrxTrTrack hrxTrState" + sState + "\"><div class=\"hrxTrFill\" style=\"width:" +
-				Math.max(0, Math.min(100, fPct)).toFixed(1) + "%\"></div></div>";
+		_width: function (fPct) {
+			return Math.max(0, Math.min(100, fPct || 0)).toFixed(1) + "%";
+		},
+
+		/**
+		 * @param {string} sPONo a purchase order number as held on the project
+		 * @returns {string} as the design shows it, e.g. "PO 4500127"
+		 */
+		_poText: function (sPONo) {
+			return /^PO\b/i.test(sPONo) ? sPONo : "PO " + sPONo;
 		},
 
 		/**

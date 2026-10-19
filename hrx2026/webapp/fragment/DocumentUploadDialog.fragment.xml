@@ -3,77 +3,90 @@
 	xmlns:core="sap.ui.core"
 	xmlns:u="sap.ui.unified">
 
+	<!-- The design's "Upload document" modal (.modal.wide): name across the top, category
+	     and audience side by side, the acknowledgement box, then the file. -->
 	<Dialog
 		id="documentUploadDialog"
 		title="{i18n>dmUploadTitle}"
-		contentWidth="34rem"
-		class="sapUiContentPadding">
+		contentWidth="560px"
+		class="hrxModal hrxModalWide hrxDocUploadDialog">
 		<content>
-			<VBox busy="{dmUpload>/saving}" busyIndicatorDelay="0">
-				<Label text="{i18n>dmFieldName}" required="true" labelFor="documentUploadName" />
-				<Input
-					id="documentUploadName"
-					width="100%"
-					maxLength="200"
-					value="{dmUpload>/Name}"
-					valueLiveUpdate="true"
-					liveChange=".onUploadInput"
-					class="sapUiSmallMarginBottom" />
+			<VBox busy="{dmUpload>/saving}" busyIndicatorDelay="0" renderType="Bare" class="hrxDuGrid">
+				<VBox renderType="Bare" class="hrxDuField hrxDuSpan2">
+					<Label text="{i18n>dmFieldName}" required="true" labelFor="documentUploadName" class="hrxModalLabel hrxDuLabel" />
+					<Input
+						id="documentUploadName"
+						width="100%"
+						maxLength="200"
+						value="{dmUpload>/Name}"
+						valueLiveUpdate="true"
+						liveChange=".onUploadInput"
+						class="hrxDuInput" />
+				</VBox>
 
-				<HBox class="hrxDocUploadPair">
-					<VBox>
-						<layoutData><FlexItemData growFactor="1" baseSize="0" /></layoutData>
-						<Label text="{i18n>dmFieldCategory}" labelFor="documentUploadCategory" />
-						<Select
-							id="documentUploadCategory"
-							width="100%"
-							selectedKey="{dmUpload>/Category}"
-							items="{path: 'dmUpload>/categories', templateShareable: false}">
-							<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
-						</Select>
-					</VBox>
-					<VBox>
-						<layoutData><FlexItemData growFactor="1" baseSize="0" /></layoutData>
-						<Label text="{i18n>dmFieldVisibility}" labelFor="documentUploadVisibility" />
-						<Select
-							id="documentUploadVisibility"
-							width="100%"
-							selectedKey="{dmUpload>/Visibility}"
-							items="{path: 'dmUpload>/audiences', templateShareable: false}">
-							<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
-						</Select>
-					</VBox>
-				</HBox>
+				<VBox renderType="Bare" class="hrxDuField">
+					<Label text="{i18n>dmFieldCategory}" labelFor="documentUploadCategory" class="hrxModalLabel hrxDuLabel" />
+					<Select
+						id="documentUploadCategory"
+						width="100%"
+						selectedKey="{dmUpload>/Category}"
+						items="{path: 'dmUpload>/categories', templateShareable: false}"
+						class="hrxDuSelect">
+						<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
+					</Select>
+				</VBox>
+				<VBox renderType="Bare" class="hrxDuField">
+					<Label text="{i18n>dmFieldVisibility}" labelFor="documentUploadVisibility" class="hrxModalLabel hrxDuLabel" />
+					<Select
+						id="documentUploadVisibility"
+						width="100%"
+						selectedKey="{dmUpload>/Visibility}"
+						items="{path: 'dmUpload>/audiences', templateShareable: false}"
+						class="hrxDuSelect">
+						<core:Item key="{dmUpload>key}" text="{dmUpload>text}" />
+					</Select>
+				</VBox>
 
-				<CheckBox
-					text="{i18n>dmFieldAckRequired}"
-					selected="{dmUpload>/AckRequired}"
-					class="sapUiSmallMarginBottom" />
+				<VBox renderType="Bare" class="hrxDuField hrxDuSpan2">
+					<CheckBox
+						text="{i18n>dmFieldAckRequired}"
+						selected="{dmUpload>/AckRequired}"
+						class="hrxDuCheck" />
+				</VBox>
 
-				<Label text="{i18n>dmFieldFile}" required="true" labelFor="documentUploadFile" />
-				<u:FileUploader
-					id="documentUploadFile"
-					width="100%"
-					fileType="pdf,doc,docx"
-					mimeType="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-					maximumFileSize="10"
-					sameFilenameAllowed="true"
-					placeholder="{i18n>dmFilePlaceholder}"
-					change=".onUploadFileChange"
-					typeMissmatch=".onUploadFileRejected"
-					fileSizeExceed=".onUploadFileTooBig" />
-				<Text text="{i18n>dmFileHint}" class="hrxResourceMeta" />
+				<VBox renderType="Bare" class="hrxDuField hrxDuSpan2">
+					<Label text="{i18n>dmFieldFile}" required="true" labelFor="documentUploadFile" class="hrxModalLabel hrxDuLabel" />
+					<u:FileUploader
+						id="documentUploadFile"
+						width="100%"
+						fileType="pdf,doc,docx"
+						mimeType="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+						maximumFileSize="10"
+						sameFilenameAllowed="true"
+						placeholder="{i18n>dmFilePlaceholder}"
+						change=".onUploadFileChange"
+						typeMissmatch=".onUploadFileRejected"
+						fileSizeExceed=".onUploadFileTooBig"
+						class="hrxDuFile">
+						<!-- the label of the design's "Choose file" button, drawn by the CSS -->
+						<u:customData>
+							<core:CustomData key="choose" value="{i18n>dmFileButton}" writeToDom="true" />
+						</u:customData>
+					</u:FileUploader>
+					<Text text="{i18n>dmFileHint}" class="hrxDuHint" />
+				</VBox>
 			</VBox>
 		</content>
 		<beginButton>
 			<Button
 				text="{i18n>dmUploadConfirm}"
 				type="Emphasized"
-				enabled="{= ${dmUpload>/canSave} &amp;&amp; !${dmUpload>/saving} }"
-				press=".onConfirmUpload" />
+				enabled="{= !${dmUpload>/saving} }"
+				press=".onConfirmUpload"
+				class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button text="{i18n>dmCancel}" press=".onCancelUpload" />
+			<Button text="{i18n>dmCancel}" press=".onCancelUpload" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

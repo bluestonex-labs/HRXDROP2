@@ -1,0 +1,48 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<!-- The design's "Send message — <name>" modal (.modal.wide): the follow-up to the
+	     employee, editable before it is sent and logged against their attendance record. -->
+	<Dialog
+		id="sicknessMessageDialog"
+		title="{skMessage>/title}"
+		class="hrxModal hrxModalWide hrxSicknessDialog"
+		afterClose=".onMessageAfterClose">
+		<content>
+			<VBox busy="{skMessage>/saving}" busyIndicatorDelay="0" renderType="Bare" class="hrxSickDlgBody">
+				<HBox alignItems="Center" renderType="Bare" class="hrxSickStrip">
+					<customData>
+						<core:CustomData key="kind" value="warn" writeToDom="true" />
+					</customData>
+					<core:Icon src="sap-icon://message-warning" class="hrxSickStripIcon" />
+					<Text text="{i18n>skMessageAudit}" class="hrxSickStripText" />
+				</HBox>
+
+				<VBox renderType="Bare" class="hrxSickField hrxSickFieldAfterStrip">
+					<Label text="{i18n>skFieldMessage}" required="true" labelFor="skMessageText" class="hrxModalLabel" />
+					<TextArea
+						id="skMessageText"
+						width="100%"
+						height="155px"
+						rows="9"
+						maxLength="2000"
+						valueLiveUpdate="true"
+						value="{skMessage>/text}"
+						liveChange=".onMessageInput"
+						class="hrxSickMessage" />
+				</VBox>
+			</VBox>
+		</content>
+		<beginButton>
+			<Button
+				text="{i18n>skSendMessage}"
+				type="Emphasized"
+				class="hrxModalBtn hrxModalBtnPrimary"
+				enabled="{= ${skMessage>/canSave} &amp;&amp; !${skMessage>/saving} }"
+				press=".onConfirmMessage" />
+		</beginButton>
+		<endButton>
+			<Button text="{i18n>skCancel}" press=".onCancelMessage" class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

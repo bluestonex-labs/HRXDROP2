@@ -40,55 +40,49 @@
 			</tnt:SideNavigation>
 		</tnt:sideContent>
 		<tnt:mainContents>
-			<!-- One header bar for the app: the launchpad shell already provides the bar
-			     above it, so the page name and the health strip live here rather than in
-			     a second tool header. -->
+			<!-- The design's top bar: HR SUITE and the page title on the left, the page's
+			     own action (and when its data was last read) on the right; on Home only,
+			     the health strip under it. The launchpad shell supplies the bar above. -->
 			<VBox fitContainer="true" class="hrxMainStack">
-				<VBox class="hrxCrumbBar">
-					<HBox alignItems="End" wrap="Wrap" width="100%">
-						<VBox justifyContent="Center">
-							<Text text="{i18n>appEyebrow}" class="hrxEyebrow"/>
-							<Title text="{app>/page/title}" level="H1" class="hrxPageTitle"/>
-						</VBox>
-
-						<!-- The strip summarises the signed-in user's own week, so it belongs to
-						     the home page rather than to every screen. Bottom-aligned against the
-						     title/eyebrow stack so it lines up with the title text itself, not the
-						     midpoint of the whole stack. -->
-						<HBox wrap="Wrap" class="hrxHealthStrip" visible="{app>/page/showStrip}" items="{app>/healthStrip}">
-							<ObjectStatus text="{app>text}" state="{app>state}" class="hrxPill sapUiTinyMarginEnd"/>
-						</HBox>
-
-						<!-- Reload sits on the one bar the app already has rather than in a
-						     toolbar of its own on every page: between the launchpad's shell
-						     bar and this one, a strip carrying nothing but a refresh icon was
-						     costing a row of screen height on every screen. It goes to the far
-						     right, where it was on those toolbars - FlexItemData puts the class
-						     that pushes it there on the flex item wrapper. (A ToolbarSpacer did
-						     nothing here: it only grows inside a toolbar, not an HBox, which is
-						     how the button ended up jammed against the page title.) -->
-						<!-- When the page's data was last read, where a page reports it, sits
-						     just left of the reload button it refers to. -->
-						<HBox alignItems="Center" class="hrxCrumbActions">
-							<layoutData>
-								<FlexItemData styleClass="hrxCrumbActionSlot"/>
-							</layoutData>
-							<Text
-								id="pageStamp"
-								text="{app>/page/stamp}"
-								visible="{= !!${app>/page/stamp} }"
-								class="hrxCrumbStamp"/>
-							<Button
-								id="pageRefresh"
-								icon="sap-icon://refresh"
-								type="Transparent"
-								tooltip="{i18n>appRefreshTooltip}"
-								visible="{app>/page/showRefresh}"
-								press="onRefreshPage"
-								class="hrxCrumbAction"/>
-						</HBox>
+				<HBox alignItems="Center" justifyContent="SpaceBetween" class="hrxTopBar">
+					<VBox class="hrxCrumb">
+						<Text text="{i18n>appEyebrow}" class="hrxEyebrow"/>
+						<Title text="{app>/page/title}" level="H1" class="hrxPageTitle"/>
+					</VBox>
+					<!-- The page action: Record sickness, Upload document, Refresh from service.
+					     Pressing it calls the page controller's onPageAction (see App.controller). -->
+					<HBox alignItems="Center" class="hrxTopBarActions" visible="{= !!${app>/page/action} }">
+						<Text
+							id="pageStamp"
+							text="{app>/page/stamp}"
+							visible="{= !!${app>/page/stamp} }"
+							class="hrxTopBarStamp"/>
+						<Button
+							id="pageAction"
+							text="{app>/page/action/text}"
+							icon="{app>/page/action/icon}"
+							type="Emphasized"
+							press=".onPageAction"
+							class="hrxTopBarAction"/>
 					</HBox>
-				</VBox>
+				</HBox>
+
+				<!-- The signed-in user's own week at a glance; the home page fills it. -->
+				<HBox
+					alignItems="Center"
+					wrap="Wrap"
+					visible="{app>/page/showStrip}"
+					items="{app>/healthStrip}"
+					class="hrxHealthStrip">
+					<HBox alignItems="Center" class="hrxHealthPill">
+						<customData>
+							<core:CustomData key="state" value="{app>state}" writeToDom="true"/>
+						</customData>
+						<core:Icon src="sap-icon://warning2" visible="{= ${app>state} === 'Warning' }" class="hrxHealthIcon"/>
+						<core:HTML content="&lt;span class=&quot;hrxHealthDot&quot;&gt;&lt;/span&gt;" visible="{= ${app>state} !== 'Warning' }"/>
+						<Text text="{app>text}" class="hrxHealthText"/>
+					</HBox>
+				</HBox>
 				<NavContainer id="appNavContainer" height="100%">
 					<layoutData>
 						<FlexItemData growFactor="1" baseSize="0%"/>

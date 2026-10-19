@@ -54,10 +54,15 @@ sap.ui.define([
 		admin: "navAdmin"
 	};
 
-	// Pages whose controller offers an onRefresh - the shell bar's reload button is
-	// theirs. Driven off the route rather than off whichever page the NavContainer
-	// reports, which during a transition is still the page being left behind.
-	var aRefreshableRoutes = ["home", "timesheet", "leave", "teamcal", "sickness", "timesheetreport", "policies", "documents"];
+	// The pages with an action in the top bar, as the design has them. Pressing it
+	// calls the page controller's onPageAction (or, for a refresh, its onRefresh).
+	// Driven off the route rather than off whichever page the NavContainer reports,
+	// which during a transition is still the page being left behind.
+	var mRouteToPageAction = {
+		sickness: { textKey: "pageActionRecordSickness", icon: "sap-icon://add" },
+		documents: { textKey: "pageActionUploadDocument", icon: "sap-icon://upload" },
+		timesheetreport: { textKey: "pageActionRefresh", icon: "sap-icon://refresh" }
+	};
 
 	// Which nav row to light up for pages that have none of their own: Missing
 	// timesheets and the Admin page are opened from the App Explorer.
@@ -367,31 +372,37 @@ sap.ui.define([
 			var oModel = this.getOwnerComponent().getModel("app");
 			var aStrip = oModel.getProperty("/healthStrip") || [];
 
+			var oAction = mRouteToPageAction[this._sRoute];
+
 			oModel.setProperty("/page/showStrip", this._sRoute === "home" && aStrip.length > 0);
-			oModel.setProperty("/page/showRefresh", aRefreshableRoutes.indexOf(this._sRoute) !== -1);
+			oModel.setProperty("/page/action", oAction ? { text: this.getText(oAction.textKey), icon: oAction.icon } : null);
 		},
 
 		/**
 		 * Read at press time rather than on the route match: the NavContainer is still
 		 * transitioning when the route fires, so the page it reports then is the one
 		 * being left behind.
-		 * @returns {sap.ui.core.mvc.Controller|null} the controller of the page on
-		 * screen, when it offers a reload of its own
+		 * @returns {sap.ui.core.mvc.Controller|null} the controller of the page on screen
 		 */
 		_currentPageController: function () {
 			var oPage = this.byId("appNavContainer").getCurrentPage();
 			var oController = oPage && oPage.getController && oPage.getController();
 
-			return (oController && typeof oController.onRefresh === "function") ? oController : null;
+			return oController || null;
 		},
 
 		/**
-		 * Reloads whatever page is on screen. The button lives on the shell bar now, so
-		 * it has to ask the page rather than the page owning a button of its own.
+		 * The top bar's page action. The button lives on the shell's bar, so it asks
+		 * the page on screen: its onPageAction, or for a refresh its onRefresh.
 		 */
-		onRefreshPage: function () {
+		onPageAction: function () {
 			var oController = this._currentPageController();
-			if (oController) {
+			if (!oController) {
+				return;
+			}
+			if (typeof oController.onPageAction === "function") {
+				oController.onPageAction();
+			} else if (typeof oController.onRefresh === "function") {
 				oController.onRefresh();
 			}
 		},

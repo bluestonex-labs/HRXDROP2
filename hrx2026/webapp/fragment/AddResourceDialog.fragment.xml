@@ -1,100 +1,104 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- The design's "New resource" modal (.modal.wide): two fields a row, email on
+	     a row of its own, Create and Cancel in the grey foot. -->
 	<Dialog
 		id="addResourceDialog"
 		title="{i18n>mrAddTitle}"
-		contentWidth="34rem"
+		titleAlignment="Start"
 		busy="{mrView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxMrDialog">
 		<content>
-			<form:SimpleForm
-				id="addResourceForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mrFieldFirstName}" required="true" />
+			<HBox renderType="Bare" class="hrxMrGrid">
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldFirstName}" required="true" labelFor="newFirstName" />
 					<Input
 						id="newFirstName"
 						value="{mrNew>/FName}"
 						placeholder="{i18n>mrFieldFirstNamePlaceholder}"
 						liveChange=".onNewResourceFieldChange" />
-
-					<Label text="{i18n>mrFieldLastName}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldLastName}" labelFor="newLastName" />
 					<Input
 						id="newLastName"
 						value="{mrNew>/LName}"
 						placeholder="{i18n>mrFieldLastNamePlaceholder}"
 						liveChange=".onNewResourceFieldChange" />
-
-					<Label text="{i18n>mrFieldEmail}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMrFld hrxMrSpan2">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldEmail}" required="true" labelFor="newEmail" />
 					<Input
 						id="newEmail"
 						value="{mrNew>/Email}"
 						type="Email"
 						placeholder="{i18n>mrFieldEmailPlaceholder}"
 						liveChange=".onNewResourceFieldChange" />
-
-					<Label text="{i18n>mrFieldMobile}" />
+				</VBox>
+				<!-- Only while the HRX service has a job title to keep it in -->
+				<VBox renderType="Bare" class="hrxMrFld" visible="{services>/jobTitle}">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldJobTitle}" labelFor="newJobTitle" />
+					<Input
+						id="newJobTitle"
+						value="{mrNew>/JobTitle}"
+						maxLength="100"
+						placeholder="{i18n>mrFieldJobTitlePlaceholder}"
+						liveChange=".onNewResourceFieldChange" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldMobile}" labelFor="newMobile" />
 					<Input
 						id="newMobile"
 						value="{mrNew>/Mobile}"
 						type="Tel"
 						placeholder="{i18n>mrFieldMobilePlaceholder}"
 						liveChange=".onNewResourceFieldChange" />
-
-					<Label text="{i18n>mrFieldLocation}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldLocation}" required="true" labelFor="newSite" />
 					<ComboBox
 						id="newSite"
+						width="100%"
 						selectedKey="{mrNew>/BaseSiteKey}"
-						items="{mr>/sites}"
+						items="{path: 'mr>/sites', templateShareable: false}"
 						placeholder="{i18n>mrFieldLocationPlaceholder}"
-						showSecondaryValues="true"
 						selectionChange=".onNewResourceSelectionChange"
 						change=".onNewResourceSelectionChange">
 						<core:ListItem key="{mr>SiteID}" text="{mr>SiteLabel}" additionalText="{mr>SiteLocation}" />
 					</ComboBox>
-
-					<Label text="{i18n>mrFieldUserType}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrFieldUserType}" required="true" labelFor="newUserType" />
 					<ComboBox
 						id="newUserType"
+						width="100%"
 						selectedKey="{mrNew>/UserTypeKey}"
-						items="{mr>/userTypes}"
+						items="{path: 'mr>/userTypes', templateShareable: false}"
 						placeholder="{i18n>mrFieldUserTypePlaceholder}"
 						selectionChange=".onNewResourceSelectionChange"
 						change=".onNewResourceSelectionChange">
 						<core:ListItem key="{mr>UserTypeKey}" text="{mr>UserTypeDesc}" />
 					</ComboBox>
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+			</HBox>
 		</content>
 		<beginButton>
 			<Button
 				id="newResourceConfirm"
 				text="{i18n>mrAddConfirm}"
 				type="Emphasized"
-				press=".onCreateResource" />
+				press=".onCreateResource"
+				class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
 			<Button
 				id="newResourceCancel"
 				text="{i18n>mrCancel}"
-				press=".onCancelAddResource" />
+				press=".onCancelAddResource"
+				class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

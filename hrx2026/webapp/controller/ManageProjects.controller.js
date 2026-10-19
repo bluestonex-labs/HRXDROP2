@@ -1,6 +1,7 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Fragment",
+	"sap/ui/core/format/DateFormat",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
@@ -9,7 +10,7 @@ sap.ui.define([
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -20,6 +21,9 @@ sap.ui.define([
 	var ATTACHMENTS_SERVICE = SERVICE_ROOT + "/hrx/manageAttachments.xsjs";
 
 	var EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+	// Dates as the design writes them, e.g. "1 Apr 2020".
+	var DAY_FORMAT = DateFormat.getDateInstance({ pattern: "d MMM yyyy" });
 
 	// The project list does not need the client logo, which is a base64 blob.
 	var LIST_FIELDS = [
@@ -40,7 +44,8 @@ sap.ui.define([
 			this._sOrgId = this._resolveOrgId();
 
 			this.setModel(new JSONModel({
-				layout: "OneColumn",
+				// "list" (nothing open), "open" (list + project) or "full" (project only)
+				layout: "list",
 				fullScreen: false,
 				listBusy: true,
 				detailBusy: false,
@@ -58,6 +63,8 @@ sap.ui.define([
 				allProjects: [],
 				projects: [],
 				clients: [],
+				// the filter's client choices: "All clients", then every client
+				filterClients: [],
 				projectTypes: [],
 				priorities: [],
 				managers: [],
@@ -70,6 +77,7 @@ sap.ui.define([
 			this.setModel(new JSONModel({}), "mpDetail");
 			this.setModel(new JSONModel(this._emptyTabs()), "mpTabs");
 			this.setModel(new JSONModel({}), "mpForm");
+			this.setModel(new JSONModel({ title: "", text: "", action: "" }), "mpConfirm");
 
 			this._pLookupsLoaded = this._loadLookups();
 
@@ -138,6 +146,10 @@ sap.ui.define([
 				}, {});
 
 				oModel.setProperty("/clients", aClients);
+				oModel.setProperty("/filterClients", [{
+					ClientKey: "",
+					ClientDesc: this.getText("mpFilterAllClients")
+				}].concat(aClients));
 				oModel.setProperty("/projectTypes", this._strip(aResults[1]));
 				oModel.setProperty("/priorities", this._strip(aResults[2]));
 				oModel.setProperty("/managers", aResources);
@@ -205,7 +217,7 @@ sap.ui.define([
 			oViewModel.setProperty("/selectedId", oKeys.ProjectKey);
 			oViewModel.setProperty("/selectedClientKey", oKeys.ClientKey);
 			oViewModel.setProperty("/selectedTab", "info");
-			oViewModel.setProperty("/layout", oViewModel.getProperty("/fullScreen") ? "MidColumnFullScreen" : "TwoColumnsMidExpanded");
+			oViewModel.setProperty("/layout", oViewModel.getProperty("/fullScreen") ? "full" : "open");
 			oViewModel.setProperty("/detailBusy", true);
 			this.getModel("mpTabs").setData(this._emptyTabs());
 
@@ -364,13 +376,6 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		onProjectPress: function (oEvent) {
-			var oContext = oEvent.getSource().getBindingContext("mp");
-			if (oContext) {
-				this._showProject(oContext.getObject());
-			}
-		},
-
 		onProjectSelect: function (oEvent) {
 			var oItem = oEvent.getParameter("listItem");
 			var oContext = oItem && oItem.getBindingContext("mp");
@@ -385,7 +390,7 @@ sap.ui.define([
 
 		_closeDetail: function () {
 			var oViewModel = this.getModel("mpView");
-			oViewModel.setProperty("/layout", "OneColumn");
+			oViewModel.setProperty("/layout", "list");
 			oViewModel.setProperty("/fullScreen", false);
 			oViewModel.setProperty("/selectedId", null);
 			oViewModel.setProperty("/selectedClientKey", null);
@@ -398,7 +403,7 @@ sap.ui.define([
 			var oViewModel = this.getModel("mpView");
 			var bFullScreen = !oViewModel.getProperty("/fullScreen");
 			oViewModel.setProperty("/fullScreen", bFullScreen);
-			oViewModel.setProperty("/layout", bFullScreen ? "MidColumnFullScreen" : "TwoColumnsMidExpanded");
+			oViewModel.setProperty("/layout", bFullScreen ? "full" : "open");
 		},
 
 		/* =========================================================== */
@@ -420,10 +425,6 @@ sap.ui.define([
 
 		onCancelFilter: function () {
 			this._closeDialog("_pFilterDialog");
-		},
-
-		onClearFilter: function () {
-			this.getModel("mpView").setProperty("/filterDraft", { client: "", timeBooking: "A" });
 		},
 
 		/* =========================================================== */
@@ -470,6 +471,9 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onOpenAddProject: function () {
+			// The design asks only for the name, client, type, manager and priority. A new
+			// project starts today, is open-ended and open for booking; the rest is set on
+			// its Info tab, which opens as soon as it is created.
 			this.getModel("mpForm").setData({
 				ProjectDesc: "",
 				ClientKey: "",
@@ -479,7 +483,7 @@ sap.ui.define([
 				PONumber: "",
 				POValue: "",
 				TotBillableDays: "",
-				StartDate: null,
+				StartDate: new Date(),
 				EndDate: null,
 				TimeBooking: true,
 				taskKeys: []
@@ -523,9 +527,15 @@ sap.ui.define([
 				ProjectTask: (oForm.taskKeys || []).map(function (sTaskKey) {
 					return { TaskKey: sTaskKey };
 				})
-			}, "mpCreated", "mpErrorCreate").then(function () {
+			}, "mpCreated", "mpErrorCreate").then(function (oResult) {
 				this._closeDialog("_pAddProjectDialog");
-				return this._loadProjects();
+				return this._loadProjects().then(function () {
+					// As in the design, the new project opens straight away.
+					if (oResult && oResult.ProjectKey) {
+						return this._showProject({ ProjectKey: oResult.ProjectKey, ClientKey: oForm.ClientKey });
+					}
+					return null;
+				}.bind(this));
 			}.bind(this)).catch(function () { /* reported by _save */ });
 		},
 
@@ -664,23 +674,22 @@ sap.ui.define([
 			var oAssignment = oEvent.getSource().getBindingContext("mpTabs").getObject();
 			var sProjectKey = this.getModel("mpView").getProperty("/selectedId");
 
-			MessageBox.confirm(this.getText("mpConfirmRelease", [oAssignment.FullName]), {
-				title: this.getText("mpConfirmReleaseTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
-					}
-					this._save(ASSIGNMENTS_SERVICE + "?cmd=release", {
-						orgID: oAssignment.OrgID || this._sOrgId,
-						empID: oAssignment.EmpID,
-						projectID: oAssignment.ProjectKey || sProjectKey
-					}, "mpAssignmentReleased", "mpErrorAssignmentRelease", "PUT").then(function () {
-						return this._loadAssignments(sProjectKey);
-					}.bind(this)).catch(function () { /* reported by _save */ });
-				}.bind(this)
-			});
+			this._confirm(
+				this.getText("mpConfirmReleaseTitle"),
+				this.getText("mpConfirmRelease", [oAssignment.FullName]),
+				this.getText("mpRelease")
+			).then(function (bConfirmed) {
+				if (!bConfirmed) {
+					return;
+				}
+				this._save(ASSIGNMENTS_SERVICE + "?cmd=release", {
+					orgID: oAssignment.OrgID || this._sOrgId,
+					empID: oAssignment.EmpID,
+					projectID: oAssignment.ProjectKey || sProjectKey
+				}, "mpAssignmentReleased", "mpErrorAssignmentRelease", "PUT").then(function () {
+					return this._loadAssignments(sProjectKey);
+				}.bind(this)).catch(function () { /* reported by _save */ });
+			}.bind(this));
 		},
 
 		/**
@@ -867,23 +876,155 @@ sap.ui.define([
 			var oAttachment = oEvent.getSource().getBindingContext("mpTabs").getObject();
 			var sProjectKey = this.getModel("mpView").getProperty("/selectedId");
 
-			MessageBox.confirm(this.getText("mpConfirmDeleteAttachment", [oAttachment.FileName]), {
-				title: this.getText("mpConfirmDeleteAttachmentTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
-					}
-					this._save(ATTACHMENTS_SERVICE + "?cmd=delete", {
-						attachmentID: oAttachment.AttachmentID,
-						orgID: this._sOrgId,
-						projectID: sProjectKey
-					}, "mpAttachmentDeleted", "mpErrorAttachmentDelete").then(function () {
-						return this._loadAttachments(sProjectKey);
-					}.bind(this)).catch(function () { /* reported by _save */ });
-				}.bind(this)
-			});
+			this._confirm(
+				this.getText("mpConfirmDeleteAttachmentTitle"),
+				this.getText("mpConfirmDeleteAttachment", [oAttachment.FileName]),
+				this.getText("mpDeleteAttachment")
+			).then(function (bConfirmed) {
+				if (!bConfirmed) {
+					return;
+				}
+				this._save(ATTACHMENTS_SERVICE + "?cmd=delete", {
+					attachmentID: oAttachment.AttachmentID,
+					orgID: this._sOrgId,
+					projectID: sProjectKey
+				}, "mpAttachmentDeleted", "mpErrorAttachmentDelete").then(function () {
+					return this._loadAttachments(sProjectKey);
+				}.bind(this)).catch(function () { /* reported by _save */ });
+			}.bind(this));
+		},
+
+		/* =========================================================== */
+		/* formatters                                                  */
+		/* =========================================================== */
+
+		/**
+		 * @param {Date|string} vDate any date shape the services return
+		 * @returns {string} the date as the design writes it, e.g. "1 Apr 2020"
+		 */
+		formatDay: function (vDate) {
+			var oDate = formatter.toDate(vDate);
+			return oDate ? DAY_FORMAT.format(oDate) : "";
+		},
+
+		/**
+		 * @param {Date|string} vFrom the project's start
+		 * @param {Date|string} vTo the project's end
+		 * @returns {string} "1 Apr 2020 – 31 Dec 2029", or whichever end is known
+		 */
+		formatDateRange: function (vFrom, vTo) {
+			var sFrom = this.formatDay(vFrom);
+			var sTo = this.formatDay(vTo);
+			if (sFrom && sTo) {
+				return sFrom + " – " + sTo;
+			}
+			return sFrom || sTo;
+		},
+
+		/**
+		 * @param {string|number} vAmount a day rate or day cost
+		 * @returns {string} "£525/day", or a dash when there is none
+		 */
+		formatPerDay: function (vAmount) {
+			var fAmount = parseFloat(vAmount);
+			if (!fAmount) {
+				return "—";
+			}
+			return this.getText("mpPerDay", [formatter.money(fAmount)]);
+		},
+
+		/**
+		 * @param {Array<object>} aAreas the areas a resource works in: [{ TaskDesc }]
+		 * @returns {string} their names, comma separated, or a dash when there are none
+		 */
+		formatAreaList: function (aAreas) {
+			var aNames = (aAreas || []).map(function (oArea) {
+				return oArea.TaskDesc;
+			}).filter(Boolean);
+			return aNames.length ? aNames.join(", ") : "—";
+		},
+
+		/**
+		 * Whether an area chip is on.
+		 * @param {string} sTaskKey the chip's area
+		 * @param {Array<string>} aSelectedKeys the areas chosen
+		 * @returns {boolean} true when the area is among them
+		 */
+		isAreaSelected: function (sTaskKey, aSelectedKeys) {
+			return (aSelectedKeys || []).indexOf(sTaskKey) !== -1;
+		},
+
+		/* =========================================================== */
+		/* area chips                                                  */
+		/* =========================================================== */
+
+		/**
+		 * A chip on the Info tab: adds the area to the project, or takes it off.
+		 * @param {sap.ui.base.Event} oEvent the chip's press event
+		 */
+		onToggleProjectArea: function (oEvent) {
+			var sTaskKey = oEvent.getSource().getBindingContext("mp").getProperty("TaskKey");
+			this._toggleArea(this.getModel("mpDetail"), sTaskKey);
+		},
+
+		/**
+		 * A chip in the assignment modal: the resource works in that area, or not.
+		 * @param {sap.ui.base.Event} oEvent the chip's press event
+		 */
+		onToggleAssignmentArea: function (oEvent) {
+			var sTaskKey = oEvent.getSource().getBindingContext("mpDetail").getProperty("TaskKey");
+			this._toggleArea(this.getModel("mpForm"), sTaskKey);
+		},
+
+		_toggleArea: function (oModel, sTaskKey) {
+			var aSelectedKeys = (oModel.getProperty("/taskKeys") || []).slice();
+			var iIndex = aSelectedKeys.indexOf(sTaskKey);
+
+			if (iIndex === -1) {
+				aSelectedKeys.push(sTaskKey);
+			} else {
+				aSelectedKeys.splice(iIndex, 1);
+			}
+			// A new array, so the chips' pressed bindings see the change.
+			oModel.setProperty("/taskKeys", aSelectedKeys);
+		},
+
+		/* =========================================================== */
+		/* confirmation modal                                          */
+		/* =========================================================== */
+
+		/**
+		 * Asks before something that cannot be undone, in the design's modal.
+		 * @param {string} sTitle the modal title, e.g. "Release resource"
+		 * @param {string} sText the question
+		 * @param {string} sAction the red button's text, e.g. "Release"
+		 * @returns {Promise<boolean>} true when confirmed, false when cancelled
+		 */
+		_confirm: function (sTitle, sText, sAction) {
+			this.getModel("mpConfirm").setData({ title: sTitle, text: sText, action: sAction });
+
+			return new Promise(function (resolve) {
+				this._fnConfirmResolve = resolve;
+				this._bConfirmed = false;
+				this._openDialog("_pConfirmDialog", "bsx.hrx.hrx2026.fragment.ProjectConfirmDialog");
+			}.bind(this));
+		},
+
+		onConfirmAction: function () {
+			this._bConfirmed = true;
+			this._closeDialog("_pConfirmDialog");
+		},
+
+		onConfirmCancel: function () {
+			this._closeDialog("_pConfirmDialog");
+		},
+
+		/** Answers _confirm once the modal has closed, however it was closed. */
+		onConfirmDialogClosed: function () {
+			if (this._fnConfirmResolve) {
+				this._fnConfirmResolve(this._bConfirmed);
+				this._fnConfirmResolve = null;
+			}
 		},
 
 		/* =========================================================== */
@@ -937,6 +1078,9 @@ sap.ui.define([
 				bValid = bValid && bFilled;
 			}, this);
 
+			if (!bValid) {
+				MessageToast.show(this.getText("mpMandatory"));
+			}
 			return bValid;
 		},
 
@@ -951,6 +1095,9 @@ sap.ui.define([
 				bValid = bValid && bFilled;
 			}, this);
 
+			if (!bValid) {
+				MessageToast.show(this.getText("mpMandatory"));
+			}
 			return bValid;
 		},
 
@@ -1030,7 +1177,8 @@ sap.ui.define([
 		},
 
 		_defaultFilter: function () {
-			return { client: "", timeBooking: "Y" };
+			// As the design opens: every project, booking open or closed.
+			return { client: "", timeBooking: "A" };
 		},
 
 		_emptyTabs: function () {

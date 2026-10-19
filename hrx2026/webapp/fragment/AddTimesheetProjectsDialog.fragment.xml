@@ -2,19 +2,16 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 
-	<!-- contentWidth="auto" let the dialog shrink to roughly 40% of the screen, which
-	     wrapped every project name onto two or three lines. A definite width, capped
-	     by max-width in style.css so it still fits a laptop, keeps the three columns
-	     readable. -->
+	<!-- The design's wide modal (.modal.wide, 560px - hrxModal in css/style.css):
+	     uppercase title, the action first and Cancel after it in a frosted foot.
+	     The assignment list runs edge to edge inside it (hrxTsAddProjects). -->
 	<Dialog
 		id="addTimesheetProjectsDialog"
 		title="{i18n>tsAddProjectsTitle}"
-		contentWidth="60rem"
-		contentHeight="32rem"
-		resizable="true"
+		contentHeight="24rem"
 		busy="{tsView>/saving}"
 		busyIndicatorDelay="0"
-		class="hrxPickerDialog">
+		class="hrxModal hrxModalWide hrxTsAddProjects">
 		<content>
 			<Table
 				id="addProjectsTable"
@@ -23,16 +20,16 @@
 				growing="true"
 				growingThreshold="50"
 				sticky="ColumnHeaders"
-				class="hrxPickerTable"
+				class="hrxTsPickerTable"
 				noDataText="{i18n>tsNoAvailableProjects}">
 				<columns>
 					<!-- Fixed widths for the two short columns so the three of them line up
 					     down the list instead of shifting with the longest client name. -->
 					<Column><Text text="{i18n>tsColProject}" /></Column>
-					<Column width="11rem" minScreenWidth="Tablet" demandPopin="true">
+					<Column width="9rem" minScreenWidth="Tablet" demandPopin="true">
 						<Text text="{i18n>tsColClient}" />
 					</Column>
-					<Column width="7.5rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true">
+					<Column width="7rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true">
 						<Text text="{i18n>tsColType}" />
 					</Column>
 				</columns>
@@ -50,10 +47,10 @@
 			</Table>
 		</content>
 		<beginButton>
-			<Button id="addProjectsConfirm" text="{i18n>tsAddProjectsConfirm}" type="Emphasized" press=".onConfirmAddProjects" />
+			<Button id="addProjectsConfirm" text="{i18n>tsAddProjectsConfirm}" type="Emphasized" press=".onConfirmAddProjects" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="addProjectsCancel" text="{i18n>tsCancel}" press=".onCancelAddProjects" />
+			<Button id="addProjectsCancel" text="{i18n>tsCancel}" press=".onCancelAddProjects" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

@@ -1,1 +1,1096 @@
-/* teamcalendar - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* teamcalendar - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+
+   Team Calendar as the design draws it: a manager's Team leave card (#tcLeaveCard)
+   above the week (#tcCard). Every value below is the design's own; the selectors
+   reach into the sap.m controls the view is built from (Button, Select, Input,
+   SearchField, Table) to give them the design's look. */
+
+/* ── Leave type colours (the design's LTYPE_COLOR), shared by dots, legend and pills ── */
+.hrxTeamCalendar [data-type],
+.hrxTlPop [data-type] {
+	--c: #9B9CA1;
+}
+
+.hrxTeamCalendar [data-type="COMPL"], .hrxTlPop [data-type="COMPL"] { --c: #D97706; }
+.hrxTeamCalendar [data-type="HOLIL"], .hrxTlPop [data-type="HOLIL"] { --c: #85B7EB; }
+.hrxTeamCalendar [data-type="MATEL"], .hrxTlPop [data-type="MATEL"] { --c: #1FAE72; }
+.hrxTeamCalendar [data-type="PATEL"], .hrxTlPop [data-type="PATEL"] { --c: #D52FFF; }
+.hrxTeamCalendar [data-type="SICKL"], .hrxTlPop [data-type="SICKL"] { --c: #E5484D; }
+.hrxTeamCalendar [data-type="UNPDL"], .hrxTlPop [data-type="UNPDL"] { --c: #991B1B; }
+
+/* ── Layout: two cards, 16px apart (.stack) ── */
+.hrxApp .hrxTeamCalendar .hrxTcStack {
+	gap: 16px;
+}
+
+/* .card / .tablecard */
+.hrxApp .hrxTeamCalendar .hrxTcCard {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+/* .card-head */
+.hrxApp .hrxTeamCalendar .hrxTcCardHead {
+	gap: 10px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcCardTitle.sapMTitle,
+.hrxApp .hrxTeamCalendar .hrxTcWeekLabel.sapMTitle,
+.hrxApp .hrxTeamCalendar .hrxTcCardTitle .sapMTitleInner,
+.hrxApp .hrxTeamCalendar .hrxTcWeekLabel .sapMTitleInner {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	/* League Spartan's own line box at 14px, as the design renders it */
+	line-height: 13px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcCardHint {
+	margin-top: 3px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTlTools {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+/* ── Fields: select, input, search (the design's input/select) ── */
+.hrxApp .hrxTeamCalendar .hrxTcCardHeadText {
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSelect.sapMSlt,
+.hrxApp .hrxTeamCalendar .hrxTcInput.sapMInputBase,
+.hrxApp .hrxTeamCalendar .hrxTcSearch.sapMSF {
+	margin: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSelect.sapMSlt,
+.hrxApp .hrxTeamCalendar .hrxTcInput .sapMInputBaseContentWrapper {
+	box-sizing: border-box;
+	height: 35px;
+	font-family: var(--sans);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSelect.sapMSlt:hover,
+.hrxApp .hrxTeamCalendar .hrxTcInput:hover .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcInput.sapMInputBase {
+	height: 35px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSelect .sapMSltLabel,
+.hrxApp .hrxTeamCalendar .hrxTcInput .sapMInputBaseInner {
+	height: 33px;
+	line-height: 33px;
+	padding: 0 40px 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcInput .sapMInputBaseInner {
+	padding-right: 12px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcInput .sapMInputBaseInner::placeholder {
+	color: var(--txt-2);
+	font-style: normal;
+}
+
+/* The select's chevron, as the design draws it */
+.hrxApp .hrxTeamCalendar .hrxTcSelect .sapMSltArrow {
+	width: 40px;
+	height: 33px;
+	border: none;
+	background: transparent;
+	font-size: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSelect .sapMSltArrow::before {
+	content: "";
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 8.5px 0 0 12px;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236D6E72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+
+/* "Select resource(s)" opens a list; its value-help icon is not in the design */
+.hrxApp .hrxTeamCalendar .hrxTcResourceInput .sapMInputBaseIconContainer {
+	display: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcResourceInput .sapMInputBaseInner {
+	cursor: pointer;
+}
+
+/* .md-search: the magnifier on the left of the field */
+.hrxApp .hrxTeamCalendar .hrxTcSearch.sapMSF {
+	height: 35px;
+	padding: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSearch .sapMSFF {
+	box-sizing: border-box;
+	height: 35px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239B9CA1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") 12px center / 15px no-repeat;
+	box-shadow: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSearch .sapMSFI {
+	height: 33px;
+	padding-left: 36px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSearch .sapMSFI::placeholder {
+	color: var(--txt-2);
+	font-style: normal;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcSearch .sapMSFS {
+	display: none;
+}
+
+/* ── Status chips (.doc-filters .chip, with .chip-n) ── */
+.hrxApp .hrxTeamCalendar .hrxTcChips {
+	gap: 8px;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+/* The chip is the button itself, so its count (data-count on the button) can sit
+   inside it as the bubble. */
+.hrxApp .hrxTeamCalendar .hrxTcChip.sapMBtn {
+	box-sizing: border-box;
+	font-size: 12px;
+	line-height: 15px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: auto;
+	padding: 5px 12px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--txt-2);
+	cursor: pointer;
+	transition: .12s;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcChip .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcChip .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 15px;
+	text-transform: none;
+	letter-spacing: 0;
+	color: inherit;
+}
+
+/* .chip-n */
+.hrxApp .hrxTeamCalendar .hrxTcChip.sapMBtn::after {
+	content: attr(data-count);
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: var(--frost-2);
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcChip.sapMBtn:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcChip.sapMBtn[data-on="yes"] {
+	background: var(--ice-glow);
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcChip.sapMBtn[data-on="yes"]::after {
+	background: #FFFFFF;
+	color: var(--ice-deep);
+}
+
+/* ── The Team leave table (the design's table). !important on the paddings and the
+   header colours: the theme's compact table rules are more specific than any
+   class selector here. ── */
+.hrxApp .hrxTeamCalendar .hrxTcTable,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTbl {
+	background: transparent;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblHeader {
+	height: auto;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable th.sapMListTblHeaderCell {
+	height: auto !important;
+	padding: 9px 18px !important;
+	background: var(--frost) !important;
+	border: none !important;
+	vertical-align: middle;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable th.sapMListTblHeaderCell:nth-child(2),
+.hrxApp .hrxTeamCalendar .hrxTcTable td.sapMListTblCell:nth-child(2) {
+	padding-left: 20px !important;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable th.sapMListTblHeaderCell:last-of-type,
+.hrxApp .hrxTeamCalendar .hrxTcTable td.sapMListTblCell:last-of-type {
+	padding-right: 20px !important;
+}
+
+/* the highlight / navigation columns UI5 adds are not in the design */
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblHighlightCol,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblNavCol,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblNavigatedCol,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblDummyCell,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblHighlightCell,
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListTblNavigatedCell {
+	display: none !important;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMColumnHeader {
+	padding: 0 !important;
+	min-height: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMColumnHeaderContent.sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 11.5px;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+	white-space: nowrap;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable tr.sapMListTblRow:not(.sapMListTblHeader) {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+	background: transparent;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable tr.sapMListTblRow:not(.sapMListTblHeader):last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable tr.sapMListTblRow:not(.sapMListTblHeader):hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable td.sapMListTblCell {
+	padding: 12px 18px !important;
+	border: none !important;
+	vertical-align: middle;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable td.sapMListTblCell .sapMText:not(.hrxTcPill):not(.hrxTcDur):not(.hrxTcAvatarText) {
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMListNoData {
+	padding: 22px 20px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--txt-3);
+}
+
+/* .person: the avatar and the name */
+.hrxApp .hrxTeamCalendar .hrxTcPersonCell {
+	gap: 10px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcAvatar {
+	width: 30px;
+	height: 30px;
+	flex: 0 0 30px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcAvatar .sapMText.hrxTcAvatarText {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMText.hrxTcPersonName {
+	font-weight: 600;
+	color: var(--ink);
+}
+
+/* the leave type: .dot, the name, then .dur */
+.hrxApp .hrxTeamCalendar .hrxTcTypeDot {
+	width: 8px;
+	height: 8px;
+	flex: 0 0 8px;
+	margin-right: 7px;
+	border-radius: 3px;
+	background: var(--c);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcTable .sapMText.hrxTcDur {
+	line-height: 12px;
+	margin-left: 8px;
+	padding: 2px 7px;
+	border-radius: 5px;
+	background: var(--frost-2);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* .pill.warn / .ok / .crit */
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill,
+.hrxTlPop .sapMText.hrxTcPill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+	white-space: nowrap;
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill[data-state="REQ"],
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill.hrxTcNotMvp,
+.hrxTlPop .sapMText.hrxTcPill[data-state="REQ"] {
+	background: var(--amber-soft);
+	color: #92400E;
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill[data-state="APR"],
+.hrxTlPop .sapMText.hrxTcPill[data-state="APR"] {
+	background: var(--mint-soft);
+	color: #0F7B4F;
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill[data-state="REJ"],
+.hrxTlPop .sapMText.hrxTcPill[data-state="REJ"] {
+	background: var(--signal-soft);
+	color: #991B1B;
+}
+
+/* ── Buttons: .btn.sm .approve / .reject, and .icon-btn.sm ── */
+.hrxApp .hrxTeamCalendar .hrxTcRowActions {
+	gap: 6px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtn.sapMBtn,
+.hrxTlPop .hrxTcBtn.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtn .sapMBtnInner,
+.hrxTlPop .hrxTcBtn .sapMBtnInner {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: auto;
+	min-height: 0;
+	min-width: 92px;
+	font-size: 10.5px;
+	line-height: 1.3;
+	padding: calc(6px + .12em) 12px calc(6px - .12em);
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtn .sapMBtnContent,
+.hrxTlPop .hrxTcBtn .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 1.2;
+	line-height: 1.3;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtn .sapMBtnIcon,
+.hrxTlPop .hrxTcBtn .sapMBtnIcon {
+	position: relative;
+	top: -.12em;
+	width: 13px;
+	min-width: 13px;
+	margin: 0 5px 0 0;
+	font-size: 11px;
+	color: inherit;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtnApprove .sapMBtnInner,
+.hrxTlPop .hrxTcBtnApprove .sapMBtnInner {
+	background: var(--mint-soft);
+	border-color: #B7E3CF;
+	color: #0F7B4F;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtnApprove .sapMBtnInner:hover,
+.hrxTlPop .hrxTcBtnApprove .sapMBtnInner:hover {
+	background: var(--mint);
+	border-color: var(--mint);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtnReject .sapMBtnInner,
+.hrxTlPop .hrxTcBtnReject .sapMBtnInner {
+	background: var(--signal-soft);
+	border-color: #F3C4C6;
+	color: #991B1B;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcBtnReject .sapMBtnInner:hover,
+.hrxTlPop .hrxTcBtnReject .sapMBtnInner:hover {
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #FFFFFF;
+}
+
+/* ── The week's top row: arrows and label, then the filters (.ttop) ── */
+.hrxApp .hrxTeamCalendar .hrxTcTop {
+	gap: 14px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcWeekNav {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcIconBtn.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+/* .week-nav .icon-btn: no border or fill until hovered */
+.hrxApp .hrxTeamCalendar .hrxTcIconBtn .sapMBtnInner {
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--txt-2);
+	box-shadow: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcIconBtn .sapMBtnInner:hover {
+	background: var(--frost);
+	border-color: transparent;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcIconBtn .sapMBtnIcon {
+	margin: 0;
+	font-size: 12px;
+	color: inherit;
+}
+
+/* .tc-filters / .tc-f: the label above each control */
+.hrxApp .hrxTeamCalendar .hrxTcFilters {
+	gap: 14px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcFilter {
+	gap: 4px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcFilterLabelRow {
+	gap: 6px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcFilterLabel.sapMLabel {
+	margin: 0;
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcNotMvp {
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+/* ── The legend (.tc-legend) ── */
+.hrxApp .hrxTeamCalendar .hrxTcLegend {
+	gap: 18px;
+	padding: 10px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcLegendTypes {
+	gap: 18px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcLegendItem {
+	gap: 7px;
+	height: 14px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcLegendItem .sapMText {
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcLegendDot {
+	width: 9px;
+	height: 9px;
+	border-radius: 3px;
+	background: var(--c);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcLegendHatch {
+	width: 14px;
+	height: 10px;
+	border-radius: 3px;
+	border: 1px dashed var(--txt-3);
+	background: repeating-linear-gradient(45deg, #E4E6EA, #E4E6EA 3px, #FFFFFF 3px, #FFFFFF 6px);
+}
+
+/* ── The grid (.tc-grid: 200px, then the seven days) ── */
+.hrxApp .hrxTeamCalendar .hrxTcScroll {
+	max-height: 520px;
+	overflow: auto;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcRow {
+	display: grid;
+	grid-template-columns: 200px 1fr;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcDays {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcHeadRow {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+}
+
+/* .tc-cell .tc-head */
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcHead {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 9px;
+	background: var(--frost);
+	border-bottom: 1px solid var(--line-soft);
+	border-right: 1px solid var(--line-soft);
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+	white-space: nowrap;
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcHead[data-today="yes"] {
+	color: var(--ice-deep);
+}
+
+/* .tc-person */
+.hrxApp .hrxTeamCalendar .hrxTcPerson {
+	gap: 10px;
+	min-width: 0;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line-soft);
+	border-right: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPersonAvatar.sapMAvatar {
+	flex: 0 0 26px;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+	border: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPersonAvatar .sapMAvatarInitials {
+	font-family: var(--sans);
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPersonText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPerson .sapMText.hrxTcPersonName {
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 14px;
+	color: var(--ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTcSub {
+	margin-top: 1px;
+	font-family: var(--sans);
+	font-size: 11px;
+	line-height: 13px;
+	font-weight: 500;
+	color: var(--txt-3);
+}
+
+/* .tc-pend: "2 pending" */
+.hrxApp .hrxTeamCalendar .hrxTcPend.sapMBtn {
+	height: auto;
+	padding: 0;
+	margin-top: 4px;
+	align-self: flex-start;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPend .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 2px 9px;
+	font-size: 10.5px;
+	line-height: 12px;
+	border: 1px solid var(--amber);
+	border-radius: 999px;
+	background: var(--amber-soft);
+	color: #92400E;
+	box-shadow: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPend .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	text-transform: none;
+	letter-spacing: 0;
+	color: inherit;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcPend .sapMBtnInner:hover {
+	background: var(--amber);
+	color: #FFFFFF;
+}
+
+/* a day: .tc-cell, weekends .tc-wknd */
+.hrxApp .hrxTeamCalendar .hrxTcCell {
+	justify-content: center;
+	gap: 4px;
+	min-width: 0;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--line-soft);
+	border-right: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcCell[data-weekend="yes"] {
+	background: var(--frost);
+}
+
+/* .tcp: a leave pill in its type's colour; hatched while waiting */
+.hrxApp .hrxTeamCalendar .hrxTcp.sapMBtn {
+	display: block;
+	width: 100%;
+	height: auto;
+	min-height: 0;
+	padding: 0;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp .sapMBtnInner {
+	display: block;
+	width: 100%;
+	height: auto;
+	min-height: 0;
+	padding: 4px 6px;
+	font-size: 10.5px;
+	line-height: 12px;
+	border-radius: 6px;
+	border: 1px solid color-mix(in srgb, var(--c) 38%, #FFFFFF);
+	background: color-mix(in srgb, var(--c) 20%, #FFFFFF);
+	color: color-mix(in srgb, var(--c) 58%, #000000);
+	box-shadow: none;
+	transition: .12s;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp .sapMBtnInner:hover {
+	filter: brightness(.96);
+	box-shadow: 0 1px 4px rgba(10, 10, 11, .15);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	text-align: center;
+	text-transform: none;
+	letter-spacing: 0;
+	color: inherit;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp[data-pending="yes"] .sapMBtnInner {
+	background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--c) 14%, #FFFFFF) 0 5px, color-mix(in srgb, var(--c) 32%, #FFFFFF) 5px 10px);
+	border: 1px dashed var(--c);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp[data-pending="yes"] .sapMBtnContent {
+	font-style: italic;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp[data-selected="yes"] .sapMBtnInner {
+	outline: 2px solid var(--ink);
+	outline-offset: 1px;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcp.sapMBtn:focus,
+.hrxApp .hrxTeamCalendar .hrxTcp .sapMBtnInner:focus {
+	outline: none;
+}
+
+.hrxApp .hrxTeamCalendar .hrxTcEmpty {
+	align-items: center;
+	padding: 28px 20px;
+}
+
+/* ── "Select resource(s)" (.res-row) ── */
+.hrxTcResourcesPop .sapMPopoverCont {
+	border-radius: var(--radius);
+}
+
+.hrxTcResourcesPop .hrxTcResourceList {
+	padding: 8px;
+}
+
+.hrxTcResourcesPop .hrxTcResourceRow {
+	gap: 9px;
+	padding: 2px 6px 2px 0;
+	border-radius: 8px;
+}
+
+.hrxTcResourcesPop .hrxTcResourceRow:hover {
+	background: var(--frost);
+}
+
+.hrxTcResourcesPop .hrxTcResourceAvatar {
+	width: 24px;
+	height: 24px;
+	flex: 0 0 24px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+}
+
+.hrxTcResourcesPop .hrxTcResourceAvatar .sapMText {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+.hrxTcResourcesPop .sapMText.hrxTcResourceName {
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+/* ── The pop-over beside a pill (.cal-pop) ── */
+.hrxTlPop.sapMPopover {
+	width: 320px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: 0 12px 40px rgba(10, 10, 11, .28);
+	overflow: hidden;
+}
+
+.hrxTlPop .sapMPopoverArr {
+	display: none;
+}
+
+.hrxTlPop .sapMPopoverCont {
+	border-radius: var(--radius);
+}
+
+.hrxTlPop .hrxTlPopHead {
+	gap: 12px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .hrxTlPopWho .sapMText.hrxResourceName {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxTlPop .hrxTlPopWho .sapMText.hrxResourceMeta {
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxTlPop .hrxTlPopAvatar {
+	width: 30px;
+	height: 30px;
+	flex: 0 0 30px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+}
+
+.hrxTlPop .hrxTlPopAvatar .sapMText {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+.hrxTlPop .hrxTlPopBody {
+	padding: 12px 16px;
+}
+
+.hrxTlPop .hrxTlPopLine {
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.hrxTlPop .hrxTlPopLine .sapMText {
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxTlPop .hrxTlPopLine .sapUiIcon {
+	font-size: 14px;
+	color: var(--txt-3);
+}
+
+.hrxTlPop .hrxTlPopFoot {
+	gap: 8px;
+	padding: 12px 16px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+}
+
+.hrxTlPop .hrxTlPopFoot > .sapMFlexItem,
+.hrxTlPop .hrxTlPopFoot2 > .sapMFlexItem {
+	flex: 1 1 0 !important;
+}
+
+.hrxTlPop .hrxTlPopFoot .hrxTcBtn .sapMBtnInner,
+.hrxTlPop .hrxTlPopFoot2 .hrxTcBtn .sapMBtnInner {
+	width: 100%;
+	min-width: 0;
+}
+
+.hrxTlPop .hrxTlPopLink.sapMBtn {
+	width: 100%;
+	height: auto;
+	padding: 0;
+}
+
+.hrxTlPop .hrxTlPopLink .sapMBtnInner {
+	justify-content: flex-start;
+	width: 100%;
+	height: auto;
+	padding: 11px 16px;
+	border: none;
+	border-top: 1px solid var(--line-soft);
+	border-radius: 0;
+	background: none;
+	color: var(--ice-deep);
+}
+
+.hrxTlPop .hrxTlPopLink .sapMBtnInner:hover {
+	background: var(--frost);
+}
+
+.hrxTlPop .hrxTlPopLink .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 700;
+	text-transform: none;
+	letter-spacing: 0;
+	color: inherit;
+}
+
+.hrxTlPop .hrxTlPopLink .sapMBtnIcon {
+	display: none;
+}
+
+.hrxTlPop .sapMText.hrxTlPopDays {
+	font-weight: 700;
+}
+
+/* .pop-note: the employee's comment */
+.hrxTlPop .sapMText.hrxTlPopNote {
+	margin-top: 8px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--frost);
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+/* .pop-all: every pending request of the same person */
+.hrxTlPop .hrxTlPopAll {
+	padding: 12px 16px 14px;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .sapMText.hrxTlPopAllTitle {
+	margin-bottom: 8px;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxTlPop .hrxTlPopFoot2 {
+	gap: 8px;
+}
+
+/* .pop-list / .pop-item */
+.hrxTlPop .hrxTlPopList {
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.hrxTlPop .hrxTlPopItem {
+	gap: 10px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTlPop .hrxTlPopItem > .sapMFlexItem:first-child {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxTlPop .sapMText.hrxTlPopItemDates {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.hrxTlPop .sapMText.hrxTlPopItemMeta {
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxTlPop .hrxTlPopItemActs {
+	gap: 6px;
+}
+
+/* .icon-btn.sm .ok / .no */
+.hrxTlPop .hrxTlPopIconBtn.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxTlPop .hrxTlPopIconBtn .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+}
+
+.hrxTlPop .hrxTlPopIconBtn .sapMBtnIcon {
+	margin: 0;
+	font-size: 13px;
+	color: inherit;
+}
+
+.hrxTlPop .hrxTlPopIconOk .sapMBtnInner:hover {
+	color: var(--mint);
+	border-color: var(--mint);
+}
+
+.hrxTlPop .hrxTlPopIconNo .sapMBtnInner:hover {
+	color: var(--signal);
+	border-color: var(--signal);
+}
+
+/* the type and its duration stay on one line (.dur never wraps in the design) */
+.hrxApp .hrxTeamCalendar .hrxTcType .sapMText {
+	white-space: nowrap;
+}

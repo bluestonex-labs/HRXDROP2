@@ -1,32 +1,40 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Fragment",
+	"sap/ui/core/format/DateFormat",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
-	"sap/ui/unified/DateTypeRange",
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, DateTypeRange,
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator,
 	MessageToast, MessageBox, Backend, CurrentUser, formatter) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
 	var LEAVE_SERVICE = Backend.LEAVE;
 
-	// Calendar day types, shared with the legend so the colours stay in step.
-	var LEAVE_TYPES = {
-		HOLIL: { type: "Type01", text: "Holiday" },
-		SICKL: { type: "Type02", text: "Sick" },
-		UNPDL: { type: "Type03", text: "Unpaid" },
-		COMPL: { type: "Type04", text: "Compassionate" },
-		MATEL: { type: "Type06", text: "Maternity" },
-		PATEL: { type: "Type07", text: "Paternity" },
-		BANKHOLIDAY: { type: "Type05", text: "Bank holiday" }
+	// The leave type codes the service hands back (LeaveTypeID). The calendar and the
+	// table write the code to the DOM as data-leave; leave.css holds the colours.
+	var BANK_HOLIDAY = "BANK";
+
+	// Duration choices on the request card, and the day slot each one books.
+	var DURATION_SLOT = { F: "F", A: "A", P: "P" };
+	var PER_DAY = "M";
+
+	// How the table names a day's absence (the design's grey duration chip).
+	var ABSENCE_TEXT_KEY = {
+		"Full Day": "mlDurationFullSingle",
+		"AM": "mlDurationAm",
+		"PM": "mlDurationPm"
 	};
+
+	var oMonthTitleFormat = DateFormat.getDateInstance({ pattern: "MMMM yyyy" });
+	var oMonthNameFormat = DateFormat.getDateInstance({ pattern: "MMMM" });
+	var oShortMonthFormat = DateFormat.getDateInstance({ pattern: "MMM" });
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.Leave", {
 
@@ -55,9 +63,9 @@ sap.ui.define([
 
 			this.setModel(new JSONModel({
 				availedLeaves: [],
+				requests: [],
 				leaves: [],
 				bankHolidays: [],
-				analytics: [],
 				leaveTypes: [],
 				directory: [],
 				dates: []
@@ -65,6 +73,12 @@ sap.ui.define([
 
 			this.setModel(new JSONModel(this._emptyRequest()), "mlForm");
 			this.setModel(new JSONModel({}), "mlEdit");
+
+			// The Leave Calendar card and the Dates picker each show one month.
+			this._oCalendarMonth = this._firstOfMonth(this._today());
+			this.setModel(new JSONModel({ title: "", cells: [] }), "mlCal");
+			this.setModel(new JSONModel({ title: "", hint: "", cells: [] }), "mlPicker");
+			this._renderCalendar();
 
 			this.getOwnerComponent().getRouter().getRoute("leave")
 				.attachPatternMatched(this._onRouteMatched, this);
@@ -147,7 +161,7 @@ sap.ui.define([
 		},
 
 		/**
-		 * Loads the quota, the leave taken so far and the per-type breakdown.
+		 * Loads the quota, the leave taken so far and the bank holidays.
 		 * @returns {Promise} resolved once the page is filled
 		 */
 		_loadUser: function () {
@@ -166,14 +180,12 @@ sap.ui.define([
 					quota: oUser.annualLeaveQuota || "0",
 					used: oUser.noOfAvailedLeaves || "0",
 					balance: oUser.balanceLeaves || "0",
-					balanceState: parseFloat(oUser.balanceLeaves) > 0 ? "Good" : "Critical"
+					allowanceText: this.getText("mlQuotaSub", [this._leaveYearStart()])
 				});
 
 				oModel.setProperty("/availedLeaves", oData.availedLeaves || []);
 				oModel.setProperty("/bankHolidays", oData.bankHolidays || []);
-				oModel.setProperty("/analytics", (oData.analyticsData || []).filter(function (oEntry) {
-					return parseFloat(oEntry.Days) > 0;
-				}));
+				oModel.setProperty("/requests", this._groupRequests(oData.availedLeaves || []));
 
 				this._applyStatusFilter();
 				this._renderCalendar();
@@ -181,64 +193,72 @@ sap.ui.define([
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/busy", false);
 				this.getModel("ml").setProperty("/availedLeaves", []);
+				this.getModel("ml").setProperty("/requests", []);
 				this._applyStatusFilter();
+				this._renderCalendar();
 				this._showError("mlErrorUser", oError);
 			}.bind(this));
 		},
 
 		/**
-		 * Narrows the leave table to the status chosen in the tab bar.
+		 * The service lists leave one day at a time; the table shows one row per
+		 * request (LeaveID), as the design does - "14 – 15 Jul 2026", not two rows.
+		 * The days arrive newest first, so the requests keep that order.
+		 * @param {object[]} aDays the availedLeaves list from fetchUser
+		 * @returns {object[]} one entry per request
+		 */
+		_groupRequests: function (aDays) {
+			var aRequests = [];
+			var mById = {};
+
+			aDays.forEach(function (oDay) {
+				var oRequest = mById[oDay.LeaveID];
+				if (!oRequest) {
+					oRequest = {
+						LeaveID: oDay.LeaveID,
+						LeaveTypeID: oDay.LeaveTypeID,
+						LeaveType: oDay.LeaveType,
+						Absence: oDay.Absence,
+						Status: oDay.Status,
+						StatusID: oDay.StatusID,
+						RequesterComments: oDay.RequesterComments,
+						Dates: []
+					};
+					mById[oDay.LeaveID] = oRequest;
+					aRequests.push(oRequest);
+				}
+				oRequest.Dates.push(oDay.Date);
+			});
+
+			aRequests.forEach(function (oRequest) {
+				oRequest.Dates.sort();
+				oRequest.Date = oRequest.Dates[0];
+				oRequest.DisplayRange = this._formatTableRange(oRequest.Dates[0], oRequest.Dates[oRequest.Dates.length - 1]);
+				oRequest.DurationText = this.getText(ABSENCE_TEXT_KEY[oRequest.Absence] || "mlDurationFullSingle");
+				// Only a request still awaiting a decision can be cancelled; the update
+				// service rewrites a single date, so only a one-day request can be edited.
+				oRequest.cancellable = oRequest.StatusID === "REQ";
+				oRequest.editable = oRequest.StatusID === "REQ" && oRequest.Dates.length === 1;
+			}, this);
+
+			return aRequests;
+		},
+
+		/**
+		 * Narrows the requests table to the status chosen in the filter.
 		 */
 		_applyStatusFilter: function () {
 			var sStatus = this.getModel("mlView").getProperty("/statusFilter");
-			var aAll = this.getModel("ml").getProperty("/availedLeaves") || [];
+			var aAll = this.getModel("ml").getProperty("/requests") || [];
 
-			this.getModel("ml").setProperty("/leaves", aAll.filter(function (oLeave) {
-				return sStatus === "All" || oLeave.Status === sStatus;
+			this.getModel("ml").setProperty("/leaves", aAll.filter(function (oRequest) {
+				return sStatus === "All" || oRequest.Status === sStatus;
 			}));
 		},
 
 		onStatusFilter: function (oEvent) {
-			this.getModel("mlView").setProperty("/statusFilter", oEvent.getParameter("key"));
+			this.getModel("mlView").setProperty("/statusFilter", oEvent.getParameter("item").getKey());
 			this._applyStatusFilter();
-		},
-
-		/**
-		 * Marks every booked day on the calendar in its leave type's colour. The legend
-		 * itself is static (see the view) so every leave type is always listed, not just
-		 * the ones booked in the currently loaded range.
-		 */
-		_renderCalendar: function () {
-			var oCalendar = this.byId("leaveCalendar");
-			if (!oCalendar) {
-				return;
-			}
-
-			oCalendar.destroySpecialDates();
-
-			var fnMark = function (sDate, sTypeId, sTooltip) {
-				var oDate = formatter.toDate(sDate);
-				var oMeta = LEAVE_TYPES[sTypeId];
-				if (!oDate || !oMeta) {
-					return;
-				}
-
-				oCalendar.addSpecialDate(new DateTypeRange({
-					startDate: oDate,
-					type: oMeta.type,
-					tooltip: sTooltip
-				}));
-			};
-
-			(this.getModel("ml").getProperty("/availedLeaves") || []).forEach(function (oLeave) {
-				if (oLeave.Status === "Rejected") {
-					return;
-				}
-				fnMark(oLeave.Date, oLeave.LeaveTypeID, oLeave.LeaveType + " (" + oLeave.Absence + ") — " + oLeave.Status);
-			});
-			(this.getModel("ml").getProperty("/bankHolidays") || []).forEach(function (oHoliday) {
-				fnMark(oHoliday.Date, "BANKHOLIDAY", LEAVE_TYPES.BANKHOLIDAY.text);
-			});
 		},
 
 		onViewAsChange: function (oEvent) {
@@ -256,35 +276,217 @@ sap.ui.define([
 		},
 
 		/* =========================================================== */
+		/* leave calendar card                                         */
+		/* =========================================================== */
+
+		onCalendarPrevious: function () {
+			this._oCalendarMonth = this._addMonths(this._oCalendarMonth, -1);
+			this._renderCalendar();
+		},
+
+		onCalendarNext: function () {
+			this._oCalendarMonth = this._addMonths(this._oCalendarMonth, 1);
+			this._renderCalendar();
+		},
+
+		/**
+		 * Fills the month grid: the weeks that hold the shown month, Monday first. A
+		 * booked day carries its leave type (rejected leave is left off), a bank
+		 * holiday is marked as such, and the tooltip says what the day is.
+		 */
+		_renderCalendar: function () {
+			var oMonth = this._oCalendarMonth;
+			var sToday = this._isoDate(this._today());
+			var mLeave = {};
+
+			(this.getModel("ml").getProperty("/availedLeaves") || []).forEach(function (oLeave) {
+				if (oLeave.Status === "Rejected" || mLeave[oLeave.Date]) {
+					return;
+				}
+				mLeave[oLeave.Date] = {
+					leave: oLeave.LeaveTypeID || "OTHER",
+					tooltip: oLeave.LeaveType + " (" + oLeave.Absence + ") — " + oLeave.Status
+				};
+			});
+			(this.getModel("ml").getProperty("/bankHolidays") || []).forEach(function (oHoliday) {
+				if (!mLeave[oHoliday.Date]) {
+					mLeave[oHoliday.Date] = {
+						leave: BANK_HOLIDAY,
+						tooltip: oHoliday.Holiday || this.getText("tcLegendBankHoliday")
+					};
+				}
+			}, this);
+
+			var oFirst = this._mondayOnOrBefore(oMonth);
+			var oLast = this._addDays(this._firstOfMonth(this._addMonths(oMonth, 1)), -1);
+			var aCells = [];
+
+			for (var oDay = oFirst; oDay <= oLast || aCells.length % 7 !== 0; oDay = this._addDays(oDay, 1)) {
+				var sDate = this._isoDate(oDay);
+				var oMark = mLeave[sDate];
+				var aState = ["day"];
+
+				if (oDay.getMonth() !== oMonth.getMonth()) {
+					aState.push("muted");
+				}
+				if (oDay.getDay() === 0 || oDay.getDay() === 6) {
+					aState.push("weekend");
+				}
+				if (sDate === sToday) {
+					aState.push("today");
+				}
+
+				aCells.push({
+					label: String(oDay.getDate()),
+					state: aState.join(" "),
+					leave: oMark ? oMark.leave : "none",
+					tooltip: oMark ? oMark.tooltip : ""
+				});
+			}
+
+			this.getModel("mlCal").setData({
+				title: oMonthTitleFormat.format(oMonth),
+				cells: aCells
+			});
+		},
+
+		/* =========================================================== */
+		/* dates picker (fragment/LeaveDatePicker)                     */
+		/* =========================================================== */
+
+		/**
+		 * Opens the range picker under the Dates field, on the month of the start date
+		 * already picked, or this month.
+		 * @param {sap.ui.base.Event} oEvent the field's valueHelpRequest event
+		 */
+		onOpenDatePicker: function (oEvent) {
+			var oInput = oEvent.getSource();
+
+			// The picked range (this._oPickStart / _oPickEnd) is kept between openings,
+			// as in the design; the next click after a finished range starts a new one.
+			this._oPickerMonth = this._firstOfMonth(this._oPickStart || this._today());
+
+			this._loadFragment("_pDatePicker", "bsx.hrx.hrx2026.fragment.LeaveDatePicker").then(function (oPopover) {
+				this._renderPicker();
+				if (oPopover.isOpen()) {
+					oPopover.close();
+				} else {
+					oPopover.openBy(oInput);
+				}
+			}.bind(this));
+		},
+
+		onPickerPrevious: function () {
+			this._oPickerMonth = this._addMonths(this._oPickerMonth, -1);
+			this._renderPicker();
+		},
+
+		onPickerNext: function () {
+			this._oPickerMonth = this._addMonths(this._oPickerMonth, 1);
+			this._renderPicker();
+		},
+
+		/**
+		 * The first click picks the start, the second the end (either way round). A
+		 * click after a finished range starts a new one.
+		 * @param {sap.ui.base.Event} oEvent the day button's press event
+		 */
+		onPickerDayPress: function (oEvent) {
+			var oCell = oEvent.getSource().getBindingContext("mlPicker").getObject();
+			var oDate = this._parseIsoDate(oCell.date);
+
+			if (!this._oPickStart || this._oPickEnd) {
+				this._oPickStart = oDate;
+				this._oPickEnd = null;
+				this._renderPicker();
+				return;
+			}
+
+			if (oDate < this._oPickStart) {
+				this._oPickEnd = this._oPickStart;
+				this._oPickStart = oDate;
+			} else {
+				this._oPickEnd = oDate;
+			}
+			this._renderPicker();
+
+			// Let the finished range show for a moment before the picker closes.
+			setTimeout(function () {
+				this._closeFragment("_pDatePicker");
+			}.bind(this), 150);
+			this._onRangePicked(this._oPickStart, this._oPickEnd);
+		},
+
+		/**
+		 * Six weeks from the Monday on or before the 1st, as in the design's picker.
+		 */
+		_renderPicker: function () {
+			var oMonth = this._oPickerMonth;
+			var oToday = this._today();
+			var oFirst = this._mondayOnOrBefore(oMonth);
+			var aCells = [];
+
+			for (var i = 0; i < 42; i++) {
+				var oDay = this._addDays(oFirst, i);
+				var bPast = oDay < oToday;
+				var aState = ["day"];
+
+				if (oDay.getMonth() !== oMonth.getMonth()) {
+					aState.push("muted");
+				}
+				if (bPast) {
+					aState.push("disabled");
+				}
+				if (this._sameDay(oDay, this._oPickStart)) {
+					aState.push("range-start");
+				}
+				if (this._sameDay(oDay, this._oPickEnd)) {
+					aState.push("range-end");
+				}
+				if (this._oPickStart && this._oPickEnd && oDay > this._oPickStart && oDay < this._oPickEnd) {
+					aState.push("in-range");
+				}
+
+				aCells.push({
+					date: this._isoDate(oDay),
+					label: String(oDay.getDate()),
+					state: aState.join(" "),
+					enabled: !bPast,
+					tooltip: bPast ? this.getText("mlPastDateTooltip") : ""
+				});
+			}
+
+			this.getModel("mlPicker").setData({
+				title: oMonthTitleFormat.format(oMonth),
+				hint: this.getText(this._oPickStart && !this._oPickEnd ? "mlPickEndHint" : "mlPickStartHint"),
+				cells: aCells
+			});
+		},
+
+		/* =========================================================== */
 		/* new request                                                 */
 		/* =========================================================== */
+
+		/**
+		 * A range has been picked: show it in the field and ask the service which of
+		 * its days can actually be booked.
+		 * @param {Date} oFrom first day
+		 * @param {Date} oTo last day
+		 */
+		_onRangePicked: function (oFrom, oTo) {
+			var oForm = this.getModel("mlForm");
+			oForm.setProperty("/FromDate", oFrom);
+			oForm.setProperty("/ToDate", oTo);
+			oForm.setProperty("/DatesText", this._formatInputRange(oFrom, oTo));
+			this._loadLeaveDates();
+		},
 
 		/**
 		 * Asks the service which of the chosen days can actually be booked - weekends,
 		 * bank holidays and days already taken drop out, and a part-booked day comes back
 		 * with only its free half available.
-		 * @param {sap.ui.base.Event} oEvent the date range change event
+		 * @returns {Promise} resolved once the days are in the model
 		 */
-		onDatesChange: function (oEvent) {
-			var oForm = this.getModel("mlForm");
-			var bValid = oEvent.getParameter("valid") && !!oEvent.getParameter("value");
-
-			oEvent.getSource().setValueState(bValid ? "None" : "Error");
-			oEvent.getSource().setValueStateText(this.getText("mlMandatory"));
-
-			if (!bValid) {
-				oForm.setProperty("/FromDate", null);
-				oForm.setProperty("/ToDate", null);
-				this.getModel("ml").setProperty("/dates", []);
-				this._updateDayCount();
-				return;
-			}
-
-			oForm.setProperty("/FromDate", oEvent.getParameter("from"));
-			oForm.setProperty("/ToDate", oEvent.getParameter("to"));
-			this._loadLeaveDates();
-		},
-
 		_loadLeaveDates: function () {
 			var oForm = this.getModel("mlForm").getData();
 			var oUser = this.getModel("mlView").getProperty("/user") || {};
@@ -299,18 +501,58 @@ sap.ui.define([
 				this.getModel("ml").setProperty("/dates", (oData.dates || []).map(function (oDay) {
 					var sSlot = oDay.availableSlot;
 					return Object.assign({}, oDay, {
+						AvailableKey: sSlot === "AM" ? "A" : sSlot === "PM" ? "P" : "F",
 						SelectedKey: sSlot === "AM" ? "A" : sSlot === "PM" ? "P" : "F",
 						FullDayEnabled: sSlot === "",
 						AMEnabled: sSlot === "" || sSlot === "AM",
 						PMEnabled: sSlot === "" || sSlot === "PM"
 					});
 				}));
-				this._updateDayCount();
+				this._applyDuration();
 			}.bind(this)).catch(function (oError) {
 				this.getModel("ml").setProperty("/dates", []);
 				this._updateDayCount();
 				this._showError("mlErrorDates", oError);
 			}.bind(this));
+		},
+
+		/**
+		 * The Duration list. Full day / AM / PM applies to every day in the range;
+		 * "Choose per day" opens the half day dialog.
+		 * @param {sap.ui.base.Event} oEvent the select's change event
+		 */
+		onDurationChange: function (oEvent) {
+			var sKey = oEvent.getParameter("selectedItem").getKey();
+
+			if (sKey === PER_DAY) {
+				if (!(this.getModel("ml").getProperty("/dates") || []).length) {
+					MessageToast.show(this.getText("mlSelectDatesFirst"));
+					this.getModel("mlForm").setProperty("/Duration", "F");
+					return;
+				}
+				this._openFragment("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.LeaveHalfDayDialog");
+				return;
+			}
+			this._applyDuration();
+		},
+
+		/**
+		 * Sets every bookable day to the chosen duration. A day with only one half
+		 * free keeps that half whatever is chosen - the service will not book more.
+		 */
+		_applyDuration: function () {
+			var sSlot = DURATION_SLOT[this.getModel("mlForm").getProperty("/Duration")];
+			var oModel = this.getModel("ml");
+
+			if (sSlot) {
+				oModel.setProperty("/dates", (oModel.getProperty("/dates") || []).map(function (oDay) {
+					var bAllowed = (sSlot === "F" && oDay.FullDayEnabled) ||
+						(sSlot === "A" && oDay.AMEnabled) ||
+						(sSlot === "P" && oDay.PMEnabled);
+					return Object.assign({}, oDay, { SelectedKey: bAllowed ? sSlot : oDay.AvailableKey });
+				}));
+			}
+			this._updateDayCount();
 		},
 
 		/**
@@ -325,18 +567,18 @@ sap.ui.define([
 			this.getModel("mlForm").setProperty("/NoOfDays", fDays);
 		},
 
-		onOpenHalfDays: function () {
-			this._openDialog("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.LeaveHalfDayDialog");
-		},
-
 		onConfirmHalfDays: function () {
 			this._updateDayCount();
-			this._closeDialog("_pHalfDayDialog");
+			this._closeFragment("_pHalfDayDialog");
 		},
 
+		/**
+		 * Back to full days for the whole range.
+		 */
 		onResetHalfDays: function () {
-			this._loadLeaveDates();
-			this._closeDialog("_pHalfDayDialog");
+			this.getModel("mlForm").setProperty("/Duration", "F");
+			this._applyDuration();
+			this._closeFragment("_pHalfDayDialog");
 		},
 
 		/**
@@ -347,8 +589,16 @@ sap.ui.define([
 			var oUser = this.getModel("mlView").getProperty("/user") || {};
 			var aDates = this.getModel("ml").getProperty("/dates") || [];
 
+			if (!oForm.FromDate || !oForm.ToDate) {
+				MessageToast.show(this.getText("mlSelectDatesFirst"));
+				return;
+			}
 			if (!aDates.length) {
 				MessageToast.show(this.getText("mlNoBookableDays"));
+				return;
+			}
+			if (!oForm.LeaveCategoryId) {
+				MessageToast.show(this.getText("mlLeaveTypePlaceholder"));
 				return;
 			}
 			if (parseFloat(oForm.NoOfDays) > parseFloat(oUser.balanceLeaves || 0) && oForm.LeaveCategoryId === "HOLIL") {
@@ -388,6 +638,7 @@ sap.ui.define([
 			this._save(LEAVE_SERVICE + "?cmd=requestLeave", { LeaveReqSet: aRequests },
 				"mlRequested", "mlErrorRequest").then(function () {
 					this._resetRequestForm();
+					this.getModel("mlView").setProperty("/statusFilter", "All");
 					return this._loadUser();
 				}.bind(this)).catch(function () { /* reported by _save */ });
 		},
@@ -395,41 +646,30 @@ sap.ui.define([
 		_resetRequestForm: function () {
 			this.getModel("mlForm").setData(this._emptyRequest());
 			this.getModel("ml").setProperty("/dates", []);
-
-			var oDateRange = this.byId("leaveDateRange");
-			if (oDateRange) {
-				oDateRange.setValue("");
-				oDateRange.setValueState("None");
-			}
+			this._oPickStart = null;
+			this._oPickEnd = null;
 		},
 
 		/* =========================================================== */
-		/* edit an existing leave day                                  */
+		/* edit or cancel a request                                    */
 		/* =========================================================== */
 
+		/**
+		 * A request still awaiting a decision opens the edit dialog.
+		 * @param {sap.ui.base.Event} oEvent the row's press event
+		 */
 		onEditLeave: function (oEvent) {
 			var oContext = oEvent.getSource().getBindingContext("ml");
-			if (!oContext) {
+			if (!oContext || oContext.getProperty("StatusID") !== "REQ") {
 				return;
 			}
 
-			// An approved day is settled - the row offers no pencil, and a stray event
-			// must not open the dialog either.
-			if (oContext.getProperty("StatusID") === "APR") {
-				return;
-			}
-
-			var oLeave = oContext.getObject();
-
-			// Only a request still awaiting a decision can be changed.
-			this.getModel("mlEdit").setData(Object.assign({}, oLeave, {
-				editable: oLeave.StatusID === "REQ"
-			}));
-			this._openDialog("_pEditLeaveDialog", "bsx.hrx.hrx2026.fragment.EditLeaveDialog");
+			this.getModel("mlEdit").setData(Object.assign({}, oContext.getObject()));
+			this._openFragment("_pEditLeaveDialog", "bsx.hrx.hrx2026.fragment.EditLeaveDialog");
 		},
 
 		onCloseEditLeave: function () {
-			this._closeDialog("_pEditLeaveDialog");
+			this._closeFragment("_pEditLeaveDialog");
 		},
 
 		onUpdateLeave: function () {
@@ -442,34 +682,45 @@ sap.ui.define([
 				LeaveType: oLeave.LeaveTypeID,
 				Absence: oLeave.Absence
 			}, "mlUpdated", "mlErrorUpdate").then(function () {
-				this._closeDialog("_pEditLeaveDialog");
+				this._closeFragment("_pEditLeaveDialog");
 				return this._loadUser();
 			}.bind(this)).catch(function () { /* reported by _save */ });
 		},
 
-		onDeleteLeave: function () {
+		/**
+		 * The row's Cancel button: asks first (fragment/CancelLeaveDialog).
+		 * @param {sap.ui.base.Event} oEvent the button's press event
+		 */
+		onCancelLeave: function (oEvent) {
+			var oContext = oEvent.getSource().getBindingContext("ml");
+			if (!oContext || oContext.getProperty("StatusID") !== "REQ") {
+				return;
+			}
+
+			this.getModel("mlEdit").setData(Object.assign({}, oContext.getObject()));
+			this._openFragment("_pCancelLeaveDialog", "bsx.hrx.hrx2026.fragment.CancelLeaveDialog");
+		},
+
+		onCloseCancelLeave: function () {
+			this._closeFragment("_pCancelLeaveDialog");
+		},
+
+		/**
+		 * Removes the request - every day of it, as the service deletes by LeaveID.
+		 */
+		onConfirmCancelLeave: function () {
 			var oLeave = this.getModel("mlEdit").getData();
 
-			MessageBox.confirm(this.getText("mlConfirmDelete", [oLeave.DisplayDate, oLeave.LeaveType]), {
-				title: this.getText("mlConfirmDeleteTitle"),
-				icon: MessageBox.Icon.WARNING,
-				emphasizedAction: MessageBox.Action.CANCEL,
-				onClose: function (sAction) {
-					if (sAction !== MessageBox.Action.OK) {
-						return;
-					}
-					this._save(LEAVE_SERVICE + "?cmd=delete", {
-						OrgID: this._sOrgId,
-						LeaveID: oLeave.LeaveID,
-						Date: oLeave.Date,
-						LeaveType: oLeave.LeaveTypeID,
-						Absence: oLeave.Absence
-					}, "mlDeleted", "mlErrorDelete").then(function () {
-						this._closeDialog("_pEditLeaveDialog");
-						return this._loadUser();
-					}.bind(this)).catch(function () { /* reported by _save */ });
-				}.bind(this)
-			});
+			this._save(LEAVE_SERVICE + "?cmd=delete", {
+				OrgID: this._sOrgId,
+				LeaveID: oLeave.LeaveID,
+				Date: oLeave.Date,
+				LeaveType: oLeave.LeaveTypeID,
+				Absence: oLeave.Absence
+			}, "mlCancelled", "mlErrorDelete").then(function () {
+				this._closeFragment("_pCancelLeaveDialog");
+				return this._loadUser();
+			}.bind(this)).catch(function () { /* reported by _save */ });
 		},
 
 		/* =========================================================== */
@@ -529,28 +780,37 @@ sap.ui.define([
 			return Backend.request(sUrl, oInit);
 		},
 
-		_openDialog: function (sCacheKey, sFragmentName) {
+		/**
+		 * Loads a dialog or popover fragment once and keeps it as a dependent of the view.
+		 * @param {string} sCacheKey the property the loading promise is kept under
+		 * @param {string} sFragmentName the fragment's module name
+		 * @returns {Promise<sap.ui.core.Control>} the fragment's root control
+		 */
+		_loadFragment: function (sCacheKey, sFragmentName) {
 			if (!this[sCacheKey]) {
 				this[sCacheKey] = Fragment.load({
 					id: this.getView().getId(),
 					name: sFragmentName,
 					controller: this
-				}).then(function (oDialog) {
-					this.getView().addDependent(oDialog);
-					return oDialog;
+				}).then(function (oControl) {
+					this.getView().addDependent(oControl);
+					return oControl;
 				}.bind(this));
 			}
+			return this[sCacheKey];
+		},
 
-			return this[sCacheKey].then(function (oDialog) {
+		_openFragment: function (sCacheKey, sFragmentName) {
+			return this._loadFragment(sCacheKey, sFragmentName).then(function (oDialog) {
 				oDialog.open();
 				return oDialog;
 			});
 		},
 
-		_closeDialog: function (sCacheKey) {
+		_closeFragment: function (sCacheKey) {
 			if (this[sCacheKey]) {
-				this[sCacheKey].then(function (oDialog) {
-					oDialog.close();
+				this[sCacheKey].then(function (oControl) {
+					oControl.close();
 				});
 			}
 		},
@@ -563,8 +823,12 @@ sap.ui.define([
 			});
 		},
 
+		/**
+		 * @param {Date|string} vDate a date
+		 * @returns {string} the date as yyyy-MM-dd in local time
+		 */
 		_isoDate: function (vDate) {
-			var oDate = formatter.toDate(vDate);
+			var oDate = vDate instanceof Date ? vDate : formatter.toDate(vDate);
 			if (!oDate) {
 				return "";
 			}
@@ -573,18 +837,135 @@ sap.ui.define([
 			return oDate.getFullYear() + "-" + sMonth + "-" + sDay;
 		},
 
+		/**
+		 * @param {string} sDate yyyy-MM-dd
+		 * @returns {Date} that day at local midnight (new Date("yyyy-MM-dd") is UTC)
+		 */
+		_parseIsoDate: function (sDate) {
+			var aParts = sDate.split("-");
+			return new Date(Number(aParts[0]), Number(aParts[1]) - 1, Number(aParts[2]));
+		},
+
+		_today: function () {
+			var oNow = new Date();
+			return new Date(oNow.getFullYear(), oNow.getMonth(), oNow.getDate());
+		},
+
+		_firstOfMonth: function (oDate) {
+			return new Date(oDate.getFullYear(), oDate.getMonth(), 1);
+		},
+
+		_addMonths: function (oDate, iMonths) {
+			return new Date(oDate.getFullYear(), oDate.getMonth() + iMonths, 1);
+		},
+
+		_addDays: function (oDate, iDays) {
+			return new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate() + iDays);
+		},
+
+		_mondayOnOrBefore: function (oDate) {
+			return this._addDays(oDate, -((oDate.getDay() + 6) % 7));
+		},
+
+		_sameDay: function (oDate, oOther) {
+			return !!oDate && !!oOther && this._isoDate(oDate) === this._isoDate(oOther);
+		},
+
+		/**
+		 * The leave year runs April to March (see fetchUser in model/HrxLegacy.js), so
+		 * the quota is the allowance of the year it started in.
+		 * @returns {number} the leave year's first calendar year
+		 */
+		_leaveYearStart: function () {
+			var oToday = this._today();
+			return oToday.getMonth() < 3 ? oToday.getFullYear() - 1 : oToday.getFullYear();
+		},
+
+		/**
+		 * @param {number} iDay day of the month
+		 * @returns {string} "1st", "2nd", "13th"...
+		 */
+		_ordinal: function (iDay) {
+			var iTens = iDay % 100;
+			if (iTens >= 11 && iTens <= 13) {
+				return iDay + "th";
+			}
+			switch (iDay % 10) {
+				case 1:
+					return iDay + "st";
+				case 2:
+					return iDay + "nd";
+				case 3:
+					return iDay + "rd";
+				default:
+					return iDay + "th";
+			}
+		},
+
+		/**
+		 * The Dates field, as the design writes it: "14th - 15th July 2026",
+		 * "30th June - 2nd July 2026", or a single "14th July 2026".
+		 * @param {Date} oFrom first day
+		 * @param {Date} oTo last day
+		 * @returns {string} the range for the field
+		 */
+		_formatInputRange: function (oFrom, oTo) {
+			var fnDayMonth = function (oDate) {
+				return this._ordinal(oDate.getDate()) + " " + oMonthNameFormat.format(oDate);
+			}.bind(this);
+
+			if (this._sameDay(oFrom, oTo)) {
+				return fnDayMonth(oFrom) + " " + oFrom.getFullYear();
+			}
+			if (oFrom.getFullYear() !== oTo.getFullYear()) {
+				return fnDayMonth(oFrom) + " " + oFrom.getFullYear() + " - " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+			}
+			if (oFrom.getMonth() !== oTo.getMonth()) {
+				return fnDayMonth(oFrom) + " - " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+			}
+			return this._ordinal(oFrom.getDate()) + " - " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+		},
+
+		/**
+		 * The table's Date column, as the design writes it: "14 – 15 Jul 2026",
+		 * "30 Jun – 2 Jul 2026", or a single "20 Jun 2026".
+		 * @param {string} sFrom first day, yyyy-MM-dd
+		 * @param {string} sTo last day, yyyy-MM-dd
+		 * @returns {string} the range for the table
+		 */
+		_formatTableRange: function (sFrom, sTo) {
+			var oFrom = this._parseIsoDate(sFrom);
+			var oTo = this._parseIsoDate(sTo);
+			var fnDayMonth = function (oDate) {
+				return oDate.getDate() + " " + oShortMonthFormat.format(oDate);
+			};
+
+			if (sFrom === sTo) {
+				return fnDayMonth(oFrom) + " " + oFrom.getFullYear();
+			}
+			if (oFrom.getFullYear() !== oTo.getFullYear()) {
+				return fnDayMonth(oFrom) + " " + oFrom.getFullYear() + " – " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+			}
+			if (oFrom.getMonth() !== oTo.getMonth()) {
+				return fnDayMonth(oFrom) + " – " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+			}
+			return oFrom.getDate() + " – " + fnDayMonth(oTo) + " " + oTo.getFullYear();
+		},
+
 		_emptyRequest: function () {
 			return {
 				FromDate: null,
 				ToDate: null,
+				DatesText: "",
 				LeaveCategoryId: "HOLIL",
+				Duration: "F",
 				Comments: "",
 				NoOfDays: 0
 			};
 		},
 
 		_emptyKpis: function () {
-			return { quota: "0", used: "0", balance: "0", balanceState: "Neutral" };
+			return { quota: "0", used: "0", balance: "0", allowanceText: "" };
 		},
 
 		_errorText: function (oError) {

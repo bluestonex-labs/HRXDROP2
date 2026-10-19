@@ -1,1 +1,1156 @@
-/* leave - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* leave - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+
+   My Leave (view/Leave.view.xml), scoped under the view's root class .hrxMyLeave.
+   The dialogs and the dates picker render in UI5's static area, outside the view,
+   so they carry classes of their own: .hrxMyLeaveDialog and .hrxMyLeavePicker.
+
+   Sizes and colours are the design's: .kpi / .glyph / .klab / .knum (balance
+   tiles), .grid-2 / .card / .card-head.featured / label.f (request card), .cal /
+   .legend (calendar), .tablecard / .ttop / .seg / table / .ltype / .dur / .pill
+   (requests table), .date-popover / .dp-* (dates picker) and .modal (dialogs). */
+
+/* ── Leave type colours (the design's LTYPE_COLOR) ──────────────────────────── */
+
+.hrxMyLeave,
+.hrxMyLeaveDialog {
+	--hrxLeaveCompassionate: var(--amber);
+	--hrxLeaveHoliday: #85B7EB;
+	--hrxLeaveMaternity: var(--mint);
+	--hrxLeavePaternity: #D52FFF;
+	--hrxLeaveSick: var(--signal);
+	--hrxLeaveUnpaid: #991B1B;
+	--hrxLeaveBankHoliday: #B4BAC3;
+}
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+/* The design's sections sit 16px apart */
+.hrxApp .hrxMyLeave .hrxLeaveKpis,
+.hrxApp .hrxMyLeave .hrxLeaveMainGrid {
+	margin-bottom: 16px;
+}
+
+/* ── Balance tiles (.kpis / .kpi) ─────────────────────────────────────────── */
+
+.hrxApp .hrxMyLeave .hrxLeaveKpis {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpi {
+	display: block;
+	position: relative;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top-width: 2px;
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: 18px 20px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiNeutral { border-top-color: var(--ice); }
+.hrxApp .hrxMyLeave .hrxLeaveKpiGood { border-top-color: var(--mint); }
+.hrxApp .hrxMyLeave .hrxLeaveKpiWarning { border-top-color: var(--amber); }
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiGlyph {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	line-height: 34px;
+	border-radius: 10px;
+	font-size: 17px;
+	text-align: center;
+	color: var(--ice-deep);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiGood .hrxLeaveKpiGlyph {
+	color: var(--mint);
+	background: var(--mint-soft);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiWarning .hrxLeaveKpiGlyph {
+	color: var(--amber);
+	background: var(--amber-soft);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiLabel {
+	display: block;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 600;
+	line-height: 12px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	margin-bottom: 4px;
+}
+
+/* Number and unit share one line box, so the unit sits on the number's baseline */
+.hrxApp .hrxMyLeave .hrxLeaveKpiFigure {
+	display: block;
+	font-family: var(--disp);
+	font-size: 36px;
+	line-height: 1.05;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiNumber {
+	display: inline;
+	font-family: var(--disp);
+	font-size: 36px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1.05;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiUnit {
+	display: inline;
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--txt-3);
+	margin-left: 6px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveKpiSub {
+	display: block;
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+	margin-top: 4px;
+}
+
+/* ── Request card + calendar (.grid-2, 340px | 1fr) ───────────────────────── */
+
+.hrxApp .hrxMyLeave .hrxLeaveMainGrid {
+	display: grid;
+	grid-template-columns: 340px minmax(0, 1fr);
+	gap: 16px;
+	align-items: stretch;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCard {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardHead {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardHeadFeatured {
+	background: var(--dark);
+	border-bottom: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardHeadIcon {
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+	font-size: 16px;
+	color: var(--ice);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardTitle.sapMTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 13px;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardHeadFeatured .hrxLeaveCardTitle.sapMTitle {
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	padding: 18px 20px;
+}
+
+/* ── Form fields (label.f, input, select, textarea) ───────────────────────── */
+
+.hrxApp .hrxMyLeave .hrxLeaveFieldLabel.sapMLabel {
+	display: block;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	margin: 14px 0 6px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody > .hrxLeaveFieldLabel.sapMLabel:first-child {
+	margin-top: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveFieldLabel .sapMLabelTextWrapper {
+	font: inherit;
+}
+
+/* Text inputs: one 35px box with an 11px radius, as the design's inputs */
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMInputBase,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMInputBase {
+	margin: 0;
+	height: auto;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMInputBaseContentWrapper,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMInputBaseContentWrapper {
+	box-sizing: border-box;
+	height: 35px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMInputBaseInner,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMInputBaseInner {
+	height: 33px;
+	line-height: 33px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMInputBaseInner::placeholder,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMInputBaseInner::placeholder {
+	font-family: var(--sans) !important;
+	font-size: 13px !important;
+	font-style: normal !important;
+	color: #757575 !important;
+}
+
+/* Dates: read-only, the whole field opens the picker - no value help icon */
+.hrxApp .hrxMyLeave .hrxLeaveDatesInput .sapMInputBaseIconContainer {
+	display: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveDatesInput .sapMInputBaseInner {
+	cursor: pointer;
+}
+
+/* Comments: three rows, 65px high */
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMTextArea .sapMInputBaseContentWrapper {
+	height: 65px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMTextAreaInner {
+	box-sizing: border-box;
+	height: 63px;
+	min-height: 0;
+	padding: 9px 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--ink);
+	resize: vertical;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMTextAreaInner::placeholder {
+	font-family: var(--sans) !important;
+	font-size: 13px !important;
+	font-style: normal !important;
+	color: #757575 !important;
+}
+
+/* Selects: the same box, the chevron 12px in from the right */
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMSlt,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMSlt {
+	box-sizing: border-box;
+	height: 35px;
+	margin: 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMSlt.sapMSltHoverable:hover,
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMSlt.sapMSltFocused,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMSlt.sapMSltHoverable:hover,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMSlt.sapMSltFocused {
+	border-color: var(--ice);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMSltLabel,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMSltLabel {
+	height: 33px;
+	line-height: 33px;
+	padding: 0 40px 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCardBody .sapMSltArrow,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody .sapMSltArrow {
+	height: 33px;
+	line-height: 33px;
+	width: 40px;
+	font-size: 12px;
+	color: var(--ink);
+	border: none;
+	background: transparent;
+}
+
+/* Approver name */
+.hrxApp .hrxMyLeave .hrxLeaveApprover {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 15px;
+	color: var(--ink);
+	margin-bottom: 16px;
+}
+
+/* .card-spacer: pushes the button to the card's foot */
+.hrxApp .hrxMyLeave .hrxLeaveCardSpacer {
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+/* Request leave: the design's .btn.primary, full width, 33px */
+.hrxApp .hrxMyLeave .hrxLeaveSubmit.sapMBtn {
+	height: 33px;
+	padding: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSubmit .sapMBtnInner {
+	height: 33px;
+	font-size: 12px;
+	line-height: 11px;
+	min-height: 0;
+	border-radius: var(--radius-s);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSubmit .sapMBtnContent {
+	font-size: 12px;
+	letter-spacing: .05em;
+	padding-top: 2px;
+}
+
+/* ── Leave Calendar (.cal / .legend) ──────────────────────────────────────── */
+
+/* "JULY 2026" centred, with the month arrows at either end of its line */
+.hrxApp .hrxMyLeave .hrxLeaveMonthHead {
+	display: block;
+	position: relative;
+	height: 12px;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthTitle {
+	display: block;
+	font-family: var(--disp);
+	font-size: 13.5px;
+	font-weight: 800;
+	line-height: normal;
+	text-align: center !important;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton.sapMBtn,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav.sapMBtn {
+	width: 26px;
+	height: 26px;
+	padding: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton.sapMBtn {
+	position: absolute;
+	top: -7px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton.sapMBtn:first-child {
+	left: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton.sapMBtn:last-child {
+	right: 0;
+}
+
+/* The design's .dp-nav: a small bordered square */
+.hrxApp .hrxMyLeave .hrxLeaveNavButton .sapMBtnInner,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav .sapMBtnInner {
+	box-sizing: border-box;
+	width: 26px;
+	height: 26px;
+	min-width: 0;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton .sapMBtnInner,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	line-height: 24px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton .sapMBtnIcon,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav .sapMBtnIcon {
+	position: static;
+	width: auto;
+	margin: 0 !important;
+	font-size: 11px;
+	line-height: 24px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton .sapMBtnInner:hover,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav .sapMBtnInner:hover {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveNavButton .sapMBtnInner:hover .sapMBtnIcon,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav .sapMBtnInner:hover .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+/* Seven columns, 4px apart: the weekday row, then the days */
+.hrxApp .hrxMyLeave .hrxLeaveMonthGrid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 4px;
+	text-align: center;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthGrid + .hrxLeaveMonthGrid {
+	margin-top: 4px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveWeekday {
+	display: block;
+	padding: 4px 0;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 11px;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	text-align: center !important;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	height: 35px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 13px;
+	color: var(--ink);
+	cursor: default;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-cell~="muted"] {
+	color: var(--txt-3);
+	border-color: var(--line-soft);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-cell~="weekend"] {
+	background: var(--frost);
+}
+
+/* Booked days: Holiday as in the design (ice glow, #85B7EB edge, bold); the other
+   types follow the same pattern in their own colour. */
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="HOLIL"],
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="OTHER"] {
+	background: var(--ice-glow);
+	border-color: var(--hrxLeaveHoliday);
+	color: var(--ice-deep);
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="COMPL"] {
+	background: rgba(217, 119, 6, .14);
+	border-color: var(--hrxLeaveCompassionate);
+	color: #92400E;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="MATEL"] {
+	background: var(--mint-soft);
+	border-color: var(--hrxLeaveMaternity);
+	color: #0F7B4F;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="PATEL"] {
+	background: rgba(213, 47, 255, .12);
+	border-color: var(--hrxLeavePaternity);
+	color: #9A1FB8;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="SICKL"] {
+	background: var(--signal-soft);
+	border-color: var(--hrxLeaveSick);
+	color: #991B1B;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="UNPDL"] {
+	background: rgba(153, 27, 27, .10);
+	border-color: var(--hrxLeaveUnpaid);
+	color: #991B1B;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-leave="BANK"] {
+	background: var(--frost-2);
+	border-color: var(--hrxLeaveBankHoliday);
+	color: var(--txt-2);
+	font-weight: 700;
+}
+
+/* Today keeps its ice edge whatever else the day is */
+.hrxApp .hrxMyLeave .hrxLeaveMonthDay[data-cell~="today"] {
+	border: 1.5px solid var(--ice);
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveLegend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveLegendItem {
+	display: inline-flex;
+	align-items: center;
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+/* The colour square in front of a legend entry and of a table row's leave type */
+.hrxApp .hrxMyLeave .hrxLeaveLegendItem::before,
+.hrxApp .hrxMyLeave .hrxLeaveTypeName::before {
+	content: "";
+	display: inline-block;
+	flex-shrink: 0;
+	width: 9px;
+	height: 9px;
+	border-radius: 3px;
+	margin-right: 5px;
+	background: var(--txt-3);
+}
+
+.hrxApp .hrxMyLeave [data-leave="COMPL"]::before { background: var(--hrxLeaveCompassionate); }
+.hrxApp .hrxMyLeave [data-leave="HOLIL"]::before { background: var(--hrxLeaveHoliday); }
+.hrxApp .hrxMyLeave [data-leave="MATEL"]::before { background: var(--hrxLeaveMaternity); }
+.hrxApp .hrxMyLeave [data-leave="PATEL"]::before { background: var(--hrxLeavePaternity); }
+.hrxApp .hrxMyLeave [data-leave="SICKL"]::before { background: var(--hrxLeaveSick); }
+.hrxApp .hrxMyLeave [data-leave="UNPDL"]::before { background: var(--hrxLeaveUnpaid); }
+.hrxApp .hrxMyLeave [data-leave="BANK"]::before { background: var(--hrxLeaveBankHoliday); }
+
+/* ── Leave Requests (.tablecard / .ttop / .seg / table) ───────────────────── */
+
+.hrxApp .hrxMyLeave .hrxLeaveTableCard {
+	display: block;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTableTop {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+/* The status filter: the design's .seg - frosted track, white "on" button */
+.hrxApp .hrxMyLeave .hrxLeaveSeg.sapMSegB,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg.sapMSegB {
+	display: inline-flex;
+	gap: 2px;
+	width: auto !important;
+	height: auto;
+	padding: 3px;
+	margin: 0;
+	background: var(--frost);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn {
+	height: 24px;
+	min-width: 0;
+	/* the control writes equal widths inline; the design sizes each to its text */
+	width: auto !important;
+	padding: 0 14px;
+	margin: 0;
+	border: none;
+	border-radius: 8px;
+	background: none;
+	box-shadow: none;
+	font-family: var(--disp);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 24px;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn::before,
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn::after,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn::before,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn::after {
+	display: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtnInnerWrapper,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtnInnerWrapper {
+	height: auto;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:focus,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:focus {
+	outline: none;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:focus-visible,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:focus-visible {
+	outline: 1px dotted var(--ice-deep);
+	outline-offset: -2px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtnInner,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtnInner {
+	color: inherit;
+	background: transparent;
+	border: none;
+	margin: 0;
+	padding: 0;
+	font: inherit;
+	line-height: 24px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:hover,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:hover {
+	background: none;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn.sapMSegBBtnSel,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn.sapMSegBBtnSel {
+	background: var(--surface);
+	color: var(--ice-deep);
+	box-shadow: 0 1px 2px rgba(51, 52, 58, .08);
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn.sapMSegBBtnDis {
+	opacity: .45;
+}
+
+/* The table itself: no frame of its own inside the card */
+.hrxApp .hrxMyLeave .hrxLeaveTable.sapMList,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTbl {
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: var(--surface);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHeader {
+	height: auto;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHeader .sapMListTblHeaderCell {
+	height: auto;
+	padding: 9px 18px;
+	background: var(--frost);
+	border: none;
+	vertical-align: middle;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMColumnHeader {
+	padding: 0;
+	min-height: 0;
+	height: auto;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHeaderCell .sapMText,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHeaderCell .sapMLabel {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 11.5px;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblRow {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+	background: var(--surface);
+}
+
+/* The rows' hairlines sit on the cells: the table's borders are not collapsed,
+   so a border on the row itself is never drawn. */
+.hrxApp .hrxMyLeave .hrxLeaveTable tbody > .sapMListTblRow > td {
+	border-bottom: 1px solid var(--line-soft) !important;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable tbody > .sapMListTblRow:last-child > td {
+	border-bottom: none !important;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblRow:hover,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblRow.sapMLIBHoverable:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblCell {
+	height: auto;
+	padding: 12px 18px;
+	border: none;
+	vertical-align: middle;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+/* The first and last columns run 20px in from the card's edges */
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblCell.hrxLeaveColFirst {
+	padding-left: 20px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblCell.hrxLeaveColLast {
+	padding-right: 20px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHighlightCol,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblHighlightCell,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblNavigatedCol,
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblNavigatedCell {
+	width: 0;
+	padding: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListTblCell > .sapMText {
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMListNoData {
+	padding: 22px 20px;
+	font-size: 13px;
+	color: var(--txt-3);
+	text-align: center;
+}
+
+/* Leave type: colour square, name, then the grey duration chip (.ltype / .dur) */
+.hrxApp .hrxMyLeave .hrxLeaveTypeCell {
+	display: inline-flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTypeName {
+	display: inline-flex;
+	align-items: center;
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTypeName::before {
+	width: 8px;
+	height: 8px;
+	margin-right: 13px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveDuration {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 5px;
+	background: var(--frost-2);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* Status: the design's .pill (warn / ok / crit) */
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMObjStatus,
+.hrxApp .hrxMyLeaveDialog .sapMObjStatus {
+	height: auto;
+	min-height: 0;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMObjStatus .sapUiPseudoInvisibleText,
+.hrxApp .hrxMyLeaveDialog .sapMObjStatus .sapUiPseudoInvisibleText {
+	/* screen reader texts: out of the pill's flex row, so they add no height or gap */
+	position: absolute !important;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveTable .sapMObjStatusText,
+.hrxApp .hrxMyLeaveDialog .sapMObjStatusText {
+	font: inherit;
+	color: inherit;
+}
+
+/* Cancel: the design's .btn.ghost.sm */
+.hrxApp .hrxMyLeave .hrxLeaveCancelButton.sapMBtn {
+	height: 23px;
+	padding: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCancelButton .sapMBtnInner {
+	box-sizing: border-box;
+	font-size: 10.5px;
+	line-height: 11px;
+	height: 23px;
+	min-width: 0;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+	color: var(--txt);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCancelButton .sapMBtnContent {
+	padding-top: 2px;
+	font-size: 10.5px;
+	letter-spacing: .05em;
+	color: var(--txt);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCancelButton .sapMBtnInner:hover {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveCancelButton .sapMBtnInner:hover .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+/* ── Dates picker (.date-popover / .dp-*) ─────────────────────────────────── */
+
+.hrxApp .hrxMyLeavePicker.sapMPopover {
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxMyLeavePicker .sapMPopoverCont {
+	margin: 0;
+	background: var(--surface);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePicker {
+	display: block;
+	box-sizing: border-box;
+	padding: 14px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerTitle {
+	font-family: var(--disp);
+	font-size: 12.5px;
+	font-weight: 800;
+	letter-spacing: .02em;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerGrid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 3px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerGrid + .hrxLeavePickerGrid {
+	margin-top: 3px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerWeekday {
+	display: block;
+	padding-bottom: 4px;
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 10px;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	text-align: center !important;
+	color: var(--txt-3);
+}
+
+/* One day: a 30px bordered cell; the range is ice blue. The theme's focus ring
+   would double the border of the day just clicked, so focus shows as an ice
+   border instead (keyboard only). */
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay:focus > .sapMBtnInner,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav:focus > .sapMBtnInner {
+	outline: none;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay:focus > .sapMBtnInner::after,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav:focus > .sapMBtnInner::after,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay:focus > .sapMBtnInner::before,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav:focus > .sapMBtnInner::before {
+	display: none;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerNav:focus-visible > .sapMBtnInner {
+	border-color: var(--ice-deep);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay:focus-visible > .sapMBtnInner {
+	border-color: var(--ice-deep);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay.sapMBtn {
+	width: auto;
+	height: 30px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay .sapMBtnInner {
+	box-sizing: border-box;
+	width: 100%;
+	height: 30px;
+	min-width: 0;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: transparent;
+	box-shadow: none;
+	transition: .12s;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 400;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay .sapMBtnInner:hover {
+	border-color: var(--ice);
+	background: transparent;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay .sapMBtnInner:hover .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="muted"] .sapMBtnInner {
+	border-color: var(--line-soft);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="muted"] .sapMBtnContent {
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="disabled"] {
+	opacity: .4;
+	cursor: not-allowed;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="disabled"] .sapMBtnInner {
+	border-color: var(--line-soft);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="disabled"] .sapMBtnContent {
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="in-range"] .sapMBtnInner {
+	background: var(--ice-glow);
+	border-color: #85B7EB;
+	border-radius: 0;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="in-range"] .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-start"] .sapMBtnInner,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-end"] .sapMBtnInner {
+	background: var(--ice);
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-start"] .sapMBtnContent,
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-end"] .sapMBtnContent {
+	color: #FFFFFF;
+	font-weight: 700;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-start"] .sapMBtnInner {
+	border-radius: 7px 0 0 7px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-end"] .sapMBtnInner {
+	border-radius: 0 7px 7px 0;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerDay[data-cell~="range-start"][data-cell~="range-end"] .sapMBtnInner {
+	border-radius: 7px;
+}
+
+.hrxApp .hrxMyLeavePicker .hrxLeavePickerFoot {
+	display: block;
+	margin-top: 10px;
+	font-size: 11px;
+	line-height: 13px;
+	text-align: center;
+	color: var(--txt-3);
+}
+
+/* ── Dialogs ──────────────────────────────────────────────────────────────── */
+
+/* The frame, head, foot, buttons, labels and text are the shared design modal
+   (hrxModal in css/style.css). Only what sits inside this page's dialogs is here. */
+
+/* The dialog keeps room for its footer with a bottom padding the theme sizes for
+   its own 40px footer bar; the design's taller foot (14px + button + 14px, about
+   62px) then covered the last field. Room for the taller foot. */
+.hrxApp .sapMDialog.hrxModal.hrxMyLeaveDialog {
+	padding-bottom: 62px;
+}
+
+/* One text per line (sap.m.Text renders inline) */
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody > .sapMText {
+	display: block;
+}
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogBody {
+	display: block;
+}
+
+/* label.f spacing between the fields: 14px above every label but the first */
+.hrxApp .hrxModal.hrxMyLeaveDialog .sapMLabel.hrxModalLabel.hrxLeaveDialogGap {
+	margin-top: 14px;
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogValue {
+	display: block;
+	font-size: 13.5px;
+	line-height: 18px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxModal.hrxMyLeaveDialog .sapMText.hrxModalText.hrxLeaveDialogDetail {
+	margin-bottom: 0;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+/* .trig-note: a frosted note under the fields */
+.hrxApp .hrxMyLeaveDialog .hrxLeaveDialogNote {
+	display: block;
+	margin-top: 16px;
+	padding: 10px 14px;
+	border-radius: var(--radius-s);
+	background: var(--frost);
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--txt-2);
+}
+
+/* Half days: one line per day - the date, then its full / AM / PM choice */
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayList.sapMList,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayList .sapMListUl {
+	border: none;
+	box-shadow: none;
+	background: transparent;
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayList .sapMLIB {
+	height: auto;
+	padding: 0;
+	background: transparent;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayList .sapMLIB:last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	padding: 10px 0;
+}
+
+.hrxApp .hrxMyLeaveDialog .hrxLeaveHalfDayDate {
+	font-size: 13.5px;
+	color: var(--ink);
+}

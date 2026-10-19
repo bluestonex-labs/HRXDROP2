@@ -2,17 +2,19 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 
-	<!-- Team Calendar's pop-over, bound to the "tcPop" model. It shows either
-	     - one request (kind "request"), opened from its block on the calendar or its
-	       row in Team leave: who, what, when, and for a manager Approve / Reject (and
-	       the person's other pending requests at once), or Cancel leave; or
+	<!-- Team Calendar's pop-over (the design's .cal-pop), bound to the "tcPop" model.
+	     It shows either
+	     - one request (kind "request"), opened from its pill on the grid or its row in
+	       Team leave: who, what, when, and for a manager Approve / Reject (and the
+	       person's other pending requests at once), or Cancel leave; or
 	     - one person's pending requests (kind "person"), opened from "N pending"
 	       under their name, each to approve or reject, or all of them together. -->
 	<Popover
 		id="teamLeavePopover"
 		showHeader="false"
+		showArrow="false"
 		placement="Auto"
-		contentWidth="21rem"
+		contentWidth="320px"
 		class="hrxTlPop">
 		<content>
 			<VBox busy="{tcPop>/saving}" busyIndicatorDelay="0">
@@ -20,25 +22,27 @@
 				<!-- ── one request ── -->
 				<VBox visible="{= ${tcPop>/kind} === 'request' }">
 					<HBox alignItems="Center" class="hrxTlPopHead">
-						<Avatar initials="{tcPop>/request/initials}" displaySize="XS" class="sapUiSmallMarginEnd" />
+						<HBox alignItems="Center" justifyContent="Center" class="hrxTlPopAvatar">
+							<Text text="{tcPop>/request/initials}" />
+						</HBox>
 						<VBox class="hrxTlPopWho">
 							<Text text="{tcPop>/request/Name}" class="hrxResourceName" />
 							<Text text="{tcPop>/request/typeText}" class="hrxResourceMeta" />
 						</VBox>
-						<ObjectStatus
-							text="{tcPop>/request/statusText}"
-							state="{tcPop>/request/statusState}"
-							inverted="true"
-							class="hrxSkPill" />
+						<Text text="{tcPop>/request/statusText}" class="hrxTcPill">
+							<customData><core:CustomData key="state" value="{tcPop>/request/status}" writeToDom="true" /></customData>
+						</Text>
 					</HBox>
 					<VBox class="hrxTlPopBody">
 						<HBox alignItems="Center" class="hrxTlPopLine">
-							<core:Icon src="sap-icon://calendar" class="sapUiTinyMarginEnd" />
+							<core:Icon src="sap-icon://calendar" />
 							<Text text="{tcPop>/request/dates}" />
 						</HBox>
-						<Text text="{tcPop>/request/daysText}" class="hrxTlPopLine hrxResourceName" />
+						<HBox alignItems="Center" class="hrxTlPopLine">
+							<Text text="{tcPop>/request/daysText}" class="hrxTlPopDays" />
+						</HBox>
 						<Text
-							text="{tcPop>/request/comments}"
+							text="“{tcPop>/request/comments}”"
 							visible="{= !!${tcPop>/request/comments} }"
 							class="hrxTlPopNote" />
 						<Text
@@ -47,19 +51,19 @@
 							class="hrxTlPopNote" />
 					</VBox>
 					<HBox visible="{tcPop>/canAct}" class="hrxTlPopFoot">
-						<Button text="{i18n>btnApprove}" icon="sap-icon://accept" type="Accept" width="100%" press=".onPopApprove" />
-						<Button text="{i18n>btnReject}" icon="sap-icon://decline" type="Reject" width="100%" press=".onPopReject" />
+						<Button text="{i18n>btnApprove}" icon="sap-icon://accept" press=".onPopApprove" class="hrxTcBtn hrxTcBtnApprove" />
+						<Button text="{i18n>btnReject}" icon="sap-icon://decline" press=".onPopReject" class="hrxTcBtn hrxTcBtnReject" />
 					</HBox>
 					<VBox visible="{= ${tcPop>/canAct} &amp;&amp; ${tcPop>/pending}.length > 1 }" class="hrxTlPopAll">
 						<Text text="{tcPop>/allPendingText}" class="hrxTlPopAllTitle" />
 						<HBox class="hrxTlPopFoot2">
-							<Button text="{i18n>tcApproveAll}" icon="sap-icon://accept" type="Accept" width="100%" press=".onPopApproveAll" />
-							<Button text="{i18n>tcRejectAll}" icon="sap-icon://decline" type="Reject" width="100%" press=".onPopRejectAll" />
+							<Button text="{i18n>tcApproveAll}" icon="sap-icon://accept" press=".onPopApproveAll" class="hrxTcBtn hrxTcBtnApprove" />
+							<Button text="{i18n>tcRejectAll}" icon="sap-icon://decline" press=".onPopRejectAll" class="hrxTcBtn hrxTcBtnReject" />
 						</HBox>
 					</VBox>
+					<!-- .pop-link: a manager can cancel leave that has not started -->
 					<Button
 						text="{i18n>lmCancelLeave}"
-						icon="sap-icon://cancel"
 						type="Transparent"
 						visible="{tcPop>/cancellable}"
 						press=".onPopCancel"
@@ -69,7 +73,9 @@
 				<!-- ── one person's pending requests ── -->
 				<VBox visible="{= ${tcPop>/kind} === 'person' }">
 					<HBox alignItems="Center" class="hrxTlPopHead">
-						<Avatar initials="{tcPop>/initials}" displaySize="XS" class="sapUiSmallMarginEnd" />
+						<HBox alignItems="Center" justifyContent="Center" class="hrxTlPopAvatar">
+							<Text text="{tcPop>/initials}" />
+						</HBox>
 						<VBox class="hrxTlPopWho">
 							<Text text="{tcPop>/name}" class="hrxResourceName" />
 							<Text text="{tcPop>/pendingText}" class="hrxResourceMeta" />
@@ -78,16 +84,18 @@
 					<VBox items="{path: 'tcPop>/pending', templateShareable: false}" class="hrxTlPopList">
 						<HBox alignItems="Center" class="hrxTlPopItem">
 							<VBox class="hrxTlPopWho">
-								<Text text="{tcPop>dates}" class="hrxResourceName" />
-								<Text text="{tcPop>typeText} · {tcPop>daysText}" class="hrxResourceMeta" />
+								<Text text="{tcPop>dates}" class="hrxTlPopItemDates" />
+								<Text text="{tcPop>typeText} · {tcPop>daysText}" class="hrxTlPopItemMeta" />
 							</VBox>
-							<Button icon="sap-icon://accept" type="Accept" tooltip="{i18n>btnApprove}" press=".onPopApproveOne" class="sapUiTinyMarginEnd" />
-							<Button icon="sap-icon://decline" type="Reject" tooltip="{i18n>btnReject}" press=".onPopRejectOne" />
+							<HBox class="hrxTlPopItemActs">
+								<Button icon="sap-icon://accept" tooltip="{i18n>btnApprove}" press=".onPopApproveOne" class="hrxTlPopIconBtn hrxTlPopIconOk" />
+								<Button icon="sap-icon://decline" tooltip="{i18n>btnReject}" press=".onPopRejectOne" class="hrxTlPopIconBtn hrxTlPopIconNo" />
+							</HBox>
 						</HBox>
 					</VBox>
 					<HBox class="hrxTlPopFoot">
-						<Button text="{tcPop>/approveAllText}" icon="sap-icon://accept" type="Accept" width="100%" press=".onPopApproveAll" />
-						<Button text="{tcPop>/rejectAllText}" icon="sap-icon://decline" type="Reject" width="100%" press=".onPopRejectAll" />
+						<Button text="{tcPop>/approveAllText}" icon="sap-icon://accept" press=".onPopApproveAll" class="hrxTcBtn hrxTcBtnApprove" />
+						<Button text="{tcPop>/rejectAllText}" icon="sap-icon://decline" press=".onPopRejectAll" class="hrxTcBtn hrxTcBtnReject" />
 					</HBox>
 				</VBox>
 			</VBox>

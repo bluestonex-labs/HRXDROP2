@@ -1,93 +1,104 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:grid="sap.ui.layout.cssgrid">
 
+	<!-- Assign a resource to the project, or edit an assignment: the design's fields
+	     (resource, billing scheme, day rate, day cost, areas) plus the billable days
+	     and start date the timesheet reads from the assignment. -->
 	<Dialog
 		id="assignmentDialog"
 		title="{= ${mpForm>/mode} === 'edit' ? ${i18n>mpEditAssignmentTitle} : ${i18n>mpAddAssignmentTitle} }"
-		contentWidth="34rem"
 		busy="{mpView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxMpDialog">
 		<content>
-			<form:SimpleForm
-				id="assignmentForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="5"
-				labelSpanL="5"
-				labelSpanM="5"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mpFieldResource}" required="true" />
+			<grid:CSSGrid id="assignmentGrid" class="hrxMpGrid">
+				<VBox renderType="Bare" class="hrxMpField">
+					<layoutData>
+						<grid:GridItemLayoutData gridColumn="1 / -1" />
+					</layoutData>
+					<Label text="{i18n>mpFieldResource}" labelFor="assignmentResource" required="true" class="hrxModalLabel" />
 					<ComboBox
 						id="assignmentResource"
 						selectedKey="{mpForm>/EmpID}"
 						items="{mpForm>/resources}"
-						showSecondaryValues="false"
+						width="100%"
 						enabled="{= ${mpForm>/mode} !== 'edit' }"
-						placeholder="{i18n>mpFieldResourcePlaceholder}">
-						<core:ListItem key="{mpForm>EmpID}" text="{mpForm>FullName}" additionalText="{mpForm>EmpID}" />
+						placeholder="{i18n>mpFieldResourcePlaceholder}"
+						class="hrxMpInput hrxMpSelect">
+						<core:ListItem key="{mpForm>EmpID}" text="{mpForm>FullName}" />
 					</ComboBox>
-
-					<Label text="{i18n>mpFieldBillingScheme}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldBillingScheme}" labelFor="assignmentBilling" required="true" class="hrxModalLabel" />
 					<ComboBox
 						id="assignmentBilling"
 						selectedKey="{mpForm>/BillingID}"
 						items="{mp>/billing}"
-						showSecondaryValues="true"
+						width="100%"
 						selectionChange=".onBillingSchemeChange"
-						placeholder="{i18n>mpFieldBillingSchemePlaceholder}">
-						<core:ListItem
-							key="{mp>BillingID}"
-							text="{mp>BillingDesc}"
-							additionalText="{path: 'mp>DayRate', formatter: '.formatter.money'}" />
+						placeholder="{i18n>mpFieldBillingSchemePlaceholder}"
+						class="hrxMpInput hrxMpSelect">
+						<core:ListItem key="{mp>BillingID}" text="{mp>BillingDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mpFieldDayRate}" required="true" />
-					<Input id="assignmentDayRate" value="{mpForm>/DayRate}" type="Number" description="GBP" />
-
-					<Label text="{i18n>mpFieldDayCost}" visible="{services>/dayCost}" />
-					<Input
-						id="assignmentDayCost"
-						value="{mpForm>/DayCost}"
-						type="Number"
-						description="GBP"
-						visible="{services>/dayCost}"
-						placeholder="{i18n>mpFieldDayCostPlaceholder}" />
-
-					<Label text="{i18n>mpFieldBillableDays}" required="true" />
-					<Input id="assignmentDays" value="{mpForm>/BillableDays}" type="Number" />
-
-					<Label text="{i18n>mpFieldStartDate}" />
-					<DatePicker id="assignmentStartDate" dateValue="{mpForm>/StartDate}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mpFieldAreas}" visible="{mp>/tasksAvailable}" />
-					<MultiComboBox
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldDayRate}" labelFor="assignmentDayRate" required="true" class="hrxModalLabel" />
+					<HBox renderType="Bare" class="hrxMpSuffixRow">
+						<Input id="assignmentDayRate" value="{mpForm>/DayRate}" type="Number" class="hrxMpInput" />
+						<Text text="{i18n>mpCurrencyGbp}" class="hrxMpSuffix" />
+					</HBox>
+				</VBox>
+				<VBox renderType="Bare" visible="{services>/dayCost}" class="hrxMpField">
+					<Label text="{i18n>mpFieldDayCost}" labelFor="assignmentDayCost" class="hrxModalLabel" />
+					<HBox renderType="Bare" class="hrxMpSuffixRow">
+						<Input id="assignmentDayCost" value="{mpForm>/DayCost}" type="Number" class="hrxMpInput" />
+						<Text text="{i18n>mpCurrencyGbp}" class="hrxMpSuffix" />
+					</HBox>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldBillableDays}" labelFor="assignmentDays" required="true" class="hrxModalLabel" />
+					<Input id="assignmentDays" value="{mpForm>/BillableDays}" type="Number" class="hrxMpInput" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldStartDate}" labelFor="assignmentStartDate" class="hrxModalLabel" />
+					<DatePicker
+						id="assignmentStartDate"
+						dateValue="{mpForm>/StartDate}"
+						displayFormat="dd/MM/yyyy"
+						valueFormat="yyyy-MM-dd"
+						class="hrxMpInput hrxMpDate" />
+				</VBox>
+				<!-- Areas: the project's own areas, one chip each -->
+				<VBox renderType="Bare" visible="{mp>/tasksAvailable}" class="hrxMpField">
+					<layoutData>
+						<grid:GridItemLayoutData gridColumn="1 / -1" />
+					</layoutData>
+					<Label text="{i18n>mpColAreas}" class="hrxModalLabel" />
+					<HBox
 						id="assignmentAreas"
-						visible="{mp>/tasksAvailable}"
-						selectedKeys="{mpForm>/taskKeys}"
-						items="{mpDetail>/projectTasks}"
-						placeholder="{i18n>mpFieldAssignmentAreasPlaceholder}">
-						<core:Item key="{mpDetail>TaskKey}" text="{mpDetail>TaskDesc}" />
-					</MultiComboBox>
-				</form:content>
-			</form:SimpleForm>
+						renderType="Bare"
+						class="hrxMpChips"
+						items="{path: 'mpDetail>/projectTasks', templateShareable: false}">
+						<ToggleButton
+							text="{mpDetail>TaskDesc}"
+							pressed="{parts: ['mpDetail>TaskKey', 'mpForm>/taskKeys'], formatter: '.isAreaSelected'}"
+							press=".onToggleAssignmentArea"
+							class="hrxMpChip" />
+					</HBox>
+					<Text
+						text="{i18n>mpNoProjectAreas}"
+						visible="{= !${mpDetail>/projectTasks/length} }"
+						class="hrxMpHint" />
+				</VBox>
+			</grid:CSSGrid>
 		</content>
 		<beginButton>
-			<Button id="assignmentConfirm" text="{i18n>mpSave}" type="Emphasized" press=".onSaveAssignment" />
+			<Button id="assignmentConfirm" text="{i18n>mpSave}" type="Emphasized" press=".onSaveAssignment" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="assignmentCancel" text="{i18n>mpCancel}" press=".onCancelAssignment" />
+			<Button id="assignmentCancel" text="{i18n>mpCancel}" press=".onCancelAssignment" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

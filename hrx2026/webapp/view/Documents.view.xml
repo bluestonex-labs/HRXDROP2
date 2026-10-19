@@ -2,12 +2,12 @@
 	controllerName="bsx.hrx.hrx2026.controller.Documents"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
 	displayBlock="true"
-	class="hrxDocuments">
+	class="hrxDocuments hrxPageDocuments">
 
+	<!-- "Upload document" is in the shell's top bar on this route, as in the design:
+	     it calls onPageAction (see App.controller). -->
 	<Page id="documentsPage" showHeader="false" title="{i18n>dmTitle}" showNavButton="false" class="hrxPageContent">
 		<content>
 			<IllustratedMessage
@@ -16,16 +16,7 @@
 				title="{i18n>dmTitle}"
 				description="{i18n>adminRestricted}" />
 
-			<VBox visible="{app>/user/isManager}" busy="{dmView>/busy}" busyIndicatorDelay="0">
-
-				<HBox justifyContent="End" class="sapUiSmallMarginBottom">
-					<Button
-						id="documentsUpload"
-						text="{i18n>dmUpload}"
-						icon="sap-icon://upload"
-						type="Emphasized"
-						press=".onOpenUpload" />
-				</HBox>
+			<VBox visible="{app>/user/isManager}" busy="{dmView>/busy}" busyIndicatorDelay="0" renderType="Bare">
 
 				<MessageStrip
 					text="{i18n>serviceNeededDocuments}"
@@ -33,122 +24,145 @@
 					showIcon="true"
 					enableFormattedText="true"
 					visible="{= !${dmView>/bound} }"
-					class="sapUiSmallMarginBottom" />
-				<MessageStrip
-					text="{dm>/lowText}"
-					type="Warning"
-					showIcon="true"
-					visible="{= ${dm>/low} > 0 }"
-					class="sapUiSmallMarginBottom" />
+					class="hrxPdStrip" />
 
-				<layout:Grid defaultSpan="XL7 L7 M12 S12" hSpacing="1" vSpacing="1" class="hrxDocGrid">
+				<!-- .alert.warn: how many documents are below the acknowledgement target -->
+				<HBox visible="{= ${dm>/low} > 0 }" renderType="Bare" class="hrxDmAlert">
+					<core:Icon src="sap-icon://warning" class="hrxDmAlertIcon" />
+					<Text text="{dm>/lowText}" class="hrxDmAlertText" />
+				</HBox>
 
-					<!-- all documents -->
-					<VBox id="documentsListCard" class="hrxSkCard hrxTrCard">
-						<layoutData><layout:GridData span="XL7 L7 M12 S12" /></layoutData>
-						<HBox alignItems="Center" class="hrxTrCardHead">
-							<VBox class="hrxTrCardHeadText">
-								<Title text="{i18n>dmAllDocuments}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-								<Text text="{dm>/countText}" class="hrxSkHint" />
-							</VBox>
+				<HBox renderType="Bare" class="hrxDmGrid">
+
+					<!-- All documents: search, category, filter chips, then one row per document -->
+					<VBox id="documentsListCard" renderType="Bare" class="hrxPdCard hrxDmPanel">
+						<HBox renderType="Bare" class="hrxPdCardHead">
+							<Title text="{i18n>dmAllDocuments}" level="H3" class="hrxPdCardTitle" />
+							<Text text="{dm>/countText}" class="hrxPdCardHint" />
 						</HBox>
-						<VBox class="hrxDocTools">
-							<HBox alignItems="Center" class="hrxDocToolRow">
-								<SearchField
+
+						<HBox renderType="Bare" class="hrxDmTools">
+							<HBox renderType="Bare" class="hrxDmSearch">
+								<core:Icon src="sap-icon://search" class="hrxDmSearchIcon" />
+								<Input
 									value="{dmView>/q}"
 									placeholder="{i18n>dmSearch}"
+									valueLiveUpdate="true"
 									liveChange=".onFilterChange"
-									width="100%">
-									<layoutData><FlexItemData growFactor="1" /></layoutData>
-								</SearchField>
-								<Select
-									selectedKey="{dmView>/category}"
-									items="{path: 'dm>/categories', templateShareable: false}"
-									change=".onFilterChange"
-									width="11rem">
-									<core:Item key="{dm>key}" text="{dm>text}" />
-								</Select>
+									width="100%"
+									class="hrxDmInput" />
 							</HBox>
-							<HBox wrap="Wrap" items="{path: 'dm>/chips', templateShareable: false}" class="hrxDocChips">
-								<Button
-									text="{dm>text}"
-									type="{= ${dm>selected} ? 'Emphasized' : 'Default' }"
-									press=".onChip"
-									class="hrxDocChip" />
-							</HBox>
-						</VBox>
+							<Select
+								selectedKey="{dmView>/category}"
+								items="{path: 'dm>/categories', templateShareable: false}"
+								change=".onFilterChange"
+								width="170px"
+								class="hrxDmSelect">
+								<core:Item key="{dm>key}" text="{dm>text}" />
+							</Select>
+						</HBox>
 
-						<VBox visible="{= ${dm>/rows}.length === 0 }" class="hrxDocEmpty">
-							<Title text="{= ${dm>/total} ? ${i18n>dmNoMatch} : ${i18n>dmNoDocuments} }" level="H4" />
-							<Text text="{= ${dm>/total} ? ${i18n>dmNoMatchText} : ${i18n>dmNoDocumentsText} }" class="hrxResourceMeta" />
-						</VBox>
-
-						<VBox id="documentsList" items="{path: 'dm>/rows', templateShareable: false}">
-							<HBox alignItems="Center" class="hrxDocRow2">
+						<!-- .doc-filters: each chip carries its count in a small pill after the label -->
+						<HBox items="{path: 'dm>/chips', templateShareable: false}" renderType="Bare" class="hrxDmChips">
+							<Button text="{dm>text}" press=".onChip" class="hrxDmChip">
 								<customData>
-									<core:CustomData key="id" value="{dm>DocumentID}" writeToDom="true" />
-									<core:CustomData key="sel" value="{= ${dm>selected} ? 'yes' : 'no' }" writeToDom="true" />
+									<core:CustomData key="count" value="{dm>count}" writeToDom="true" />
+									<core:CustomData key="on" value="{= ${dm>selected} ? 'yes' : 'no' }" writeToDom="true" />
 								</customData>
-								<VBox class="hrxDocMain">
-									<Text text="{dm>Name}" class="hrxDocName" />
-									<Text text="{dm>meta}" class="hrxResourceMeta" />
-								</VBox>
-								<VBox class="hrxDocAck">
-									<Text text="{dm>ackText}" class="{= ${dm>AckRequired} ? 'hrxDocAckN' : 'hrxResourceMeta' }" />
-									<core:HTML content="{dm>barHtml}" visible="{dm>AckRequired}" />
-								</VBox>
-								<HBox class="hrxDocAct" justifyContent="End">
-									<Button
-										icon="sap-icon://email"
-										type="Transparent"
-										tooltip="{i18n>dmRemindOutstanding}"
-										visible="{= ${dm>outstandingCount} > 0 }"
-										press=".onRemindRow" />
-								</HBox>
-							</HBox>
-						</VBox>
-					</VBox>
+							</Button>
+						</HBox>
 
-					<!-- who hasn't acknowledged the selected document -->
-					<VBox class="hrxSkCard hrxTrCard">
-						<layoutData><layout:GridData span="XL5 L5 M12 S12" /></layoutData>
-						<HBox alignItems="Center" class="hrxTrCardHead">
-							<VBox class="hrxTrCardHeadText">
-								<Title text="{i18n>dmWhoTitle}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-								<Text text="{dm>/selected/Name}" class="hrxSkHint" />
+						<VBox renderType="Bare" class="hrxDmRows">
+							<VBox visible="{= ${dm>/rows}.length === 0 }" renderType="Bare" class="hrxPdEmpty">
+								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatch} : ${i18n>dmNoDocuments} }" class="hrxPdEmptyTitle" />
+								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatchText} : ${i18n>dmNoDocumentsText} }" class="hrxPdEmptyText" />
 							</VBox>
+
+							<VBox id="documentsList" items="{path: 'dm>/rows', templateShareable: false}" renderType="Bare">
+								<!-- a click on the row selects it (see onInit) -->
+								<HBox renderType="Bare" class="hrxDmRow">
+									<customData>
+										<core:CustomData key="id" value="{dm>DocumentID}" writeToDom="true" />
+										<core:CustomData key="sel" value="{= ${dm>selected} ? 'yes' : 'no' }" writeToDom="true" />
+									</customData>
+									<VBox renderType="Bare" class="hrxDmMain">
+										<Text text="{dm>Name}" wrapping="false" class="hrxPdName" />
+										<Text text="{dm>meta}" wrapping="false" class="hrxPdMeta" />
+									</VBox>
+
+									<!-- .ack-mini: "acknowledged / audience", the bar and its state icon -->
+									<HBox visible="{= !!${dm>AckRequired} }" renderType="Bare" class="hrxDmAck">
+										<Text text="{dm>ackText}" class="hrxDmAckN" />
+										<ProgressIndicator
+											percentValue="{dm>pct}"
+											showValue="false"
+											width="84px"
+											height="7px"
+											state="{dm>ackState}"
+											class="hrxDmBar" />
+										<core:Icon src="sap-icon://status-inactive" class="hrxDmAckIcon">
+											<core:customData>
+												<core:CustomData key="state" value="{dm>ackIcon}" writeToDom="true" />
+											</core:customData>
+										</core:Icon>
+									</HBox>
+									<Text text="{dm>ackText}" visible="{= !${dm>AckRequired} }" class="hrxPdNoAck" />
+
+									<HBox renderType="Bare" class="hrxDmAct">
+										<Button
+											icon="sap-icon://email"
+											tooltip="{i18n>dmRemindOutstanding}"
+											visible="{= ${dm>outstandingCount} > 0 }"
+											press=".onRemindRow"
+											class="hrxDmIconBtn hrxPdBtnMail" />
+									</HBox>
+								</HBox>
+							</VBox>
+						</VBox>
+					</VBox>
+
+					<!-- Who hasn't acknowledged the selected document -->
+					<VBox renderType="Bare" class="hrxPdCard hrxDmPanel">
+						<HBox renderType="Bare" class="hrxPdCardHead">
+							<Title text="{i18n>dmWhoTitle}" level="H3" class="hrxPdCardTitle" />
+							<Text text="{dm>/selected/Name}" wrapping="false" class="hrxPdCardHint hrxDmWhoDoc" />
 						</HBox>
 
-						<VBox visible="{= !!${dm>/detailEmptyTitle} }" class="hrxDocEmpty">
-							<Title text="{dm>/detailEmptyTitle}" level="H4" />
-							<Text text="{dm>/detailEmptyText}" class="hrxResourceMeta" />
-						</VBox>
+						<VBox renderType="Bare" class="hrxDmRows">
+							<VBox visible="{= !!${dm>/detailEmptyTitle} }" renderType="Bare" class="hrxPdEmpty">
+								<Text text="{dm>/detailEmptyTitle}" class="hrxPdEmptyTitle" />
+								<Text text="{dm>/detailEmptyText}" visible="{= !!${dm>/detailEmptyText} }" class="hrxPdEmptyText" />
+							</VBox>
 
-						<VBox items="{path: 'dm>/outstanding', templateShareable: false}" class="hrxDocWho">
-							<HBox alignItems="Center" class="hrxDocWhoRow">
-								<f:Avatar initials="{dm>initials}" displaySize="XS" backgroundColor="Accent6" class="sapUiTinyMarginEnd" />
-								<VBox>
-									<Text text="{dm>Name}" class="hrxResourceName" />
-									<Text text="{dm>siteName}" class="hrxResourceMeta" />
-								</VBox>
+							<VBox items="{path: 'dm>/outstanding', templateShareable: false}" renderType="Bare">
+								<HBox renderType="Bare" class="hrxDmWhoRow">
+									<Text text="{dm>initials}" class="hrxDmAvatar" />
+									<VBox renderType="Bare">
+										<Text text="{dm>Name}" class="hrxDmWhoName" />
+										<Text text="{dm>siteName}" class="hrxDmWhoSite" />
+									</VBox>
+								</HBox>
+							</VBox>
+
+							<!-- .who-foot: Remind outstanding. Remove document is the app's own
+							     (the design has no way to unpublish), so it sits beside it. -->
+							<HBox visible="{= !!${dm>/selected/DocumentID} }" renderType="Bare" class="hrxDmWhoFoot">
+								<Button
+									text="{i18n>dmRemove}"
+									icon="sap-icon://delete"
+									press=".onRemove"
+									class="hrxPdBtn hrxPdBtnTrash" />
+								<Button
+									text="{i18n>dmRemindOutstanding}"
+									icon="sap-icon://email"
+									type="Emphasized"
+									visible="{= ${dm>/outstanding}.length > 0 }"
+									press=".onRemindSelected"
+									class="hrxPdBtn hrxPdBtnMail" />
 							</HBox>
 						</VBox>
-
-						<HBox justifyContent="End" wrap="Wrap" visible="{= !!${dm>/selected/DocumentID} }" class="hrxDocWhoFoot">
-							<Button
-								text="{i18n>dmRemove}"
-								icon="sap-icon://delete"
-								type="Transparent"
-								press=".onRemove" />
-							<Button
-								text="{i18n>dmRemindOutstanding}"
-								icon="sap-icon://email"
-								type="Emphasized"
-								visible="{= ${dm>/outstanding}.length > 0 }"
-								press=".onRemindSelected" />
-						</HBox>
 					</VBox>
-				</layout:Grid>
+				</HBox>
 			</VBox>
 		</content>
 	</Page>

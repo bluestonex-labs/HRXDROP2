@@ -2,269 +2,260 @@
 	controllerName="bsx.hrx.hrx2026.controller.Leave"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
-	xmlns:card="sap.f.cards"
-	xmlns:u="sap.ui.unified"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
-	xmlns:microchart="sap.suite.ui.microchart"
 	displayBlock="true"
 	class="hrxMyLeave">
 
+	<!-- My Leave, laid out as the 15.10.26 design's "leave" view: three balance tiles,
+	     the New Leave Request card beside the Leave Calendar, then the Leave Requests
+	     table. The page title sits in the shell's top bar (App.view.xml). -->
 	<Page id="leavePage" showHeader="false" title="{i18n>leaveTitle}" showNavButton="false" class="hrxPageContent">
-
-		<!-- No sub-header: it held nothing but a hidden picker, a reload button that now
-		     lives on the shell bar with the page title, and the approver's name, which
-		     the New Leave Request card below states anyway. A whole toolbar's height
-		     back on every screen. -->
-
 		<content>
-			<layout:Grid
-				defaultSpan="XL4 L4 M4 S12"
-				hSpacing="1"
-				vSpacing="1"
-				class="hrxCardRow">
 
-				<VBox class="hrxKpi hrxKpiNeutral">
-					<core:Icon src="sap-icon://calendar" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiAnnualQuota}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{mlView>/kpis/quota}" class="hrxKpiNum" />
-						<Text text="{i18n>mlDays}" class="hrxKpiUnit" />
+			<!-- ── Balance tiles (the design's .kpis row) ─────────────────────── -->
+			<HBox renderType="Bare" class="hrxLeaveKpis">
+
+				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiNeutral">
+					<core:Icon src="sap-icon://appointment-2" class="hrxLeaveKpiGlyph" />
+					<Text text="{i18n>kpiAnnualQuota}" class="hrxLeaveKpiLabel" />
+					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
+						<Text id="leaveKpiQuota" text="{mlView>/kpis/quota}" class="hrxLeaveKpiNumber" />
+						<Text text="{i18n>mlDaysUnit}" class="hrxLeaveKpiUnit" />
 					</HBox>
-					<Text text="{i18n>mlQuotaFooter}" class="hrxKpiSub" />
+					<Text text="{mlView>/kpis/allowanceText}" class="hrxLeaveKpiSub" />
 				</VBox>
 
-				<VBox class="hrxKpi hrxKpiWarning">
-					<core:Icon src="sap-icon://appointment-2" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiDaysBooked}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{mlView>/kpis/used}" class="hrxKpiNum" />
-						<Text text="{i18n>mlDays}" class="hrxKpiUnit" />
+				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiGood">
+					<core:Icon src="sap-icon://check-availability" class="hrxLeaveKpiGlyph" />
+					<Text text="{i18n>kpiDaysRemaining}" class="hrxLeaveKpiLabel" />
+					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
+						<Text id="leaveKpiBalance" text="{mlView>/kpis/balance}" class="hrxLeaveKpiNumber" />
+						<Text text="{i18n>mlDaysUnit}" class="hrxLeaveKpiUnit" />
 					</HBox>
-					<Text text="{i18n>mlUsedFooter}" class="hrxKpiSub" />
+					<Text text="{i18n>mlBalanceSub}" class="hrxLeaveKpiSub" />
 				</VBox>
 
-				<VBox class="hrxKpi hrxKpiGood">
-					<core:Icon src="sap-icon://flag" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiDaysRemaining}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{mlView>/kpis/balance}" class="hrxKpiNum" />
-						<Text text="{i18n>mlDays}" class="hrxKpiUnit" />
+				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiWarning">
+					<core:Icon src="sap-icon://calendar" class="hrxLeaveKpiGlyph" />
+					<Text text="{i18n>kpiDaysBooked}" class="hrxLeaveKpiLabel" />
+					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
+						<Text id="leaveKpiBooked" text="{mlView>/kpis/used}" class="hrxLeaveKpiNumber" />
+						<Text text="{i18n>mlDaysUnit}" class="hrxLeaveKpiUnit" />
 					</HBox>
-					<Text text="{i18n>mlBalanceFooter}" class="hrxKpiSub" />
+					<Text text="{i18n>mlBookedSub}" class="hrxLeaveKpiSub" />
 				</VBox>
-			</layout:Grid>
+			</HBox>
 
-			<layout:Grid
-				defaultSpan="XL4 L4 M6 S12"
-				hSpacing="1"
-				vSpacing="1"
-				class="hrxCardRow">
+			<!-- ── Request card (340px) beside the calendar (the rest) ────────── -->
+			<HBox renderType="Bare" class="hrxLeaveMainGrid">
 
-				<!-- new request -->
-				<f:Card id="newLeaveRequestCard">
-					<f:header>
-						<card:Header
-							title="{i18n>newLeaveRequestTitle}"
-							subtitle="{i18n>mlRequestSubtitle}"
-							iconSrc="sap-icon://create-leave-request" />
-					</f:header>
-					<f:content>
-						<!-- The three cards are made equal height by the flex row they sit in
-						     (.hrxCardRow), so none of them needs - or should have - a height
-						     of its own: a fixed one clipped the calendar card's legend off at
-						     the bottom of the card. -->
-						<VBox class="hrxLeaveCardBody" busy="{mlView>/saving}" busyIndicatorDelay="0">
-							<Label text="{i18n>fieldDates}" required="true" />
-							<DateRangeSelection
-								id="leaveDateRange"
-								width="100%"
-								change=".onDatesChange"
-								valueFormat="yyyy-MM-dd"
-								placeholder="{i18n>mlDatesPlaceholder}"
-								class="sapUiTinyMarginBottom" />
+				<!-- New Leave Request: the design's featured (dark) card head -->
+				<VBox id="newLeaveRequestCard" renderType="Bare" class="hrxLeaveCard">
+					<HBox renderType="Bare" class="hrxLeaveCardHead hrxLeaveCardHeadFeatured">
+						<core:Icon src="sap-icon://add-calendar" class="hrxLeaveCardHeadIcon" />
+						<Title text="{i18n>newLeaveRequestTitle}" level="H2" class="hrxLeaveCardTitle" />
+					</HBox>
 
-							<Label text="{i18n>fieldLeaveType}" />
-							<ComboBox
-								id="leaveType"
-								width="100%"
-								selectedKey="{mlForm>/LeaveCategoryId}"
-								items="{ml>/leaveTypes}"
-								class="sapUiTinyMarginBottom"
-								placeholder="{i18n>mlLeaveTypePlaceholder}">
-								<core:ListItem key="{ml>LeaveCategoryId}" text="{ml>LeaveCategoryDesc}" />
-							</ComboBox>
+					<VBox renderType="Bare" class="hrxLeaveCardBody hrxLeaveRequestBody" busy="{mlView>/saving}" busyIndicatorDelay="0">
+						<Label text="{i18n>fieldDates}" labelFor="leaveDatesInput" class="hrxLeaveFieldLabel" />
+						<!-- Read-only, as in the design: a click anywhere on the field opens the
+						     range picker (fragment/LeaveDatePicker), which offers today onwards. -->
+						<Input
+							id="leaveDatesInput"
+							value="{mlForm>/DatesText}"
+							placeholder="{i18n>mlDatesClickPlaceholder}"
+							showValueHelp="true"
+							valueHelpOnly="true"
+							valueHelpRequest=".onOpenDatePicker"
+							width="100%"
+							class="hrxLeaveDatesInput" />
 
-							<Label text="{i18n>fieldDuration}" />
-							<HBox alignItems="Center" class="sapUiTinyMarginBottom">
-								<ObjectNumber
-									number="{mlForm>/NoOfDays}"
-									unit="{i18n>mlDays}"
-									state="{= ${mlForm>/NoOfDays} > 0 ? 'Success' : 'None' }"
-									class="sapUiSmallMarginEnd" />
-								<Button
-									id="leaveHalfDays"
-									text="{i18n>mlHalfDays}"
-									type="Transparent"
-									icon="sap-icon://time-entry-request"
-									press=".onOpenHalfDays"
-									enabled="{= ${mlForm>/NoOfDays} > 0 }" />
-							</HBox>
+						<Label text="{i18n>fieldLeaveType}" labelFor="leaveType" class="hrxLeaveFieldLabel" />
+						<Select
+							id="leaveType"
+							width="100%"
+							forceSelection="false"
+							selectedKey="{mlForm>/LeaveCategoryId}"
+							items="{ml>/leaveTypes}">
+							<core:Item key="{ml>LeaveCategoryId}" text="{ml>LeaveCategoryDesc}" />
+						</Select>
 
-							<Label text="{i18n>fieldComments}" />
-							<TextArea
-								id="leaveComments"
-								value="{mlForm>/Comments}"
-								rows="2"
-								width="100%"
-								class="sapUiTinyMarginBottom"
-								placeholder="{i18n>mlOptional}" />
+						<Label text="{i18n>fieldDuration}" labelFor="leaveDuration" class="hrxLeaveFieldLabel" />
+						<!-- One choice for the whole range, as in the design. "Choose per day"
+						     opens the half day dialog for a mix of full and half days. -->
+						<Select
+							id="leaveDuration"
+							width="100%"
+							selectedKey="{mlForm>/Duration}"
+							change=".onDurationChange">
+							<core:Item key="F" text="{i18n>mlDurationFull}" />
+							<core:Item key="A" text="{i18n>mlDurationAm}" />
+							<core:Item key="P" text="{i18n>mlDurationPm}" />
+							<core:Item key="M" text="{i18n>mlDurationPerDay}" />
+						</Select>
 
-							<Label text="{i18n>fieldApprover}" />
-							<Text text="{mlView>/user/managerName}" class="sapUiSmallMarginBottom hrxResourceName" />
+						<Label text="{i18n>fieldComments}" labelFor="leaveComments" class="hrxLeaveFieldLabel" />
+						<TextArea
+							id="leaveComments"
+							value="{mlForm>/Comments}"
+							rows="3"
+							width="100%"
+							placeholder="{i18n>mlOptional}" />
 
-							<!-- At the foot of the card, as on the home page's Quick Leave card:
-							     the class goes on the flex item wrapper, where margin-top:auto
-							     can push it down (see hrxCardFooterButton). -->
+						<Label text="{i18n>fieldApprover}" class="hrxLeaveFieldLabel" />
+						<Text
+							id="leaveApprover"
+							text="{= ${mlView>/user/managerName} || ${i18n>mlNoApprover} }"
+							class="hrxLeaveApprover" />
+
+						<!-- The design's .card-spacer: keeps the button on the card's foot -->
+						<HBox renderType="Bare" class="hrxLeaveCardSpacer" />
+
+						<Button
+							id="leaveSubmit"
+							text="{i18n>btnRequestLeave}"
+							type="Emphasized"
+							width="100%"
+							enabled="{= !${mlView>/saving} }"
+							press=".onSubmitLeave"
+							class="hrxLeaveSubmit" />
+					</VBox>
+				</VBox>
+
+				<!-- Leave Calendar: one month at a time, each day in its leave type's colour -->
+				<VBox id="leaveCalendarCard" renderType="Bare" class="hrxLeaveCard">
+					<HBox renderType="Bare" class="hrxLeaveCardHead">
+						<Title text="{i18n>mlCalendarTitle}" level="H2" class="hrxLeaveCardTitle" />
+					</HBox>
+
+					<VBox renderType="Bare" class="hrxLeaveCardBody" busy="{mlView>/busy}" busyIndicatorDelay="0">
+						<HBox renderType="Bare" class="hrxLeaveMonthHead">
 							<Button
-								id="leaveSubmit"
-								text="{i18n>btnRequestLeave}"
-								type="Emphasized"
-								width="100%"
-								enabled="{= ${mlForm>/NoOfDays} > 0 }"
-								press=".onSubmitLeave">
-								<layoutData>
-									<FlexItemData styleClass="hrxCardFooterButton" />
-								</layoutData>
-							</Button>
-						</VBox>
-					</f:content>
-				</f:Card>
+								id="leaveCalendarPrevious"
+								icon="sap-icon://navigation-left-arrow"
+								tooltip="{i18n>mlPreviousMonth}"
+								press=".onCalendarPrevious"
+								class="hrxLeaveNavButton" />
+							<Text id="leaveCalendarTitle" text="{mlCal>/title}" class="hrxLeaveMonthTitle" />
+							<Button
+								id="leaveCalendarNext"
+								icon="sap-icon://navigation-right-arrow"
+								tooltip="{i18n>mlNextMonth}"
+								press=".onCalendarNext"
+								class="hrxLeaveNavButton" />
+						</HBox>
 
-				<!-- calendar -->
-				<f:Card id="leaveCalendarCard">
-					<f:header>
-						<card:Header
-							title="{i18n>mlCalendarTitle}"
-							subtitle="{i18n>mlCalendarSubtitle}"
-							iconSrc="sap-icon://calendar" />
-					</f:header>
-					<f:content>
-						<VBox class="hrxLeaveCardBody" alignItems="Center" busy="{mlView>/busy}" busyIndicatorDelay="0">
-							<u:Calendar id="leaveCalendar" showWeekNumbers="false" width="100%" />
-							<u:CalendarLegend id="leaveCalendarLegend" standardItems="Today" class="sapUiSmallMarginTop">
-								<u:items>
-									<u:CalendarLegendItem text="{i18n>tcLegendHoliday}" type="Type01" />
-									<u:CalendarLegendItem text="{i18n>tcLegendSick}" type="Type02" />
-									<u:CalendarLegendItem text="{i18n>tcLegendBankHoliday}" type="Type05" />
-									<u:CalendarLegendItem text="{i18n>tcLegendUnpaid}" type="Type03" />
-									<u:CalendarLegendItem text="{i18n>tcLegendCompassionate}" type="Type04" />
-								</u:items>
-							</u:CalendarLegend>
-						</VBox>
-					</f:content>
-				</f:Card>
+						<HBox renderType="Bare" class="hrxLeaveMonthGrid">
+							<Text text="{i18n>mlDayMo}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDayTu}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDayWe}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDayTh}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDayFr}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDaySa}" class="hrxLeaveWeekday" />
+							<Text text="{i18n>mlDaySu}" class="hrxLeaveWeekday" />
+						</HBox>
 
-				<!-- breakdown -->
-				<f:Card id="leaveBreakdownCard">
-					<f:header>
-						<card:NumericHeader
-							title="{i18n>mlSnapshotTitle}"
-							subtitle="{i18n>kpiDaysRemaining}"
-							number="{mlView>/kpis/balance}"
-							scale="{i18n>mlDays}"
-							state="{mlView>/kpis/balanceState}">
-							<card:sideIndicators>
-								<card:NumericSideIndicator title="{i18n>kpiAnnualQuota}" number="{mlView>/kpis/quota}" unit="{i18n>mlDays}" />
-								<card:NumericSideIndicator title="{i18n>kpiDaysBooked}" number="{mlView>/kpis/used}" unit="{i18n>mlDays}" />
-							</card:sideIndicators>
-						</card:NumericHeader>
-					</f:header>
-					<f:content>
-						<VBox class="hrxLeaveCardBody hrxLeaveBreakdown">
-							<Text text="{i18n>mlByTypeTitle}" class="hrxEyebrow sapUiTinyMarginBottom" />
-							<microchart:ComparisonMicroChart
-								id="leaveBreakdownChart"
-								size="Responsive"
-								width="100%"
-								data="{ml>/analytics}"
-								visible="{path: 'ml>/analytics', formatter: '.formatter.hasItems'}">
-								<microchart:ComparisonMicroChartData
-									title="{ml>LeaveType}"
-									value="{ml>Days}"
-									color="{path: 'ml>LeaveType', formatter: '.formatter.leaveTypeColor'}" />
-							</microchart:ComparisonMicroChart>
-							<IllustratedMessage
-								illustrationType="sapIllus-NoTasks"
-								illustrationSize="Spot"
-								title="{i18n>mlNoLeaveTaken}"
-								description="{i18n>mlNoLeaveTakenText}"
-								visible="{path: 'ml>/analytics', formatter: '.formatter.isEmptyList'}" />
-						</VBox>
-					</f:content>
-				</f:Card>
-			</layout:Grid>
+						<!-- Each day writes its state (muted, weekend, today) and leave type
+						     (data-leave) to the DOM, where leave.css colours it. -->
+						<HBox id="leaveCalendarGrid" renderType="Bare" class="hrxLeaveMonthGrid" items="{mlCal>/cells}">
+							<Text text="{mlCal>label}" tooltip="{mlCal>tooltip}" class="hrxLeaveMonthDay">
+								<customData>
+									<core:CustomData key="cell" value="{mlCal>state}" writeToDom="true" />
+									<core:CustomData key="leave" value="{mlCal>leave}" writeToDom="true" />
+								</customData>
+							</Text>
+						</HBox>
 
-			<f:Card id="myLeaveCard">
-				<f:header>
-					<card:Header
-						title="{i18n>myRequestsTitle}"
-						subtitle="{i18n>mlRequestsSubtitle}"
-						iconSrc="sap-icon://general-leave-request" />
-				</f:header>
-				<f:content>
-					<!-- No content padding: the table is a card in its own right by default
-					     (see .hrxCardTable in style.css), which put a rounded, shadowed box
-					     inside the card's own rounded box. The table runs the full width of
-					     the tab container instead, and hrxFlushTable takes the inner frame
-					     off it. -->
-					<IconTabBar
-						id="leaveStatusTabs"
+						<!-- The colour key. Bank holidays are not in the design's key, but the
+						     service returns them and the calendar marks them. -->
+						<HBox renderType="Bare" class="hrxLeaveLegend">
+							<Text text="{i18n>tcLegendCompassionate}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="COMPL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>tcLegendHoliday}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="HOLIL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>mlLegendMaternity}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="MATEL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>mlLegendPaternity}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="PATEL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>tcLegendSick}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="SICKL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>tcLegendUnpaid}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="UNPDL" writeToDom="true" /></customData>
+							</Text>
+							<Text text="{i18n>tcLegendBankHoliday}" class="hrxLeaveLegendItem">
+								<customData><core:CustomData key="leave" value="BANK" writeToDom="true" /></customData>
+							</Text>
+						</HBox>
+					</VBox>
+				</VBox>
+			</HBox>
+
+			<!-- ── Leave Requests (the design's .tablecard) ───────────────────── -->
+			<VBox id="myLeaveCard" renderType="Bare" class="hrxLeaveTableCard">
+				<HBox renderType="Bare" class="hrxLeaveTableTop">
+					<Title text="{i18n>mlRequestsTitle}" level="H2" class="hrxLeaveCardTitle" />
+					<SegmentedButton
+						id="leaveStatusFilter"
 						selectedKey="{mlView>/statusFilter}"
-						select=".onStatusFilter"
-						class="hrxFlushTabs">
+						selectionChange=".onStatusFilter"
+						class="hrxLeaveSeg">
 						<items>
-							<IconTabFilter key="All" text="{i18n>mlTabAll}" icon="sap-icon://expand-all" />
-							<IconTabSeparator />
-							<IconTabFilter key="Requested" text="{i18n>mlTabRequested}" icon="sap-icon://begin" iconColor="Neutral" />
-							<IconTabFilter key="Approved" text="{i18n>mlTabApproved}" icon="sap-icon://accept" iconColor="Positive" />
-							<IconTabFilter key="Rejected" text="{i18n>mlTabRejected}" icon="sap-icon://decline" iconColor="Negative" />
+							<SegmentedButtonItem key="All" text="{i18n>mlTabAll}" />
+							<SegmentedButtonItem key="Requested" text="{i18n>mlTabRequested}" />
+							<SegmentedButtonItem key="Approved" text="{i18n>mlTabApproved}" />
+							<SegmentedButtonItem key="Rejected" text="{i18n>mlTabRejected}" />
 						</items>
-						<content>
-							<Table
-								id="myLeaveTable"
-								items="{ml>/leaves}"
-								busy="{= ${mlView>/busy} || ${mlView>/saving} }"
-								busyIndicatorDelay="0"
-								noDataText="{i18n>mlNoLeave}"
-								alternateRowColors="true"
-								growing="true"
-								growingScrollToLoad="true">
-								<columns>
-									<Column width="10rem"><Text text="{i18n>mrLeaveColDate}" /></Column>
-									<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mrLeaveColType}" /></Column>
-									<Column hAlign="End"><Text text="{i18n>mrLeaveColStatus}" /></Column>
-								</columns>
-								<items>
-									<!-- Once a request has been approved there is nothing left to edit -->
-									<ColumnListItem
-										type="{= ${ml>StatusID} === 'REQ' ? 'Detail' : 'Inactive' }"
-										detailPress=".onEditLeave">
-										<cells>
-											<Text text="{ml>DisplayDate}" />
-											<Text text="{ml>LeaveType} — {ml>Absence}" />
-											<ObjectStatus
-												text="{ml>Status}"
-												state="{path: 'ml>StatusID', formatter: '.formatter.leaveStatusState'}" />
-										</cells>
-									</ColumnListItem>
-								</items>
-							</Table>
-						</content>
-					</IconTabBar>
-				</f:content>
-			</f:Card>
+					</SegmentedButton>
+				</HBox>
+
+				<!-- One row per request (a request can span several days). A request still
+				     awaiting a decision opens the edit dialog and can be cancelled. -->
+				<Table
+					id="myLeaveTable"
+					items="{ml>/leaves}"
+					busy="{= ${mlView>/busy} || ${mlView>/saving} }"
+					busyIndicatorDelay="0"
+					noDataText="{i18n>mlNoLeave}"
+					growing="true"
+					growingThreshold="50"
+					growingScrollToLoad="true"
+					class="hrxLeaveTable">
+					<columns>
+						<Column width="22.1%" styleClass="hrxLeaveColFirst"><Text text="{i18n>mrLeaveColDate}" /></Column>
+						<Column width="41.5%"><Text text="{i18n>mlColLeaveType}" /></Column>
+						<Column width="18.9%"><Text text="{i18n>mrLeaveColStatus}" /></Column>
+						<Column width="17.5%" hAlign="End" styleClass="hrxLeaveColLast"><Text text="" /></Column>
+					</columns>
+					<items>
+						<ColumnListItem
+							type="{= ${ml>editable} ? 'Active' : 'Inactive' }"
+							press=".onEditLeave">
+							<cells>
+								<Text text="{ml>DisplayRange}" />
+								<HBox renderType="Bare" class="hrxLeaveTypeCell">
+									<Text text="{ml>LeaveType}" class="hrxLeaveTypeName">
+										<customData><core:CustomData key="leave" value="{ml>LeaveTypeID}" writeToDom="true" /></customData>
+									</Text>
+									<Text text="{ml>DurationText}" class="hrxLeaveDuration" />
+								</HBox>
+								<ObjectStatus
+									text="{ml>Status}"
+									state="{path: 'ml>StatusID', formatter: '.formatter.leaveStatusState'}" />
+								<Button
+									text="{i18n>mlCancel}"
+									visible="{ml>cancellable}"
+									press=".onCancelLeave"
+									class="hrxLeaveCancelButton" />
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</VBox>
 		</content>
 	</Page>
 </mvc:View>

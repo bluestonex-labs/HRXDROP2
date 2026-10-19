@@ -129,7 +129,8 @@ sap.ui.define([], function () {
 		},
 
 		/**
-		 * Billing by assignment: every employee/project with time booked in the period.
+		 * Billing by assignment: every employee/project with time booked in the period,
+		 * and every assignment (Assigned) with none.
 		 * @param {Array<object>} aBookings bookings
 		 * @param {object} oPeriod from and to, "yyyy-MM-dd"
 		 * @param {object} oMonth the calendar month to report "this month" for
@@ -156,7 +157,8 @@ sap.ui.define([], function () {
 					})
 				});
 			}).filter(function (oRow) {
-				return oRow.days > 0;
+				// An assignment with no time in the period still has its row ("No bookings").
+				return oRow.days > 0 || oRow.Assigned === true;
 			}).sort(function (a, b) {
 				return a.Name.localeCompare(b.Name) || a.ClientDesc.localeCompare(b.ClientDesc) ||
 					a.ProjectDesc.localeCompare(b.ProjectDesc);

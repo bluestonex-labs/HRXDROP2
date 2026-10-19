@@ -1,1 +1,1159 @@
-/* timesheet-reporting - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* timesheet-reporting - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+
+   Timesheet reporting and Utilisation: view/TimesheetReport.view.xml. Every rule is
+   scoped under the view's root class (.hrxTimesheetReport) and uses hrxTs* classes of
+   its own, so the older hrxTr* rules in style.css do not reach this page. Sizes are
+   the design's own (filter bar, tabs, KPI tiles, cards, tables, pills, buttons). */
+
+/* ── Page layout ───────────────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsBody {
+	display: block;
+}
+
+/* sap.m adds a margin under inputs and a minimum width to flex items; the design has neither. */
+.hrxTimesheetReport .hrxTsBody .sapMFlexItem {
+	min-width: 0;
+}
+
+.hrxTimesheetReport .hrxTsStrip,
+.hrxTimesheetReport .hrxTsLoading {
+	margin-bottom: 16px;
+}
+
+.hrxTimesheetReport .hrxTsLoading {
+	color: var(--txt-2);
+	font-size: 12px;
+}
+
+/* ── Shared type ───────────────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsBody .sapMText,
+.hrxTimesheetReport .hrxTsBody .sapMLabel {
+	font-family: var(--sans);
+	color: var(--ink);
+	font-size: 13px;
+	line-height: normal;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsStrong {
+	font-weight: 700;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsSub {
+	display: block;
+	margin-top: 1px;
+	font-size: 11.5px;
+	font-weight: 500;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsNum {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── Buttons: the design's .btn.ghost.sm and .btn.primary.sm ───────────────── */
+
+.hrxTimesheetReport .hrxTsBtn.sapMBtn {
+	height: auto;
+	min-width: 0;
+	padding: 0;
+	flex: 0 0 auto;
+}
+
+.hrxTimesheetReport .hrxTsBtn .sapMBtnInner {
+	height: auto;
+	min-width: 0;
+	padding: calc(6px + .12em) 12px calc(6px - .12em);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	color: var(--txt);
+	font-family: var(--disp);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	line-height: .92;
+	text-shadow: none;
+	box-shadow: none;
+	display: inline-flex;
+	align-items: center;
+	transition: .15s;
+}
+
+/* The theme sets its own font on the button's content; the design's comes from the
+   button. League Spartan's line box here is the design's (.92em): the app loads a
+   different file of the font, whose "normal" line height is taller. */
+.hrxTimesheetReport .hrxTsBtn .sapMBtnContent,
+.hrxTimesheetReport .hrxTsBtn .sapMBtnContent > bdi,
+.hrxTimesheetReport .hrxTsTab .sapMBtnContent,
+.hrxTimesheetReport .hrxTsTab .sapMBtnContent > bdi {
+	padding: 0;
+	font: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	text-transform: inherit;
+	overflow: visible;
+}
+
+.hrxTimesheetReport .hrxTsBtn:hover .sapMBtnInner {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+	background: var(--surface);
+}
+
+.hrxTimesheetReport .hrxTsBtnPrimary .sapMBtnInner,
+.hrxTimesheetReport .hrxTsBtnPrimary:hover .sapMBtnInner {
+	background: var(--ice);
+	border-color: transparent;
+	color: #FFFFFF;
+}
+
+.hrxTimesheetReport .hrxTsBtnPrimary:hover .sapMBtnInner {
+	background: var(--ice-deep);
+}
+
+/* Remind: the design's mail glyph before the text. */
+.hrxTimesheetReport .hrxTsBtnMail .sapMBtnInner::before {
+	content: "";
+	width: 14px;
+	height: 14px;
+	margin-right: 5px;
+	position: relative;
+	top: -.12em;
+	flex: 0 0 14px;
+	background: currentColor;
+	-webkit-mask: url("../../img/icons/tsreport-mail.svg") center / 14px 14px no-repeat;
+	mask: url("../../img/icons/tsreport-mail.svg") center / 14px 14px no-repeat;
+}
+
+/* ── Inputs and selects: the design's 35px fields ──────────────────────────── */
+
+.hrxTimesheetReport .hrxTsInput.sapMInputBase {
+	height: 35px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxTimesheetReport .hrxTsInput .sapMInputBaseContentWrapper {
+	height: 35px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxTimesheetReport .hrxTsInput:hover .sapMInputBaseContentWrapper {
+	border-color: var(--line);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxTimesheetReport .hrxTsInput.sapMFocus .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+}
+
+.hrxTimesheetReport .hrxTsInput .sapMInputBaseInner {
+	height: 33px;
+	padding: 9px 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+	line-height: normal;
+	background: transparent;
+}
+
+.hrxTimesheetReport .hrxTsInput .sapMInputBaseInner::placeholder {
+	font-style: normal;
+	color: var(--txt-2);
+}
+
+/* Search: the design's magnifier inside the field, on the left. */
+.hrxTimesheetReport .hrxTsSearch .sapMInputBaseContentWrapper::before {
+	content: "";
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	width: 15px;
+	height: 15px;
+	transform: translateY(-50%);
+	background: var(--txt-3);
+	-webkit-mask: url("../../img/icons/tsreport-search.svg") center / 15px 15px no-repeat;
+	mask: url("../../img/icons/tsreport-search.svg") center / 15px 15px no-repeat;
+	pointer-events: none;
+}
+
+.hrxTimesheetReport .hrxTsSearch .sapMInputBaseContentWrapper {
+	position: relative;
+}
+
+.hrxTimesheetReport .hrxTsSearch .sapMInputBaseInner {
+	padding-left: 36px;
+}
+
+/* Period: read-only as the design's field. The calendar button is stretched over the
+   whole field and made invisible, so a click anywhere on it opens the calendar
+   (the keyboard still opens it from the field with F4 or Alt+Down). */
+.hrxTimesheetReport .hrxTsPeriod .sapMInputBaseContentWrapper {
+	position: relative;
+}
+
+.hrxTimesheetReport .hrxTsPeriod .sapMInputBaseIconContainer {
+	position: absolute;
+	inset: 0;
+	width: auto;
+	height: auto;
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsPeriod .sapMInputBaseIconContainer > .sapMInputBaseIcon {
+	position: absolute;
+	inset: 0;
+	/* !important: the theme sizes this icon with a more specific rule. */
+	width: 100% !important;
+	height: 100% !important;
+	min-width: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsSelect.sapMSlt {
+	height: 35px;
+	margin: 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxTimesheetReport .hrxTsSelect.sapMSlt:hover,
+.hrxTimesheetReport .hrxTsSelect.sapMSltHoverable:hover {
+	border-color: var(--line);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxTimesheetReport .hrxTsSelect.sapMSlt.sapMSltPressed,
+.hrxTimesheetReport .hrxTsSelect.sapMSlt.sapMFocus {
+	border-color: var(--ice);
+}
+
+.hrxTimesheetReport .hrxTsSelect .sapMSltLabel {
+	height: 33px;
+	line-height: normal;
+	padding: 9px 40px 9px 12px;
+	margin: 0;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsSelect .sapMSelectListItemText {
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	line-height: 15px;
+}
+
+.hrxTimesheetReport .hrxTsSelect .sapMSltArrow {
+	position: absolute;
+	right: 12px;
+	top: 50%;
+	width: 16px;
+	height: 16px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	transform: translateY(-50%);
+	border: none;
+	background: url("../../img/icons/tsreport-select.svg") center / 16px 16px no-repeat;
+	font-size: 0;
+}
+
+.hrxTimesheetReport .hrxTsSelect .sapMSltArrow::before {
+	content: none;
+}
+
+/* ── Filter bar (.fbar) ────────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsFbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 14px;
+	margin-bottom: 16px;
+	padding: 14px 18px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.hrxTimesheetReport .hrxTsFg {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	flex: 1 1 150px;
+	min-width: 150px !important;
+}
+
+.hrxTimesheetReport .hrxTsFgShow {
+	max-width: 240px;
+	margin-left: auto;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMLabel.hrxTsFgLabel {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	line-height: 12px;
+	height: 12px;
+	padding: 0;
+}
+
+/* Hide the theme's "required"/colon decoration on these labels. */
+.hrxTimesheetReport .hrxTsFgLabel .sapMLabelColonAndRequired {
+	display: none;
+}
+
+.hrxTimesheetReport .hrxTsQlinks {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+	padding-bottom: 6px;
+}
+
+/* ── Tabs (.tabs / .tab) ───────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsTabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 16px;
+	border-bottom: 1px solid var(--line);
+	overflow-x: auto;
+}
+
+.hrxTimesheetReport .hrxTsTab.sapMBtn {
+	position: relative;
+	height: auto;
+	min-width: 0;
+	padding: 0;
+	flex: 0 0 auto;
+}
+
+.hrxTimesheetReport .hrxTsTab .sapMBtnInner {
+	height: auto;
+	min-width: 0;
+	padding: calc(11px + .12em) 16px calc(11px - .12em);
+	border: none;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	text-shadow: none;
+	font-family: var(--disp);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	line-height: .92;
+	color: var(--txt-2);
+}
+
+.hrxTimesheetReport .hrxTsTab:hover .sapMBtnInner,
+.hrxTimesheetReport .hrxTsTab .sapMBtnInner:hover {
+	background: none;
+	color: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsTab[data-on="yes"] .sapMBtnInner {
+	color: var(--ice-deep);
+}
+
+.hrxTimesheetReport .hrxTsTab[data-on="yes"]::after {
+	content: "";
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: 0;
+	height: 2px;
+	background: var(--ice);
+	border-radius: 2px;
+}
+
+/* ── KPI tiles (.kpis / .kpi) ──────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsSection {
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsKpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.hrxTimesheetReport .hrxTsKpi {
+	display: block;
+	position: relative;
+	padding: 18px 20px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top: 2px solid var(--ice);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.hrxTimesheetReport .hrxTsKpi[data-state="ok"] { border-top-color: var(--mint); }
+.hrxTimesheetReport .hrxTsKpi[data-state="warn"] { border-top-color: var(--amber); }
+.hrxTimesheetReport .hrxTsKpi[data-state="crit"] { border-top-color: var(--signal); }
+
+.hrxTimesheetReport .hrxTsGlyph,
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsGlyph {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	display: grid;
+	place-items: center;
+	border-radius: 10px;
+	font-size: 17px;
+	line-height: 34px;
+	text-align: center;
+	color: var(--ice-deep);
+	background: var(--ice-glow);
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsGlyphText {
+	font-family: var(--sans);
+	font-weight: 600;
+	font-size: 17px;
+}
+
+.hrxTimesheetReport .hrxTsKpi[data-state="ok"] .hrxTsGlyph { color: var(--mint); background: var(--mint-soft); }
+.hrxTimesheetReport .hrxTsKpi[data-state="warn"] .hrxTsGlyph { color: var(--amber); background: var(--amber-soft); }
+.hrxTimesheetReport .hrxTsKpi[data-state="crit"] .hrxTsGlyph { color: var(--signal); background: var(--signal-soft); }
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsKlab {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	line-height: 12px;
+}
+
+.hrxTimesheetReport .hrxTsKnum,
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsKnum,
+.hrxTimesheetReport .hrxTsKnum > .sapMText {
+	display: block;
+	font-family: var(--disp);
+	font-size: 36px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1.05;
+	text-transform: uppercase;
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.hrxTimesheetReport .hrxTsKnum > .sapMText {
+	display: inline;
+}
+
+.hrxTimesheetReport .hrxTsKnum > .sapMText.hrxTsKunit {
+	margin-left: 6px;
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsKsub {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--txt-3);
+	line-height: 14px;
+}
+
+/* ── Cards (.card / .card-head) ────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsCard {
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxTimesheetReport .hrxTsCardHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTimesheetReport .hrxTsCardHeadText {
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsCardTitle.sapMTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+	line-height: .92;
+	letter-spacing: 0;
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsCardTitle.sapMTitle > span {
+	line-height: inherit;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsCardHint {
+	display: block;
+	margin-top: 3px;
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsTools {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxTimesheetReport .hrxTsTools .hrxTsSearch {
+	flex: 0 0 260px;
+	width: 260px !important;
+}
+
+.hrxTimesheetReport .hrxTsTools .hrxTsWork {
+	flex: 0 0 150px;
+	width: 150px !important;
+}
+
+.hrxTimesheetReport .hrxTsPadded {
+	display: block;
+	padding: 18px 20px;
+}
+
+/* ── Tables: the design's plain table, one CSS grid per row ────────────────── */
+
+.hrxTimesheetReport .hrxTsTable {
+	display: block;
+	min-width: 760px;
+}
+
+.hrxTimesheetReport .hrxTsTr {
+	display: grid;
+	align-items: center;
+	border-bottom: 1px solid var(--line-soft);
+	transition: background .12s;
+}
+
+.hrxTimesheetReport .hrxTsTr > * {
+	padding: 12px 18px;
+}
+
+/* Text stacked in a cell (name over its detail) as blocks, so no line box of the
+   cell's own adds height around them. */
+.hrxTimesheetReport .hrxTsTr > .sapMFlexBox > .sapMText {
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsTr > :first-child {
+	padding-left: 20px;
+}
+
+.hrxTimesheetReport .hrxTsTr > :last-child {
+	padding-right: 20px;
+}
+
+.hrxTimesheetReport .hrxTsTr:not(.hrxTsTh):hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxTimesheetReport .hrxTsTr.hrxTsTh {
+	border-bottom-color: var(--line);
+	background: var(--frost);
+}
+
+.hrxTimesheetReport .hrxTsTr.hrxTsTh > * {
+	padding-top: 9px;
+	padding-bottom: 8px;
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsTh .sapMText {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+	white-space: nowrap;
+	line-height: 11.5px;
+}
+
+/* No line under a table's last row. */
+.hrxTimesheetReport .hrxTsTable > .sapMFlexBox:last-child > :last-child.hrxTsTr,
+.hrxTimesheetReport .hrxTsTable > .sapMFlexBox:last-child > :last-child > .hrxTsTr {
+	border-bottom: none;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsTblEmpty {
+	display: block;
+	padding: 26px 20px;
+	text-align: center;
+	color: var(--txt-3);
+}
+
+/* The design's empty state (hrx.empty): a short uppercase line, centred. */
+.hrxTimesheetReport .hrxTsEmpty {
+	display: block;
+	padding: 44px 24px;
+	text-align: center;
+}
+
+.hrxTimesheetReport .hrxTsEmpty.hrxTsEmptySmall {
+	padding: 18px;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsEmptyTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+/* Pills (.pill): Billable, Internal, Fully booked, Under target, Not started. */
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsPill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	line-height: 13px;
+	background: var(--frost-2);
+	color: var(--txt-2);
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsPill[data-state="ok"] { background: var(--mint-soft); color: #0F7B4F; }
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsPill[data-state="warn"] { background: var(--amber-soft); color: #92400E; }
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsPill[data-state="crit"] { background: var(--signal-soft); color: #991B1B; }
+
+/* Chevron (row expand): the design's 14px chevron, turned down when open. */
+.hrxTimesheetReport .hrxTsChev.sapMBtn {
+	width: 14px;
+	height: 14px;
+	min-width: 0;
+	padding: 0;
+	flex: 0 0 14px;
+	transition: transform .15s;
+}
+
+.hrxTimesheetReport .hrxTsChev .sapMBtnInner {
+	width: 14px;
+	height: 14px;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	background: var(--txt-3);
+	-webkit-mask: url("../../img/icons/tsreport-chevron.svg") center / 14px 14px no-repeat;
+	mask: url("../../img/icons/tsreport-chevron.svg") center / 14px 14px no-repeat;
+	box-shadow: none;
+}
+
+.hrxTimesheetReport .hrxTsChev:hover .sapMBtnInner {
+	background: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsAsg[data-open="yes"] > .hrxTsAsgRow .hrxTsChev,
+.hrxTimesheetReport .hrxTsGrp[data-open="yes"] .hrxTsChev {
+	transform: rotate(90deg);
+}
+
+/* Bars (hrx.bar): track, fill in the state's colour, status glyph. */
+.hrxTimesheetReport .hrxTsBarLine {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hrxTimesheetReport .hrxTsTrack {
+	display: block;
+	flex: 1 1 auto;
+	height: 7px;
+	background: var(--line-soft);
+	border-radius: 5px;
+	overflow: hidden;
+}
+
+.hrxTimesheetReport .hrxTsFill {
+	display: block;
+	height: 100%;
+	border-radius: 5px;
+	background: var(--ice);
+}
+
+.hrxTimesheetReport .hrxTsFill[data-state="ok"] { background: var(--mint); }
+.hrxTimesheetReport .hrxTsFill[data-state="warn"] { background: var(--amber); }
+.hrxTimesheetReport .hrxTsFill[data-state="crit"] { background: var(--signal); }
+
+.hrxTimesheetReport .hrxTsIco {
+	display: block;
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	background: var(--mint);
+	-webkit-mask: url("../../img/icons/tsreport-ok.svg") center / 18px 18px no-repeat;
+	mask: url("../../img/icons/tsreport-ok.svg") center / 18px 18px no-repeat;
+}
+
+.hrxTimesheetReport .hrxTsIco[data-state="warn"] {
+	background: var(--amber);
+	-webkit-mask-image: url("../../img/icons/tsreport-warn.svg");
+	mask-image: url("../../img/icons/tsreport-warn.svg");
+}
+
+.hrxTimesheetReport .hrxTsIco[data-state="crit"] {
+	background: var(--signal);
+	-webkit-mask-image: url("../../img/icons/tsreport-crit.svg");
+	mask-image: url("../../img/icons/tsreport-crit.svg");
+}
+
+/* ── Billing by assignment ─────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsAsgCols {
+	grid-template-columns: 34px minmax(0, 141fr) minmax(0, 415fr) 130.5px 118.3px 141.5px 153.4px;
+}
+
+.hrxTimesheetReport .hrxTsAsgCols > :first-child {
+	padding-right: 0;
+}
+
+/* The chevron is the first cell itself, so the cell's left padding is a margin on it. */
+.hrxTimesheetReport .hrxTsAsgRow > .hrxTsChev.sapMBtn {
+	margin-left: 20px;
+}
+
+.hrxTimesheetReport .hrxTsAsg {
+	display: block;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTimesheetReport .hrxTsAsg:last-child {
+	border-bottom: none;
+}
+
+.hrxTimesheetReport .hrxTsAsgRow.hrxTsTr {
+	border-bottom: none;
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsAsgRow.hrxTsTr:hover {
+	background: var(--frost);
+}
+
+.hrxTimesheetReport .hrxTsAsgRow > .sapMFlexBox {
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsTotal[data-priced="yes"] {
+	font-weight: 700;
+}
+
+/* An open assignment's time bookings: a white inset table on the frost band. */
+.hrxTimesheetReport .hrxTsAsgSub {
+	display: block;
+	padding: 4px 20px 16px 34px;
+	background: var(--frost);
+}
+
+.hrxTimesheetReport .hrxTsInner {
+	display: block;
+	border: 1px solid var(--line-soft);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.hrxTimesheetReport .hrxTsLogCols {
+	grid-template-columns: 197.2px 148.5px minmax(0, 1fr);
+}
+
+.hrxTimesheetReport .hrxTsInner > .sapMFlexBox:not(.hrxTsTr) > :last-child.hrxTsTr {
+	border-bottom: none;
+}
+
+/* ── Billed days overview ──────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsDaysGrid {
+	display: grid;
+	grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr) minmax(0, 1.3fr);
+	gap: 16px;
+	align-items: start;
+}
+
+.hrxTimesheetReport .hrxTsStat {
+	display: block;
+	padding: 14px 0;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxTimesheetReport .hrxTsStat:last-child {
+	border-bottom: none;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsStatLabel {
+	display: block;
+	margin-bottom: 3px;
+	font-size: 12px;
+	color: var(--txt-2);
+}
+
+.hrxTimesheetReport .hrxTsStatValue {
+	display: block;
+	white-space: nowrap;
+	font-family: var(--disp);
+	font-size: 24px;
+	line-height: .92;
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsStatValue > .sapMText {
+	display: inline;
+	font-family: var(--disp);
+	font-size: 24px;
+	font-weight: 800;
+	letter-spacing: -.5px;
+	line-height: inherit;
+	color: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsStatValue > .sapMText.hrxTsStatUnit {
+	margin-left: 5px;
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsDonutWrap {
+	display: flex;
+	justify-content: center;
+	margin: 6px 0 16px;
+}
+
+.hrxTimesheetReport .hrxTsDonut {
+	width: 210px;
+	height: 210px;
+}
+
+.hrxTimesheetReport .hrxTsDonutTrack {
+	stroke: var(--line-soft);
+}
+
+.hrxTimesheetReport .hrxTsSeg {
+	transition: opacity .15s;
+}
+
+.hrxTimesheetReport .hrxTsSegActive {
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsSegActive:hover {
+	opacity: .78;
+}
+
+.hrxTimesheetReport .hrxTsDonutTotal {
+	font-family: var(--disp);
+	font-weight: 800;
+	font-size: 12px;
+	fill: var(--ink);
+	pointer-events: none;
+}
+
+.hrxTimesheetReport .hrxTsDonutUnit {
+	font-family: var(--sans);
+	font-size: 4.6px;
+	font-weight: 700;
+	letter-spacing: .14em;
+	fill: var(--txt-3);
+	pointer-events: none;
+}
+
+/* Legend (.legend2): a list, so the rows can be reached and pressed by keyboard. */
+.hrxTimesheetReport .hrxTsLegend.sapMList .sapMLIB {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+}
+
+.hrxTimesheetReport .hrxTsLegend .sapMLIBContent,
+.hrxTimesheetReport .hrxTsLegend .sapMCLIContent {
+	width: 100%;
+}
+
+.hrxTimesheetReport .hrxTsLegend .sapMLIB.sapMLIBActive,
+.hrxTimesheetReport .hrxTsLegend .sapMLIB:hover {
+	background: transparent;
+}
+
+.hrxTimesheetReport .hrxTsLegend .sapMLIBActionable .hrxTsLgRow,
+.hrxTimesheetReport .hrxTsLegend .sapMLIBTypeActive .hrxTsLgRow {
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsLegend .sapMLIBTypeActive:hover .hrxTsLgRow {
+	background: var(--frost);
+}
+
+.hrxTimesheetReport .hrxTsLgRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 6px;
+	border-radius: 8px;
+}
+
+.hrxTimesheetReport .hrxTsLgRow .hrxTsLgName {
+	flex: 1 1 auto;
+}
+
+.hrxTimesheetReport .hrxTsDot {
+	display: block;
+	flex: 0 0 8px;
+	width: 8px;
+	height: 8px;
+	margin-right: 7px;
+	border-radius: 3px;
+	background: #26AAE2;
+}
+
+/* The chart palette, in the order slices take it (COLORS in the controller). */
+.hrxTimesheetReport .hrxTsDot[data-colour="1"] { background: #756EE5; }
+.hrxTimesheetReport .hrxTsDot[data-colour="2"] { background: #C43FF6; }
+.hrxTimesheetReport .hrxTsDot[data-colour="3"] { background: #2DD4BF; }
+.hrxTimesheetReport .hrxTsDot[data-colour="4"] { background: #E5B159; }
+.hrxTimesheetReport .hrxTsDot[data-colour="5"] { background: #E5484D; }
+
+.hrxTimesheetReport .hrxTsTopRow {
+	display: block;
+	margin-bottom: 14px;
+}
+
+.hrxTimesheetReport .hrxTsTopLabel {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 5px;
+}
+
+.hrxTimesheetReport .hrxTsTopLabel .sapMText.hrxTsStrong {
+	flex: 0 0 auto;
+	font-variant-numeric: tabular-nums;
+}
+
+.hrxTimesheetReport .hrxTsFill.hrxTsFillTop {
+	background: linear-gradient(90deg, var(--ice), #756EE5);
+}
+
+/* ── Timesheet breakdown ───────────────────────────────────────────────────── */
+
+/* The name column takes the room left; each person and the totals get the same width. */
+.hrxTimesheetReport .hrxTsBrkRow.hrxTsTr {
+	display: flex;
+}
+
+.hrxTimesheetReport .hrxTsBrkRow > :first-child {
+	flex: 1 0 260px;
+}
+
+.hrxTimesheetReport .hrxTsBrkRow > :not(:first-child) {
+	flex: 0 0 125px;
+	width: 125px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* People's full names can be longer than the column: the header wraps instead. */
+.hrxTimesheetReport .hrxTsBody .hrxTsBrkRow.hrxTsTh > :not(:first-child) {
+	white-space: normal;
+}
+
+.hrxTimesheetReport .hrxTsBrkRow > :last-child {
+	flex-basis: 129px;
+	width: 129px;
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsBrkRow:not(.hrxTsTh) .sapMText.hrxTsNum {
+	color: var(--txt-2);
+}
+
+.hrxTimesheetReport .hrxTsGrp.hrxTsTr {
+	background: var(--frost);
+	cursor: pointer;
+}
+
+.hrxTimesheetReport .hrxTsGrp.hrxTsTr:hover {
+	background: var(--frost-2);
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsGrp .sapMText,
+.hrxTimesheetReport .hrxTsBody .hrxTsBrkRow.hrxTsGrp .sapMText.hrxTsNum {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsGrpName {
+	display: flex;
+	align-items: center;
+}
+
+.hrxTimesheetReport .hrxTsGrpName .hrxTsChev {
+	margin-right: 10px;
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsGrp .sapMText.hrxTsGrpCount {
+	margin-left: 12px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsIndent {
+	padding-left: 38px;
+	color: var(--txt-2);
+}
+
+.hrxTimesheetReport .hrxTsBrkTotals.hrxTsTr {
+	border-top: 2px solid var(--line);
+	border-bottom: none;
+}
+
+.hrxTimesheetReport .hrxTsBody .hrxTsBrkTotals .sapMText,
+.hrxTimesheetReport .hrxTsBody .hrxTsBrkRow.hrxTsBrkTotals .sapMText.hrxTsNum {
+	font-weight: 800;
+	color: var(--ink);
+}
+
+/* ── Who's submitted ───────────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsSubCols {
+	grid-template-columns: minmax(0, 396fr) minmax(0, 345fr) 193.6px 199.6px;
+}
+
+.hrxTimesheetReport .hrxTsPerson {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsAvatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 30px;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsPersonName {
+	font-weight: 600;
+}
+
+.hrxTimesheetReport .hrxTsAck {
+	display: block;
+	min-width: 200px;
+	max-width: 380px;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsAckText {
+	display: block;
+	margin-bottom: 5px;
+	font-size: 12.5px;
+}
+
+.hrxTimesheetReport .hrxTsCellEnd {
+	display: flex;
+	justify-content: flex-end;
+}
+
+/* ── Utilisation ───────────────────────────────────────────────────────────── */
+
+.hrxTimesheetReport .hrxTsUtilCols {
+	grid-template-columns: minmax(0, 154fr) 100.7px 86.4px 249.1px minmax(0, 543.6fr);
+}
+
+.hrxTimesheetReport .hrxTsUtilCols > .sapMFlexBox {
+	display: block;
+}
+
+.hrxTimesheetReport .hrxTsUbBar {
+	width: 180px;
+}
+
+.hrxTimesheetReport .hrxTsUtilCols > .hrxTsUbBar {
+	display: block;
+	width: auto;
+}
+
+.hrxTimesheetReport .hrxTsUbBar > * {
+	max-width: 180px;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsUbPct {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 11.5px;
+	font-weight: 700;
+}
+
+.hrxTimesheetReport .hrxTsBody .sapMText.hrxTsProjs {
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+/* ── Narrow screens: tiles two by two, cards stacked ───────────────────────── */
+
+@media (max-width: 1100px) {
+	.hrxTimesheetReport .hrxTsKpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.hrxTimesheetReport .hrxTsDaysGrid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.hrxTimesheetReport .hrxTsCardHead {
+		flex-wrap: wrap;
+	}
+}

@@ -1,1 +1,1234 @@
-/* manage-resources - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* manage-resources - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+   Everything is scoped under .hrxManageResources (the view) or under the hrxMr* field classes
+   its dialogs share (UI5 renders dialogs outside the view; their frame is the shared .hrxModal). Design class names are given in brackets. */
+
+/* ── Page: the design's .scroll gutter around the master / detail (.md) ─────── */
+
+.hrxApp .hrxManageResources {
+	box-sizing: border-box;
+	padding: 26px var(--gutter) 0;
+	background: var(--frost);
+}
+
+/* (.md) list and detail side by side, 16px apart. The design sizes them as
+   100vh - 250px: the view (under the 68px top bar) less 182px, i.e. its
+   content box (inside the 26px top padding) less 156px. */
+.hrxApp .hrxManageResources .hrxMrMd {
+	display: flex;
+	gap: 16px;
+	align-items: stretch;
+	height: calc(100% - 156px);
+	min-height: 520px;
+}
+
+/* (.card) */
+.hrxApp .hrxManageResources .hrxMrCard {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+/* (.md-list) the full width until a resource opens, then 360px */
+.hrxApp .hrxManageResources .hrxMrList {
+	flex: 1 1 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrMd[data-mr-open="yes"] .hrxMrList {
+	flex: 0 0 360px;
+}
+
+.hrxApp .hrxManageResources .hrxMrMd[data-mr-full="yes"] .hrxMrList {
+	display: none;
+}
+
+/* (.md-detail) */
+.hrxApp .hrxManageResources .hrxMrDetail {
+	flex: 1 1 0;
+}
+
+@media (max-width: 1100px) {
+	.hrxApp .hrxManageResources .hrxMrMd[data-mr-open="yes"] .hrxMrList {
+		display: none;
+	}
+}
+
+/* (.card-head / .card-title) */
+.hrxApp .hrxManageResources .hrxMrCardHead {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxManageResources .hrxMrCardTitle.sapMTitle,
+.hrxApp .hrxManageResources .hrxMrCardTitle .sapMTitleInner {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 0;
+	line-height: 13px;
+	color: var(--ink);
+}
+
+/* ── List tools (.md-tools): search, filter, add, reload ────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrTools {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+/* (.md-search) the field with its glyph inside on the left */
+.hrxApp .hrxManageResources .hrxMrSearch {
+	position: relative;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrSearch .sapMInputBase {
+	width: 100%;
+}
+
+.hrxApp .hrxManageResources .hrxMrSearch .sapMInputBaseInner {
+	padding-left: 35px;
+}
+
+.hrxApp .hrxManageResources .hrxMrSearchIcon.sapUiIcon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	z-index: 1;
+	width: 15px;
+	height: 15px;
+	margin-top: -7.5px;
+	color: var(--txt-3);
+	pointer-events: none;
+}
+
+/* ── Icons drawn from the design's own inline SVGs (img/icons) ──────────────── */
+
+.hrxApp .hrxMrIcoSearch.sapUiIcon,
+.hrxApp .hrxMrIcoFilter .sapUiIcon,
+.hrxApp .hrxMrIcoPlus .sapUiIcon,
+.hrxApp .hrxMrIcoRefresh .sapUiIcon,
+.hrxApp .hrxMrIcoExpand .sapUiIcon,
+.hrxApp .hrxMrIcoClose .sapUiIcon,
+.hrxApp .hrxMrIcoCheck .sapUiIcon,
+.hrxApp .hrxMrIcoCal .sapUiIcon {
+	width: 15px;
+	height: 15px;
+	font-size: 0;
+	line-height: 0;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-mr-icon) center / 100% 100% no-repeat;
+	mask: var(--hrx-mr-icon) center / 100% 100% no-repeat;
+}
+
+.hrxApp .hrxMrIcoSearch.sapUiIcon::before,
+.hrxApp .hrxMrIcoFilter .sapUiIcon::before,
+.hrxApp .hrxMrIcoPlus .sapUiIcon::before,
+.hrxApp .hrxMrIcoRefresh .sapUiIcon::before,
+.hrxApp .hrxMrIcoExpand .sapUiIcon::before,
+.hrxApp .hrxMrIcoClose .sapUiIcon::before,
+.hrxApp .hrxMrIcoCheck .sapUiIcon::before,
+.hrxApp .hrxMrIcoCal .sapUiIcon::before {
+	content: none !important;
+}
+
+.hrxApp .hrxMrIcoSearch { --hrx-mr-icon: url("../../img/icons/resources-search.svg"); }
+.hrxApp .hrxMrIcoFilter { --hrx-mr-icon: url("../../img/icons/resources-filter.svg"); }
+.hrxApp .hrxMrIcoPlus { --hrx-mr-icon: url("../../img/icons/resources-plus.svg"); }
+.hrxApp .hrxMrIcoRefresh { --hrx-mr-icon: url("../../img/icons/resources-refresh.svg"); }
+.hrxApp .hrxMrIcoExpand { --hrx-mr-icon: url("../../img/icons/resources-expand.svg"); }
+.hrxApp .hrxMrIcoClose { --hrx-mr-icon: url("../../img/icons/resources-x.svg"); }
+.hrxApp .hrxMrIcoCheck { --hrx-mr-icon: url("../../img/icons/resources-check.svg"); }
+.hrxApp .hrxMrIcoCal { --hrx-mr-icon: url("../../img/icons/resources-cal.svg"); }
+
+/* (.icon-btn.sm) 30px square, white, grey line; ice on hover */
+.hrxApp .hrxManageResources .hrxMrIconBtn.sapMBtn {
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrIconBtn .sapMBtnInner {
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+	transition: .15s;
+}
+
+.hrxApp .hrxManageResources .hrxMrIconBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	background: var(--surface);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxManageResources .hrxMrIconBtn .sapMBtnIcon {
+	margin: 0;
+	color: inherit;
+}
+
+/* (.icon-btn.ok / .icon-btn.no) approve / reject a requested day */
+.hrxApp .hrxManageResources .hrxMrIconBtnOk .sapMBtnInner:hover {
+	border-color: var(--mint);
+	color: var(--mint);
+}
+
+.hrxApp .hrxManageResources .hrxMrIconBtnNo .sapMBtnInner:hover {
+	border-color: var(--signal);
+	color: var(--signal);
+}
+
+/* ── List rows (.md-rows / .md-row) ─────────────────────────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrRows {
+	flex: 1 1 auto;
+	min-height: 0;
+	height: auto !important;
+}
+
+.hrxApp .hrxManageResources .hrxMrRows .sapMList,
+.hrxApp .hrxManageResources .hrxMrRows .sapMListUl {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	background: var(--surface);
+	border-bottom: 1px solid var(--line-soft);
+	transition: .12s;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB:hover {
+	background: var(--frost);
+}
+
+/* (.md-row.sel) */
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB.sapMLIBSelected,
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB.sapMLIBSelected:hover {
+	background: #EAF5FB;
+	box-shadow: inset 3px 0 0 var(--ice);
+}
+
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB .sapMLIBContent {
+	width: 100%;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIBFocusable:focus::after,
+.hrxApp .hrxManageResources .hrxMrRowItem.sapMLIB:focus::after {
+	border-color: transparent;
+}
+
+.hrxApp .hrxManageResources .hrxMrRow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 18px;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowMain {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowName.sapMText {
+	font-size: 13.5px;
+	font-weight: 700;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageResources .hrxMrRowEmail.sapMText {
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* (.md-row .r) the pill over type · site; hidden while a resource is open */
+.hrxApp .hrxManageResources .hrxMrRowSide {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	flex-shrink: 0;
+	max-width: 44%;
+	text-align: right;
+}
+
+.hrxApp .hrxManageResources .hrxMrMd[data-mr-open="yes"] .hrxMrRowSide {
+	display: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrRowMeta.sapMText {
+	margin-top: 3px;
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+/* (.avatar-sm.grad-av.big) initials on the ice-to-violet gradient */
+.hrxApp .hrxMrAvatar.sapFAvatar {
+	flex-shrink: 0;
+	border: none;
+	background: linear-gradient(135deg, var(--ice), #756EE5);
+	color: #FFFFFF;
+	box-shadow: none;
+}
+
+.hrxApp .hrxMrAvatar.sapFAvatar .sapFAvatarInitialsHolder {
+	font-family: var(--sans);
+	font-weight: 700;
+	color: #FFFFFF;
+}
+
+/* (.pill) Active / Inactive and the leave statuses */
+.hrxApp .hrxMrPill.sapMObjStatus {
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+}
+
+.hrxApp .hrxMrPill.sapMObjStatus {
+	min-height: 0;
+	height: auto;
+	position: relative;
+}
+
+/* The status's screen-reader texts must not take up room in the pill */
+.hrxApp .hrxMrPill.sapMObjStatus .sapUiPseudoInvisibleText {
+	position: absolute;
+}
+
+.hrxApp .hrxMrPill.sapMObjStatus .sapMObjStatusText {
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+	color: inherit;
+}
+
+/* ── Detail head (.md-head) ─────────────────────────────────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrHead {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-shrink: 0;
+	padding: 18px 22px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxManageResources .hrxMrHeadText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrNameRow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+/* (.nm) */
+.hrxApp .hrxManageResources .hrxMrName.sapMTitle,
+.hrxApp .hrxManageResources .hrxMrName .sapMTitleInner {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 17px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* (.sub) type · site · job title */
+.hrxApp .hrxManageResources .hrxMrHeadSub.sapMText {
+	margin-top: 2px;
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-3);
+}
+
+/* (.acts) full screen and close */
+.hrxApp .hrxManageResources .hrxMrHeadActs {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+}
+
+/* ── Tabs (.tabs / .tab) ───────────────────────────────────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrTabs.sapMITB {
+	position: relative;
+	inset: auto;
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 0;
+	height: auto;
+	background: transparent;
+	box-shadow: none;
+}
+
+/* (.tabs) 22px in from the card edges and 10px under the head, on a 1px line */
+.hrxApp .hrxManageResources .hrxMrTabs > .sapMITH {
+	flex-shrink: 0;
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	margin: 10px 22px 0;
+	background: transparent;
+	box-shadow: none;
+	border: none;
+	border-bottom: 1px solid var(--line);
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBHead {
+	display: flex;
+	gap: 4px;
+	height: auto;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBHead .sapMITBItem.sapMITBFilter {
+	margin: 0;
+	padding: 0;
+	height: auto;
+	min-width: 0;
+	align-items: stretch;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBFilterWrapper {
+	position: relative;
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITFExpandButtonBadge {
+	display: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBText {
+	display: block;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: calc(11px + .12em) 16px calc(11px - .12em);
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-weight: 700;
+	font-size: 12px;
+	line-height: 11px;
+	letter-spacing: .04em;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITHTextContent {
+	display: inline;
+	font: inherit;
+	line-height: 11px;
+	color: inherit;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBFilter:hover .sapMITBText {
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBSelected .sapMITBText,
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBSelected:hover .sapMITBText {
+	color: var(--ice-deep);
+}
+
+/* The theme's own marker is replaced by the design's: 2px of ice, 12px in */
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBContentArrow {
+	display: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBFilter .sapMITBFilterWrapper::after {
+	content: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBSelected .sapMITBText {
+	position: relative;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBSelected .sapMITBText::after {
+	content: "";
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: -1px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--ice);
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBFilter:focus,
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBFilter:focus-visible {
+	outline: none;
+}
+
+/* (.md-body) the tab's content scrolls between the tabs and the foot */
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBContainerContent {
+	flex: 1 1 auto;
+	min-height: 0;
+	margin-top: 16px;
+	border: none;
+	background: transparent;
+}
+
+.hrxApp .hrxManageResources .hrxMrTabs .sapMITBContent {
+	position: static;
+	height: 100%;
+	box-sizing: border-box;
+	overflow-y: auto;
+	padding: 18px 22px;
+	background: transparent;
+	border: none;
+}
+
+/* ── Forms (.fgrid / .fld / label.f) - the detail and the dialogs ──────────── */
+
+.hrxApp .hrxMrGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: 20px;
+}
+
+.hrxApp .hrxMrGrid.hrxMrGridOne {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.hrxApp .hrxMrFld {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	margin-bottom: 16px;
+}
+
+.hrxApp .hrxMrFld.hrxMrSpan2 {
+	grid-column: 1 / -1;
+}
+
+.hrxApp .hrxMrFld.hrxMrFldLast {
+	margin-bottom: 0;
+}
+
+.hrxApp .hrxMrGrid > .hrxMrGrid {
+	grid-column: 1 / -1;
+}
+
+.hrxApp .hrxMrFld > .sapMLabel {
+	margin: 0 0 6px;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMrFld > .sapMLabel .sapMLabelColonAndRequired {
+	padding: 0;
+}
+
+/* (.req) a small red star 3px after the label */
+.hrxApp .hrxMrFld > .sapMLabel.sapMLabelRequired .sapMLabelColonAndRequired::after,
+.hrxApp .hrxMrFld > .sapMLabel.sapMLabelRequired::after {
+	content: "*";
+	margin-left: 3px;
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	color: var(--signal);
+	vertical-align: top;
+}
+
+/* (input / select) 35px, 11px corners, grey line */
+.hrxApp .hrxMrFld .sapMInputBase,
+.hrxApp .hrxMrSuffix .sapMInputBase,
+.hrxApp .hrxMrFld .sapMSlt {
+	height: 35px;
+	margin: 0;
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseContentWrapper,
+.hrxApp .hrxMrSearch .sapMInputBaseContentWrapper {
+	height: 35px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMrSearch .sapMInputBase {
+	height: 35px;
+	margin: 0;
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseContentWrapper:hover,
+.hrxApp .hrxMrSearch .sapMInputBaseContentWrapper:hover {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseInner,
+.hrxApp .hrxMrSearch .sapMInputBaseInner {
+	height: 33px;
+	padding-top: 0;
+	padding-bottom: 0;
+	padding-right: 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseInner:not(.sapMTextAreaInner) {
+	padding-left: 12px;
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseInner::placeholder,
+.hrxApp .hrxMrSearch .sapMInputBaseInner::placeholder {
+	font-style: normal;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMrFld .sapMInputBaseIconContainer .sapMInputBaseIcon {
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxMrFld .sapMSlt {
+	box-sizing: border-box;
+	border-radius: var(--radius-s);
+	box-shadow: inset 0 0 0 1px var(--line);
+	background: var(--surface);
+}
+
+.hrxApp .hrxMrFld .sapMSlt.sapMSltHoverable:hover,
+.hrxApp .hrxMrFld .sapMSlt.sapMSltFocused {
+	box-shadow: inset 0 0 0 1px var(--ice);
+}
+
+.hrxApp .hrxMrFld .sapMSltLabel {
+	height: 35px;
+	line-height: 35px;
+	padding-left: 12px;
+	font-size: 13px;
+}
+
+.hrxApp .hrxMrFld .sapMTextArea {
+	height: auto;
+}
+
+.hrxApp .hrxMrFld .sapMTextArea .sapMInputBaseContentWrapper {
+	height: auto;
+}
+
+.hrxApp .hrxMrFld .sapMTextAreaInner {
+	height: auto;
+	padding: 9px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+/* (.ro) a value that is shown, not edited */
+.hrxApp .hrxMrRo.sapMText {
+	padding: 9px 0;
+	font-size: 13.5px;
+	font-weight: 500;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* (.sfx) a field with its unit after it */
+.hrxApp .hrxMrSuffix {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hrxApp .hrxMrSuffix > .sapMInputBase {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+}
+
+.hrxApp .hrxMrSuffixText.sapMText {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--txt-2);
+}
+
+/* (input[type=file]) the file button first, then the file name */
+.hrxApp .hrxMrFile {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	box-sizing: border-box;
+	height: 39px;
+	padding: 6px 8px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+}
+
+.hrxApp .hrxMrFileButton.sapUiFup {
+	flex-shrink: 0;
+	width: auto;
+	height: 25px;
+	margin: 0;
+}
+
+.hrxApp .hrxMrFileButton .sapMBtn {
+	height: 25px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxMrFileButton .sapMBtn .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	font-size: 10.5px;
+	line-height: 1;
+	height: 25px;
+	min-width: 0;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt);
+	box-shadow: none;
+}
+
+.hrxApp .hrxMrFileButton .sapMBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrFileButton .sapMBtn .sapMBtnContent {
+	padding-top: .12em;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	line-height: 1;
+	color: inherit;
+}
+
+.hrxApp .hrxMrFileName.sapMText {
+	min-width: 0;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+/* (.fhint) under the picture, with Remove picture beside it */
+.hrxApp .hrxMrHintRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 5px;
+}
+
+.hrxApp .hrxMrHint.sapMText {
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxMrHintLink.sapMLnk {
+	font-size: 11.5px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+/* (.chips / .chip) the work schedule days */
+.hrxApp .hrxMrChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hrxApp .hrxMrChip.sapMBtn {
+	height: auto;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxMrChip .sapMBtnInner,
+.hrxApp .hrxMrChip .sapMBtnInner.sapMToggleBtnPressed {
+	height: 31px;
+	min-width: 0;
+	padding: 0 14px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+	transition: .12s;
+}
+
+.hrxApp .hrxMrChip .sapMBtnInner:hover {
+	border-color: var(--ice);
+	background: var(--surface);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrChip .sapMBtnInner.sapMToggleBtnPressed,
+.hrxApp .hrxMrChip .sapMBtnInner.sapMToggleBtnPressed:hover {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrChip .sapMBtnContent {
+	font-family: var(--sans);
+	text-transform: none;
+	letter-spacing: 0;
+	font-size: 12.5px;
+	font-weight: 700;
+	color: inherit;
+}
+
+/* ── Leave Taken (.kpi-mini, then the table) ────────────────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrLeaveHead {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.hrxApp .hrxManageResources .hrxMrKpis {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+}
+
+.hrxApp .hrxManageResources .hrxMrKpi {
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxApp .hrxManageResources .hrxMrKpiNum.sapMText {
+	font-family: var(--disp);
+	font-size: 30px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageResources .hrxMrKpiNum.hrxMrKpiNumOk.sapMText {
+	color: var(--mint);
+}
+
+.hrxApp .hrxManageResources .hrxMrKpiLabel.sapMText {
+	margin-top: 4px;
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-2);
+}
+
+/* (table) frost header, 12px x 18px cells, 20px at either end */
+.hrxApp .hrxManageResources .hrxMrTable.sapMListTbl,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTbl {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblHeader {
+	height: auto;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+/* th / td and !important: the theme's compact table rules outrank class selectors */
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell {
+	height: auto !important;
+	padding: 9px 18px !important;
+	background: var(--frost);
+	border: none;
+	font-size: 10px;
+	line-height: 12px;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell .sapMColumnHeader {
+	padding: 0 !important;
+	min-height: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell .sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 12px;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblRow {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+	background: transparent;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblRow:last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblRow:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxManageResources .hrxMrTable td.sapMListTblCell {
+	height: auto;
+	padding: 12px 18px !important;
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+	vertical-align: middle;
+	border: none;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblCell .sapMText {
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell:first-of-type,
+.hrxApp .hrxManageResources .hrxMrTable td.sapMListTblCell:first-of-type,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblHighlightCol + th.sapMListTblHeaderCell,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblHighlightCell + td.sapMListTblCell {
+	padding-left: 20px !important;
+}
+
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell:last-of-type,
+.hrxApp .hrxManageResources .hrxMrTable td.sapMListTblCell:last-of-type,
+.hrxApp .hrxManageResources .hrxMrTable th.sapMListTblHeaderCell:has(+ .sapMListTblNavigatedCol),
+.hrxApp .hrxManageResources .hrxMrTable td.sapMListTblCell:has(+ .sapMListTblNavigatedCell) {
+	padding-right: 20px !important;
+}
+
+/* The navigation / highlight columns UI5 adds carry no content here */
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblHighlightCell,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblNavCol,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblSubCnt,
+.hrxApp .hrxManageResources .hrxMrTable .sapMTableTH.sapMListTblHighlightCol,
+.hrxApp .hrxManageResources .hrxMrTable .sapMListTblHighlightCol {
+	width: 0;
+	padding: 0;
+}
+
+/* (.tbl-empty) */
+.hrxApp .hrxManageResources .hrxMrTable .sapMListNoData {
+	height: auto;
+	padding: 26px 20px;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	font-size: 13px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageResources .hrxMrTable .sapMListNoDataText {
+	font-size: 13px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxManageResources .hrxMrRowActs {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+}
+
+/* ── Foot (.md-foot): Active / Inactive switch, Save ─────────────────────────── */
+
+.hrxApp .hrxManageResources .hrxMrFoot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex-shrink: 0;
+	padding: 12px 22px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitchRow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitchText.sapMText {
+	font-size: 13.5px;
+	font-weight: 600;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* (.sw) 42 x 24, grey off and mint on, a white 18px knob */
+.hrxApp .hrxManageResources .hrxMrSwitch.sapMSwtCont {
+	width: 42px;
+	min-width: 42px;
+	height: 24px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwt {
+	width: 42px;
+	min-width: 42px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: 14px;
+	background: var(--line);
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwt.sapMSwtOn {
+	background: var(--mint);
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtInner {
+	position: static;
+	width: 100%;
+	height: 100%;
+	transform: none !important;
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtText,
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtLabel,
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtTrack {
+	display: none;
+}
+
+/* Selectors as specific as the theme's compact, no-label ones they replace */
+.hrxApp .hrxManageResources .hrxMrSwitch.sapMSwtCont .sapMSwt.sapMSwtNoLabel .sapMSwtHandle,
+.hrxApp .hrxManageResources .hrxMrSwitch.sapMSwtCont .sapMSwt.sapMSwtNoLabel.sapMSwtOn .sapMSwtHandle {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	box-sizing: border-box;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border: none;
+	border-radius: 50%;
+	background: #FFFFFF;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+	transition: transform .18s;
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch.sapMSwtCont .sapMSwt.sapMSwtNoLabel.sapMSwtOn .sapMSwtHandle {
+	transform: translateX(18px);
+}
+
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtHandle::before,
+.hrxApp .hrxManageResources .hrxMrSwitch .sapMSwtHandle::after {
+	content: none;
+}
+
+/* ── Buttons (.btn / .btn.primary / .btn.ghost / .btn.sm / .btn.danger) ─────── */
+
+.hrxApp .hrxMrBtn.sapMBtn,
+.hrxApp .hrxMrBtnGhost.sapMBtn {
+	height: 33px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxApp .hrxMrBtn .sapMBtnInner,
+.hrxApp .hrxMrBtnGhost .sapMBtnInner {
+	height: 33px;
+	min-width: 0;
+	padding: 0 18px;
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	transition: .15s;
+}
+
+.hrxApp .hrxMrBtn .sapMBtnContent,
+.hrxApp .hrxMrBtnGhost .sapMBtnContent {
+	padding-top: .12em;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1;
+	color: inherit;
+}
+
+.hrxApp .hrxMrBtn.sapMBtn .sapMBtnInner.sapMBtnEmphasized {
+	background: var(--ice);
+	border-color: var(--ice);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxMrBtn.sapMBtn .sapMBtnInner.sapMBtnEmphasized:hover {
+	background: var(--ice-deep);
+	border-color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrBtnGhost .sapMBtnInner,
+.hrxApp .hrxMrBtnGhost .sapMBtnInner.sapMBtnDefault {
+	background: var(--surface);
+	border-color: var(--line);
+	color: var(--txt);
+}
+
+.hrxApp .hrxMrBtnGhost .sapMBtnInner:hover {
+	background: var(--surface);
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrBtn.sapMBtnDisabled,
+.hrxApp .hrxMrBtn .sapMBtnDisabled {
+	opacity: .45;
+}
+
+/* (.btn.ghost.sm) Book leave, with the design's calendar glyph */
+.hrxApp .hrxMrBtnSm.sapMBtn {
+	height: 30px;
+}
+
+.hrxApp .hrxMrBtnSm .sapMBtnInner {
+	height: 30px;
+	padding: 0 12px;
+}
+
+.hrxApp .hrxMrBtnSm .sapMBtnContent {
+	font-size: 10.5px;
+}
+
+.hrxApp .hrxMrBtnSm .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	margin: 0 5px 0 0;
+	color: inherit;
+}
+
+/* ── Dialogs: the shared .hrxModal (css/style.css) frames them; only the
+   Book leave dialog's own rows are styled here ───────────────────────────── */
+
+/* The foot (.modal-foot) is 62px high, taller than the theme's own, so the body
+   keeps clear of it */
+.hrxApp .sapMDialog.hrxModal.hrxMrDialog {
+	padding-bottom: 62px;
+}
+
+/* One chevron colour for every dropdown, as the design's select */
+.hrxApp .hrxMrFld .sapMSltArrow,
+.hrxApp .hrxMrFld .sapMSltIcon,
+.hrxApp .hrxMrFld .sapMInputBaseIcon {
+	color: var(--txt-2);
+}
+
+/* Book leave: the bookable days, one row each */
+.hrxApp .hrxMrBookDays {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line-soft);
+	border-radius: var(--radius-s);
+}
+
+.hrxApp .hrxMrBookDay {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 12px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxMrBookDays > .hrxMrBookDay:last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxMrBookDayDate.sapMText {
+	font-size: 13px;
+	color: var(--ink);
+}
+
+/* (.strip) */
+.hrxApp .hrxMrStrip.sapMMsgStrip {
+	margin: 0;
+	padding: 10px 14px 10px 40px;
+	border: 1px solid #B9DDF0;
+	border-radius: var(--radius-s);
+	background: #E6F4FB;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrStrip.sapMMsgStrip .sapMMsgStripMessage,
+.hrxApp .hrxMrStrip.sapMMsgStrip .sapMText {
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrStrip.sapMMsgStrip .sapMMsgStripIcon {
+	left: 14px;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxMrStrip.sapMMsgStripWarning {
+	border-color: #F5D488;
+	background: var(--amber-soft);
+}
+
+.hrxApp .hrxMrStrip.sapMMsgStripWarning .sapMMsgStripMessage,
+.hrxApp .hrxMrStrip.sapMMsgStripWarning .sapMText,
+.hrxApp .hrxMrStrip.sapMMsgStripWarning .sapMMsgStripIcon {
+	color: #92400E;
+}

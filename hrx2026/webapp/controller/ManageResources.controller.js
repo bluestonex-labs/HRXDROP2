@@ -47,7 +47,6 @@ sap.ui.define([
 			this._sOrgId = this._resolveOrgId();
 
 			this.setModel(new JSONModel({
-				layout: "OneColumn",
 				fullScreen: false,
 				listBusy: true,
 				detailBusy: false,
@@ -253,7 +252,6 @@ sap.ui.define([
 
 			oViewModel.setProperty("/selectedId", sEmpId);
 			oViewModel.setProperty("/selectedTab", "info");
-			oViewModel.setProperty("/layout", oViewModel.getProperty("/fullScreen") ? "MidColumnFullScreen" : "TwoColumnsMidExpanded");
 			oViewModel.setProperty("/detailBusy", true);
 			this.getModel("mrLeave").setData(this._emptyLeaveData());
 
@@ -293,6 +291,7 @@ sap.ui.define([
 				Pic: oResource.Pic || "",
 				PicB: oResource.PicB || "",
 				NewPic: "",
+				NewPicName: "",
 				IsActive: oResource.IsActive || "N",
 				Active: oResource.IsActive === "Y",
 				TargetUtilization: this._toNumber(oResource.TargetUtilization),
@@ -376,20 +375,47 @@ sap.ui.define([
 		},
 
 		onApproveLeave: function (oEvent) {
-			this._decideLeave(oEvent, "APR");
+			var oLeave = oEvent.getSource().getBindingContext("mrLeave").getObject();
+			this._decideLeave(oLeave, "APR", "");
 		},
 
+		/**
+		 * Asks before a request is declined, with room for a note to the employee
+		 * (the design's "Decline leave request" modal).
+		 * @param {sap.ui.base.Event} oEvent the button press event
+		 */
 		onRejectLeave: function (oEvent) {
-			this._decideLeave(oEvent, "REJ");
+			var oLeave = oEvent.getSource().getBindingContext("mrLeave").getObject();
+			var oDetail = this.getModel("mrDetail").getData();
+
+			this.setModel(new JSONModel({
+				leave: oLeave,
+				summary: this.getText("mrDeclineSummary", [
+					oDetail.FullName, oLeave.DisplayDate, oLeave.LeaveType, oLeave.Absence
+				]),
+				note: ""
+			}), "mrDecline");
+
+			this._openDialog("_pDeclineDialog", "bsx.hrx.hrx2026.fragment.ResourceDeclineLeaveDialog");
+		},
+
+		onConfirmDeclineLeave: function () {
+			var oDecline = this.getModel("mrDecline").getData();
+			this._closeDialog("_pDeclineDialog");
+			this._decideLeave(oDecline.leave, "REJ", oDecline.note || "");
+		},
+
+		onCancelDeclineLeave: function () {
+			this._closeDialog("_pDeclineDialog");
 		},
 
 		/**
 		 * Approves or rejects one requested day of the resource's leave.
-		 * @param {sap.ui.base.Event} oEvent the button press event
+		 * @param {object} oLeave the leave record (from mrLeave>/availedLeaves)
 		 * @param {string} sStatus "APR" or "REJ"
+		 * @param {string} sNote the approver's note to the employee, may be empty
 		 */
-		_decideLeave: function (oEvent, sStatus) {
-			var oLeave = oEvent.getSource().getBindingContext("mrLeave").getObject();
+		_decideLeave: function (oLeave, sStatus, sNote) {
 			var oDetail = this.getModel("mrDetail").getData();
 			var oProfile = CurrentUser.get() || {};
 
@@ -406,7 +432,8 @@ sap.ui.define([
 					ApprovedOn: this._isoDate(new Date()),
 					ApprovedBy: oProfile.empID || "",
 					ApproverName: oProfile.name || "",
-					ApproverEmail: oProfile.email || ""
+					ApproverEmail: oProfile.email || "",
+					ApproverComments: sNote
 				}]
 			}).then(function () {
 				MessageToast.show(this.getText(sStatus === "APR" ? "mrLeaveApproved" : "mrLeaveRejected",
@@ -465,7 +492,6 @@ sap.ui.define([
 
 		_closeDetail: function () {
 			var oViewModel = this.getModel("mrView");
-			oViewModel.setProperty("/layout", "OneColumn");
 			oViewModel.setProperty("/fullScreen", false);
 			oViewModel.setProperty("/selectedId", null);
 			oViewModel.setProperty("/selectedTab", "info");
@@ -477,7 +503,6 @@ sap.ui.define([
 			var oViewModel = this.getModel("mrView");
 			var bFullScreen = !oViewModel.getProperty("/fullScreen");
 			oViewModel.setProperty("/fullScreen", bFullScreen);
-			oViewModel.setProperty("/layout", bFullScreen ? "MidColumnFullScreen" : "TwoColumnsMidExpanded");
 		},
 
 		onPictureChange: function (oEvent) {
@@ -489,6 +514,7 @@ sap.ui.define([
 
 			var oDetailModel = this.getModel("mrDetail");
 			var oReader = new FileReader();
+			oDetailModel.setProperty("/NewPicName", oFile.name);
 			oReader.onload = function (oLoadEvent) {
 				oDetailModel.setProperty("/NewPic", oLoadEvent.target.result);
 			};
@@ -501,6 +527,7 @@ sap.ui.define([
 
 		onRemovePicture: function () {
 			this.getModel("mrDetail").setProperty("/NewPic", "");
+			this.getModel("mrDetail").setProperty("/NewPicName", "");
 			this.getModel("mrDetail").setProperty("/Pic", "");
 			this._resetPictureUploader();
 		},
@@ -528,6 +555,28 @@ sap.ui.define([
 				return;
 			}
 
+			var oPayload = this._toUpdatePayload(oDetail);
+
+			this.getModel("mrView").setProperty("/saving", true);
+
+			this._postJson(USERS_SERVICE + "?cmd=update&visitorx=", oPayload).then(function (oResult) {
+				this.getModel("mrView").setProperty("/saving", false);
+				MessageToast.show(oResult.msg || this.getText("mrSaved"));
+				return this._loadResources().then(function () {
+					return this._showResource(oDetail.EmpID);
+				}.bind(this));
+			}.bind(this)).catch(function (oError) {
+				this.getModel("mrView").setProperty("/saving", false);
+				this._showError("mrErrorSave", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * The body manageUsers.xsjs expects to update a resource.
+		 * @param {object} oDetail the detail object (see _toDetail)
+		 * @returns {object} the update payload
+		 */
+		_toUpdatePayload: function (oDetail) {
 			var oPayload = {
 				ID: oDetail.ID,
 				UserID: oDetail.UserID,
@@ -557,18 +606,7 @@ sap.ui.define([
 				oPayload[sDay] = oDetail.days[sDay] ? "Y" : "N";
 			});
 
-			this.getModel("mrView").setProperty("/saving", true);
-
-			this._postJson(USERS_SERVICE + "?cmd=update&visitorx=", oPayload).then(function (oResult) {
-				this.getModel("mrView").setProperty("/saving", false);
-				MessageToast.show(oResult.msg || this.getText("mrSaved"));
-				return this._loadResources().then(function () {
-					return this._showResource(oDetail.EmpID);
-				}.bind(this));
-			}.bind(this)).catch(function (oError) {
-				this.getModel("mrView").setProperty("/saving", false);
-				this._showError("mrErrorSave", oError);
-			}.bind(this));
+			return oPayload;
 		},
 
 		/**
@@ -624,10 +662,6 @@ sap.ui.define([
 			this._closeDialog("_pFilterDialog");
 		},
 
-		onClearFilter: function () {
-			this.getModel("mrView").setProperty("/filterDraft", { userType: "A", active: "A", site: "" });
-		},
-
 		/* =========================================================== */
 		/* add resource dialog                                         */
 		/* =========================================================== */
@@ -635,7 +669,7 @@ sap.ui.define([
 		onOpenAddResource: function () {
 			this.getModel("mrNew").setData(this._emptyNewResource());
 			this._openDialog("_pAddDialog", "bsx.hrx.hrx2026.fragment.AddResourceDialog").then(function () {
-				["newFirstName", "newLastName", "newEmail", "newSite", "newUserType"].forEach(function (sId) {
+				["newFirstName", "newEmail", "newSite", "newUserType"].forEach(function (sId) {
 					var oControl = this.byId(sId);
 					if (oControl) {
 						oControl.setValueState("None");
@@ -660,7 +694,7 @@ sap.ui.define([
 				this._validateEmailControl(oControl);
 				return;
 			}
-			if (oControl === this.byId("newMobile")) {
+			if (oControl !== this.byId("newFirstName")) {
 				oControl.setValueState("None");
 				return;
 			}
@@ -691,7 +725,7 @@ sap.ui.define([
 				OrgID: this._sOrgId,
 				BaseSiteKey: oNew.BaseSiteKey,
 				FName: oNew.FName.trim(),
-				LName: oNew.LName.trim(),
+				LName: (oNew.LName || "").trim(),
 				ManagerID: "",
 				Mobile: oNew.Mobile || "",
 				Email: oNew.Email.trim(),
@@ -710,17 +744,48 @@ sap.ui.define([
 				TargetUtilization: "",
 				TargetHrsPerWeek: ""
 			};
+			var sJobTitle = (oNew.JobTitle || "").trim();
 
 			this.getModel("mrView").setProperty("/saving", true);
 
 			this._postJson(USERS_SERVICE + "?cmd=new", oPayload).then(function (oResult) {
-				this.getModel("mrView").setProperty("/saving", false);
-				MessageToast.show(oResult.msg || this.getText("mrCreated"));
-				this._closeDialog("_pAddDialog");
-				return this._loadResources();
+				var sEmpId = oResult && oResult.EmpID;
+				// The create call has no job title, so one given is saved straight after.
+				var pJobTitle = sEmpId && sJobTitle ? this._saveJobTitle(sEmpId, sJobTitle) : Promise.resolve();
+
+				return pJobTitle.then(function () {
+					this.getModel("mrView").setProperty("/saving", false);
+					MessageToast.show(oResult.msg || this.getText("mrCreated"));
+					this._closeDialog("_pAddDialog");
+					return this._loadResources();
+				}.bind(this)).then(function () {
+					// The new resource opens, as in the design
+					if (sEmpId) {
+						this._showResource(sEmpId);
+					}
+				}.bind(this));
 			}.bind(this)).catch(function (oError) {
 				this.getModel("mrView").setProperty("/saving", false);
 				this._showError("mrErrorCreate", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * Gives a resource that was just created its job title: the resource is read back
+		 * and saved again through the same update call as the detail's Save.
+		 * @param {string} sEmpId the new resource's EmpID
+		 * @param {string} sJobTitle the job title entered in the add dialog
+		 * @returns {Promise} resolved once saved
+		 */
+		_saveJobTitle: function (sEmpId, sJobTitle) {
+			var oModel = this.getOwnerComponent().getModel();
+
+			return oModel.metadataLoaded().then(function () {
+				return this._read("/" + oModel.createKey("Resources", { EmpID: sEmpId }));
+			}.bind(this)).then(function (oResource) {
+				var oDetail = this._toDetail(oResource);
+				oDetail.JobTitle = sJobTitle;
+				return this._postJson(USERS_SERVICE + "?cmd=update&visitorx=", this._toUpdatePayload(oDetail));
 			}.bind(this));
 		},
 
@@ -731,8 +796,7 @@ sap.ui.define([
 			var bValid = true;
 
 			[
-				{ id: "newFirstName", path: "/FName" },
-				{ id: "newLastName", path: "/LName" }
+				{ id: "newFirstName", path: "/FName" }
 			].forEach(function (oField) {
 				var oControl = this.byId(oField.id);
 				var bFilled = !!(this.getModel("mrNew").getProperty(oField.path) || "").trim();
@@ -861,8 +925,13 @@ sap.ui.define([
 			return CurrentUser.orgId(this.getOwnerComponent());
 		},
 
+		/**
+		 * Every resource to start with, as the design lists them: any type, active or
+		 * not, every location. The filter dialog narrows it.
+		 * @returns {object} the default list filter
+		 */
 		_defaultFilter: function () {
-			return { userType: "S", active: "Y", site: "" };
+			return { userType: "A", active: "A", site: "" };
 		},
 
 		_emptyNewResource: function () {
@@ -872,7 +941,8 @@ sap.ui.define([
 				Email: "",
 				Mobile: "",
 				BaseSiteKey: "",
-				UserTypeKey: "S"
+				UserTypeKey: "S",
+				JobTitle: ""
 			};
 		},
 

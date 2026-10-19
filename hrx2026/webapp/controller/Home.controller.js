@@ -22,20 +22,13 @@ sap.ui.define([
 	"../model/Documents",
 	"../model/DocumentService",
 	"../model/TimesheetReport",
-	"../model/TimesheetReportService"
+	"../model/TimesheetReportService",
+	"sap/base/security/encodeXML"
 ], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, MessageBox,
 	Backend, formatter, CurrentUser, Dialog, Button, Label, Text, TextArea, VBox,
 	Hrx, HrxTime, HrxLegacy, SicknessPolicy, SicknessService, Documents, DocumentService,
-	TimesheetReport, TimesheetReportService) {
+	TimesheetReport, TimesheetReportService, encodeXML) {
 	"use strict";
-
-	// RadialMicroChart only accepts its own colour enum (a raw CSS colour has been
-	// deprecated since 1.135), and its four semantic values are already spoken for:
-	// Good = complete, Critical = action needed, Error = missing, Neutral = on
-	// leave / not due yet. Sequence1 is the one slot carrying no meaning of its
-	// own, so overbooked days claim it and style.css restyles it to the HRX
-	// overbooked violet.
-	var RING_OVERBOOKED = "Sequence1";
 
 	// abbrev matches the day fields exposed by the /Resources OData entity.
 	var DAYS = [
@@ -78,12 +71,7 @@ sap.ui.define([
 			var oModel = this.getModel();
 			oModel.setProperty("/quick", this._emptyQuickEntry());
 			oModel.setProperty("/quickLeave", this._emptyQuickLeave());
-
-			var oDateRange = this.byId("qlDateRange");
-			if (oDateRange) {
-				oDateRange.setValue("");
-				oDateRange.setValueState("None");
-			}
+			this.byId("qlDates").setValueState("None");
 
 			var oComponent = this.getOwnerComponent();
 
@@ -308,10 +296,17 @@ sap.ui.define([
 				var iTargetPerDay = Math.round(Backend.toMinutes(oUser.targetHrsPerWeek) / iWorkingDays);
 				var sToday = Backend.isoDate(new Date());
 
-				oModel.setProperty("/weekRings", DAYS.map(function (oDay, iIndex) {
+				// The design shows the working week. A day the person does not work is
+				// left out, unless time was booked against it anyway.
+				var aRings = [];
+				DAYS.forEach(function (oDay, iIndex) {
 					var sDate = Backend.isoDate(aDates[iIndex]);
 					var bWorking = oSchedule[oDay.schedule] !== "N";
 					var iBooked = this._bookedMinutes(oData, sDate);
+
+					if (!bWorking && !iBooked) {
+						return;
+					}
 
 					// A day off owes no time at all, so anything booked against it is
 					// already more than was asked for - but only once there is a target to
@@ -319,82 +314,43 @@ sap.ui.define([
 					// nothing can be judged either way, so no day is called overbooked.
 					var iDayTarget = bWorking ? iTargetPerDay : 0;
 					var bOverbooked = iTargetPerDay > 0 && iBooked > iDayTarget;
-
-					// The ring can never read past a full circle - the control clamps the
-					// figure it prints to 100% and logs an error above that - so
-					// overbooking is carried by the ring's colour and its tooltip rather
-					// than by a percentage the chart would refuse to show.
-					var iPercent = iDayTarget
-						? Math.min(iBooked * 100 / iDayTarget, 100)
-						: (bOverbooked ? 100 : 0);
-
-					// The true figure, uncapped - 20:00 against an 8:00 day reads 250%.
-					// It is rendered as our own label over the ring (see hrxRingPercent in
-					// style.css) because the chart's built-in one cannot print past 100%.
-					// A day with no target has no denominator, so there is no percentage
-					// to state and the tooltip carries the hours instead.
-					var sPercentLabel = iDayTarget
-						? Math.round(iBooked * 100 / iDayTarget) + "%"
-						: (iBooked ? "—" : "0%");
+					var fPercent = iDayTarget ? Math.min(iBooked * 100 / iDayTarget, 100) : 0;
+					var sHours = this._hoursLabel(iBooked);
 
 					if (mLeave[sDate]) {
-						return {
-							day: oDay.label,
-							onLeave: true,
-							percent: 100,
-							state: "Neutral",
-							label: this.getText("legendOnLeave"),
-							percentLabel: "",
-							tooltip: this.getText("legendOnLeave")
-						};
+						aRings.push(this._ring(oDay.label, "leave", 100, "", this.getText("legendOnLeave")));
+						return;
 					}
 
 					// Checked ahead of the not-due-yet branch: time booked over target on
 					// a day still to come is just as overbooked as on a day gone by.
 					if (bOverbooked) {
-						return {
-							day: oDay.label,
-							onLeave: false,
-							percent: 100,
-							state: RING_OVERBOOKED,
-							label: Backend.fromMinutes(iBooked),
-							percentLabel: sPercentLabel,
-							tooltip: this.getText("ringTooltipOverbooked", [
-								Backend.fromMinutes(iBooked),
-								Backend.fromMinutes(iDayTarget),
-								Backend.fromMinutes(iBooked - iDayTarget)
-							])
-						};
+						aRings.push(this._ring(oDay.label, "over", 100, sHours, this.getText("ringTooltipOverbooked", [
+							Backend.fromMinutes(iBooked),
+							Backend.fromMinutes(iDayTarget),
+							Backend.fromMinutes(iBooked - iDayTarget)
+						])));
+						return;
 					}
 
 					if (!bWorking || sDate > sToday) {
-						return {
-							day: oDay.label,
-							onLeave: false,
-							percent: iPercent,
-							state: "Neutral",
-							label: iBooked ? Backend.fromMinutes(iBooked) : "—",
-							percentLabel: sPercentLabel,
-							tooltip: bWorking
-								? this.getText("ringTooltipNotDue", [
-									Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)
-								])
-								: this.getText("qtNonWorkingDay")
-						};
+						aRings.push(this._ring(oDay.label, "notdue", fPercent, iBooked ? sHours : "–",
+							bWorking
+								? this.getText("ringTooltipNotDue", [Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)])
+								: this.getText("qtNonWorkingDay")));
+						return;
 					}
 
-					return {
-						day: oDay.label,
-						onLeave: false,
-						percent: iPercent,
-						state: iBooked >= iDayTarget ? "Good" : iBooked > 0 ? "Critical" : "Error",
-						label: Backend.fromMinutes(iBooked),
-						percentLabel: sPercentLabel,
-						tooltip: this.getText("ringTooltipBooked", [
-							Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)
-						])
-					};
-				}, this));
+					var sTone = iBooked >= iDayTarget ? "complete" : (iBooked > 0 ? "short" : "missing");
+					aRings.push(this._ring(oDay.label, sTone, fPercent, sHours, this.getText("ringTooltipBooked", [
+						Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)
+					])));
+				}, this);
+
+				oModel.setProperty("/weekRings", aRings);
+				oModel.setProperty("/weekHasOverbooked", aRings.some(function (oRing) {
+					return oRing.tone === "over";
+				}));
 
 				oModel.setProperty("/loadingWeek", false);
 			}.bind(this)).catch(function (oError) {
@@ -448,17 +404,19 @@ sap.ui.define([
 			var oModel = this.getModel();
 			var aStrip = [];
 
-			// The hours still to book used to lead this strip. They are the week's own
-			// figure, so they are shown on the Timesheet card with the week they
-			// describe - see _weekStatus - rather than beside the page title, where
-			// nothing said which week or which timesheet they referred to.
+			// The design's strip leads with this week's timesheet: on track, or the
+			// hours still to book.
+			var oWeekStatus = this._weekStatus(this._oWeekTotals);
+			if (oWeekStatus.text) {
+				aStrip.push(oWeekStatus);
+			}
 
 			// One pill per person waiting, not per day, so it lines up with the
 			// approvals card on the home page.
 			var iPending = (oModel.getProperty("/approvals") || []).length;
 			if (iPending) {
 				aStrip.push({
-					text: this.getText("stripApprovalsPending", [iPending]),
+					text: this.getText(iPending === 1 ? "homeStripApproval" : "homeStripApprovals", [iPending]),
 					state: "Warning"
 				});
 			}
@@ -491,6 +449,76 @@ sap.ui.define([
 				text: this.getText("stripTimesheetShort", [Backend.fromMinutes(oTotals.target - oTotals.booked)]),
 				state: "Warning"
 			};
+		},
+
+		/**
+		 * One day of the Timesheet card.
+		 * @param {string} sDay the day's short name, e.g. "Mon"
+		 * @param {string} sTone missing, short, complete, over, leave or notdue
+		 * @param {number} fPercent how much of the ring to fill, 0 to 100
+		 * @param {string} sText the figure inside the ring
+		 * @param {string} sTooltip the hover text on the day
+		 * @returns {object} the ring's row in home>/weekRings
+		 */
+		_ring: function (sDay, sTone, fPercent, sText, sTooltip) {
+			return {
+				day: sDay,
+				tone: sTone,
+				onLeave: sTone === "leave",
+				tooltip: sTooltip,
+				svg: this._ringSvg(sTone, fPercent, sText)
+			};
+		},
+
+		/**
+		 * The design's 44px day ring: a soft track, the booked share drawn over it
+		 * from twelve o'clock, and the hours in the middle. A day of leave is a filled
+		 * circle with a tick instead. The colours come from css/pages/home.css, keyed
+		 * on data-tone.
+		 * @param {string} sTone missing, short, complete, over, leave or notdue
+		 * @param {number} fPercent how much of the ring to fill, 0 to 100
+		 * @param {string} sText the figure inside the ring
+		 * @returns {string} the ring as SVG markup
+		 */
+		_ringSvg: function (sTone, fPercent, sText) {
+			var sOpen = "<svg class=\"hrxHomeRing\" data-tone=\"" + sTone + "\" width=\"44\" height=\"44\" " +
+				"viewBox=\"0 0 44 44\" aria-hidden=\"true\">";
+
+			if (sTone === "leave") {
+				return sOpen +
+					"<circle class=\"hrxHomeRingFill\" cx=\"22\" cy=\"22\" r=\"18\"/>" +
+					"<path class=\"hrxHomeRingTick\" d=\"M15 22l4 4 9-9\"/>" +
+					"</svg>";
+			}
+
+			// The circle's length is 2 * pi * 18 = 113.1. A missing day still shows
+			// the dot the design draws at twelve o'clock.
+			var fLength = 113.1;
+			var fArc = fPercent * fLength / 100;
+			if (sTone === "missing") {
+				fArc = Math.max(fArc, 1);
+			}
+
+			var sArc = fArc > 0
+				? "<circle class=\"hrxHomeRingArc\" cx=\"22\" cy=\"22\" r=\"18\" stroke-dasharray=\"" +
+					fArc.toFixed(1) + " " + fLength + "\" transform=\"rotate(-90 22 22)\"/>"
+				: "";
+
+			return sOpen +
+				"<circle class=\"hrxHomeRingTrack\" cx=\"22\" cy=\"22\" r=\"18\"/>" +
+				sArc +
+				"<text class=\"hrxHomeRingText\" x=\"22\" y=\"26\" text-anchor=\"middle\">" +
+				encodeXML(sText) + "</text>" +
+				"</svg>";
+		},
+
+		/**
+		 * Minutes as the design's ring figure: "8h", or "7.5h" for part of an hour.
+		 * @param {number} iMinutes the minutes booked
+		 * @returns {string} the hours
+		 */
+		_hoursLabel: function (iMinutes) {
+			return (Math.round(iMinutes / 6) / 10) + "h";
 		},
 
 		/**
@@ -601,6 +629,16 @@ sap.ui.define([
 				aProjects.sort(function (a, b) {
 					return a.label.localeCompare(b.label);
 				});
+				// The design's prompt, as the first choice of the list
+				aProjects.unshift({ ProjectID: "", label: this.getText("homeProjectPlaceholder") });
+
+				var bToday = sDay === Backend.isoDate(new Date());
+				oModel.setProperty("/quick/loggedTitle", bToday
+					? this.getText("homeLoggedToday")
+					: this.getText("homeLoggedOn", [this._dayLabel(oDay)]));
+				oModel.setProperty("/quick/loggedSub", this.getText("homeLoggedSub", [
+					oModel.getProperty("/quick/dayFullLabel"), Backend.fromMinutes(iBooked)
+				]));
 
 				oModel.setProperty("/quick/projects", aProjects);
 				oModel.setProperty("/quick/entries", aEntries);
@@ -658,6 +696,12 @@ sap.ui.define([
 					oGroup.range = formatter.dateRange(aDates[0], aDates[aDates.length - 1]);
 					oGroup.daysText = this.getText("homeDaysCount", [this._leaveDays(oGroup.LeaveList)]);
 					oGroup.meta = oGroup.range + " · " + oGroup.daysText;
+
+					// The design's row: "14 – 15 Jul 2026", "Holiday · Full day", "2 days"
+					var fDays = this._leaveDays(oGroup.LeaveList);
+					oGroup.rangeLabel = this._shortRange(aDates[0], aDates[aDates.length - 1]);
+					oGroup.typeLabel = oGroup.LeaveType + " · " + this._durationLabel(oGroup.LeaveList);
+					oGroup.daysLabel = this.getText(fDays === 1 ? "homeDay" : "homeDays", [fDays]);
 					return oGroup;
 				}, this));
 
@@ -955,8 +999,9 @@ sap.ui.define([
 						pct: oPerson.pct,
 						pctText: oPerson.pct + "%",
 						sub: this.getText("mgrUtilRowSub", [this._days(oPerson.billable), this._days(oPerson.total)]),
-						barHtml: "<div class=\"hrxTrTrack hrxTrState" + sState + "\"><div class=\"hrxTrFill\" style=\"width:" +
-							Math.max(0, Math.min(100, oPerson.pct)) + "%\"></div></div>"
+						// The bar (a ProgressIndicator) takes 0 to 100 and one of its own states
+						barPct: Math.max(0, Math.min(100, oPerson.pct)),
+						state: sState
 					};
 				}, this).sort(function (a, b) {
 					return (a.pct - b.pct) || a.Name.localeCompare(b.Name);
@@ -998,6 +1043,51 @@ sap.ui.define([
 		},
 
 		/**
+		 * Whether a request is for whole days, half days or both.
+		 * @param {Array<object>} aLeaveList pendingApproval rows, one per day
+		 * @returns {string} "Full day", "Half day" or "Full and half days"
+		 */
+		_durationLabel: function (aLeaveList) {
+			var iHalf = aLeaveList.filter(function (oLeave) {
+				return /^(AM|PM)$/i.test(String(oLeave.AbsenceType || ""));
+			}).length;
+			if (!iHalf) {
+				return this.getText("homeFullDay");
+			}
+			return this.getText(iHalf === aLeaveList.length ? "homeHalfDay" : "homeMixedDays");
+		},
+
+		/**
+		 * A date range as the design writes it: "14 – 15 Jul 2026",
+		 * "29 Aug – 2 Sep 2026", or a single "14 Jul 2026".
+		 * @param {string|Date} vFrom the first day
+		 * @param {string|Date} vTo the last day
+		 * @returns {string} the range
+		 */
+		_shortRange: function (vFrom, vTo) {
+			var oFrom = formatter.toDate(vFrom);
+			var oTo = formatter.toDate(vTo) || oFrom;
+			if (!oFrom) {
+				return "";
+			}
+			var fnFull = function (oDate) {
+				return oDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+			};
+			if (Backend.isoDate(oFrom) === Backend.isoDate(oTo)) {
+				return fnFull(oFrom);
+			}
+			var sFrom;
+			if (oFrom.getFullYear() !== oTo.getFullYear()) {
+				sFrom = fnFull(oFrom);
+			} else if (oFrom.getMonth() !== oTo.getMonth()) {
+				sFrom = oFrom.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+			} else {
+				sFrom = String(oFrom.getDate());
+			}
+			return sFrom + " – " + fnFull(oTo);
+		},
+
+		/**
 		 * Working days in a list of pending leave days, a half day counting as half.
 		 * @param {Array<object>} aLeaveList pendingApproval rows, one per day
 		 * @returns {number} the days
@@ -1012,17 +1102,27 @@ sap.ui.define([
 		/* quick timesheet                                             */
 		/* =========================================================== */
 
-		onQuickDayChange: function (oEvent) {
-			var oPicker = oEvent.getSource();
-			if (!oEvent.getParameter("valid")) {
-				oPicker.setValueState("Error");
-				oPicker.setValueStateText(this.getText("homeInvalidDay"));
-				return;
-			}
+		/**
+		 * The "Today" link in the Quick Timesheet header: opens the date picker on the
+		 * day being booked, to book another day instead.
+		 * @param {sap.ui.base.Event} oEvent the link press event
+		 */
+		onOpenQuickDayCalendar: function (oEvent) {
+			var oDay = formatter.toDate(this.getModel().getProperty("/quick/day")) || new Date();
+			this._openCalendar("day", oEvent.getSource(), oDay);
+		},
 
-			oPicker.setValueState("None");
-			this.getModel().setProperty("/quick/hours", "");
-			this.getModel().setProperty("/quick/comment", "");
+		/**
+		 * A day picked for Quick Timesheet: the card loads what that day holds.
+		 * @param {Date} oDay the day picked
+		 */
+		_applyQuickDay: function (oDay) {
+			var oModel = this.getModel();
+			oModel.setProperty("/quick/day", Backend.isoDate(oDay));
+			oModel.setProperty("/quick/hours", "");
+			oModel.setProperty("/quick/comment", "");
+			oModel.setProperty("/quick/ProjectID", "");
+			this.byId("qtHours").setValueState("None");
 			this._loadDay();
 		},
 
@@ -1123,29 +1223,34 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
+		 * The Dates field of Quick Leave: opens the date picker for a range.
+		 * @param {sap.ui.base.Event} oEvent the value help request of the field
+		 */
+		onOpenQuickLeaveCalendar: function (oEvent) {
+			this._openCalendar("range", oEvent.getSource(), null);
+		},
+
+		/**
 		 * Asks the service which of the chosen days can actually be booked - weekends,
 		 * bank holidays and days already taken are left out.
-		 * @param {sap.ui.base.Event} oEvent the date range change event
+		 * @param {Date} oFrom the first day picked
+		 * @param {Date} oTo the last day picked
 		 */
-		onQuickLeaveDatesChange: function (oEvent) {
+		_applyQuickLeaveRange: function (oFrom, oTo) {
 			var oModel = this.getModel();
-			var bValid = oEvent.getParameter("valid") && !!oEvent.getParameter("value");
-
-			oEvent.getSource().setValueState(bValid ? "None" : "Error");
-			oEvent.getSource().setValueStateText(this.getText("mlMandatory"));
-
-			if (!bValid) {
-				oModel.setProperty("/quickLeave/dates", []);
-				oModel.setProperty("/quickLeave/NoOfDays", 0);
-				return;
-			}
-
 			var oUser = oModel.getProperty("/user") || {};
+			var sRange = this._ordinalRange(oFrom, oTo);
+
+			this.byId("qlDates").setValueState("None");
+			oModel.setProperty("/quickLeave/rangeBase", sRange);
+			oModel.setProperty("/quickLeave/rangeText", sRange);
+			oModel.setProperty("/quickLeave/dates", []);
+			oModel.setProperty("/quickLeave/NoOfDays", 0);
 
 			Backend.getJson(Backend.query(Backend.LEAVE, {
 				cmd: "getDates",
-				FromDate: Backend.isoDate(oEvent.getParameter("from")),
-				ToDate: Backend.isoDate(oEvent.getParameter("to")),
+				FromDate: Backend.isoDate(oFrom),
+				ToDate: Backend.isoDate(oTo),
 				OrgID: this._sOrgId,
 				SiteID: oUser.siteID || "",
 				EmpID: oUser.empID || ""
@@ -1157,6 +1262,195 @@ sap.ui.define([
 				oModel.setProperty("/quickLeave/NoOfDays", 0);
 				this._showError("mlErrorDates", oError);
 			}.bind(this));
+		},
+
+		/**
+		 * A range as the design's picker writes it: "16th – 20th July 2026",
+		 * "30th July – 3rd August 2026", or a single "16th July 2026".
+		 * @param {Date} oFrom the first day
+		 * @param {Date} oTo the last day
+		 * @returns {string} the range
+		 */
+		_ordinalRange: function (oFrom, oTo) {
+			var fnDay = function (oDate) {
+				return this._ordinal(oDate.getDate());
+			}.bind(this);
+			var fnMonth = function (oDate) {
+				return oDate.toLocaleDateString("en-GB", { month: "long" });
+			};
+			var bSameYear = oFrom.getFullYear() === oTo.getFullYear();
+			var bSameMonth = bSameYear && oFrom.getMonth() === oTo.getMonth();
+
+			if (Backend.isoDate(oFrom) === Backend.isoDate(oTo)) {
+				return fnDay(oFrom) + " " + fnMonth(oFrom) + " " + oFrom.getFullYear();
+			}
+			if (bSameMonth) {
+				return fnDay(oFrom) + " - " + fnDay(oTo) + " " + fnMonth(oFrom) + " " + oFrom.getFullYear();
+			}
+			if (bSameYear) {
+				return fnDay(oFrom) + " " + fnMonth(oFrom) + " - " + fnDay(oTo) + " " + fnMonth(oTo) + " " +
+					oFrom.getFullYear();
+			}
+			return fnDay(oFrom) + " " + fnMonth(oFrom) + " " + oFrom.getFullYear() + " - " +
+				fnDay(oTo) + " " + fnMonth(oTo) + " " + oTo.getFullYear();
+		},
+
+		/**
+		 * @param {number} iDay a day of the month
+		 * @returns {string} the day with its suffix: 1st, 2nd, 3rd, 4th, 11th, 22nd
+		 */
+		_ordinal: function (iDay) {
+			var iTens = iDay % 100;
+			if (iTens >= 11 && iTens <= 13) {
+				return iDay + "th";
+			}
+			return iDay + ({ 1: "st", 2: "nd", 3: "rd" }[iDay % 10] || "th");
+		},
+
+		/* =========================================================== */
+		/* date picker (fragment/HomeDatePopover)                      */
+		/* =========================================================== */
+
+		/**
+		 * Opens the design's date picker under a field.
+		 * @param {string} sMode "range" for Quick Leave, "day" for Quick Timesheet
+		 * @param {sap.ui.core.Control} oOpener the control the picker opens under
+		 * @param {Date|null} oSelected the day already chosen, in "day" mode
+		 */
+		_openCalendar: function (sMode, oOpener, oSelected) {
+			var oToday = new Date();
+			var oShown = oSelected || oToday;
+
+			this._oCal = {
+				mode: sMode,
+				month: new Date(oShown.getFullYear(), oShown.getMonth(), 1),
+				start: sMode === "day" ? oSelected : null,
+				end: sMode === "day" ? oSelected : null
+			};
+			this.getModel().setProperty("/cal/foot", this.getText(sMode === "day" ? "homeDpDay" : "homeDpStart"));
+			this._renderCalendar();
+
+			this._getDatePopover().then(function (oPopover) {
+				// A Bottom popover hangs from its opener's left edge, as the design's does
+				// from the Dates field; by the "Today" link it is kept inside the window.
+				oPopover.openBy(oOpener);
+			});
+		},
+
+		/**
+		 * @returns {Promise<sap.m.Popover>} the date picker, loaded on first use
+		 */
+		_getDatePopover: function () {
+			if (!this._pDatePopover) {
+				this._pDatePopover = this.loadFragment({
+					name: "bsx.hrx.hrx2026.fragment.HomeDatePopover"
+				});
+			}
+			return this._pDatePopover;
+		},
+
+		onCalendarPrevMonth: function () {
+			this._oCal.month.setMonth(this._oCal.month.getMonth() - 1);
+			this._renderCalendar();
+		},
+
+		onCalendarNextMonth: function () {
+			this._oCal.month.setMonth(this._oCal.month.getMonth() + 1);
+			this._renderCalendar();
+		},
+
+		/**
+		 * A day pressed in the picker. In "day" mode that is the choice. In "range"
+		 * mode the first press is the start, the second the end (either way round).
+		 * @param {sap.ui.base.Event} oEvent the day button press event
+		 */
+		onCalendarDayPress: function (oEvent) {
+			var oCal = this._oCal;
+			var oDay = formatter.toDate(oEvent.getSource().getBindingContext("home").getProperty("date"));
+			var oModel = this.getModel();
+
+			if (oCal.mode === "day") {
+				oCal.start = oCal.end = oDay;
+				this._renderCalendar();
+				this._closeCalendarSoon();
+				this._applyQuickDay(oDay);
+				return;
+			}
+
+			if (!oCal.start || oCal.end) {
+				oCal.start = oDay;
+				oCal.end = null;
+				oModel.setProperty("/cal/foot", this.getText("homeDpEnd"));
+				this._renderCalendar();
+				return;
+			}
+
+			if (oDay < oCal.start) {
+				oCal.end = oCal.start;
+				oCal.start = oDay;
+			} else {
+				oCal.end = oDay;
+			}
+			this._renderCalendar();
+			this._closeCalendarSoon();
+			this._applyQuickLeaveRange(oCal.start, oCal.end);
+		},
+
+		/**
+		 * Closes the picker a moment after the pick, so the chosen days show first -
+		 * as the design does.
+		 */
+		_closeCalendarSoon: function () {
+			this._getDatePopover().then(function (oPopover) {
+				setTimeout(function () {
+					oPopover.close();
+				}, 150);
+			});
+		},
+
+		/**
+		 * Fills home>/cal with the month on show: six weeks from the Monday on or
+		 * before the 1st, each day marked as outside the month, before today (no
+		 * leave can be booked in the past) and where it sits in the range picked.
+		 */
+		_renderCalendar: function () {
+			var oCal = this._oCal;
+			var oModel = this.getModel();
+			var oMonth = oCal.month;
+			var sToday = Backend.isoDate(new Date());
+			var sStart = oCal.start ? Backend.isoDate(oCal.start) : "";
+			var sEnd = oCal.end ? Backend.isoDate(oCal.end) : "";
+			var oFirst = this._mondayOf(oMonth);
+			var aDays = [];
+
+			for (var i = 0; i < 42; i++) {
+				var oDate = new Date(oFirst.getFullYear(), oFirst.getMonth(), oFirst.getDate() + i);
+				var sDate = Backend.isoDate(oDate);
+				var bPast = oCal.mode === "range" && sDate < sToday;
+				var sRange = "none";
+
+				if (sDate === sStart && sDate === sEnd) {
+					sRange = "single";
+				} else if (sDate === sStart) {
+					sRange = sEnd ? "start" : "single";
+				} else if (sDate === sEnd) {
+					sRange = "end";
+				} else if (sStart && sEnd && sDate > sStart && sDate < sEnd) {
+					sRange = "in";
+				}
+
+				aDays.push({
+					date: sDate,
+					text: String(oDate.getDate()),
+					muted: oDate.getMonth() !== oMonth.getMonth(),
+					enabled: !bPast,
+					range: sRange,
+					tooltip: bPast ? this.getText("homeDpPast") : ""
+				});
+			}
+
+			oModel.setProperty("/cal/title", oMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
+			oModel.setProperty("/cal/days", aDays);
 		},
 
 		onQuickLeaveDurationChange: function () {
@@ -1171,10 +1465,20 @@ sap.ui.define([
 			var aDates = oModel.getProperty("/quickLeave/dates") || [];
 			var bHalf = oModel.getProperty("/quickLeave/DayTime") !== "Full Day";
 
-			oModel.setProperty("/quickLeave/NoOfDays", aDates.reduce(function (fTotal, oDay) {
+			var fDays = aDates.reduce(function (fTotal, oDay) {
 				// A day with only one free half can never be taken as a whole one.
 				return fTotal + (bHalf || oDay.availableSlot ? 0.5 : 1);
-			}, 0));
+			}, 0);
+			oModel.setProperty("/quickLeave/NoOfDays", fDays);
+
+			// The field shows the range picked and how many days of it are bookable
+			// (weekends, bank holidays and days already taken drop out).
+			var sRange = oModel.getProperty("/quickLeave/rangeBase");
+			if (sRange) {
+				oModel.setProperty("/quickLeave/rangeText", this.getText("homeRangeDays", [
+					sRange, this.getText(fDays === 1 ? "homeDay" : "homeDays", [fDays])
+				]));
+			}
 		},
 
 		/**
@@ -1186,6 +1490,13 @@ sap.ui.define([
 			var oUser = oModel.getProperty("/user") || {};
 			var aDates = oForm.dates || [];
 
+			// The design's button is always live and says what is missing
+			if (!oForm.rangeText) {
+				this.byId("qlDates").setValueState("Error");
+				this.byId("qlDates").setValueStateText(this.getText("homeNeedDates"));
+				MessageToast.show(this.getText("homeNeedDates"));
+				return;
+			}
 			if (!aDates.length) {
 				MessageToast.show(this.getText("mlNoBookableDays"));
 				return;
@@ -1234,7 +1545,6 @@ sap.ui.define([
 					MessageToast.show(oResult.msg || this.getText("mlRequested"));
 					oModel.setProperty("/savingLeave", false);
 					oModel.setProperty("/quickLeave", this._emptyQuickLeave());
-					this.byId("qlDateRange").setValue("");
 					return this._loadLeaveUser();
 				}.bind(this)).catch(function (oError) {
 					oModel.setProperty("/savingLeave", false);
@@ -1266,36 +1576,36 @@ sap.ui.define([
 				maxLength: 500,
 				placeholder: this.getText("mgrDeclineNotePlaceholder")
 			});
+			// The design's decline modal (hrxModal, shared in style.css): who, when
+			// and what, an optional note, Reject (danger) then Cancel.
 			var oDialog = new Dialog({
 				title: this.getText("mgrDeclineTitle"),
-				contentWidth: "28rem",
 				content: new VBox({
 					items: [
-						new Text({ text: oGroup.RequesterName + " · " + oGroup.range + " · " + oGroup.LeaveType })
-							.addStyleClass("hrxResourceMeta sapUiSmallMarginBottom"),
-						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }),
+						new Text({ text: oGroup.RequesterName + " · " + oGroup.rangeLabel + " · " + oGroup.typeLabel })
+							.addStyleClass("hrxModalText"),
+						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("hrxModalLabel"),
 						oNote
 					]
-				}).addStyleClass("sapUiSmallMargin"),
+				}),
 				beginButton: new Button({
 					text: this.getText("btnReject"),
-					type: "Reject",
 					press: function () {
 						var sNote = oNote.getValue().trim();
 						oDialog.close();
 						this._actionLeave(oGroup, "REJ", sNote);
 					}.bind(this)
-				}),
+				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
 				endButton: new Button({
 					text: this.getText("dmCancel"),
 					press: function () {
 						oDialog.close();
 					}
-				}),
+				}).addStyleClass("hrxModalBtn hrxModalBtnGhost"),
 				afterClose: function () {
 					oDialog.destroy();
 				}
-			});
+			}).addStyleClass("hrxModal");
 			this.getView().addDependent(oDialog);
 			oDialog.open();
 		},
@@ -1437,8 +1747,10 @@ sap.ui.define([
 		_emptyQuickEntry: function () {
 			return Object.assign({
 				day: Backend.isoDate(new Date()),
-				dayLabel: "",
+				dayLabel: this.getText("today"),
 				dayFullLabel: "",
+				loggedTitle: "",
+				loggedSub: "",
 				projects: [],
 				entries: [],
 				bookedTotal: "0:00",
@@ -1452,6 +1764,8 @@ sap.ui.define([
 			return {
 				LeaveCategoryId: "HOLIL",
 				DayTime: "Full Day",
+				rangeBase: "",
+				rangeText: "",
 				Comments: "",
 				NoOfDays: 0,
 				dates: []
@@ -1480,7 +1794,17 @@ sap.ui.define([
 				quickLeave: this._emptyQuickLeave(),
 				quick: this._emptyQuickEntry(),
 				week: { label: "", status: { text: "", state: "None" } },
-				weekRings: []
+				weekRings: [],
+				weekHasOverbooked: false,
+				// The date picker: Mo to Su headings, then the month on show
+				cal: {
+					title: "",
+					foot: "",
+					weekdays: this.getText("homeDpWeekdays").split(",").map(function (sName) {
+						return { name: sName };
+					}),
+					days: []
+				}
 			};
 		},
 

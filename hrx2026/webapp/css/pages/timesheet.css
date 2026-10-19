@@ -1,1 +1,862 @@
-/* timesheet - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* timesheet - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+   Everything here is scoped to the page root (.hrxTimesheet) or, for the dialogs and
+   pop-overs the page opens (they render outside the page), to their own hrxTs* class. */
+
+/* ── KPI TILES (design: .kpis / .kpi) ─────────────────────────────────────── */
+
+/* Four columns as in the design; the timesheet only fills three with figures. */
+.hrxApp .hrxTimesheet .hrxTsKpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpi {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top-width: 2px;
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: 18px 20px;
+	min-width: 0;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpiNeutral { border-top-color: var(--ice); }
+.hrxApp .hrxTimesheet .hrxTsKpiWarning { border-top-color: var(--amber); }
+.hrxApp .hrxTimesheet .hrxTsKpiGood { border-top-color: var(--mint); }
+
+.hrxApp .hrxTimesheet .hrxTsKpiGlyph {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	line-height: 34px;
+	border-radius: 10px;
+	font-size: 17px;
+	text-align: center;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpiNeutral .hrxTsKpiGlyph { color: var(--ice-deep); background: var(--ice-glow); }
+.hrxApp .hrxTimesheet .hrxTsKpiWarning .hrxTsKpiGlyph { color: var(--amber); background: var(--amber-soft); }
+.hrxApp .hrxTimesheet .hrxTsKpiGood .hrxTsKpiGlyph { color: var(--mint); background: var(--mint-soft); }
+
+.hrxApp .hrxTimesheet .hrxTsKpiLabel {
+	display: block;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 600;
+	line-height: 12px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	margin-bottom: 4px;
+	padding-right: 44px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpiNum,
+.hrxApp .hrxTimesheet .hrxTsKpiNum .sapMText {
+	display: block;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 36px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1.05;
+	color: var(--ink);
+}
+
+/* A figure with a unit after it ("54 %"): the unit sits on the figure's baseline */
+.hrxApp .hrxTimesheet .hrxTsKpiNum.sapMFlexBox {
+	display: flex;
+	align-items: flex-start;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpiNum .hrxTsKpiUnit {
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 1.05;
+	text-transform: none;
+	color: var(--txt-3);
+	margin-left: 6px;
+	/* Where the design's inline unit lands on the figure's baseline */
+	margin-top: 14px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsKpiSub {
+	display: block;
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+	margin-top: 4px;
+}
+
+/* The manager's "viewing as" picker in the grid's free fourth column */
+.hrxApp .hrxTimesheet .hrxTsViewAs {
+	border-top-width: 1px;
+	justify-content: flex-start;
+}
+
+.hrxApp .hrxTimesheet .hrxTsViewAs .hrxTsKpiLabel {
+	padding-right: 0;
+	margin-bottom: 10px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsViewAsField .sapMInputBaseContentWrapper {
+	height: 38px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsViewAsField .sapMInputBaseInner {
+	height: 36px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	padding-left: 12px;
+}
+
+/* ── THE WEEK CARD (design: .tablecard) ───────────────────────────────────── */
+
+.hrxApp .hrxTimesheet .hrxTsCard {
+	display: block;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+/* Card top: week navigation on the left, actions on the right (design: .ttop) */
+.hrxApp .hrxTimesheet .hrxTsTop {
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTimesheet .hrxTsWeekNav,
+.hrxApp .hrxTimesheet .hrxTsActions {
+	gap: 10px;
+}
+
+/* Previous / next week (design: .icon-btn.sm with a transparent border) */
+.hrxApp .hrxTimesheet .hrxTsIconButton.sapMBtn {
+	height: 30px;
+	padding: 0;
+}
+
+.hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnInner {
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	box-shadow: none;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnIcon {
+	font-size: 14px;
+	line-height: 28px;
+	width: 28px;
+	margin: 0;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTimesheet .hrxTsIconButton:hover .sapMBtnInner {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxTimesheet .hrxTsIconButton:hover .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+/* The week title reads as a title (design: .ttop-title) but opens the week picker */
+.hrxApp .hrxTimesheet .hrxTsWeekTitle.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxTimesheet .hrxTsWeekTitle .sapMBtnInner {
+	height: auto;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsWeekTitle .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 13px;
+	letter-spacing: 0;
+	color: var(--ink);
+	position: relative;
+	top: 2.5px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsWeekTitle:hover .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+/* Text buttons (design: .btn.ghost / .btn.primary) */
+.hrxApp .hrxTimesheet .hrxTsButton.sapMBtn {
+	height: 34px;
+	padding: 0;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButton .sapMBtnInner {
+	height: 34px;
+	min-width: 0;
+	padding: 0 18px;
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	transition: background .15s, border-color .15s, color .15s;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButton .sapMBtnContent {
+	padding: 0;
+	/* The design nudges button text down by .12em to sit optically centred */
+	padding-top: 2.88px;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 14px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButton .sapMBtnIcon {
+	font-size: 12px;
+	width: 12.6px;
+	min-width: 0;
+	margin: 0 5px 0 0;
+	line-height: 14px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButton .sapMBtnInner.sapMBtnIconFirst {
+	padding-left: 18px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonGhost .sapMBtnInner {
+	background: var(--surface);
+	border-color: var(--line);
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonGhost .sapMBtnContent,
+.hrxApp .hrxTimesheet .hrxTsButtonGhost .sapMBtnIcon {
+	color: var(--txt);
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonGhost:hover .sapMBtnInner {
+	border-color: var(--ice);
+	background: var(--surface);
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonGhost:hover .sapMBtnContent,
+.hrxApp .hrxTimesheet .hrxTsButtonGhost:hover .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonPrimary .sapMBtnInner {
+	background: var(--ice);
+	border-color: transparent;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonPrimary .sapMBtnContent {
+	color: #fff;
+}
+
+.hrxApp .hrxTimesheet .hrxTsButtonPrimary:hover .sapMBtnInner {
+	background: var(--ice-deep);
+}
+
+/* ── HOURS PROGRESS (design: .hours-progress) ─────────────────────────────── */
+
+.hrxApp .hrxTimesheet .hrxTsHours {
+	gap: 14px;
+	padding: 16px 20px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursTrack.sapMPI {
+	height: 9px !important;
+	min-height: 9px;
+	max-height: 9px;
+	padding: 0;
+	margin: 0;
+	border: none;
+	border-radius: 6px;
+	background: var(--line-soft);
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursTrack .sapMPIBar {
+	height: 9px;
+	margin: 0;
+	top: 0;
+	border: none;
+	border-radius: 6px;
+	background: var(--ice);
+	transition: width .35s cubic-bezier(.2, .8, .3, 1);
+}
+
+/* Booked beyond the week's target (design: .hp-fill.over) */
+.hrxApp .hrxTimesheet .hrxTsHoursTrack .sapMPIBarNegative {
+	background: var(--signal);
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursTrack .sapMPIBarRemaining {
+	background: transparent;
+	border: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursTrack .sapMPITextLeft,
+.hrxApp .hrxTimesheet .hrxTsHoursTrack .sapMPITextRight {
+	display: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursLabel {
+	display: flex;
+	align-items: baseline;
+	white-space: nowrap;
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursBooked {
+	font-family: monospace;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTimesheet .hrxTsHoursTarget {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-2);
+	margin-left: .28em;
+}
+
+/* ── THE GRID (design: .ts-table) ─────────────────────────────────────────── */
+
+.hrxApp .hrxTimesheet .hrxTsTable,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTbl {
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+	font-family: var(--sans);
+	font-size: 13px;
+}
+
+/* Header row */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader {
+	height: 29.5px !important;
+	background: var(--frost);
+	border-bottom: 1px solid var(--line);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th {
+	height: 29.5px;
+	padding: 0 18px;
+	background: var(--frost);
+	border: none;
+	border-bottom: 1px solid var(--line);
+	box-sizing: border-box;
+	vertical-align: middle;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .sapMColumnHeader {
+	padding: 0;
+	min-height: 0;
+	justify-content: flex-start !important;
+	text-align: left !important;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 11.5px;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th:last-child {
+	padding-right: 20px;
+}
+
+/* The selection column (design: .chk-col, 30px with the box 14px in) */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblSelCol,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th.sapMListTblSelCol {
+	width: 30px;
+	min-width: 30px;
+	padding: 0 0 0 14px;
+	box-sizing: border-box;
+	vertical-align: middle;
+}
+
+/* No highlight or "navigated" columns: the design's grid has neither */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHighlightCol,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHighlightCell,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblNavigatedCol,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblNavigatedCell {
+	display: none;
+}
+
+/* A plain 13px checkbox, as the design draws it */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIBSelectM.sapMCb {
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	padding: 0;
+	line-height: 16px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIBSelectM .sapMCbBg {
+	position: relative;
+	top: 0;
+	left: 0;
+	margin: 1.5px 0 0 1.5px;
+	width: 13px;
+	height: 13px;
+	min-width: 13px;
+	min-height: 13px;
+	box-sizing: border-box;
+	border: 1px solid #767676;
+	border-radius: 2.5px;
+	background: var(--surface);
+	box-shadow: none;
+	transform: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIBSelectM .sapMCbBg.sapMCbMarkChecked {
+	background: var(--ice);
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIBSelectM .sapMCbBg.sapMCbMarkChecked::after {
+	color: #fff;
+	font-size: 9px;
+	line-height: 11px;
+	width: 11px;
+	height: 11px;
+	top: 0;
+	left: 0;
+	position: absolute;
+	text-align: center;
+	margin: 0;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIBSelectM.sapMCbBgDis {
+	opacity: .5;
+}
+
+/* Project rows */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIB.sapMListTblRow:not(.sapMListTblHeader) {
+	background: transparent;
+	border-bottom: none;
+	transition: background .12s;
+}
+
+/* The table keeps separate borders, so the row separator is drawn by the cells */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader):last-child > td {
+	height: 58px;
+	border-bottom: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader):hover,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow.sapMLIBSelected,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow.sapMLIBSelected:hover {
+	background: rgba(38, 170, 226, .04);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader) > td {
+	height: 59px;
+	padding: 12px 18px;
+	box-sizing: border-box;
+	border: none;
+	border-bottom: 1px solid var(--line-soft);
+	vertical-align: middle;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader) > td.sapMListTblSelCol {
+	padding: 0 0 0 14px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader) > td:last-child {
+	padding-right: 20px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow .sapMListTblCellDup {
+	display: none;
+}
+
+/* Project name (design: .proj-cell) */
+.hrxApp .hrxTimesheet .hrxTsProject {
+	gap: 6px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsProjectName {
+	font-family: var(--sans);
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTimesheet .hrxTsOverbooked.sapMObjStatus {
+	padding: 2px 8px;
+	font-size: 10.5px;
+	background: var(--amber-soft);
+	color: #92400E;
+}
+
+.hrxApp .hrxTimesheet .hrxTsOverbooked .sapMObjStatusText {
+	color: #92400E;
+	font-size: 10.5px;
+}
+
+/* A day: time box and comment button (design: .te-cell). The time box takes
+   auto margins, so the comment button sits at the cell's right edge. */
+.hrxApp .hrxTimesheet .hrxTsTimeCell {
+	gap: 6px;
+	justify-content: center;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput.sapMInputBase {
+	width: 64px !important;
+	height: 34px;
+	margin: 0 auto;
+	padding: 0;
+	flex: 0 0 64px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseContentWrapper {
+	width: 64px;
+	height: 34px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseContentWrapper::after,
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseContentWrapper::before {
+	display: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner {
+	height: 32px;
+	padding: 0 4px;
+	text-align: center;
+	font-family: monospace;
+	font-size: 12px;
+	font-style: normal;
+	color: var(--ink);
+	background: transparent;
+}
+
+/* An empty day reads "00:00", as in the design */
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner::placeholder {
+	font-family: monospace;
+	font-size: 12px;
+	font-weight: 400;
+	font-style: normal;
+	color: var(--ink);
+	opacity: 1;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput.sapMInputBaseContentWrapperError .sapMInputBaseContentWrapper,
+.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseContentWrapperError {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTimeInput:focus-within .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+}
+
+/* Work-description button (design: .cmt-btn, .has / .missing) */
+.hrxApp .hrxTimesheet .hrxTsCommentButton.sapMBtn {
+	height: 22px;
+	padding: 0;
+	flex: 0 0 22px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnInner {
+	width: 22px;
+	min-width: 22px;
+	height: 22px;
+	padding: 0;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--surface);
+	box-shadow: none;
+	transition: .12s;
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnIcon {
+	width: 20px;
+	margin: 0;
+	font-size: 12px;
+	line-height: 20px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="has"] .sapMBtnInner {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="has"] .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="missing"] .sapMBtnInner {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="missing"] .sapMBtnIcon {
+	color: #991B1B;
+}
+
+/* A day that cannot be booked (design: td.mono "—"), or leave and holiday hours */
+.hrxApp .hrxTimesheet .hrxTsCellText {
+	font-family: monospace;
+	font-variant-numeric: tabular-nums;
+	font-size: 12px;
+	color: var(--txt-3);
+}
+
+/* Client group rows (design: tr.group-row) */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIB.sapMGHLI,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMLIB.sapMGHLI:hover {
+	height: auto;
+	/* The library paints its own group colour on the row with a stronger rule */
+	background: var(--frost) !important;
+	border-bottom: none;
+	cursor: pointer;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMGHLICell {
+	height: 37px;
+	padding: 0 20px;
+	box-sizing: border-box;
+	vertical-align: middle;
+	border: none;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMGHLITitle {
+	display: flex;
+	align-items: center;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 14px;
+	letter-spacing: .05em;
+	color: var(--ink-2);
+}
+
+/* The fold chevron (design: .group-toggle) */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMGHLITitle::before {
+	content: "\e1ef";
+	font-family: "SAP-icons";
+	font-size: 14px;
+	font-weight: normal;
+	letter-spacing: 0;
+	width: 14px;
+	margin-right: 8px;
+	text-align: center;
+	transition: transform .15s;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .hrxTsGroupCollapsed .sapMGHLITitle::before {
+	transform: rotate(-90deg);
+}
+
+/* Empty week (design: .tbl-empty) */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListNoData {
+	background: transparent;
+	border-bottom: none;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListNoDataText,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblNoData .sapMListTblCell,
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListNoData > td {
+	padding: 26px 20px;
+	text-align: center;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--txt-3);
+}
+
+/* ── FOOTNOTE (design: .cmt-note) ─────────────────────────────────────────── */
+
+.hrxApp .hrxTimesheet .hrxTsNote {
+	gap: 7px;
+	padding: 12px 20px;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTimesheet .hrxTsNote .sapMText {
+	font-family: var(--sans);
+	font-size: 11px;
+	line-height: 13px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTimesheet .hrxTsNoteIcon {
+	flex-shrink: 0;
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	line-height: 14px;
+	color: var(--signal);
+}
+
+/* ── DIALOGS AND POP-OVERS ───────────────────────────────────────────────── */
+
+/* The dialogs themselves take the shared design modal (hrxModal, css/style.css);
+   only what is particular to this page's dialogs is here. */
+
+/* Add Project(s): the assignment list runs edge to edge, as the design's tables */
+.hrxApp .hrxModal.hrxTsAddProjects .sapMDialogScrollCont {
+	display: block;
+	width: 100%;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable {
+	width: 100%;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable th.sapMListTblHeaderCell,
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblHeader > th {
+	background: var(--frost);
+	border-bottom: 1px solid var(--line);
+	padding: 9px 18px !important;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblHeader > th.sapMListTblSelCol {
+	padding: 0 0 0 14px !important;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblHeader .sapMText {
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblHighlightCol,
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblHighlightCell,
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblNavigatedCol,
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblNavigatedCell {
+	display: none;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable td.sapMListTblCell {
+	padding: 10px 18px !important;
+	border-bottom: 1px solid var(--line-soft);
+	vertical-align: middle;
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable td.sapMListTblSelCol {
+	padding: 0 0 0 14px !important;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListTblRow.sapMLIBSelected {
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMText,
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMObjectIdentifierTitle .sapMText {
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMObjectIdentifierText .sapMText {
+	font-family: monospace;
+	font-size: 11px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMListNoDataText {
+	padding: 26px 20px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--txt-3);
+}
+
+/* The week picker pop-over (its fragment is shared with Missing Timesheets, so
+   the controller adds hrxTsPopover only when this page opens it) */
+.hrxApp .sapMPopover.hrxTsPopover {
+	border: none;
+	border-radius: var(--radius);
+	box-shadow: 0 20px 60px rgba(10, 10, 11, .4);
+	overflow: hidden;
+}
+
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMIBar.sapMBar {
+	height: auto !important;
+	padding: 16px 22px;
+	background: var(--surface);
+	border-bottom: 1px solid var(--line-soft);
+	box-shadow: none;
+}
+
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMBarMiddle,
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMBarPH {
+	position: static;
+	height: auto !important;
+	padding: 0;
+	justify-content: flex-start;
+	text-align: left;
+}
+
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMBarLeft.sapMBarEmpty,
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMBarRight.sapMBarEmpty {
+	display: none;
+}
+
+.hrxApp .sapMPopover.hrxTsPopover .sapMPopoverHeader .sapMTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 15px;
+	font-weight: 800;
+	line-height: 14px;
+	color: var(--ink);
+}

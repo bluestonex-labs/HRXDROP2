@@ -1,5 +1,6 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
+	"sap/ui/core/format/DateFormat",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast",
@@ -7,8 +8,21 @@ sap.ui.define([
 	"../model/Documents",
 	"../model/DocumentService",
 	"../model/formatter"
-], function (Controller, JSONModel, MessageBox, MessageToast, CurrentUser, Documents, DocumentService, formatter) {
+], function (Controller, DateFormat, JSONModel, MessageBox, MessageToast, CurrentUser, Documents, DocumentService, formatter) {
 	"use strict";
+
+	// The design's dates on a document: "8 Jul 2026"
+	var oPublishedDate = DateFormat.getDateInstance({ pattern: "d MMM yyyy" });
+	var oServiceDate = DateFormat.getDateInstance({ pattern: "yyyy-MM-dd" });
+
+	/**
+	 * @param {string} sDate a service date, "yyyy-MM-dd"
+	 * @returns {string} the date as the design shows it, or "" when there is none
+	 */
+	function publishedText(sDate) {
+		var oDate = sDate ? oServiceDate.parse(String(sDate).slice(0, 10)) : null;
+		return oDate ? oPublishedDate.format(oDate) : "";
+	}
 
 	/*
 	 * Policies to read: the documents an employee has been given, and the ones they
@@ -73,9 +87,10 @@ sap.ui.define([
 				return Object.assign({}, oDocument, {
 					outstanding: bOutstanding,
 					meta: this.getText("pdMeta", [oDocument.Category || "", oDocument.Version || "1.0",
-						formatter.date(oDocument.PublishedOn)]),
+						publishedText(oDocument.PublishedOn)]),
 					statusText: this.getText(!oDocument.AckRequired ? "pdNoAckNeeded" : bOutstanding ? "pdNotAcknowledged" : "pdAcknowledged"),
-					statusState: !oDocument.AckRequired ? "None" : bOutstanding ? "Warning" : "Success"
+					// the pill's colour (see css/pages/policies-documents.css)
+					statusState: !oDocument.AckRequired ? "none" : bOutstanding ? "warn" : "ok"
 				});
 			}, this).sort(function (a, b) {
 				return String(b.PublishedOn || "").localeCompare(String(a.PublishedOn || ""));
@@ -108,7 +123,11 @@ sap.ui.define([
 			var oDocument = oEvent.getSource().getBindingContext("pd").getObject();
 			var sUrl = DocumentService.fileUrl(oDocument.DocumentID);
 			if (!sUrl) {
-				MessageBox.information(this.getText("docNotBound"));
+				if (DocumentService.isBound()) {
+					MessageToast.show(this.getText("pdNoFile"));
+				} else {
+					MessageBox.information(this.getText("docNotBound"));
+				}
 				return;
 			}
 			window.open(sUrl, "_blank", "noopener");

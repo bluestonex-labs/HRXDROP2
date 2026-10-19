@@ -1,0 +1,26 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- Team Calendar's "Select resource(s)": everybody the Team choice covers, each
+	     with a tick box. Nobody ticked shows everyone. -->
+	<Popover
+		id="teamResourcesPopover"
+		showHeader="false"
+		placement="Bottom"
+		contentWidth="260px"
+		contentHeight="260px"
+		class="hrxTcResourcesPop">
+		<content>
+			<VBox items="{path: 'tc>/pool', templateShareable: false}" class="hrxTcResourceList">
+				<HBox alignItems="Center" class="hrxTcResourceRow">
+					<CheckBox selected="{tc>selected}" select=".onResourceToggle" />
+					<HBox alignItems="Center" justifyContent="Center" class="hrxTcResourceAvatar">
+						<Text text="{tc>initials}" />
+					</HBox>
+					<Text text="{tc>Name}" class="hrxTcResourceName" />
+				</HBox>
+			</VBox>
+		</content>
+	</Popover>
+</core:FragmentDefinition>

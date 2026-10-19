@@ -1,1 +1,85 @@
-/* app-explorer - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* app-explorer - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+   App Explorer (design view "explorer", root .hrxPageExplorer). */
+
+/* .grid-3 */
+.hrxPageExplorer .hrxAeGrid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+/* .app-card: a white card, title over a one-line description, lifting on hover */
+.hrxPageExplorer .sapMGT.hrxAeCard {
+	display: flex;
+	flex-direction: column;
+	width: auto;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 18px 20px;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	cursor: pointer;
+	transition: .15s;
+}
+
+.hrxPageExplorer .sapMGT.hrxAeCard:hover {
+	box-shadow: 0 4px 20px rgba(51, 52, 58, .14);
+	transform: translateY(-2px);
+}
+
+.hrxPageExplorer .sapMGT.hrxAeCard::before,
+.hrxPageExplorer .sapMGT.hrxAeCard::after,
+.hrxPageExplorer .sapMGT.hrxAeCard .sapMGTHoverOverlay,
+.hrxPageExplorer .sapMGT.hrxAeCard .sapMGTWithoutImageHoverOverlay,
+.hrxPageExplorer .sapMGT.hrxAeCard .sapMGTFocusDiv {
+	display: none;
+}
+
+.hrxPageExplorer .hrxAeCard .sapMGTHdrContent,
+.hrxPageExplorer .hrxAeCard .sapMGTHdrContent.sapMGTHeaderMode,
+.hrxPageExplorer .hrxAeCard .sapMGTContent,
+.hrxPageExplorer .hrxAeCard .sapMGTTInfoContainer {
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	position: static;
+	width: auto;
+}
+
+.hrxPageExplorer .hrxAeCard .sapMGTHdrTxt,
+.hrxPageExplorer .hrxAeCard .sapMGTHdrTxt .sapMText {
+	margin: 0 0 6px;
+	padding: 0;
+	height: auto;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-weight: 800;
+	font-size: 14px;
+	line-height: 13px;
+	letter-spacing: 0;
+	color: var(--ink-2);
+	-webkit-line-clamp: unset;
+}
+
+.hrxPageExplorer .hrxAeCard .sapMGTHdrTxt .sapMText {
+	margin: 0;
+}
+
+.hrxPageExplorer .hrxAeCard .sapMGTSubHdrTxt,
+.hrxPageExplorer .hrxAeCard .sapMGTSubHdrTxt .sapMText {
+	display: block;
+	margin: 0;
+	padding: 0;
+	height: auto;
+	font-family: var(--sans);
+	font-weight: 400;
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-2);
+}

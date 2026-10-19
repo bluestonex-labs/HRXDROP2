@@ -3,78 +3,90 @@
 	xmlns:core="sap.ui.core">
 
 	<!-- A manager or admin books leave for someone. Approved straight away, as a
-	     booking from the team calendar is. Driven by controller/BookLeave. -->
+	     booking from the team calendar is. Driven by controller/BookLeave.
+	     Laid out as the design's modals (.modal.wide, label.f fields, .strip). -->
 	<Dialog
 		id="resourceBookLeaveDialog"
 		title="{i18n>mrBookLeaveTitle}"
-		contentWidth="34rem"
-		class="sapUiContentPadding">
+		titleAlignment="Start"
+		class="hrxModal hrxModalWide hrxMrDialog">
 		<content>
-			<VBox busy="{mrBook>/saving}" busyIndicatorDelay="0">
-				<!-- Fixed from Manage Resources; chosen from a list in Leave management. -->
-				<Label text="{i18n>mrBookLeaveFor}" required="{mrBook>/pickEmployee}" labelFor="resourceBookLeaveEmployee" />
-				<Text text="{mrBook>/EmpName}" visible="{= !${mrBook>/pickEmployee} }" class="hrxResourceName sapUiSmallMarginBottom" />
-				<ComboBox
-					id="resourceBookLeaveEmployee"
-					width="100%"
-					visible="{mrBook>/pickEmployee}"
-					selectedKey="{mrBook>/EmpID}"
-					placeholder="{i18n>lmBookEmployeePlaceholder}"
-					items="{path: 'mrBook>/employees', templateShareable: false}"
-					selectionChange=".onBookLeaveEmployeeChange"
-					class="sapUiSmallMarginBottom">
-					<core:Item key="{mrBook>EmpID}" text="{mrBook>EmpName}" />
-				</ComboBox>
+			<VBox renderType="Bare" busy="{mrBook>/saving}" busyIndicatorDelay="0" class="hrxMrGrid hrxMrGridOne">
+				<!-- Fixed from Manage Resources; chosen from a list when no one is given. -->
+				<VBox renderType="Bare" class="hrxMrFld">
+					<Label class="hrxModalLabel" text="{i18n>mrBookLeaveFor}" required="{mrBook>/pickEmployee}" labelFor="resourceBookLeaveEmployee" />
+					<Text text="{mrBook>/EmpName}" visible="{= !${mrBook>/pickEmployee} }" class="hrxMrRo" />
+					<ComboBox
+						id="resourceBookLeaveEmployee"
+						width="100%"
+						visible="{mrBook>/pickEmployee}"
+						selectedKey="{mrBook>/EmpID}"
+						placeholder="{i18n>lmBookEmployeePlaceholder}"
+						items="{path: 'mrBook>/employees', templateShareable: false}"
+						selectionChange=".onBookLeaveEmployeeChange">
+						<core:Item key="{mrBook>EmpID}" text="{mrBook>EmpName}" />
+					</ComboBox>
+				</VBox>
 
-				<Label text="{i18n>mrBookLeaveDates}" required="true" labelFor="resourceBookLeaveDates" />
-				<DateRangeSelection
-					id="resourceBookLeaveDates"
-					width="100%"
-					displayFormat="d MMM yyyy"
-					placeholder="{i18n>mrBookLeaveDatesPlaceholder}"
-					change=".onBookLeaveDatesChange"
-					class="sapUiSmallMarginBottom" />
-
-				<Label text="{i18n>mrBookLeaveType}" required="true" labelFor="resourceBookLeaveType" />
-				<Select
-					id="resourceBookLeaveType"
-					width="100%"
-					forceSelection="true"
-					selectedKey="{mrBook>/LeaveCategoryId}"
-					items="{path: 'mrBook>/leaveTypes', templateShareable: false}"
-					class="sapUiSmallMarginBottom">
-					<core:Item key="{mrBook>LeaveCategoryId}" text="{mrBook>LeaveCategoryDesc}" />
-				</Select>
+				<HBox renderType="Bare" class="hrxMrGrid">
+					<VBox renderType="Bare" class="hrxMrFld">
+						<Label class="hrxModalLabel" text="{i18n>mrBookLeaveDates}" required="true" labelFor="resourceBookLeaveDates" />
+						<DateRangeSelection
+							id="resourceBookLeaveDates"
+							width="100%"
+							displayFormat="d MMM yyyy"
+							placeholder="{i18n>mrBookLeaveDatesPlaceholder}"
+							change=".onBookLeaveDatesChange" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxMrFld">
+						<Label class="hrxModalLabel" text="{i18n>mrBookLeaveType}" required="true" labelFor="resourceBookLeaveType" />
+						<Select
+							id="resourceBookLeaveType"
+							width="100%"
+							forceSelection="true"
+							selectedKey="{mrBook>/LeaveCategoryId}"
+							items="{path: 'mrBook>/leaveTypes', templateShareable: false}">
+							<core:Item key="{mrBook>LeaveCategoryId}" text="{mrBook>LeaveCategoryDesc}" />
+						</Select>
+					</VBox>
+				</HBox>
 
 				<!-- One row per bookable day: bank holidays, non-working days and days
 				     already taken are left out; a half-taken day offers its free half. -->
-				<Label text="{i18n>mrBookLeaveDays}" visible="{= ${mrBook>/dates}.length > 0 }" />
-				<VBox items="{path: 'mrBook>/dates', templateShareable: false}" class="sapUiSmallMarginBottom">
-					<HBox alignItems="Center" justifyContent="SpaceBetween" class="hrxBookDay">
-						<Text text="{mrBook>displayDate}" />
-						<SegmentedButton selectedKey="{mrBook>SelectedKey}" selectionChange=".onBookLeaveDayChange">
-							<items>
-								<SegmentedButtonItem key="F" text="{i18n>mrBookLeaveFull}" enabled="{mrBook>FullDayEnabled}" />
-								<SegmentedButtonItem key="A" text="{i18n>mrBookLeaveAM}" enabled="{mrBook>AMEnabled}" />
-								<SegmentedButtonItem key="P" text="{i18n>mrBookLeavePM}" enabled="{mrBook>PMEnabled}" />
-							</items>
-						</SegmentedButton>
-					</HBox>
+				<VBox renderType="Bare" class="hrxMrFld" visible="{= ${mrBook>/dates}.length > 0 }">
+					<Label class="hrxModalLabel" text="{i18n>mrBookLeaveDays}" />
+					<VBox items="{path: 'mrBook>/dates', templateShareable: false}" renderType="Bare" class="hrxMrBookDays">
+						<HBox renderType="Bare" class="hrxMrBookDay">
+							<Text text="{mrBook>displayDate}" class="hrxMrBookDayDate" />
+							<SegmentedButton selectedKey="{mrBook>SelectedKey}" selectionChange=".onBookLeaveDayChange">
+								<items>
+									<SegmentedButtonItem key="F" text="{i18n>mrBookLeaveFull}" enabled="{mrBook>FullDayEnabled}" />
+									<SegmentedButtonItem key="A" text="{i18n>mrBookLeaveAM}" enabled="{mrBook>AMEnabled}" />
+									<SegmentedButtonItem key="P" text="{i18n>mrBookLeavePM}" enabled="{mrBook>PMEnabled}" />
+								</items>
+							</SegmentedButton>
+						</HBox>
+					</VBox>
 				</VBox>
-				<MessageStrip
-					text="{mrBook>/daysText}"
-					type="{= ${mrBook>/datesPicked} &amp;&amp; ${mrBook>/NoOfDays} === 0 ? 'Warning' : 'Information' }"
-					showIcon="true"
-					class="sapUiSmallMarginBottom" />
 
-				<Label text="{i18n>mrBookLeaveComments}" labelFor="resourceBookLeaveComments" />
-				<TextArea
-					id="resourceBookLeaveComments"
-					width="100%"
-					rows="2"
-					maxLength="255"
-					value="{mrBook>/Comments}"
-					placeholder="{i18n>mrBookLeaveOptional}" />
+				<VBox renderType="Bare" class="hrxMrFld">
+					<MessageStrip
+						text="{mrBook>/daysText}"
+						type="{= ${mrBook>/datesPicked} &amp;&amp; ${mrBook>/NoOfDays} === 0 ? 'Warning' : 'Information' }"
+						showIcon="true"
+						class="hrxMrStrip" />
+				</VBox>
+
+				<VBox renderType="Bare" class="hrxMrFld hrxMrFldLast">
+					<Label class="hrxModalLabel" text="{i18n>mrBookLeaveComments}" labelFor="resourceBookLeaveComments" />
+					<TextArea
+						id="resourceBookLeaveComments"
+						width="100%"
+						rows="2"
+						maxLength="255"
+						value="{mrBook>/Comments}"
+						placeholder="{i18n>mrBookLeaveOptional}" />
+				</VBox>
 			</VBox>
 		</content>
 		<beginButton>
@@ -82,10 +94,14 @@
 				text="{i18n>mrBookLeaveConfirm}"
 				type="Emphasized"
 				enabled="{= ${mrBook>/NoOfDays} > 0 &amp;&amp; !${mrBook>/saving} }"
-				press=".onConfirmBookLeave" />
+				press=".onConfirmBookLeave"
+				class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button text="{i18n>mrBookLeaveCancel}" press=".onCancelBookLeave" />
+			<Button
+				text="{i18n>mrBookLeaveCancel}"
+				press=".onCancelBookLeave"
+				class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

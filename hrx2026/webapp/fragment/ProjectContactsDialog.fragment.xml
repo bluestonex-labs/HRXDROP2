@@ -1,7 +1,7 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:grid="sap.ui.layout.cssgrid">
 
 	<!-- The client's contacts for a project: a primary (name and email required) and
 	     an optional secondary (both or neither). Checked by ManageProjects.onSaveContacts
@@ -9,69 +9,65 @@
 	<Dialog
 		id="projectContactsDialog"
 		title="{i18n>mpContactsDialogTitle}"
-		contentWidth="36rem"
 		busy="{mpView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxMpDialog">
 		<content>
-			<form:SimpleForm
-				id="projectContactsForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<core:Title text="{i18n>mpPrimaryContact}" />
-					<Label text="{i18n>mpColName}" required="true" />
+			<Title text="{i18n>mpPrimaryContact}" level="H3" class="hrxMpSection" />
+			<grid:CSSGrid id="primaryContactGrid" class="hrxMpGrid">
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpColName}" labelFor="primaryContactName" required="true" class="hrxModalLabel" />
 					<Input
 						id="primaryContactName"
 						value="{mpForm>/PrimaryContactName}"
 						valueState="{mpForm>/state/PrimaryContactName}"
 						maxLength="100"
-						placeholder="{i18n>mpContactNamePlaceholder}" />
-					<Label text="{i18n>mpFieldEmailAddress}" required="true" />
+						placeholder="{i18n>mpContactNamePlaceholder}"
+						class="hrxMpInput" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldEmailAddress}" labelFor="primaryContactEmail" required="true" class="hrxModalLabel" />
 					<Input
 						id="primaryContactEmail"
 						type="Email"
 						value="{mpForm>/PrimaryContactEmail}"
 						valueState="{mpForm>/state/PrimaryContactEmail}"
 						maxLength="100"
-						placeholder="{i18n>mpContactEmailPlaceholder}" />
+						placeholder="{i18n>mpContactEmailPlaceholder}"
+						class="hrxMpInput" />
+				</VBox>
+			</grid:CSSGrid>
 
-					<core:Title text="{i18n>mpSecondaryContact}" />
-					<Label text="{i18n>mpColName}" />
+			<Title text="{i18n>mpSecondaryContact}" level="H3" class="hrxMpSection hrxMpSectionRule" />
+			<grid:CSSGrid id="secondaryContactGrid" class="hrxMpGrid">
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpColName}" labelFor="secondaryContactName" class="hrxModalLabel" />
 					<Input
 						id="secondaryContactName"
 						value="{mpForm>/SecondaryContactName}"
 						valueState="{mpForm>/state/SecondaryContactName}"
 						maxLength="100"
-						placeholder="{i18n>mpContactNameOptional}" />
-					<Label text="{i18n>mpFieldEmailAddress}" />
+						placeholder="{i18n>mpContactNameOptional}"
+						class="hrxMpInput" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldEmailAddress}" labelFor="secondaryContactEmail" class="hrxModalLabel" />
 					<Input
 						id="secondaryContactEmail"
 						type="Email"
 						value="{mpForm>/SecondaryContactEmail}"
 						valueState="{mpForm>/state/SecondaryContactEmail}"
 						maxLength="100"
-						placeholder="{i18n>mpContactEmailOptional}" />
-				</form:content>
-			</form:SimpleForm>
+						placeholder="{i18n>mpContactEmailOptional}"
+						class="hrxMpInput" />
+				</VBox>
+			</grid:CSSGrid>
 		</content>
 		<beginButton>
-			<Button id="projectContactsSave" text="{i18n>mpSave}" type="Emphasized" press=".onSaveContacts" />
+			<Button id="projectContactsSave" text="{i18n>mpSave}" type="Emphasized" press=".onSaveContacts" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="projectContactsCancel" text="{i18n>mpCancel}" press=".onCancelContacts" />
+			<Button id="projectContactsCancel" text="{i18n>mpCancel}" press=".onCancelContacts" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

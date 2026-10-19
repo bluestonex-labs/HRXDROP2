@@ -36,7 +36,8 @@ sap.ui.define([
 				year: oYear,
 				isCurrentYear: true,
 				ruleText: this.getText("skRule", [SicknessPolicy.TRIGGER_INSTANCES]),
-				alert: { text: "", type: "Information" },
+				// state is the design's alert kind: "crit", "ok" or "info"
+				alert: { text: "", state: "info" },
 				// false until the HRX service can store trigger reviews and return to work
 				reviewBound: SicknessService.isReviewBound(),
 				allExpanded: false,
@@ -176,6 +177,8 @@ sap.ui.define([
 			var aAllTriggers = SicknessPolicy.triggers(aAbsences, oYear, aReviews).map(this._toTrigger, this);
 			var aRtw = (aRawRtw || []).map(this._toRtw, this);
 
+			this._setAbsenceStatus(aAbsences, aRtw);
+
 			// Only open triggers stay in the list. A dismissed one moves to the All
 			// sickness table, where the absences it covered carry the dismissal and
 			// its reason - and a further absence brings it back as open.
@@ -205,15 +208,41 @@ sap.ui.define([
 			oViewModel.setProperty("/allCount", this.getText(aAbsences.length === 1 ? "skAbsence" : "skAbsences", [aAbsences.length]));
 
 			if (!SicknessService.isBound()) {
-				oViewModel.setProperty("/alert", { text: this.getText("skNotBoundStrip"), type: "Information" });
+				oViewModel.setProperty("/alert", { text: this.getText("skNotBoundStrip"), state: "info" });
 			} else if (iOpen) {
 				oViewModel.setProperty("/alert", {
 					text: this.getText(iOpen === 1 ? "skTriggerCount" : "skTriggerCountPlural", [iOpen]),
-					type: "Error"
+					state: "crit"
 				});
 			} else {
-				oViewModel.setProperty("/alert", { text: this.getText(iDismissed ? "skNoOpenTriggersAlert" : "skNoTriggersAlert"), type: "Success" });
+				oViewModel.setProperty("/alert", { text: this.getText(iDismissed ? "skNoOpenTriggersAlert" : "skNoTriggersAlert"), state: "ok" });
 			}
+		},
+
+		/**
+		 * The All sickness table's Status column. An absence is Open while the return
+		 * to work it started is still in progress - that is, its employee has one open
+		 * that was opened when (or before) the absence was recorded. Every other
+		 * absence has been actioned.
+		 * @param {Array<object>} aAbsences the absences, as _toAbsence shapes them
+		 * @param {Array<object>} aRtw the returns to work in progress, as _toRtw shapes them
+		 */
+		_setAbsenceStatus: function (aAbsences, aRtw) {
+			var mOpenedOn = {};
+			aRtw.forEach(function (oRtw) {
+				mOpenedOn[oRtw.EmpID] = oRtw.OpenedOn || "";
+			});
+
+			aAbsences.forEach(function (oAbsence) {
+				var bHasRtw = Object.prototype.hasOwnProperty.call(mOpenedOn, oAbsence.EmpID);
+				// The process is opened just after the absence is saved, so allow a
+				// minute either way; an absence recorded later carries the same process on.
+				var bOpen = bHasRtw && (!oAbsence.RecordedOn || !mOpenedOn[oAbsence.EmpID] ||
+					new Date(oAbsence.RecordedOn).getTime() >= new Date(mOpenedOn[oAbsence.EmpID]).getTime() - 60000);
+
+				oAbsence.statusText = this.getText(bOpen ? "skStatusOpen" : "skStatusActioned");
+				oAbsence.statusKind = bOpen ? "warn" : "ok";
+			}, this);
 		},
 
 		_toAbsence: function (oRaw) {
@@ -235,6 +264,9 @@ sap.ui.define([
 				Reason: oRaw.Reason || "",
 				Notes: oRaw.Notes || "",
 				FitNote: oRaw.FitNote === "Y" || oRaw.FitNote === true,
+				RecordedOn: oRaw.RecordedOn || "",
+				statusText: "",
+				statusKind: "ok",
 				dateText: this._rangeText(sStart, sEnd),
 				durationText: this._daysText(fDays),
 				dismissed: false,
@@ -257,7 +289,10 @@ sap.ui.define([
 				Email: sEmail,
 				firstName: sName.split(/\s+/)[0],
 				initials: formatter.nameInitials(sName),
-				summary: this.getText("skSummary", [oTrigger.instances, this._daysText(oTrigger.days)]),
+				summary: this.getText("skSummary", [oTrigger.instances, oTrigger.days.toFixed(1)]),
+				// The head's pill: Open, or that a follow-up has gone (it stays open)
+				pillText: this.getText(oTrigger.emailed ? "skEmailSent" : "skTriggerOpen"),
+				pillKind: oTrigger.emailed ? "info" : "crit",
 				historyCount: this.getText(oTrigger.instances === 1 ? "skAbsence" : "skAbsences", [oTrigger.instances]),
 				dismissText: this.getText("skDismissButton", [sName.split(/\s+/)[0]]),
 				noteText: bDismissed ? this.getText("skDismissedNote", [oTrigger.note]) : "",
@@ -277,6 +312,7 @@ sap.ui.define([
 				Name: sName,
 				Title: oRaw.Title || "",
 				Email: oRaw.Email || (oPerson && oPerson.Email) || "",
+				OpenedOn: oRaw.OpenedOn || "",
 				initials: formatter.nameInitials(sName),
 				steps: (oRaw.Steps || []).slice().sort(function (a, b) {
 					return (a.StepNo || 0) - (b.StepNo || 0);
@@ -294,6 +330,35 @@ sap.ui.define([
 		/* =========================================================== */
 		/* events: page                                                */
 		/* =========================================================== */
+
+		/**
+		 * The shell's top-bar action on this page: "Record sickness".
+		 */
+		onPageAction: function () {
+			if (this._oProfile && this._oProfile.isManager) {
+				this.onOpenRecord();
+			}
+		},
+
+		/**
+		 * Opens or folds one trigger's absence history.
+		 * @param {sap.ui.base.Event} oEvent the toggle's press event
+		 */
+		onToggleHistory: function (oEvent) {
+			var oContext = oEvent.getSource().getBindingContext("sk");
+			var bExpanded = !oContext.getProperty("expanded");
+
+			this.getModel("sk").setProperty("expanded", bExpanded, oContext);
+			this._mExpanded[oContext.getProperty("EmpID")] = bExpanded;
+		},
+
+		/**
+		 * Opens or folds the All sickness card.
+		 */
+		onToggleAll: function () {
+			var oViewModel = this.getModel("skView");
+			oViewModel.setProperty("/allExpanded", !oViewModel.getProperty("/allExpanded"));
+		},
 
 		onRefresh: function () {
 			if (this._oProfile && this._oProfile.isManager) {
@@ -415,9 +480,7 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
-		 * Opens the admin's own mail app with a draft check-in to the employee, and
-		 * logs the email against their attendance record. The trigger stays open -
-		 * only a dismissal closes it - but is marked as emailed.
+		 * Opens the follow-up message to the employee, written out ready to edit.
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 */
 		onSendFollowUp: function (oEvent) {
@@ -428,8 +491,37 @@ sap.ui.define([
 				return;
 			}
 
+			this._oMessaging = oTrigger;
+			this.setModel(new JSONModel({
+				title: this.getText("skMessageTitle", [oTrigger.Name]),
+				text: this.getText("skFollowUpBody", [oTrigger.firstName, oTrigger.instances]),
+				canSave: true,
+				saving: false
+			}), "skMessage");
+
+			this._dialog("_pMessageDialog", "SicknessMessageDialog").then(function (oDialog) {
+				oDialog.open();
+			});
+		},
+
+		onMessageInput: function (oEvent) {
+			this.getModel("skMessage").setProperty("/canSave", !!String(oEvent.getParameter("value") || "").trim());
+		},
+
+		/**
+		 * Sends the message - through the HRX service, or as a draft in the admin's own
+		 * mail app where the service cannot send it - and logs it against the
+		 * employee's attendance record. The trigger stays open - only a dismissal
+		 * closes it - but is marked as emailed.
+		 */
+		onConfirmMessage: function () {
+			var oMessage = this.getModel("skMessage");
+			var oTrigger = this._oMessaging;
 			var sSubject = this.getText("skFollowUpSubject");
-			var sBody = this.getText("skFollowUpBody", [oTrigger.firstName, oTrigger.instances]);
+			var sBody = oMessage.getProperty("/text").trim();
+			var sOutcome;
+
+			oMessage.setProperty("/saving", true);
 
 			Reminders.send({
 				kind: "Sickness",
@@ -437,13 +529,24 @@ sap.ui.define([
 				subject: sSubject,
 				message: sBody,
 				draft: { to: oTrigger.Email, subject: sSubject, body: sBody }
-			}).then(function () {
+			}).then(function (sResult) {
+				sOutcome = sResult;
 				return this._review(oTrigger, "EMAILED", sBody);
 			}.bind(this)).then(function () {
-				MessageToast.show(this.getText("skFollowUpLogged"));
+				this.byId("sicknessMessageDialog").close();
+				MessageToast.show(this.getText(sOutcome === "sent" ? "skFollowUpLogged" : "skFollowUpDrafted"));
 			}.bind(this)).catch(function (oError) {
+				oMessage.setProperty("/saving", false);
 				this._showError("skErrorFollowUp", oError);
 			}.bind(this));
+		},
+
+		onCancelMessage: function () {
+			this.byId("sicknessMessageDialog").close();
+		},
+
+		onMessageAfterClose: function () {
+			this._oMessaging = null;
 		},
 
 		onOpenDismiss: function (oEvent) {
@@ -599,26 +702,22 @@ sap.ui.define([
 		/**
 		 * @param {string} sStart the first day, "yyyy-MM-dd"
 		 * @param {string} sEnd the last day, "yyyy-MM-dd"
-		 * @returns {string} e.g. "22 Jun 2026", "13 – 14 Jul 2026", "30 Jun – 2 Jul 2026"
+		 * @returns {string} as the design writes a range: "22 Jun 2026", or both days
+		 * in full, "13 Jul 2026 – 14 Jul 2026"
 		 */
 		_rangeText: function (sStart, sEnd) {
 			if (!sStart) {
 				return "";
 			}
-			var oStart = SicknessPolicy.parseDay(sStart);
-			var oEnd = SicknessPolicy.parseDay(sEnd || sStart);
-			var sEndText = oEnd.getDate() + " " + MONTHS[oEnd.getMonth()] + " " + oEnd.getFullYear();
+			var fnDay = function (sDay) {
+				var oDay = SicknessPolicy.parseDay(sDay);
+				return oDay.getDate() + " " + MONTHS[oDay.getMonth()] + " " + oDay.getFullYear();
+			};
 
-			if (sStart === sEnd || !sEnd) {
-				return sEndText;
+			if (!sEnd || sStart === sEnd) {
+				return fnDay(sStart);
 			}
-			if (oStart.getFullYear() !== oEnd.getFullYear()) {
-				return oStart.getDate() + " " + MONTHS[oStart.getMonth()] + " " + oStart.getFullYear() + " – " + sEndText;
-			}
-			if (oStart.getMonth() !== oEnd.getMonth()) {
-				return oStart.getDate() + " " + MONTHS[oStart.getMonth()] + " – " + sEndText;
-			}
-			return oStart.getDate() + " – " + sEndText;
+			return fnDay(sStart) + " – " + fnDay(sEnd);
 		},
 
 		/**

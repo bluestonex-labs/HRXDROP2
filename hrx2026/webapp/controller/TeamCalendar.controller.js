@@ -14,16 +14,19 @@ sap.ui.define([
 	"../model/CurrentUser",
 	"../model/TeamLeave",
 	"../model/Mail",
-	"../model/formatter",
-	"./BookLeave"
+	"../model/formatter"
 ], function (Controller, Fragment, JSONModel, MessageToast, MessageBox, Dialog, Button, Label, Text, TextArea, VBox,
-	Backend, CurrentUser, TeamLeave, Mail, formatter, BookLeave) {
+	Backend, CurrentUser, TeamLeave, Mail, formatter) {
 	"use strict";
 
 	var TEAM_SERVICE = Backend.SERVICE_ROOT + "/hrx/teamCalendar1.xsjs";
 
 	// The leave types in the calendar's colour key, in the design's order.
 	var LEGEND_TYPES = ["COMPL", "HOLIL", "MATEL", "PATEL", "SICKL", "UNPDL"];
+
+	var DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+	var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September",
+		"October", "November", "December"];
 
 	/*
 	 * Team Calendar, as the 15.10.26 design has it.
@@ -33,15 +36,15 @@ sap.ui.define([
 	 * whole year or a range - by status, to approve or reject. Clicking one moves the
 	 * calendar to its week and opens it there.
 	 *
-	 * Availability: who is away, week or month, filtered by team (a manager starts on
-	 * their direct reports), people, site and project. Approved leave is drawn in its
+	 * The week: who is away, Monday to Sunday, filtered by team (a manager starts on
+	 * their direct reports), people, site and project. Approved leave is a pill in its
 	 * leave type's colour; a request still waiting is hatched and only shown to a
 	 * manager, who can open it - or "N pending" under a name - to decide it.
 	 *
 	 * Everybody's leave comes from teamCalendar1.xsjs (answered by the HRX service, see
 	 * HrxLegacy); the requests behind it come from model/TeamLeave.
 	 */
-	return Controller.extend("bsx.hrx.hrx2026.controller.TeamCalendar", Object.assign({}, BookLeave, {
+	return Controller.extend("bsx.hrx.hrx2026.controller.TeamCalendar", {
 
 		formatter: formatter,
 
@@ -58,20 +61,20 @@ sap.ui.define([
 			this._aProjects = [];
 
 			this.setModel(new JSONModel({
-				startDate: this._mondayOf(new Date()),
+				weekStart: this._mondayOf(new Date()),
+				weekLabel: "",
 				busy: true,
-				viewKey: "week",
 				isManager: false,
 				myEmpId: "",
 				team: "mine",
 				site: "all",
 				project: "all",
 				selectedResources: [],
-				title: this.getText("tcTitle"),
-				periodLabel: ""
+				resourcesText: ""
 			}), "tcView");
 
 			this.setModel(new JSONModel({
+				days: [],
 				people: [],
 				pool: [],
 				sites: [],
@@ -108,6 +111,7 @@ sap.ui.define([
 		_onRouteMatched: function () {
 			var oViewModel = this.getModel("tcView");
 			oViewModel.setProperty("/selectedResources", []);
+			oViewModel.setProperty("/resourcesText", "");
 			oViewModel.setProperty("/site", "all");
 			oViewModel.setProperty("/project", "all");
 
@@ -125,7 +129,7 @@ sap.ui.define([
 
 				oViewModel.setProperty("/isManager", !!oProfile.isManager);
 				oViewModel.setProperty("/myEmpId", oProfile.empID || "");
-				this._applyView(this._currentViewKey(), new Date());
+				oViewModel.setProperty("/weekStart", this._mondayOf(new Date()));
 				return this._loadAll();
 			}.bind(this));
 		},
@@ -185,20 +189,21 @@ sap.ui.define([
 			oModel.setProperty("/legend", LEGEND_TYPES.filter(function (sCode) {
 				return !!mTypeNames[sCode];
 			}).map(function (sCode) {
-				return { text: mTypeNames[sCode], colour: TeamLeave.colourOf(sCode) };
+				return { text: mTypeNames[sCode], code: sCode };
 			}));
 		},
 
 		/**
-		 * Everybody's leave for the period the calendar shows, and the requests behind it.
-		 * @returns {Promise} resolved once the calendar is filled
+		 * Everybody's leave for the week on screen, and the requests behind it.
+		 * @returns {Promise} resolved once the grid is filled
 		 */
 		_loadCalendar: function () {
 			var oViewModel = this.getModel("tcView");
 			var oPeriod = this._calendarPeriod();
 
 			oViewModel.setProperty("/busy", true);
-			oViewModel.setProperty("/periodLabel", formatter.dateRange(oPeriod.from, oPeriod.to));
+			oViewModel.setProperty("/weekLabel", this._weekLabel(oPeriod.from, oPeriod.to));
+			this.getModel("tc").setProperty("/days", this._weekDays(oPeriod.from));
 
 			return Promise.all([
 				this._getJson(TEAM_SERVICE + "?cmd=team&" + new URLSearchParams({
@@ -339,53 +344,65 @@ sap.ui.define([
 			var bManager = oViewModel.getProperty("/isManager");
 			var sSelectedKey = this._sSelectedRequestKey;
 			var mRequestByLeaveId = this._requestsByLeaveId();
+			var aDays = this.getModel("tc").getProperty("/days") || [];
+			var aPicked = oViewModel.getProperty("/selectedResources") || [];
 			var aPeople = this._shown().map(function (oPerson) {
-				return this._toRow(oPerson, bManager, mRequestByLeaveId, sSelectedKey);
+				return this._toRow(oPerson, aDays, bManager, mRequestByLeaveId, sSelectedKey);
 			}, this);
 
 			this.getModel("tc").setProperty("/pool", this._pool().map(function (oPerson) {
-				return { EmpID: oPerson.EmpID, Name: oPerson.Name };
+				return {
+					EmpID: oPerson.EmpID,
+					Name: oPerson.Name,
+					initials: formatter.nameInitials(oPerson.Name),
+					selected: aPicked.indexOf(oPerson.EmpID) !== -1
+				};
 			}).sort(function (a, b) {
 				return a.Name.localeCompare(b.Name);
 			}));
 			this.getModel("tc").setProperty("/people", aPeople);
-			oViewModel.setProperty("/title", this.getText("tcTitleCount", [aPeople.length]));
 		},
 
 		/**
-		 * One person's calendar row: their leave as appointments, coloured by leave type.
-		 * A request still waiting is hatched (tentative), and only a manager sees it.
+		 * One person's row: who they are, and their leave as pills in the week's
+		 * weekday cells, coloured by leave type. A request still waiting is hatched,
+		 * and only a manager sees it.
 		 * @param {object} oPerson a person from the team service
+		 * @param {Array<object>} aDays the week's seven days (see _weekDays)
 		 * @param {boolean} bManager whether the signed-in user is a manager
 		 * @param {object} mRequestByLeaveId the requests behind the leave, by Leaves ID
 		 * @param {string} [sSelectedKey] the request to show as selected
 		 * @returns {object} the row
 		 */
-		_toRow: function (oPerson, bManager, mRequestByLeaveId, sSelectedKey) {
-			var aLeave = (oPerson.Leave || []).filter(function (oDay) {
-				return oDay.StatusID === "APR" || (bManager && oDay.StatusID === "REQ");
-			}).map(function (oDay) {
-				var oDate = formatter.toDate(oDay.Date);
-				if (!oDate) {
-					return null;
-				}
-				var sHalf = oDay.AbsenceType;
-				var oRequest = mRequestByLeaveId[oDay.LeaveID];
-				var bBankHoliday = oDay.LeaveTypeID === "BANKHOLIDAY";
+		_toRow: function (oPerson, aDays, bManager, mRequestByLeaveId, sSelectedKey) {
+			var aCells = aDays.map(function (oDay) {
+				return { weekend: oDay.isWeekend, pills: [] };
+			});
+			var mCellByDate = {};
+			aDays.forEach(function (oDay, iDay) {
+				mCellByDate[oDay.iso] = aCells[iDay];
+			});
 
-				return {
-					leaveId: oDay.LeaveID || "",
-					requestKey: oRequest ? oRequest.key : "",
-					start: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), sHalf === "PM" ? 13 : 0, 0),
-					end: new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), sHalf === "AM" ? 13 : 23, sHalf === "AM" ? 0 : 59),
-					title: oDay.LeaveType + (sHalf ? " · " + sHalf : ""),
-					info: bBankHoliday ? this.getText("tcBankHoliday") : "",
-					colour: TeamLeave.colourOf(oDay.LeaveTypeID),
-					tentative: oDay.StatusID === "REQ",
+			(oPerson.Leave || []).forEach(function (oLeaveDay) {
+				var oCell = mCellByDate[this._isoDate(oLeaveDay.Date)];
+				var bShown = oLeaveDay.StatusID === "APR" || (bManager && oLeaveDay.StatusID === "REQ");
+				// The design draws leave on weekdays only.
+				if (!oCell || oCell.weekend || !bShown) {
+					return;
+				}
+				var oRequest = mRequestByLeaveId[oLeaveDay.LeaveID];
+				var sHalf = oLeaveDay.AbsenceType;
+
+				oCell.pills.push({
+					text: oLeaveDay.LeaveType + (sHalf ? " · " + sHalf : ""),
+					typeCode: oLeaveDay.LeaveTypeID || "",
+					pending: oLeaveDay.StatusID === "REQ",
 					selected: !!oRequest && oRequest.key === sSelectedKey,
-					tooltip: oPerson.Name + " · " + oDay.LeaveType + (oRequest ? " · " + oRequest.dates + " · " + oRequest.statusText : "")
-				};
-			}, this).filter(Boolean);
+					requestKey: oRequest ? oRequest.key : "",
+					leaveId: oLeaveDay.LeaveID || "",
+					tooltip: [oPerson.Name, oLeaveDay.LeaveType, oRequest ? oRequest.dates : ""].filter(Boolean).join(" · ")
+				});
+			}, this);
 
 			var iPending = this._pendingOf(oPerson.EmpID).length;
 			var sSite = this._oReferences.sites[oPerson.SiteID] || "";
@@ -398,7 +415,7 @@ sap.ui.define([
 				subText: [oPerson.JobTitle, sSite].filter(Boolean).join(" · "),
 				pendingCount: iPending,
 				pendingText: this.getText("tcPendingCount", [iPending]),
-				Leave: aLeave
+				cells: aCells
 			};
 		},
 
@@ -441,7 +458,8 @@ sap.ui.define([
 			oModel.setProperty("/chips", ["REQ", "APR", "REJ"].map(function (sStatus) {
 				return {
 					status: sStatus,
-					text: this.getText(TeamLeave.STATUS[sStatus].textKey) + "  " + fnCount(sStatus),
+					text: this.getText(TeamLeave.STATUS[sStatus].textKey),
+					count: String(fnCount(sStatus)),
 					selected: oLeaveView.status === sStatus
 				};
 			}, this));
@@ -455,7 +473,7 @@ sap.ui.define([
 			oModel.setProperty("/rows", aRows);
 
 			var bMyTeam = this.getModel("tcView").getProperty("/team") === "mine";
-			var sPeriod = oPeriod ? formatter.dateRange(oPeriod.from, oPeriod.to) : this.getText("tlSelectDates");
+			var sPeriod = oPeriod ? TeamLeave.rangeLabel(oPeriod.from, oPeriod.to) : this.getText("tlSelectDates");
 			oModel.setProperty("/countText", this.getText(bMyTeam ? "tlCountMine" : "tlCount", [
 				this.getText(aRows.length === 1 ? "tlOneRequest" : "tlRequests", [aRows.length]), sPeriod]));
 			oModel.setProperty("/noDataText", oLeaveView.status === "REQ"
@@ -468,15 +486,57 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
-		 * @returns {{from: Date, to: Date}} the days the calendar shows
+		 * @returns {{from: Date, to: Date}} the week on screen, Monday to Sunday
 		 */
 		_calendarPeriod: function () {
-			var oViewModel = this.getModel("tcView");
-			var oStart = formatter.toDate(oViewModel.getProperty("/startDate")) || new Date();
-			if (oViewModel.getProperty("/viewKey") === "month") {
-				return { from: this._firstOfMonth(oStart), to: new Date(oStart.getFullYear(), oStart.getMonth() + 1, 0) };
+			var oMonday = this.getModel("tcView").getProperty("/weekStart");
+			return { from: oMonday, to: new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 6) };
+		},
+
+		/**
+		 * The week's label, as the design writes it: "13th - 19th July", or
+		 * "29th June - 5th July" across two months.
+		 * @param {Date} oMonday the first day
+		 * @param {Date} oSunday the last day
+		 * @returns {string} the label
+		 */
+		_weekLabel: function (oMonday, oSunday) {
+			var sEnd = this._ordinal(oSunday.getDate()) + " " + MONTH_NAMES[oSunday.getMonth()];
+			if (oMonday.getMonth() === oSunday.getMonth()) {
+				return this._ordinal(oMonday.getDate()) + " - " + sEnd;
 			}
-			return { from: oStart, to: new Date(oStart.getFullYear(), oStart.getMonth(), oStart.getDate() + 6) };
+			return this._ordinal(oMonday.getDate()) + " " + MONTH_NAMES[oMonday.getMonth()] + " - " + sEnd;
+		},
+
+		/**
+		 * @param {number} iDay a day of the month
+		 * @returns {string} it with its English ordinal: 1st, 2nd, 3rd, 4th, 11th ...
+		 */
+		_ordinal: function (iDay) {
+			if (iDay >= 11 && iDay <= 13) {
+				return iDay + "th";
+			}
+			return iDay + ({ 1: "st", 2: "nd", 3: "rd" }[iDay % 10] || "th");
+		},
+
+		/**
+		 * @param {Date} oMonday the week's Monday
+		 * @returns {Array<object>} the seven days: iso, label ("Mon 13"), isToday, isWeekend
+		 */
+		_weekDays: function (oMonday) {
+			var sToday = this._isoDate(new Date());
+			var aDays = [];
+			for (var iDay = 0; iDay < 7; iDay++) {
+				var oDate = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + iDay);
+				var sIso = this._isoDate(oDate);
+				aDays.push({
+					iso: sIso,
+					label: DAY_NAMES[oDate.getDay()] + " " + oDate.getDate(),
+					isToday: sIso === sToday,
+					isWeekend: iDay > 4
+				});
+			}
+			return aDays;
 		},
 
 		/**
@@ -551,7 +611,7 @@ sap.ui.define([
 			}
 
 			this._sSelectedRequestKey = oRequest.key;
-			this._applyView("week", oFirstDay);
+			this.getModel("tcView").setProperty("/weekStart", this._mondayOf(oFirstDay));
 			this._loadCalendar().then(function () {
 				var oCard = this.byId("teamCalCard");
 				if (oCard && oCard.getDomRef()) {
@@ -559,7 +619,7 @@ sap.ui.define([
 				}
 				// After the scroll, so the pop-over opens beside the block where it now is.
 				setTimeout(function () {
-					this._openRequest(oRequest, this._appointmentOf(oRequest) || oEvent.getSource());
+					this._openRequest(oRequest, this._pillOf(oRequest) || oEvent.getSource());
 				}.bind(this), 350);
 			}.bind(this));
 		},
@@ -569,47 +629,105 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onFilterChange: function () {
+			// A different team means a different list of people to pick from.
+			if (this.getModel("tcView").getProperty("/selectedResources").length) {
+				this.getModel("tcView").setProperty("/selectedResources", []);
+				this.getModel("tcView").setProperty("/resourcesText", "");
+			}
+			this._closePopover();
 			this._renderCalendar();
 			this._renderLeave();
 		},
 
-		/**
-		 * Stepping back or forward moves by the calendar's own idea of a step - in
-		 * month view, 31 days from wherever it is - so it is snapped back onto a whole
-		 * week or a whole month.
-		 * @param {sap.ui.base.Event} oEvent the startDateChange event
-		 */
-		onStartDateChange: function (oEvent) {
-			var sViewKey = this._currentViewKey();
-			var oNewStart = oEvent.getSource().getStartDate();
+		onPreviousWeek: function () {
+			this._stepWeek(-1);
+		},
 
-			if (sViewKey === "month") {
-				oNewStart = this._snapMonthStep(formatter.toDate(this.getModel("tcView").getProperty("/startDate")), oNewStart);
-			}
+		onNextWeek: function () {
+			this._stepWeek(1);
+		},
+
+		/**
+		 * @param {number} iWeeks how many weeks to move: -1 back, 1 forward
+		 */
+		_stepWeek: function (iWeeks) {
+			var oViewModel = this.getModel("tcView");
+			var oMonday = oViewModel.getProperty("/weekStart");
 			this._sSelectedRequestKey = "";
-			this._applyView(sViewKey, oNewStart);
-			this._loadCalendar();
-		},
-
-		onViewChange: function (oEvent) {
-			this._applyView(oEvent.getSource().getViewKey(), formatter.toDate(this.getModel("tcView").getProperty("/startDate")));
+			this._closePopover();
+			oViewModel.setProperty("/weekStart", new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 7 * iWeeks));
 			this._loadCalendar();
 		},
 
 		/**
-		 * Opens the request behind a leave block. A bank holiday has none.
-		 * @param {sap.ui.base.Event} oEvent the appointmentSelect event
+		 * Opens the request behind a leave pill. A bank holiday has none.
+		 * @param {sap.ui.base.Event} oEvent the pill's press event
 		 */
-		onAppointmentSelect: function (oEvent) {
-			var oAppointment = oEvent.getParameter("appointment");
-			var oContext = oAppointment && oAppointment.getBindingContext("tc");
-			var oDay = oContext && oContext.getObject();
-			var oRequest = oDay && oDay.leaveId && this._requestsByLeaveId()[oDay.leaveId];
+		onPillPress: function (oEvent) {
+			var oPillButton = oEvent.getSource();
+			var oPill = oPillButton.getBindingContext("tc").getObject();
+			var oRequest = oPill.leaveId && this._requestsByLeaveId()[oPill.leaveId];
 			if (!oRequest) {
 				return;
 			}
 			this._sSelectedRequestKey = oRequest.key;
-			this._openRequest(oRequest, oAppointment);
+			this._markSelectedPills();
+			this._openRequest(oRequest, oPillButton);
+		},
+
+		/**
+		 * Outlines the selected request's pills without redrawing the grid (redrawing
+		 * would replace the pill the pop-over is opening beside).
+		 */
+		_markSelectedPills: function () {
+			var oModel = this.getModel("tc");
+			var sSelectedKey = this._sSelectedRequestKey;
+			(oModel.getProperty("/people") || []).forEach(function (oPerson, iPerson) {
+				oPerson.cells.forEach(function (oCell, iCell) {
+					oCell.pills.forEach(function (oPill, iPill) {
+						oModel.setProperty("/people/" + iPerson + "/cells/" + iCell + "/pills/" + iPill + "/selected",
+							!!sSelectedKey && oPill.requestKey === sSelectedKey);
+					});
+				});
+			});
+		},
+
+		/* =========================================================== */
+		/* "Select resource(s)"                                        */
+		/* =========================================================== */
+
+		onOpenResources: function (oEvent) {
+			var oInput = oEvent.getSource();
+			if (!this._pResourcesPopover) {
+				this._pResourcesPopover = Fragment.load({
+					id: this.getView().getId(),
+					name: "bsx.hrx.hrx2026.fragment.TeamResourcesPopover",
+					controller: this
+				}).then(function (oPopover) {
+					this.getView().addDependent(oPopover);
+					return oPopover;
+				}.bind(this));
+			}
+			this._pResourcesPopover.then(function (oPopover) {
+				oPopover.openBy(oInput);
+			});
+		},
+
+		/**
+		 * A person ticked or unticked: the grid and Team leave narrow to the people
+		 * ticked (nobody ticked shows everyone).
+		 */
+		onResourceToggle: function () {
+			var oViewModel = this.getModel("tcView");
+			var aPicked = (this.getModel("tc").getProperty("/pool") || []).filter(function (oPerson) {
+				return oPerson.selected;
+			}).map(function (oPerson) {
+				return oPerson.EmpID;
+			});
+			oViewModel.setProperty("/selectedResources", aPicked);
+			oViewModel.setProperty("/resourcesText", aPicked.length ? this.getText("tcResourcesSelected", [aPicked.length]) : "");
+			this._renderCalendar();
+			this._renderLeave();
 		},
 
 		/**
@@ -748,25 +866,23 @@ sap.ui.define([
 			});
 			var aLines = bMany
 				? [new Text({ text: this.getText("tlDeclineManyIntro", [sName, aRequests.length]) })
-					.addStyleClass("hrxResourceMeta sapUiTinyMarginBottom")].concat(aRequests.map(function (oRequest) {
-					return new Text({ text: "• " + oRequest.dates + " · " + oRequest.type }).addStyleClass("hrxResourceMeta");
+					.addStyleClass("hrxModalText")].concat(aRequests.map(function (oRequest) {
+					return new Text({ text: "• " + oRequest.dates + " · " + oRequest.type }).addStyleClass("hrxModalText");
 				}))
-				: [new Text({ text: sName + " · " + aRequests[0].dates + " · " + aRequests[0].typeText })
-					.addStyleClass("hrxResourceMeta")];
+				: [new Text({ text: sName + " · " + aRequests[0].dates + " · " + aRequests[0].type + " (" + aRequests[0].duration + ")" })
+					.addStyleClass("hrxModalText")];
 
 			this._closePopover();
 			var oDialog = new Dialog({
 				title: this.getText(bMany ? "tlDeclineManyTitle" : "mgrDeclineTitle"),
-				contentWidth: "28rem",
 				content: new VBox({
 					items: aLines.concat([
-						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("sapUiSmallMarginTop"),
+						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("hrxModalLabel"),
 						oNote
 					])
-				}).addStyleClass("sapUiSmallMargin"),
+				}),
 				beginButton: new Button({
 					text: this.getText(bMany ? "tcRejectAll" : "btnReject"),
-					type: "Reject",
 					press: function () {
 						var sNote = oNote.getValue().trim();
 						oDialog.close();
@@ -776,17 +892,17 @@ sap.ui.define([
 								: this.getText("mgrDeclinedToast", [sName]));
 						}.bind(this));
 					}.bind(this)
-				}),
+				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
 				endButton: new Button({
 					text: this.getText("dmCancel"),
 					press: function () {
 						oDialog.close();
 					}
-				}),
+				}).addStyleClass("hrxModalBtn hrxModalBtnGhost"),
 				afterClose: function () {
 					oDialog.destroy();
 				}
-			});
+			}).addStyleClass("hrxModal");
 			this.getView().addDependent(oDialog);
 			oDialog.open();
 		},
@@ -882,116 +998,16 @@ sap.ui.define([
 			});
 		},
 
-		/* =========================================================== */
-		/* book leave (shared with Manage Resources, see BookLeave.js) */
-		/* =========================================================== */
-
-		/**
-		 * Book leave for someone: a manager's direct reports, or anyone with full access.
-		 */
-		onOpenBookLeave: function () {
-			var sMe = this.getModel("tcView").getProperty("/myEmpId");
-			var bEveryone = CurrentUser.hasFullAccess();
-			var aEmployees = this._oReferences.list.filter(function (oPerson) {
-				return oPerson.IsActive && (bEveryone || oPerson.ManagerID === sMe);
-			}).map(function (oPerson) {
-				return { EmpID: oPerson.EmpID, EmpName: oPerson.Name, EmpEmail: oPerson.Email, SiteID: oPerson.SiteID };
-			});
-
-			if (!aEmployees.length) {
-				MessageBox.information(this.getText("lmNoReports"));
-				return;
-			}
-			this.openBookLeave(null, aEmployees);
-		},
-
-		_afterBookLeave: function () {
-			return Promise.all([this._loadCalendar(), this._loadRequests()]);
-		},
-
-		/* =========================================================== */
-		/* calendar periods                                            */
-		/* =========================================================== */
-
-		/**
-		 * @returns {string} the key of the view the calendar is showing
-		 */
-		_currentViewKey: function () {
-			var oCalendar = this.byId("teamPlanningCalendar");
-			return (oCalendar && oCalendar.getViewKey()) || "week";
-		},
-
-		/**
-		 * Puts the calendar on the whole period its view is named after: a week from its
-		 * Monday, or a month from the 1st and exactly as many columns wide as it has days.
-		 * @param {string} sViewKey "week" or "month"
-		 * @param {Date} [oAnchor] a day inside the period to show, today by default
-		 */
-		_applyView: function (sViewKey, oAnchor) {
-			var oViewModel = this.getModel("tcView");
-			var oCalendar = this.byId("teamPlanningCalendar");
-			var oDate = oAnchor || new Date();
-			var oStart = sViewKey === "month" ? this._firstOfMonth(oDate) : this._mondayOf(oDate);
-
-			oViewModel.setProperty("/viewKey", sViewKey);
-			oViewModel.setProperty("/startDate", oStart);
-			if (!oCalendar) {
-				return;
-			}
-
-			if (sViewKey === "month") {
-				var iDays = new Date(oStart.getFullYear(), oStart.getMonth() + 1, 0).getDate();
-				var oMonthView = this.byId("teamCalMonthView");
-				oMonthView.setIntervalsL(iDays);
-				oMonthView.setIntervalsM(iDays);
-			}
-			if (oCalendar.getViewKey() !== sViewKey) {
-				oCalendar.setViewKey(sViewKey);
-			}
-			oCalendar.setStartDate(oStart);
-		},
-
-		/**
-		 * Reads a month-view step as the month it was meant to reach: back from
-		 * 1 October by 31 days is 31 August, which would skip September.
-		 * @param {Date} oOldStart where the calendar was
-		 * @param {Date} oNewStart where it says it is going
-		 * @returns {Date} the first day of the month that step was meant to reach
-		 */
-		_snapMonthStep: function (oOldStart, oNewStart) {
-			if (!oOldStart || !oNewStart) {
-				return oNewStart;
-			}
-			var iDaysBack = Math.round((oOldStart.getTime() - oNewStart.getTime()) / (24 * 60 * 60 * 1000));
-			var iDaysInOldMonth = new Date(oOldStart.getFullYear(), oOldStart.getMonth() + 1, 0).getDate();
-			if (iDaysBack > 0 && iDaysBack <= iDaysInOldMonth) {
-				return new Date(oOldStart.getFullYear(), oOldStart.getMonth() - 1, 1);
-			}
-			return oNewStart;
-		},
-
 		/**
 		 * @param {object} oRequest a request
-		 * @returns {sap.ui.unified.CalendarAppointment|null} its first block on the calendar
+		 * @returns {sap.m.Button|null} its first pill on the grid
 		 */
-		_appointmentOf: function (oRequest) {
-			var oCalendar = this.byId("teamPlanningCalendar");
-			var oFound = null;
-			oCalendar.getRows().some(function (oRow) {
-				return oRow.getAppointments().some(function (oAppointment) {
-					var oContext = oAppointment.getBindingContext("tc");
-					if (oContext && oContext.getProperty("requestKey") === oRequest.key) {
-						oFound = oAppointment;
-						return true;
-					}
-					return false;
-				});
+		_pillOf: function (oRequest) {
+			var aPills = this.byId("teamCalCard").findAggregatedObjects(true, function (oControl) {
+				var oContext = oControl.isA("sap.m.Button") && oControl.hasStyleClass("hrxTcp") && oControl.getBindingContext("tc");
+				return !!oContext && oContext.getProperty("requestKey") === oRequest.key;
 			});
-			return oFound && oFound.getDomRef() ? oFound : null;
-		},
-
-		_firstOfMonth: function (oDate) {
-			return new Date(oDate.getFullYear(), oDate.getMonth(), 1);
+			return aPills.length && aPills[0].getDomRef() ? aPills[0] : null;
 		},
 
 		/**
@@ -1005,7 +1021,7 @@ sap.ui.define([
 		},
 
 		/* =========================================================== */
-		/* helpers (BookLeave.js relies on these too)                  */
+		/* helpers                                                     */
 		/* =========================================================== */
 
 		getModel: function (sName) {
@@ -1025,45 +1041,8 @@ sap.ui.define([
 			return Backend.isoDate(formatter.toDate(vDate));
 		},
 
-		_read: function (sPath, mParameters) {
-			return Backend.read(this.getOwnerComponent().getModel(), sPath, mParameters);
-		},
-
 		_getJson: function (sUrl) {
 			return Backend.request(sUrl, { method: "GET" });
-		},
-
-		_postJson: function (sUrl, oPayload) {
-			return Backend.request(sUrl, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(oPayload)
-			});
-		},
-
-		_openDialog: function (sCacheKey, sFragmentName) {
-			if (!this[sCacheKey]) {
-				this[sCacheKey] = Fragment.load({
-					id: this.getView().getId(),
-					name: sFragmentName,
-					controller: this
-				}).then(function (oDialog) {
-					this.getView().addDependent(oDialog);
-					return oDialog;
-				}.bind(this));
-			}
-			return this[sCacheKey].then(function (oDialog) {
-				oDialog.open();
-				return oDialog;
-			});
-		},
-
-		_closeDialog: function (sCacheKey) {
-			if (this[sCacheKey]) {
-				this[sCacheKey].then(function (oDialog) {
-					oDialog.close();
-				});
-			}
 		},
 
 		_showError: function (sTextKey, oError) {
@@ -1071,5 +1050,5 @@ sap.ui.define([
 				details: (oError && oError.message) || (oError ? String(oError) : "")
 			});
 		}
-	}));
+	});
 });

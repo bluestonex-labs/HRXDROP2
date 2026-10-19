@@ -3,7 +3,6 @@
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
 	xmlns:hrx="bsx.hrx.hrx2026.control"
 	displayBlock="true"
 	class="hrxTimesheet">
@@ -12,195 +11,158 @@
 
 		<content>
 
-			<!-- Managers can look at somebody else's week. Reloading is on the shell bar
-			     with the page title, so this row disappears entirely for everybody else
-			     rather than holding a lone refresh icon. -->
-			<HBox
-				alignItems="Center"
-				justifyContent="End"
-				visible="{tsView>/isManager}"
-				class="hrxToolRow">
-				<Label
-					text="{i18n>tsViewingAs}"
-					labelFor="timesheetViewAs"
-					class="sapUiTinyMarginEnd" />
-				<ComboBox
-					id="timesheetViewAs"
-					selectedKey="{tsView>/currentEmail}"
-					items="{ts>/directory}"
-					width="15rem"
-					change=".onViewAsChange"
-					selectionChange=".onViewAsChange"
-					placeholder="{i18n>tsViewingAsPlaceholder}">
-					<core:ListItem key="{ts>Email}" text="{ts>FullName}" />
-				</ComboBox>
-			</HBox>
+			<!-- The month's billing figures, laid out as the design's four-column KPI grid.
+			     The design leaves the fourth column empty; a manager gets the "viewing as"
+			     picker there, so it never pushes the tiles or the week card down. -->
+			<FlexBox renderType="Bare" class="hrxTsKpis">
 
-			<!-- The month's billing figures. A responsive grid gives each tile its own
-			     column, so they cannot overlap however wide the numbers get. -->
-			<layout:Grid
-				defaultSpan="XL4 L4 M4 S12"
-				hSpacing="1"
-				vSpacing="1"
-				class="hrxCardRow">
-
-				<VBox class="hrxKpi hrxKpiNeutral">
-					<core:Icon src="sap-icon://target-group" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiTargetBillable}" class="hrxKpiLabel" />
-					<Text text="{tsView>/kpis/targetDays}" class="hrxKpiNum" />
-					<Text text="{tsView>/kpis/month}" class="hrxKpiSub" />
+				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiNeutral">
+					<core:Icon src="sap-icon://target-group" class="hrxTsKpiGlyph" />
+					<Text text="{i18n>kpiTargetBillable}" class="hrxTsKpiLabel" />
+					<Text text="{tsView>/kpis/targetDays}" class="hrxTsKpiNum" />
+					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
 
-				<VBox class="hrxKpi hrxKpiGood">
-					<core:Icon src="sap-icon://fob-watch" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiActualBilled}" class="hrxKpiLabel" />
-					<Text text="{tsView>/kpis/actualDays}" class="hrxKpiNum" />
-					<Text text="{tsView>/kpis/month}" class="hrxKpiSub" />
+				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiWarning">
+					<core:Icon src="sap-icon://pending" class="hrxTsKpiGlyph" />
+					<Text text="{i18n>kpiActualBilled}" class="hrxTsKpiLabel" />
+					<Text text="{tsView>/kpis/actualDays}" class="hrxTsKpiNum" />
+					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
 
-				<VBox class="hrxKpi hrxKpiWarning">
-					<core:Icon src="sap-icon://bar-chart" class="hrxKpiGlyph" />
-					<Text text="{i18n>kpiUtilisation}" class="hrxKpiLabel" />
-					<HBox alignItems="Baseline" class="hrxKpiFigure">
-						<Text text="{tsView>/kpis/utilisation}" class="hrxKpiNum" />
-						<Text text="%" class="hrxKpiUnit" />
+				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiGood">
+					<core:Icon src="sap-icon://vertical-bar-chart" class="hrxTsKpiGlyph" />
+					<Text text="{i18n>kpiUtilisation}" class="hrxTsKpiLabel" />
+					<HBox renderType="Bare" class="hrxTsKpiNum">
+						<Text text="{tsView>/kpis/utilisation}" />
+						<Text text="%" class="hrxTsKpiUnit" />
 					</HBox>
-					<Text text="{tsView>/kpis/month}" class="hrxKpiSub" />
+					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
-			</layout:Grid>
+
+				<!-- Managers can look at somebody else's week -->
+				<VBox renderType="Bare" visible="{tsView>/isManager}" class="hrxTsKpi hrxTsViewAs">
+					<Label
+						text="{i18n>tsViewingAs}"
+						labelFor="timesheetViewAs"
+						class="hrxTsKpiLabel" />
+					<ComboBox
+						id="timesheetViewAs"
+						selectedKey="{tsView>/currentEmail}"
+						items="{ts>/directory}"
+						width="100%"
+						change=".onViewAsChange"
+						selectionChange=".onViewAsChange"
+						placeholder="{i18n>tsViewingAsPlaceholder}"
+						class="hrxTsViewAsField">
+						<core:ListItem key="{ts>Email}" text="{ts>FullName}" />
+					</ComboBox>
+				</VBox>
+			</FlexBox>
 
 			<!-- The week itself, as one card: week navigation, progress, grid, footnote -->
-			<VBox class="hrxTableCard">
+			<VBox renderType="Bare" class="hrxTsCard">
 
-				<HBox class="hrxTableTop" alignItems="Center" justifyContent="SpaceBetween">
-					<HBox alignItems="Center" class="hrxWeekNav">
+				<HBox alignItems="Center" justifyContent="SpaceBetween" class="hrxTsTop">
+					<HBox alignItems="Center" class="hrxTsWeekNav">
 						<Button
 							id="timesheetPrevWeek"
-							icon="sap-icon://navigation-left-arrow"
-							type="Transparent"
+							icon="sap-icon://slim-arrow-left"
 							tooltip="{i18n>tsPreviousWeek}"
-							press=".onPreviousWeek" />
+							press=".onPreviousWeek"
+							class="hrxTsIconButton" />
+						<!-- The week title opens a calendar to jump straight to any week -->
 						<Button
 							id="timesheetWeekPicker"
-							type="Transparent"
 							text="{tsView>/weekLabel}"
 							tooltip="{i18n>tsPickWeek}"
 							press=".onOpenWeekPicker"
-							class="hrxWeekLabel" />
+							class="hrxTsWeekTitle" />
 						<Button
 							id="timesheetNextWeek"
-							icon="sap-icon://navigation-right-arrow"
-							type="Transparent"
+							icon="sap-icon://slim-arrow-right"
 							tooltip="{i18n>tsNextWeek}"
-							press=".onNextWeek" />
-						<Button
-							id="timesheetThisWeek"
-							icon="sap-icon://rhombus-milestone"
-							type="Transparent"
-							tooltip="{i18n>tsCurrentWeek}"
-							press=".onCurrentWeek" />
+							press=".onNextWeek"
+							class="hrxTsIconButton" />
 					</HBox>
-					<HBox>
+					<HBox alignItems="Center" class="hrxTsActions">
 						<Button
 							id="timesheetAddProjects"
 							text="{i18n>btnAddProjects}"
-							icon="sap-icon://add"
 							press=".onOpenAddProjects"
-							class="sapUiTinyMarginEnd" />
+							class="hrxTsButton hrxTsButtonGhost" />
 						<Button
 							id="timesheetDeleteProjects"
 							text="{i18n>btnDeleteProjects}"
 							icon="sap-icon://delete"
-							enabled="{= ${tsView>/selectedCount} > 0 }"
 							press=".onDeleteProjects"
-							class="sapUiTinyMarginEnd" />
+							class="hrxTsButton hrxTsButtonGhost" />
 						<Button
 							id="timesheetSave"
 							text="{i18n>btnSave}"
 							type="Emphasized"
-							press=".onSave" />
+							press=".onSave"
+							class="hrxTsButton hrxTsButtonPrimary" />
 					</HBox>
 				</HBox>
 
-				<HBox class="hrxHoursProgress" alignItems="Center">
+				<!-- Hours booked against the week's target -->
+				<HBox alignItems="Center" class="hrxTsHours">
 					<ProgressIndicator
 						percentValue="{tsView>/weekPercent}"
 						showValue="false"
-						height="0.5rem"
-						class="hrxHoursTrack"
-						state="{= ${tsView>/weekPercent} >= 100 ? 'Success' : ${tsView>/weekPercent} >= 75 ? 'Warning' : 'Error' }">
+						state="{= ${tsView>/weekOver} ? 'Error' : 'None' }"
+						class="hrxTsHoursTrack">
 						<layoutData>
 							<FlexItemData growFactor="1" baseSize="0%" />
 						</layoutData>
 					</ProgressIndicator>
-					<Text
-						text="{parts: ['tsView>/weekBooked', 'tsView>/weekTarget'], formatter: '.formatter.hoursOfTarget'}"
-						class="hrxHoursLabel" />
+					<HBox renderType="Bare" class="hrxTsHoursLabel">
+						<Text text="{tsView>/weekBooked}" class="hrxTsHoursBooked" />
+						<Text
+							text="{path: 'tsView>/weekTarget', formatter: '.formatHoursOfTarget'}"
+							class="hrxTsHoursTarget" />
+					</HBox>
 				</HBox>
 
+				<!-- One row per project, grouped by client; a group row folds its projects
+				     away when clicked (see createGroupHeader). -->
 				<hrx:TimesheetTable
 					id="timesheetTable"
-					items="{path: 'ts>/rows'}"
+					items="{path: 'ts>/rows', groupHeaderFactory: '.createGroupHeader'}"
 					mode="MultiSelect"
 					busy="{= ${tsView>/busy} || ${tsView>/saving} }"
 					busyIndicatorDelay="0"
 					noDataText="{i18n>tsNoRows}"
 					alternateRowColors="false"
 					sticky="ColumnHeaders"
-					class="hrxInnerTable"
-					selectionChange=".onSelectionChange">
+					class="hrxTsTable"
+					selectionChange=".onSelectionChange"
+					updateFinished=".onTableUpdated">
 					<hrx:columns>
-						<Column width="18rem" vAlign="Middle">
+						<Column width="13.48%" vAlign="Middle">
 							<Text text="{i18n>tsColProject}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/0/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/0/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/0/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/0/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/0/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/1/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/1/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/1/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/1/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/1/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/2/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/2/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/2/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/2/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/2/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/3/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/3/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/3/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/3/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/3/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/4/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/4/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/4/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/4/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/4/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/5/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/5/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/5/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/5/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column width="7.54%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/5/label}" />
 						</Column>
-						<Column hAlign="Center" width="7.5rem" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<VBox alignItems="Center" class="{= ${tsView>/dayHeaders/6/working} ? '' : 'hrxNonWorkingDay' }">
-								<Text text="{tsView>/dayHeaders/6/label}" class="hrxResourceName" />
-								<Text text="{tsView>/dayHeaders/6/date}" class="hrxResourceMeta" />
-								<Text text="{tsView>/dayHeaders/6/total}" class="hrxDayTotal" />
-							</VBox>
+						<Column vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<Text text="{tsView>/dayHeaders/6/label}" />
 						</Column>
 					</hrx:columns>
 					<hrx:items>
@@ -220,136 +182,175 @@
 									writeToDom="true" />
 							</hrx:customData>
 							<hrx:cells>
-								<VBox>
-									<ObjectIdentifier title="{ts>project}" />
-									<HBox alignItems="Center">
-										<ObjectStatus
-											text="{i18n>tsOverbooked}"
-											state="Warning"
-											visible="{ts>Overbooked}"
-											class="sapUiTinyMarginEnd" />
-										<Text text="{ts>ProjectTypeText}" class="hrxResourceMeta" />
-									</HBox>
-								</VBox>
-							<HBox binding="{ts>days/0}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/1}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/2}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/3}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/4}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/5}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
-							<HBox binding="{ts>days/6}" alignItems="Center" justifyContent="Center">
-								<Input
-									value="{ts>time}"
-									editable="{ts>editable}"
-									change=".onTimeChange"
-									placeholder="hh:mm"
-									textAlign="Center"
-									width="4.5rem"
-									class="hrxTimeCell" />
-								<Button
-									icon="sap-icon://comment"
-									type="{parts: ['ts>time', 'ts>comment'], formatter: '.formatter.commentState'}"
-									tooltip="{i18n>tsComment}"
-									press=".onOpenComment"
-									visible="{ts>editable}" />
-							</HBox>
+								<HBox alignItems="Center" wrap="Wrap" class="hrxTsProject">
+									<Text text="{ts>project}" class="hrxTsProjectName" />
+									<ObjectStatus
+										text="{i18n>tsOverbooked}"
+										state="Warning"
+										visible="{ts>Overbooked}"
+										class="hrxTsOverbooked" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/0}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/1}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/2}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/3}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/4}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/5}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
+								<HBox renderType="Bare" binding="{ts>days/6}" alignItems="Center" class="hrxTsTimeCell">
+									<Input
+										value="{ts>time}"
+										visible="{ts>editable}"
+										change=".onTimeChange"
+										placeholder="00:00"
+										class="hrxTsTimeInput" />
+									<Button
+										icon="sap-icon://comment"
+										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
+										visible="{ts>editable}"
+										press=".onOpenComment"
+										class="hrxTsCommentButton">
+										<customData>
+											<core:CustomData
+												key="comment"
+												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												writeToDom="true" />
+										</customData>
+									</Button>
+									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+								</HBox>
 							</hrx:cells>
 						</hrx:TimesheetRow>
 					</hrx:items>
 				</hrx:TimesheetTable>
 
-				<HBox class="hrxCommentNote" alignItems="Center">
-					<core:Icon src="sap-icon://message-information" class="sapUiTinyMarginEnd" />
+				<HBox renderType="Bare" alignItems="Center" class="hrxTsNote">
+					<core:Icon src="sap-icon://high-priority" class="hrxTsNoteIcon" />
 					<Text text="{i18n>commentRequiredNote}" />
 				</HBox>
 			</VBox>

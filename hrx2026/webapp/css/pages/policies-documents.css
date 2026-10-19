@@ -1,1 +1,1078 @@
-/* policies-documents - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+/* policies-documents - the 15.10.26 design, page by page (see css/style.css for what every page shares).
+   Policies to read (design view "mydocs", root .hrxPagePolicies) and Documents (design view
+   "documents", root .hrxPageDocuments, plus its upload dialog .hrxDocUploadDialog). */
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Shared by both pages: card, card head, buttons, pills, empty state
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* The design's .card */
+.hrxPagePolicies .hrxPdCard,
+.hrxPageDocuments .hrxPdCard {
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+/* .card-head: title (and hint) left, a control or count right */
+.hrxPagePolicies .hrxPdCardHead,
+.hrxPageDocuments .hrxPdCardHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxPagePolicies .sapMTitle.hrxPdCardTitle,
+.hrxPageDocuments .sapMTitle.hrxPdCardTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 0;
+	line-height: 13px;
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.hrxPagePolicies .sapMText.hrxPdCardHint,
+.hrxPageDocuments .sapMText.hrxPdCardHint {
+	font-family: var(--sans);
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* .btn.sm: League Spartan capitals, 28px high, the text sat .12em low as the design does */
+.hrxPagePolicies .sapMBtn.hrxPdBtn,
+.hrxPageDocuments .sapMBtn.hrxPdBtn {
+	height: 28px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnInner,
+.hrxPageDocuments .hrxPdBtn .sapMBtnInner {
+	height: 28px;
+	min-width: 0;
+	padding: 2.52px 12px 0;
+	border-radius: var(--radius-s);
+	border: 1px solid var(--line);
+	background: var(--surface);
+	color: var(--txt);
+	box-sizing: border-box;
+	text-shadow: none;
+	box-shadow: none;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnInner:hover,
+.hrxPageDocuments .hrxPdBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+	background: var(--surface);
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnInner.sapMBtnEmphasized,
+.hrxPageDocuments .hrxPdBtn .sapMBtnInner.sapMBtnEmphasized {
+	background: var(--ice);
+	border-color: transparent;
+	color: #FFFFFF;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnInner.sapMBtnEmphasized:hover,
+.hrxPageDocuments .hrxPdBtn .sapMBtnInner.sapMBtnEmphasized:hover {
+	background: var(--ice-deep);
+	color: #FFFFFF;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnContent,
+.hrxPageDocuments .hrxPdBtn .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	text-transform: uppercase;
+	letter-spacing: .05em;
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 1;
+	color: inherit;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnInner .sapMBtnContent > bdi,
+.hrxPageDocuments .hrxPdBtn .sapMBtnInner .sapMBtnContent > bdi {
+	color: inherit;
+}
+
+/* The button glyphs are the design's own line icons, drawn with a mask in the text colour */
+.hrxPagePolicies .hrxPdBtn .sapMBtnIcon,
+.hrxPageDocuments .hrxPdBtn .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	min-width: 14px;
+	margin: -2.52px 5px 0 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-pd-icon) center / 14px 14px no-repeat;
+	mask: var(--hrx-pd-icon) center / 14px 14px no-repeat;
+}
+
+.hrxPagePolicies .hrxPdBtn .sapMBtnIcon::before,
+.hrxPageDocuments .hrxPdBtn .sapMBtnIcon::before {
+	content: none !important;
+}
+
+.hrxPagePolicies .hrxPdBtnAck { --hrx-pd-icon: url("../../img/icons/policies-check.svg"); }
+.hrxPagePolicies .hrxPdBtnRead { --hrx-pd-icon: url("../../img/icons/policies-eye.svg"); }
+.hrxPageDocuments .hrxPdBtnMail { --hrx-pd-icon: url("../../img/icons/documents-mail.svg"); }
+.hrxPageDocuments .hrxPdBtnTrash { --hrx-pd-icon: url("../../img/icons/documents-trash.svg"); }
+
+/* .pill: ok (mint) and warn (amber) */
+.hrxPagePolicies .sapMText.hrxPdPill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+	white-space: nowrap;
+}
+
+.hrxPagePolicies .hrxPdPill[data-state="ok"] {
+	background: var(--mint-soft);
+	color: #0F7B4F;
+}
+
+.hrxPagePolicies .hrxPdPill[data-state="warn"] {
+	background: var(--amber-soft);
+	color: #92400E;
+}
+
+/* .noack: the plain status of a document no one has to acknowledge */
+.hrxPagePolicies .sapMText.hrxPdNoAck,
+.hrxPageDocuments .sapMText.hrxPdNoAck {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 600;
+	line-height: 15px;
+	color: var(--txt-2);
+	white-space: nowrap;
+}
+
+/* .empty-state */
+.hrxPagePolicies .hrxPdEmpty,
+.hrxPageDocuments .hrxPdEmpty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 44px 24px;
+	text-align: center;
+}
+
+.hrxPagePolicies .sapMText.hrxPdEmptyTitle,
+.hrxPageDocuments .sapMText.hrxPdEmptyTitle {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-weight: 800;
+	font-size: 14px;
+	line-height: 13px;
+	color: var(--ink);
+	margin-bottom: 6px;
+}
+
+.hrxPagePolicies .sapMText.hrxPdEmptyText,
+.hrxPageDocuments .sapMText.hrxPdEmptyText {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--txt-3);
+	max-width: 380px;
+	text-align: center;
+}
+
+/* A "Service needed" note keeps the page's one 16px spacing below it */
+.hrxPagePolicies .hrxPdStrip,
+.hrxPageDocuments .hrxPdStrip {
+	margin-bottom: 16px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Policies to read
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* .kpis with two columns */
+.hrxPagePolicies .hrxPdKpis {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+/* .kpi.neu: ice top rule, glyph top right */
+.hrxPagePolicies .hrxPdKpi {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	padding: 18px 20px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top: 2px solid var(--ice);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	box-sizing: border-box;
+	min-width: 0;
+}
+
+.hrxPagePolicies .hrxPdGlyph {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--ice-glow);
+}
+
+.hrxPagePolicies .hrxPdGlyph .sapUiIcon {
+	width: 17px;
+	height: 17px;
+	font-size: 17px;
+	line-height: 17px;
+	text-align: center;
+	color: var(--ice-deep);
+}
+
+.hrxPagePolicies .sapMText.hrxPdKlab {
+	font-family: var(--sans);
+	font-size: 10.5px;
+	line-height: 12px;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.hrxPagePolicies .sapMText.hrxPdKnum {
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 36px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1.05;
+	color: var(--ink);
+}
+
+.hrxPagePolicies .sapMText.hrxPdKsub {
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+	margin-top: 4px;
+}
+
+.hrxPagePolicies .hrxPdCardHint {
+	margin-top: 3px;
+}
+
+/* .chk: "Only those I have not acknowledged" - a 13px box, 10px from its label */
+.hrxPagePolicies .sapMCb.hrxPdCheck {
+	height: 16px;
+	padding: 0 0 0 23px;
+	line-height: 16px;
+}
+
+.hrxPagePolicies .hrxPdCheck .sapMCbBg {
+	left: 0;
+	top: 1.5px;
+	width: 13px;
+	height: 13px;
+	min-width: 13px;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	border: 1px solid #767676;
+	border-radius: 2.5px;
+	background: var(--surface);
+}
+
+.hrxPagePolicies .hrxPdCheck .sapMCbBg.sapMCbMarkChecked {
+	background: var(--ice);
+	border-color: var(--ice);
+}
+
+.hrxPagePolicies .hrxPdCheck .sapMCbBg.sapMCbMarkChecked::before {
+	color: #FFFFFF;
+	font-size: 9px;
+	line-height: 11px;
+	width: 11px;
+	height: 11px;
+	left: 0;
+	top: 0;
+	position: absolute;
+	text-align: center;
+}
+
+.hrxPagePolicies .hrxPdCheck .sapMCbLabel {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 500;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* .doc-row */
+.hrxPagePolicies .hrxPdRow {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 14px 22px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxPagePolicies .hrxPdRow:last-child {
+	border-bottom: none;
+}
+
+.hrxPagePolicies .hrxPdMain {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxPagePolicies .sapMText.hrxPdName,
+.hrxPageDocuments .sapMText.hrxPdName {
+	font-family: var(--sans);
+	font-weight: 700;
+	font-size: 13.5px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxPagePolicies .sapMText.hrxPdMeta,
+.hrxPageDocuments .sapMText.hrxPdMeta {
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
+	margin-top: 2px;
+}
+
+.hrxPagePolicies .hrxPdStatus {
+	display: flex;
+	flex-shrink: 0;
+}
+
+.hrxPagePolicies .hrxPdActs {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+	min-width: 210px;
+	justify-content: flex-end;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Documents (admin)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* .alert.warn */
+.hrxPageDocuments .hrxDmAlert {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 11px 16px;
+	margin-bottom: 16px;
+	border: 1px solid #F5D488;
+	border-radius: var(--radius-s);
+	background: var(--amber-soft);
+	color: #92400E;
+}
+
+.hrxPageDocuments .hrxDmAlertIcon {
+	--hrx-pd-icon: url("../../img/icons/documents-tri.svg");
+}
+
+.hrxPageDocuments .sapMText.hrxDmAlertText {
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 18px;
+	color: inherit;
+}
+
+/* Line icons drawn with a mask in the current colour (alert, search, the bar's state) */
+.hrxPageDocuments .sapUiIcon.hrxDmAlertIcon,
+.hrxPageDocuments .sapUiIcon.hrxDmSearchIcon,
+.hrxPageDocuments .sapUiIcon.hrxDmAckIcon {
+	flex-shrink: 0;
+	font-size: 0;
+	line-height: 0;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-pd-icon) center / 100% 100% no-repeat;
+	mask: var(--hrx-pd-icon) center / 100% 100% no-repeat;
+}
+
+.hrxPageDocuments .sapUiIcon.hrxDmAlertIcon::before,
+.hrxPageDocuments .sapUiIcon.hrxDmSearchIcon::before,
+.hrxPageDocuments .sapUiIcon.hrxDmAckIcon::before {
+	content: none !important;
+}
+
+.hrxPageDocuments .sapUiIcon.hrxDmAlertIcon {
+	width: 18px;
+	height: 18px;
+	color: #92400E;
+}
+
+/* .doc-grid: the document list half as wide again as who hasn't acknowledged */
+.hrxPageDocuments .hrxDmGrid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+	gap: 16px;
+}
+
+/* .doc-panel: fixed height, the rows scroll. The design's 100vh - 290px; here the
+   launchpad's own 52px bar is inside the viewport as well. */
+.hrxPageDocuments .hrxDmPanel {
+	height: calc(100vh - 342px);
+	min-height: 460px;
+}
+
+.hrxPageDocuments .hrxDmRows {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+/* .md-tools: search and category */
+.hrxPageDocuments .hrxDmTools {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxPageDocuments .hrxDmSearch {
+	position: relative;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxPageDocuments .sapUiIcon.hrxDmSearchIcon {
+	--hrx-pd-icon: url("../../img/icons/documents-search.svg");
+	position: absolute;
+	left: 12px;
+	top: 10px;
+	width: 15px;
+	height: 15px;
+	color: var(--txt-3);
+	z-index: 1;
+	pointer-events: none;
+}
+
+/* Inputs and selects: 35px, 11px corners, 13px Raleway (page and upload dialog) */
+.hrxPageDocuments .sapMInputBase.hrxDmInput,
+.hrxDocUploadDialog .sapMInputBase.hrxDuInput {
+	height: 35px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxPageDocuments .hrxDmInput .sapMInputBaseContentWrapper,
+.hrxDocUploadDialog .hrxDuInput .sapMInputBaseContentWrapper {
+	height: 35px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+	box-sizing: border-box;
+}
+
+.hrxPageDocuments .hrxDmInput .sapMInputBaseInner,
+.hrxDocUploadDialog .hrxDuInput .sapMInputBaseInner {
+	height: 33px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	background: transparent;
+}
+
+.hrxPageDocuments .hrxDmInput .sapMInputBaseInner {
+	padding-left: 36px;
+}
+
+.hrxPageDocuments .hrxDmInput .sapMInputBaseInner::placeholder,
+.hrxDocUploadDialog .hrxDuInput .sapMInputBaseInner::placeholder {
+	font-style: normal;
+	color: #757575;
+}
+
+.hrxPageDocuments .hrxDmInput .sapMInputBaseContentWrapper::after,
+.hrxDocUploadDialog .hrxDuInput .sapMInputBaseContentWrapper::after {
+	content: none;
+}
+
+.hrxPageDocuments .sapMSlt.hrxDmSelect,
+.hrxDocUploadDialog .sapMSlt.hrxDuSelect {
+	height: 35px;
+	margin: 0;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+.hrxPageDocuments .hrxDmSelect .sapMSltLabel,
+.hrxDocUploadDialog .hrxDuSelect .sapMSltLabel {
+	height: 33px;
+	line-height: 33px;
+	padding: 0 40px 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+/* the design's chevron, 16px, 12px in from the right */
+.hrxPageDocuments .hrxDmSelect .sapMSltArrow,
+.hrxDocUploadDialog .hrxDuSelect .sapMSltArrow {
+	position: absolute;
+	right: 12px;
+	top: 0;
+	width: 16px;
+	min-width: 16px;
+	height: 33px;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	border: none;
+	color: var(--txt-2);
+	background: currentColor !important;
+	-webkit-mask: url("../../img/icons/documents-chevron.svg") center / 16px 16px no-repeat;
+	mask: url("../../img/icons/documents-chevron.svg") center / 16px 16px no-repeat;
+}
+
+.hrxPageDocuments .hrxDmSelect .sapMSltArrow::before,
+.hrxDocUploadDialog .hrxDuSelect .sapMSltArrow::before {
+	content: none !important;
+}
+
+/* .doc-filters: pill chips with a count */
+.hrxPageDocuments .hrxDmChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--line-soft);
+	flex-shrink: 0;
+}
+
+.hrxPageDocuments .sapMBtn.hrxDmChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: auto;
+	padding: 5px 12px;
+	margin: 0;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-sizing: border-box;
+	cursor: pointer;
+	transition: .12s;
+}
+
+.hrxPageDocuments .sapMBtn.hrxDmChip:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxPageDocuments .sapMBtn.hrxDmChip[data-on="yes"] {
+	background: var(--ice-glow);
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxPageDocuments .hrxDmChip .sapMBtnInner {
+	height: auto;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: inherit;
+	box-shadow: none;
+}
+
+.hrxPageDocuments .hrxDmChip .sapMBtnInner:hover {
+	background: transparent;
+	color: inherit;
+}
+
+.hrxPageDocuments .hrxDmChip .sapMBtnContent,
+.hrxPageDocuments .hrxDmChip .sapMBtnContent > bdi {
+	padding: 0;
+	font-family: var(--sans);
+	text-transform: none;
+	letter-spacing: 0;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 15px;
+	color: inherit;
+}
+
+.hrxPageDocuments .sapMBtn.hrxDmChip::after {
+	content: attr(data-count);
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	color: var(--txt-3);
+	background: var(--frost-2);
+	border-radius: 999px;
+	padding: 1px 7px;
+}
+
+.hrxPageDocuments .sapMBtn.hrxDmChip[data-on="yes"]::after {
+	background: #FFFFFF;
+	color: var(--ice-deep);
+}
+
+/* .doc-row2: compact, clickable; the selected one is tinted with an ice rule */
+.hrxPageDocuments .hrxDmRow {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 10px 18px;
+	min-height: 56px;
+	box-sizing: border-box;
+	border-bottom: 1px solid var(--line-soft);
+	cursor: pointer;
+	transition: .12s;
+}
+
+.hrxPageDocuments .hrxDmRow:hover {
+	background: var(--frost);
+}
+
+.hrxPageDocuments .hrxDmRow[data-sel="yes"] {
+	background: #EAF5FB;
+	box-shadow: inset 3px 0 0 var(--ice);
+}
+
+.hrxPageDocuments .hrxDmMain {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxPageDocuments .hrxDmMain .sapMText {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* .ack-mini: count, 84px bar, state icon */
+.hrxPageDocuments .hrxDmAck {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.hrxPageDocuments .sapMText.hrxDmAckN {
+	min-width: 46px;
+	text-align: right;
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 14px;
+	color: var(--txt-2);
+	font-variant-numeric: tabular-nums;
+}
+
+.hrxPageDocuments .sapMPI.hrxDmBar {
+	width: 84px;
+	height: 7px;
+	min-height: 7px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-radius: 5px;
+	background: var(--line-soft);
+	box-shadow: none;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.hrxPageDocuments .hrxDmBar .sapMPIBar {
+	height: 100%;
+	margin: 0;
+	top: 0;
+	transform: none;
+	border-radius: 5px;
+	border: none;
+	box-shadow: none;
+}
+
+.hrxPageDocuments .hrxDmBar .sapMPIBarRemaining {
+	background: transparent;
+	border: none;
+}
+
+.hrxPageDocuments .hrxDmBar .sapMPIText {
+	display: none;
+}
+
+.hrxPageDocuments .hrxDmBar .sapMPIBarPositive { background: var(--mint); }
+.hrxPageDocuments .hrxDmBar .sapMPIBarCritical { background: var(--amber); }
+.hrxPageDocuments .hrxDmBar .sapMPIBarNegative { background: var(--signal); }
+
+/* the ack icon sits 8px after the bar (the design's .ub-line), 10px gap minus 2 */
+.hrxPageDocuments .sapUiIcon.hrxDmAckIcon {
+	width: 18px;
+	height: 18px;
+	margin-left: -2px;
+}
+
+.hrxPageDocuments .hrxDmAckIcon[data-state="ok"] { --hrx-pd-icon: url("../../img/icons/documents-okc.svg"); color: var(--mint); }
+.hrxPageDocuments .hrxDmAckIcon[data-state="warn"] { --hrx-pd-icon: url("../../img/icons/documents-tri.svg"); color: var(--amber); }
+.hrxPageDocuments .hrxDmAckIcon[data-state="crit"] { --hrx-pd-icon: url("../../img/icons/documents-xc.svg"); color: var(--signal); }
+
+/* .doc-act: room for the 30px remind button on every row */
+.hrxPageDocuments .hrxDmAct {
+	display: flex;
+	width: 30px;
+	flex-shrink: 0;
+}
+
+/* .icon-btn.sm */
+.hrxPageDocuments .sapMBtn.hrxDmIconBtn {
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxPageDocuments .hrxDmIconBtn .sapMBtnInner {
+	width: 30px;
+	height: 30px;
+	min-width: 30px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-sizing: border-box;
+	box-shadow: none;
+}
+
+.hrxPageDocuments .hrxDmIconBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+	background: var(--surface);
+}
+
+.hrxPageDocuments .hrxDmIconBtn .sapMBtnIcon {
+	width: 15px;
+	height: 15px;
+	min-width: 15px;
+	margin: 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+	color: inherit;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-pd-icon) center / 15px 15px no-repeat;
+	mask: var(--hrx-pd-icon) center / 15px 15px no-repeat;
+}
+
+.hrxPageDocuments .hrxDmIconBtn .sapMBtnIcon::before {
+	content: none !important;
+}
+
+/* The selected document's name, right of "Who hasn't acknowledged" */
+.hrxPageDocuments .sapMText.hrxDmWhoDoc {
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* .who-row with .person: avatar, name, site */
+.hrxPageDocuments .hrxDmWhoRow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 22px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxPageDocuments .sapMText.hrxDmAvatar {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 30px;
+}
+
+.hrxPageDocuments .sapMText.hrxDmWhoName {
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 600;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxPageDocuments .sapMText.hrxDmWhoSite {
+	font-family: var(--sans);
+	font-size: 11.5px;
+	font-weight: 500;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* .who-foot */
+.hrxPageDocuments .hrxDmWhoFoot {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 12px 22px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+	margin-top: -1px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Upload document dialog (the design's .modal.wide)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* The dialog itself, its head, foot and buttons are the shared .hrxModal (css/style.css). */
+
+/* .fgrid: two columns, 20px apart; name, the box and the file take both */
+.hrxDocUploadDialog .hrxDuGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: 20px;
+}
+
+.hrxDocUploadDialog .hrxDuField {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 16px;
+	min-width: 0;
+}
+
+.hrxDocUploadDialog .hrxDuSpan2 {
+	grid-column: 1 / -1;
+}
+
+/* label.f is the shared hrxModalLabel; only its required asterisk is set here */
+.hrxDocUploadDialog .sapMLabel.hrxDuLabel.sapMLabelRequired .sapMLabelColonAndRequired::after,
+.hrxDocUploadDialog .sapMLabel.hrxDuLabel.sapMLabelRequired::after {
+	color: var(--signal);
+	font-size: 10.5px;
+	font-weight: 700;
+	margin-left: 3px;
+}
+
+/* .chk: "Acknowledgement required?" */
+.hrxDocUploadDialog .sapMCb.hrxDuCheck {
+	height: 16px;
+	padding: 0 0 0 23px;
+	line-height: 16px;
+}
+
+.hrxDocUploadDialog .hrxDuCheck .sapMCbBg {
+	left: 0;
+	top: 1.5px;
+	width: 13px;
+	height: 13px;
+	min-width: 13px;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	border: 1px solid #767676;
+	border-radius: 2.5px;
+	background: var(--surface);
+}
+
+.hrxDocUploadDialog .hrxDuCheck .sapMCbBg.sapMCbMarkChecked {
+	background: var(--ice);
+	border-color: var(--ice);
+}
+
+.hrxDocUploadDialog .hrxDuCheck .sapMCbBg.sapMCbMarkChecked::before {
+	color: #FFFFFF;
+	font-size: 9px;
+	line-height: 11px;
+	width: 11px;
+	height: 11px;
+	left: 0;
+	top: 0;
+	position: absolute;
+	text-align: center;
+}
+
+.hrxDocUploadDialog .hrxDuCheck .sapMCbLabel {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 500;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+/* input[type=file]: a "Choose file" button, then the file's name, in one 39px box.
+   The FileUploader of this UI5 version draws a field with a browse icon; the button
+   is drawn over its left end (it lets clicks through to the file input underneath). */
+.hrxDocUploadDialog .sapUiFup.hrxDuFile {
+	position: relative;
+	height: 39px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapMInputBaseContentWrapper {
+	height: 39px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+	box-sizing: border-box;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapMInputBaseContentWrapper::after {
+	content: none;
+}
+
+.hrxDocUploadDialog .sapUiFup.hrxDuFile::before {
+	content: attr(data-choose);
+	position: absolute;
+	left: 9px;
+	top: 7px;
+	z-index: 1;
+	height: 25px;
+	display: flex;
+	align-items: center;
+	padding: 1.5px 12px 0;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt);
+	font-family: var(--disp);
+	text-transform: uppercase;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	line-height: 1;
+	pointer-events: none;
+	transition: .15s;
+}
+
+.hrxDocUploadDialog .sapUiFup.hrxDuFile:hover::before {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual {
+	height: 37px;
+}
+
+/* the placeholder, or the chosen file's name, starts 10px after the button */
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual .sapUiFupPlaceholder {
+	left: 0;
+	right: 0;
+	padding-left: 112px;
+	box-sizing: border-box;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual .sapUiFupPlaceholder > div {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+}
+
+/* the design's native file input has no browse or clear icon: choosing again replaces the file */
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual .sapUiFupBrowseIcon,
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual .sapUiFupClearIcon,
+.hrxDocUploadDialog .hrxDuFile .sapMTokenizer .sapMTokenIcon {
+	display: none !important;
+}
+
+/* the chosen file's name, as plain text where the placeholder was */
+.hrxDocUploadDialog .hrxDuFile .sapUiFupVisual .sapUiFupTokenizer {
+	display: flex;
+	align-items: center;
+	height: 37px;
+	padding-left: 112px;
+	box-sizing: border-box;
+	min-width: 0;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapUiFupTokenizer .sapMTokenizer {
+	margin: 0;
+	padding: 0;
+	height: auto;
+	background: transparent;
+	border: none;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapUiFupTokenizer .sapMToken {
+	height: auto;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxDocUploadDialog .hrxDuFile .sapUiFupTokenizer .sapMTokenText {
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+	line-height: 16px;
+}
+
+/* .fhint */
+.hrxDocUploadDialog .sapMText.hrxDuHint {
+	margin-top: 5px;
+	font-family: var(--sans);
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-3);
+}

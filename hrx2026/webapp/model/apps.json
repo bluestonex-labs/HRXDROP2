@@ -12,22 +12,14 @@
   "notif": { "items": [], "countText": "", "loading": false },
   "explorerApps": [
     {
-      "title": "My Timesheet",
-      "subtitle": "Log and submit weekly hours",
-      "icon": "sap-icon://history",
-      "route": "timesheet"
+      "title": "My Bonus",
+      "subtitle": "View your bonus information and history",
+      "route": ""
     },
     {
-      "title": "My Leave",
-      "subtitle": "Request and track time off",
-      "icon": "sap-icon://calendar",
-      "route": "leave"
-    },
-    {
-      "title": "Team Calendar",
-      "subtitle": "See who is out across the team",
-      "icon": "sap-icon://appointment-2",
-      "route": "teamcal"
+      "title": "Manage Bonus",
+      "subtitle": "Manage employee bonuses",
+      "route": ""
     }
   ],
   "adminSections": [

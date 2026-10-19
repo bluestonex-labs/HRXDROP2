@@ -2,31 +2,43 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 
+	<!-- "Choose per day" from the Duration list: each bookable day in the range with
+	     its own full day / AM / PM choice. A day already half taken offers only its
+	     free half. Styled as the design's modal. -->
 	<Dialog
 		id="leaveHalfDayDialog"
 		title="{i18n>mlHalfDaysTitle}"
-		contentWidth="26rem">
+		initialFocus="leaveHalfDayConfirm"
+		contentWidth="460px"
+		class="hrxModal hrxMyLeaveDialog">
 		<content>
-			<List
-				id="leaveHalfDayList"
-				items="{ml>/dates}"
-				noDataText="{i18n>mlNoBookableDays}">
-				<InputListItem label="{ml>displayDate}">
-					<SegmentedButton selectedKey="{ml>SelectedKey}" width="100%">
-						<items>
-							<SegmentedButtonItem text="{i18n>mlFullDay}" key="F" enabled="{ml>FullDayEnabled}" />
-							<SegmentedButtonItem text="{i18n>mlAm}" key="A" enabled="{ml>AMEnabled}" />
-							<SegmentedButtonItem text="{i18n>mlPm}" key="P" enabled="{ml>PMEnabled}" />
-						</items>
-					</SegmentedButton>
-				</InputListItem>
-			</List>
+			<VBox renderType="Bare" class="hrxLeaveDialogBody">
+				<List
+					id="leaveHalfDayList"
+					items="{ml>/dates}"
+					showSeparators="Inner"
+					noDataText="{i18n>mlNoBookableDays}"
+					class="hrxLeaveHalfDayList">
+					<CustomListItem>
+						<HBox renderType="Bare" class="hrxLeaveHalfDayRow">
+							<Text text="{ml>displayDate}" class="hrxLeaveHalfDayDate" />
+							<SegmentedButton selectedKey="{ml>SelectedKey}" class="hrxLeaveSeg">
+								<items>
+									<SegmentedButtonItem text="{i18n>mlFullDay}" key="F" enabled="{ml>FullDayEnabled}" />
+									<SegmentedButtonItem text="{i18n>mlAm}" key="A" enabled="{ml>AMEnabled}" />
+									<SegmentedButtonItem text="{i18n>mlPm}" key="P" enabled="{ml>PMEnabled}" />
+								</items>
+							</SegmentedButton>
+						</HBox>
+					</CustomListItem>
+				</List>
+			</VBox>
 		</content>
 		<beginButton>
-			<Button id="leaveHalfDayConfirm" text="{i18n>mlConfirm}" type="Emphasized" press=".onConfirmHalfDays" />
+			<Button id="leaveHalfDayConfirm" text="{i18n>mlConfirm}" type="Emphasized" press=".onConfirmHalfDays" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="leaveHalfDayReset" text="{i18n>mlReset}" press=".onResetHalfDays" />
+			<Button id="leaveHalfDayReset" text="{i18n>mlReset}" press=".onResetHalfDays" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

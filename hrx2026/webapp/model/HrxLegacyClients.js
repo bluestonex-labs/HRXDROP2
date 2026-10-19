@@ -94,12 +94,30 @@ sap.ui.define([
 			}).then(function () {
 				return ok({});
 			});
+		},
+
+		"delete": function (oBody) {
+			return Hrx.remove("ClientUsers(" + oBody.UserID + ")").then(function () {
+				return ok({});
+			});
 		}
 	};
 
 	/* --------------------------------------------------------------- */
 	/* service levels (supportx/ManageSLA.xsjs)                         */
 	/* --------------------------------------------------------------- */
+
+	// The page knows a service level by its client and severity.
+	function findServiceLevel(oBody) {
+		return Hrx.list("ClientSLAs", {
+			$filter: "Client_ID eq " + oBody.OrgID + " and Severity eq " + Hrx.literal(oBody.PriorityID)
+		}).then(function (aSlas) {
+			if (!aSlas.length) {
+				throw new Error("That service level no longer exists.");
+			}
+			return aSlas[0];
+		});
+	}
 
 	var ServiceLevels = {
 		fetch: function (oParams) {
@@ -133,16 +151,19 @@ sap.ui.define([
 
 		// The page edits a service level by its severity, which it does not let you change.
 		update: function (oBody) {
-			return Hrx.list("ClientSLAs", {
-				$filter: "Client_ID eq " + oBody.OrgID + " and Severity eq " + Hrx.literal(oBody.PriorityID)
-			}).then(function (aSlas) {
-				if (!aSlas.length) {
-					throw new Error("That service level no longer exists.");
-				}
-				return Hrx.update("ClientSLAs(" + aSlas[0].ID + ")", {
+			return findServiceLevel(oBody).then(function (oSla) {
+				return Hrx.update("ClientSLAs(" + oSla.ID + ")", {
 					ResponseHours: parseFloat(oBody.ResponseSLA) || 0,
 					ResolutionHours: parseFloat(oBody.ResolutionSLA) || 0
 				});
+			}).then(function () {
+				return ok({});
+			});
+		},
+
+		"delete": function (oBody) {
+			return findServiceLevel(oBody).then(function (oSla) {
+				return Hrx.remove("ClientSLAs(" + oSla.ID + ")");
 			}).then(function () {
 				return ok({});
 			});
@@ -241,6 +262,24 @@ sap.ui.define([
 			}).then(function () {
 				return ok({});
 			});
+		},
+
+		// RecordID is the ClientApplications row's ID (see ClientAppServiceView below).
+		update: function (oBody) {
+			return Hrx.update("ClientApplications(" + oBody.RecordID + ")", {
+				AppName: oBody.AppID,
+				ServiceName: oBody.ServiceID,
+				ValidFrom: day(oBody.ValidFrom),
+				ValidTill: day(oBody.ValidTill)
+			}).then(function () {
+				return ok({});
+			});
+		},
+
+		"delete": function (oBody) {
+			return Hrx.remove("ClientApplications(" + oBody.RecordID + ")").then(function () {
+				return ok({});
+			});
 		}
 	};
 
@@ -336,6 +375,7 @@ sap.ui.define([
 				return (sClientKey ? byClient("ClientApplications", sClientKey) : Hrx.list("ClientApplications")).then(function (aRows) {
 					return aRows.map(function (oRow) {
 						return {
+							RecordID: oRow.ID,
 							ClientKey: oRow.Client_ID,
 							AppID: oRow.AppName || "",
 							ServiceID: oRow.ServiceName || "",

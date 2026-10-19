@@ -1,0 +1,42 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<!-- Home: the design's date picker (.date-popover). A month of day buttons with
+	     the month name and two arrows above it and a hint below. Quick Leave picks a
+	     range in it (days before today cannot be picked); Quick Timesheet picks a
+	     single day. The grid is built by Home.controller _renderCalendar into
+	     home>/cal. Styled in css/pages/home.css (.hrxHomeDatePop). -->
+	<Popover
+		id="homeDatePopover"
+		showHeader="false"
+		showArrow="false"
+		placement="Bottom"
+		offsetY="6"
+		contentWidth="282px"
+		horizontalScrolling="false"
+		verticalScrolling="false"
+		class="hrxHomeDatePop">
+		<VBox renderType="Bare" class="hrxHomeDp">
+			<HBox renderType="Bare" class="hrxHomeDpHead">
+				<Button icon="sap-icon://navigation-left-arrow" tooltip="{i18n>homeDpPrev}"
+					press=".onCalendarPrevMonth" class="hrxHomeDpNav hrxHomeDpPrev" />
+				<Text text="{home>/cal/title}" class="hrxHomeDpTitle" />
+				<Button icon="sap-icon://navigation-right-arrow" tooltip="{i18n>homeDpNext}"
+					press=".onCalendarNextMonth" class="hrxHomeDpNav hrxHomeDpNext" />
+			</HBox>
+			<HBox renderType="Bare" items="{home>/cal/weekdays}" class="hrxHomeDpGrid">
+				<Text text="{home>name}" class="hrxHomeDpDow" />
+			</HBox>
+			<HBox renderType="Bare" items="{home>/cal/days}" class="hrxHomeDpGrid">
+				<Button text="{home>text}" enabled="{home>enabled}" tooltip="{home>tooltip}"
+					press=".onCalendarDayPress" class="hrxHomeDpDay">
+					<customData>
+						<core:CustomData key="muted" value="{= ${home>muted} ? 'true' : 'false' }" writeToDom="true" />
+						<core:CustomData key="range" value="{home>range}" writeToDom="true" />
+					</customData>
+				</Button>
+			</HBox>
+			<Text text="{home>/cal/foot}" class="hrxHomeDpFoot" />
+		</VBox>
+	</Popover>
+</core:FragmentDefinition>

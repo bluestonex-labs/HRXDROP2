@@ -1,112 +1,114 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- New / Edit Component: the design's wide two-column modal. Software, component
+	     and sub-component are suggestions from the names already in use; a name typed
+	     in that is not in the list yet is kept too (see onSaveComponent). -->
 	<Dialog
 		id="clientComponentDialog"
 		title="{= ${mcForm>/mode} === 'edit' ? ${i18n>mcEditComponentTitle} : ${i18n>mcAddComponentTitle} }"
-		contentWidth="44rem"
 		busy="{mcView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxManageClientsDialog">
 		<content>
-			<form:SimpleForm
-				id="clientComponentForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="2"
-				columnsL="2"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<core:Title text="{i18n>mcSectionComponent}" />
-
-					<Label text="{i18n>mcFieldSoftware}" required="true" />
+			<VBox renderType="Bare" class="hrxMcGrid">
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSoftware}" required="true" labelFor="componentSoftware" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="componentSoftware"
 						selectedKey="{mcForm>/Software}"
 						items="{mc>/softwares}"
-						showSecondaryValues="true"
 						selectionChange=".onSoftwareChange"
+						width="100%"
 						placeholder="{i18n>mcFieldSoftwarePlaceholder}">
-						<core:ListItem key="{mc>AppID}" text="{mc>AppName}" additionalText="{mc>AppType}" />
+						<core:ListItem key="{mc>AppID}" text="{mc>AppName}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldComponent}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldComponent}" required="true" labelFor="componentComponent" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="componentComponent"
 						selectedKey="{mcForm>/Component}"
 						items="{mc>/componentChoices}"
 						selectionChange=".onComponentChange"
+						width="100%"
 						placeholder="{i18n>mcFieldComponentPlaceholder}">
 						<core:ListItem key="{mc>ComponentID}" text="{mc>ComponentName}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldSubComponent}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSubComponent}" labelFor="componentSubComponent" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="componentSubComponent"
 						selectedKey="{mcForm>/SubComponent}"
 						items="{mc>/subComponentChoices}"
+						width="100%"
 						placeholder="{i18n>mcFieldSubComponentPlaceholder}">
 						<core:ListItem key="{mc>SubComponentID}" text="{mc>SubComponentName}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldValidFrom}" />
-					<DatePicker id="componentValidFrom" dateValue="{mcForm>/ValidFrom}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mcFieldValidTill}" />
-					<DatePicker id="componentValidTill" dateValue="{mcForm>/ValidTill}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mcFieldSupported}" />
-					<Switch id="componentSupported" state="{mcForm>/IsSupported}" customTextOn="{i18n>mcYes}" customTextOff="{i18n>mcNo}" />
-
-					<core:Title text="{i18n>mcSectionSystem}" />
-
-					<Label text="{i18n>mcFieldSystemNo}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSystemNo}" labelFor="componentSystemNo" class="hrxModalLabel hrxMcLbl" />
 					<Input id="componentSystemNo" value="{mcForm>/SystemNo}" />
-
-					<Label text="{i18n>mcFieldInstallDate}" />
-					<DatePicker id="componentInstallDate" dateValue="{mcForm>/InstallDate}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mcFieldSapVersion}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldValidFrom}" labelFor="componentValidFrom" class="hrxModalLabel hrxMcLbl" />
+					<DatePicker id="componentValidFrom" dateValue="{mcForm>/ValidFrom}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="dd/mm/yyyy" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldValidTill}" labelFor="componentValidTill" class="hrxModalLabel hrxMcLbl" />
+					<DatePicker id="componentValidTill" dateValue="{mcForm>/ValidTill}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="dd/mm/yyyy" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldInstallDate}" labelFor="componentInstallDate" class="hrxModalLabel hrxMcLbl" />
+					<DatePicker id="componentInstallDate" dateValue="{mcForm>/InstallDate}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="dd/mm/yyyy" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSapVersion}" labelFor="componentSapVersion" class="hrxModalLabel hrxMcLbl" />
 					<Input id="componentSapVersion" value="{mcForm>/SAPVersion}" />
-
-					<Label text="{i18n>mcFieldObjectCost}" />
-					<Input id="componentObjectCost" value="{mcForm>/ObjectCost}" type="Number" />
-
-					<Label text="{i18n>mcFieldSupportCost}" />
-					<Input id="componentSupportCost" value="{mcForm>/SupportCost}" type="Number" />
-
-					<Label text="{i18n>mcFieldCloudCustomer}" />
-					<Switch id="componentCloud" state="{mcForm>/IsCloudCustomer}" customTextOn="{i18n>mcYes}" customTextOff="{i18n>mcNo}" />
-
-					<core:Title text="{i18n>mcSectionMessages}" />
-
-					<Label text="{i18n>mcFieldShowWarning}" />
-					<Switch id="componentShowWarning" state="{mcForm>/ShowWarning}" customTextOn="{i18n>mcShow}" customTextOff="{i18n>mcHide}" />
-
-					<Label text="{i18n>mcFieldWarningMessage}" />
-					<TextArea id="componentWarningMessage" value="{mcForm>/WarningMessage}" rows="3" width="100%" growing="true" />
-
-					<Label text="{i18n>mcFieldHardMessage}" />
-					<TextArea id="componentHardMessage" value="{mcForm>/HardMessage}" rows="3" width="100%" growing="true" />
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldObjectCost}" labelFor="componentObjectCost" class="hrxModalLabel hrxMcLbl" />
+					<HBox renderType="Bare" class="hrxMcSfx">
+						<Input id="componentObjectCost" value="{mcForm>/ObjectCost}" type="Number" />
+						<Text text="{i18n>mcCurrencyGbp}" />
+					</HBox>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSupportCost}" labelFor="componentSupportCost" class="hrxModalLabel hrxMcLbl" />
+					<HBox renderType="Bare" class="hrxMcSfx">
+						<Input id="componentSupportCost" value="{mcForm>/SupportCost}" type="Number" />
+						<Text text="{i18n>mcCurrencyGbp}" />
+					</HBox>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldSupported}" labelFor="componentSupported" class="hrxModalLabel hrxMcLbl" />
+					<Switch id="componentSupported" state="{mcForm>/IsSupported}" customTextOn=" " customTextOff=" " class="hrxMcSwitch" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldCloudCustomer}" labelFor="componentCloud" class="hrxModalLabel hrxMcLbl" />
+					<Switch id="componentCloud" state="{mcForm>/IsCloudCustomer}" customTextOn=" " customTextOff=" " class="hrxMcSwitch" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldShowWarning}" labelFor="componentShowWarning" class="hrxModalLabel hrxMcLbl" />
+					<Switch id="componentShowWarning" state="{mcForm>/ShowWarning}" customTextOn=" " customTextOff=" " class="hrxMcSwitch" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld hrxMcSpan2">
+					<Label text="{i18n>mcFieldWarningMessage}" labelFor="componentWarningMessage" class="hrxModalLabel hrxMcLbl" />
+					<Input id="componentWarningMessage" value="{mcForm>/WarningMessage}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld hrxMcSpan2">
+					<Label text="{i18n>mcFieldHardMessage}" labelFor="componentHardMessage" class="hrxModalLabel hrxMcLbl" />
+					<Input id="componentHardMessage" value="{mcForm>/HardMessage}" />
+				</VBox>
+			</VBox>
 		</content>
 		<beginButton>
-			<Button id="componentConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveComponent" />
+			<Button id="componentConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveComponent" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="componentCancel" text="{i18n>mcCancel}" press=".onCancelComponent" />
+			<Button id="componentCancel" text="{i18n>mcCancel}" press=".onCancelComponent" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

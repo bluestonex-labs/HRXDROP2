@@ -2,23 +2,18 @@
 	controllerName="bsx.hrx.hrx2026.controller.AppExplorer"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
-	displayBlock="true">
+	displayBlock="true"
+	class="hrxPageExplorer">
 	<Page id="explorerPage" showHeader="false" showNavButton="false" class="hrxPageContent">
-		<f:GridContainer
-			items="{app>/explorerApps}"
-			snapToRow="true"
-			class="sapUiSmallMarginTop sapUiSmallMarginBeginEnd">
-			<f:layout>
-				<f:GridContainerSettings rowSize="5.5rem" columnSize="17rem" gap="1rem" />
-			</f:layout>
+		<!-- The design's .grid-3 of .app-card tiles: a title and a line saying what the app does.
+		     The catalogue is model/apps.json (explorerApps). -->
+		<HBox items="{app>/explorerApps}" renderType="Bare" class="hrxAeGrid">
 			<GenericTile
-				class="hrxAppTile"
 				header="{app>title}"
 				subheader="{app>subtitle}"
 				mode="HeaderMode"
-				frameType="TwoByHalf"
-				press="onTilePress" />
-		</f:GridContainer>
+				press=".onTilePress"
+				class="hrxAeCard" />
+		</HBox>
 	</Page>
 </mvc:View>

@@ -12,7 +12,9 @@ sap.ui.define([
 	 *
 	 * Bookings come back in the shape TimesheetReport works on:
 	 *   { EmpID, Name, Email, ClientKey, ClientDesc, ProjectKey, ProjectDesc, PONo,
-	 *     Billable, DayRate, Currency, entries: [{ RecID, Date, Minutes, Comment }] }
+	 *     Billable, DayRate, Currency, Assigned, entries: [{ RecID, Date, Minutes, Comment }] }
+	 * Assigned is true where the person is assigned to the project (UserToProject);
+	 * an active assignment with no time in the range comes back with no entries.
 	 */
 
 	return {
@@ -87,6 +89,7 @@ sap.ui.define([
 							Billable: HrxTime.isBillable(oProject, oRate),
 							DayRate: oRate.DayRate,
 							Currency: oRate.Currency,
+							Assigned: !!mRates[sKey],
 							entries: []
 						};
 					}
@@ -97,6 +100,33 @@ sap.ui.define([
 						Minutes: HrxTime.minutes(oEntry.Hours),
 						Comment: oEntry.Comment || ""
 					});
+				});
+
+				// Assignments with no time in the range still belong in Billing by
+				// assignment ("No bookings"), as long as the person and the project are
+				// both still active.
+				Object.keys(mRates).forEach(function (sKey) {
+					var aKey = sKey.split("|");
+					var oPerson = mPeople[aKey[0]];
+					var oProject = mProjects[aKey[1]];
+					if (mBookings[sKey] || !oPerson || !oPerson.IsActive || !oProject || !oProject.IsActive) {
+						return;
+					}
+					mBookings[sKey] = {
+						EmpID: aKey[0],
+						Name: oPerson.Name,
+						Email: oPerson.Email,
+						ClientKey: oProject.ClientKey,
+						ClientDesc: oProject.ClientDesc,
+						ProjectKey: aKey[1],
+						ProjectDesc: oProject.ProjectDesc,
+						PONo: oProject.PONumber,
+						Billable: HrxTime.isBillable(oProject, mRates[sKey]),
+						DayRate: mRates[sKey].DayRate,
+						Currency: mRates[sKey].Currency,
+						Assigned: true,
+						entries: []
+					};
 				});
 
 				return {

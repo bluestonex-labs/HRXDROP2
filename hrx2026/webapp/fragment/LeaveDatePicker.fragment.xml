@@ -1,0 +1,63 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- The design's date range picker (.date-popover): a month grid under the Dates
+	     field. The first click picks the start date, the second the end date; days
+	     before today cannot be picked. Filled from the mlPicker model by the
+	     Leave controller. -->
+	<Popover
+		id="leaveDatePopover"
+		showHeader="false"
+		showArrow="false"
+		placement="Bottom"
+		contentWidth="284px"
+		offsetY="6"
+		class="hrxMyLeavePicker">
+		<content>
+			<VBox renderType="Bare" class="hrxLeavePicker">
+				<HBox renderType="Bare" class="hrxLeavePickerHead">
+					<Button
+						id="leavePickerPrevious"
+						icon="sap-icon://navigation-left-arrow"
+						tooltip="{i18n>mlPreviousMonth}"
+						press=".onPickerPrevious"
+						class="hrxLeavePickerNav" />
+					<Text text="{mlPicker>/title}" class="hrxLeavePickerTitle" />
+					<Button
+						id="leavePickerNext"
+						icon="sap-icon://navigation-right-arrow"
+						tooltip="{i18n>mlNextMonth}"
+						press=".onPickerNext"
+						class="hrxLeavePickerNav" />
+				</HBox>
+
+				<HBox renderType="Bare" class="hrxLeavePickerGrid">
+					<Text text="{i18n>mlDayMo}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDayTu}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDayWe}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDayTh}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDayFr}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDaySa}" class="hrxLeavePickerWeekday" />
+					<Text text="{i18n>mlDaySu}" class="hrxLeavePickerWeekday" />
+				</HBox>
+
+				<!-- data-cell carries muted / disabled / range-start / in-range / range-end -->
+				<HBox id="leavePickerGrid" renderType="Bare" class="hrxLeavePickerGrid" items="{mlPicker>/cells}">
+					<Button
+						text="{mlPicker>label}"
+						tooltip="{mlPicker>tooltip}"
+						enabled="{mlPicker>enabled}"
+						press=".onPickerDayPress"
+						class="hrxLeavePickerDay">
+						<customData>
+							<core:CustomData key="cell" value="{mlPicker>state}" writeToDom="true" />
+						</customData>
+					</Button>
+				</HBox>
+
+				<Text text="{mlPicker>/hint}" class="hrxLeavePickerFoot" />
+			</VBox>
+		</content>
+	</Popover>
+</core:FragmentDefinition>

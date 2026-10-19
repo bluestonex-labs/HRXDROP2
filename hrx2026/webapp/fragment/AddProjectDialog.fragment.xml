@@ -1,114 +1,85 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:grid="sap.ui.layout.cssgrid">
 
+	<!-- New project, as the design's modal: the name, the client and type it is
+	     charged as, its manager and priority. Everything else (areas, commercials,
+	     dates) is set on the project's Info tab once it is created. -->
 	<Dialog
 		id="addProjectDialog"
 		title="{i18n>mpAddTitle}"
-		contentWidth="40rem"
 		busy="{mpView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxMpDialog">
 		<content>
-			<form:SimpleForm
-				id="addProjectForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<core:Title text="{i18n>mpSectionBasic}" />
-
-					<Label text="{i18n>mpFieldDesc}" required="true" />
-					<Input id="newProjectDesc" value="{mpForm>/ProjectDesc}" placeholder="{i18n>mpFieldDescPlaceholder}" />
-
-					<Label text="{i18n>mpFieldClient}" required="true" />
+			<grid:CSSGrid id="addProjectGrid" class="hrxMpGrid">
+				<VBox renderType="Bare" class="hrxMpField">
+					<layoutData>
+						<grid:GridItemLayoutData gridColumn="1 / -1" />
+					</layoutData>
+					<Label text="{i18n>mpFieldDesc}" labelFor="newProjectDesc" required="true" class="hrxModalLabel" />
+					<Input
+						id="newProjectDesc"
+						value="{mpForm>/ProjectDesc}"
+						placeholder="{i18n>mpFieldDescPlaceholder}"
+						class="hrxMpInput" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldClient}" labelFor="newProjectClient" required="true" class="hrxModalLabel" />
 					<ComboBox
 						id="newProjectClient"
 						selectedKey="{mpForm>/ClientKey}"
 						items="{mp>/clients}"
-						showSecondaryValues="true"
-						placeholder="{i18n>mpFieldClientPlaceholder}">
-						<core:ListItem key="{mp>ClientKey}" text="{mp>ClientDesc}" additionalText="{mp>ClientLocation}" />
+						width="100%"
+						placeholder="{i18n>mpFieldClientPlaceholder}"
+						class="hrxMpInput hrxMpSelect">
+						<core:ListItem key="{mp>ClientKey}" text="{mp>ClientDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mpFieldType}" required="true" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldType}" labelFor="newProjectType" required="true" class="hrxModalLabel" />
 					<ComboBox
 						id="newProjectType"
 						selectedKey="{mpForm>/ProjectTypeKey}"
 						items="{mp>/projectTypes}"
-						placeholder="{i18n>mpFieldTypePlaceholder}">
+						width="100%"
+						placeholder="{i18n>mpFieldTypePlaceholder}"
+						class="hrxMpInput hrxMpSelect">
 						<core:ListItem key="{mp>ProjectTypeKey}" text="{mp>ProjectTypeDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mpFieldPriority}" />
-					<ComboBox
-						id="newProjectPriority"
-						selectedKey="{mpForm>/PriorityKey}"
-						items="{mp>/priorities}"
-						showSecondaryValues="true"
-						placeholder="{i18n>mpFieldPriorityPlaceholder}">
-						<core:ListItem key="{mp>PriorityKey}" text="{mp>PriorityDesc}" additionalText="{mp>PriorityKey}" />
-					</ComboBox>
-
-					<Label text="{i18n>mpFieldManager}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldManager}" labelFor="newProjectManager" class="hrxModalLabel" />
 					<ComboBox
 						id="newProjectManager"
 						selectedKey="{mpForm>/ProjectManagerID}"
 						items="{mp>/managers}"
-						showSecondaryValues="true"
-						placeholder="{i18n>mpFieldManagerPlaceholder}">
-						<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" additionalText="{mp>EmpID}" />
+						width="100%"
+						placeholder="{i18n>mpFieldManagerPlaceholder}"
+						class="hrxMpInput hrxMpSelect">
+						<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" />
 					</ComboBox>
-
-					<Label text="{i18n>mpFieldAreas}" visible="{mp>/tasksAvailable}" />
-					<MultiComboBox
-						id="newProjectAreas"
-						visible="{mp>/tasksAvailable}"
-						selectedKeys="{mpForm>/taskKeys}"
-						items="{mp>/tasks}"
-						placeholder="{i18n>mpFieldAreasPlaceholder}">
-						<core:Item key="{mp>TaskKey}" text="{mp>TaskDesc}" />
-					</MultiComboBox>
-
-					<core:Title text="{i18n>mpSectionCommercials}" />
-
-					<Label text="{i18n>mpFieldPoNumber}" />
-					<Input id="newProjectPoNumber" value="{mpForm>/PONumber}" placeholder="{i18n>mpFieldPoNumberPlaceholder}" />
-
-					<Label text="{i18n>mpFieldPoValue}" />
-					<Input id="newProjectPoValue" value="{mpForm>/POValue}" type="Number" description="GBP" />
-
-					<Label text="{i18n>mpFieldBillableDays}" />
-					<Input id="newProjectBillableDays" value="{mpForm>/TotBillableDays}" type="Number" />
-
-					<Label text="{i18n>mpFieldStartDate}" />
-					<DatePicker id="newProjectStartDate" dateValue="{mpForm>/StartDate}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mpFieldEndDate}" />
-					<DatePicker id="newProjectEndDate" dateValue="{mpForm>/EndDate}" valueFormat="yyyy-MM-dd" />
-
-					<Label text="{i18n>mpFieldTimeBooking}" />
-					<Switch id="newProjectTimeBooking" state="{mpForm>/TimeBooking}" type="AcceptReject" />
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMpField">
+					<Label text="{i18n>mpFieldPriority}" labelFor="newProjectPriority" class="hrxModalLabel" />
+					<ComboBox
+						id="newProjectPriority"
+						selectedKey="{mpForm>/PriorityKey}"
+						items="{mp>/priorities}"
+						width="100%"
+						placeholder="{i18n>mpFieldPriorityPlaceholder}"
+						class="hrxMpInput hrxMpSelect">
+						<core:ListItem key="{mp>PriorityKey}" text="{mp>PriorityDesc}" />
+					</ComboBox>
+				</VBox>
+			</grid:CSSGrid>
 		</content>
 		<beginButton>
-			<Button id="newProjectConfirm" text="{i18n>mpAddConfirm}" type="Emphasized" press=".onCreateProject" />
+			<Button id="newProjectConfirm" text="{i18n>mpAddConfirm}" type="Emphasized" press=".onCreateProject" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="newProjectCancel" text="{i18n>mpCancel}" press=".onCancelAddProject" />
+			<Button id="newProjectCancel" text="{i18n>mpCancel}" press=".onCancelAddProject" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

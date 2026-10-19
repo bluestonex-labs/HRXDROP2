@@ -1,57 +1,44 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- New / Edit Service Level. A service level is kept per severity, so the
+	     severity of an existing one cannot be changed. -->
 	<Dialog
 		id="slaDialog"
 		title="{= ${mcForm>/mode} === 'edit' ? ${i18n>mcEditSlaTitle} : ${i18n>mcAddSlaTitle} }"
-		contentWidth="32rem"
 		busy="{mcView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxManageClientsDialog">
 		<content>
-			<form:SimpleForm
-				id="slaForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="5"
-				labelSpanL="5"
-				labelSpanM="5"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mcFieldSeverity}" required="true" />
+			<VBox renderType="Bare" class="hrxMcGrid">
+				<VBox renderType="Bare" class="hrxMcFld hrxMcSpan2">
+					<Label text="{i18n>mcFieldSeverity}" required="true" labelFor="slaSeverity" class="hrxModalLabel hrxMcLbl" />
 					<ComboBox
 						id="slaSeverity"
 						selectedKey="{mcForm>/PriorityID}"
 						items="{mc>/priorities}"
-						showSecondaryValues="true"
 						enabled="{= ${mcForm>/mode} !== 'edit' }"
+						width="100%"
 						placeholder="{i18n>mcFieldSeverityPlaceholder}">
-						<core:ListItem key="{mc>PriorityID}" text="{mc>PriorityDesc}" additionalText="{mc>PriorityID}" />
+						<core:ListItem key="{mc>PriorityID}" text="{mc>PriorityDesc}" />
 					</ComboBox>
-
-					<Label text="{i18n>mcFieldResponse}" required="true" />
-					<Input id="slaResponse" value="{mcForm>/ResponseSLA}" type="Number" placeholder="{i18n>mcFieldHoursPlaceholder}" />
-
-					<Label text="{i18n>mcFieldResolution}" required="true" />
-					<Input id="slaResolution" value="{mcForm>/ResolutionSLA}" type="Number" placeholder="{i18n>mcFieldHoursPlaceholder}" />
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldResponse}" required="true" labelFor="slaResponse" class="hrxModalLabel hrxMcLbl" />
+					<Input id="slaResponse" value="{mcForm>/ResponseSLA}" type="Number" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldResolution}" required="true" labelFor="slaResolution" class="hrxModalLabel hrxMcLbl" />
+					<Input id="slaResolution" value="{mcForm>/ResolutionSLA}" type="Number" />
+				</VBox>
+			</VBox>
 		</content>
 		<beginButton>
-			<Button id="slaConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveSla" />
+			<Button id="slaConfirm" text="{i18n>mcSave}" type="Emphasized" press=".onSaveSla" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="slaCancel" text="{i18n>mcCancel}" press=".onCancelSla" />
+			<Button id="slaCancel" text="{i18n>mcCancel}" press=".onCancelSla" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

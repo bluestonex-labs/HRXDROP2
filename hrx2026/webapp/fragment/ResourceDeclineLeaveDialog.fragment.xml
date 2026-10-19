@@ -1,0 +1,41 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- The design's "Decline leave request" modal: who, when and what, an optional
+	     note for the employee, then Reject (red) or Cancel. -->
+	<Dialog
+		id="resourceDeclineLeaveDialog"
+		title="{i18n>mrDeclineTitle}"
+		titleAlignment="Start"
+		class="hrxModal hrxMrDialog">
+		<content>
+			<VBox renderType="Bare" class="hrxMrFld hrxMrFldLast">
+				<Text text="{mrDecline>/summary}" class="hrxModalText" />
+				<Label class="hrxModalLabel" text="{i18n>mrDeclineNote}" labelFor="resourceDeclineNote" />
+				<TextArea
+					id="resourceDeclineNote"
+					width="100%"
+					rows="3"
+					maxLength="255"
+					value="{mrDecline>/note}"
+					placeholder="{i18n>mrDeclineNotePlaceholder}" />
+			</VBox>
+		</content>
+		<beginButton>
+			<Button
+				id="resourceDeclineConfirm"
+				text="{i18n>mrDeclineConfirm}"
+				type="Reject"
+				press=".onConfirmDeclineLeave"
+				class="hrxModalBtn hrxModalBtnDanger" />
+		</beginButton>
+		<endButton>
+			<Button
+				id="resourceDeclineCancel"
+				text="{i18n>mrCancel}"
+				press=".onCancelDeclineLeave"
+				class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

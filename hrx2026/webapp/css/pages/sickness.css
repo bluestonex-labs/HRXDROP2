@@ -1,1 +1,972 @@
 /* sickness - the 15.10.26 design, page by page (see css/style.css for what every page shares). */
+
+/* Everything here is scoped under the view's root class, .hrxSickness, or - for the
+   dialogs, which UI5 renders outside the view - under .hrxSicknessDialog. The
+   design's own line icons (img/icons/sickness-*.svg) are drawn with a CSS mask in
+   the text colour, the way the side rail draws its icons. */
+
+.hrxSickness,
+.hrxSicknessDialog {
+	--hrx-sick-xc: url("../../img/icons/sickness-xc.svg");
+	--hrx-sick-okc: url("../../img/icons/sickness-okc.svg");
+	--hrx-sick-tri: url("../../img/icons/sickness-tri.svg");
+	--hrx-sick-info: url("../../img/icons/sickness-info.svg");
+	--hrx-sick-mail: url("../../img/icons/sickness-mail.svg");
+	--hrx-sick-check: url("../../img/icons/sickness-check.svg");
+	--hrx-sick-chevron: url("../../img/icons/sickness-chevron.svg");
+	--hrx-sick-chevron-left: url("../../img/icons/sickness-chevron-left.svg");
+}
+
+/* ── ALERT (.alerts .alert) ───────────────────────────────────────────────── */
+
+.hrxSickness .hrxSickAlert {
+	gap: 12px;
+	padding: 11px 16px;
+	border: 1px solid;
+	border-radius: var(--radius-s);
+	box-sizing: border-box;
+}
+
+.hrxSickness .hrxSickAlert[data-state="crit"] {
+	background: var(--signal-soft);
+	border-color: #F3C4C6;
+	color: #991b1b;
+	--hrx-sick-alert-icon: var(--hrx-sick-xc);
+}
+
+.hrxSickness .hrxSickAlert[data-state="ok"] {
+	background: var(--mint-soft);
+	border-color: #B7E3CF;
+	color: #0F7B4F;
+	--hrx-sick-alert-icon: var(--hrx-sick-okc);
+}
+
+.hrxSickness .hrxSickAlert[data-state="info"] {
+	background: #E6F4FB;
+	border-color: #B9DDF0;
+	color: var(--ice-deep);
+	--hrx-sick-alert-icon: var(--hrx-sick-info);
+}
+
+.hrxSickness .hrxSickAlertIcon.sapUiIcon,
+.hrxSicknessDialog .hrxSickStripIcon.sapUiIcon {
+	width: 18px;
+	height: 18px;
+	flex-shrink: 0;
+	font-size: 0;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-sick-alert-icon) center / contain no-repeat;
+	mask: var(--hrx-sick-alert-icon) center / contain no-repeat;
+}
+
+.hrxSickness .hrxSickAlertIcon.sapUiIcon::before,
+.hrxSicknessDialog .hrxSickStripIcon.sapUiIcon::before {
+	content: none;
+}
+
+.hrxSickness .hrxSickAlertText.sapMText {
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 15px;
+	color: inherit;
+}
+
+/* "Service needed" note: only shown while the HRX service lacks the sickness services */
+.hrxSickness .hrxSickServiceNeeded {
+	margin-top: 16px;
+}
+
+/* ── SECTION HEADS (.section-head .section-title) ─────────────────────────── */
+
+/* 32px above a section that carries its own title, 16px under it */
+.hrxSickness .hrxSickSectionHead {
+	height: 16px;
+	margin: 32px 0 16px;
+}
+
+.hrxSickness .hrxSickSectionTitle.sapMTitle,
+.hrxSickness .hrxSickSectionTitle .sapMTitleInner {
+	font-family: var(--disp);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 16px;
+	letter-spacing: -.3px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+/* The financial year being looked at, with borderless arrows (as the design's
+   week navigation). Overhangs the 16px head rather than pushing it taller. */
+.hrxSickness .hrxSickYearNav {
+	gap: 2px;
+}
+
+.hrxSickness .hrxSickYearLabel.sapMText {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--txt-2);
+	white-space: nowrap;
+	margin: 0 4px;
+}
+
+.hrxSickness .hrxSickYearBtn.sapMBtn {
+	height: 26px;
+	padding: 0;
+}
+
+.hrxSickness .hrxSickYearBtn .sapMBtnInner {
+	width: 26px;
+	min-width: 26px;
+	height: 26px;
+	padding: 0;
+	border: none;
+	border-radius: 7px;
+	background: transparent;
+}
+
+.hrxSickness .hrxSickYearBtn .sapMBtnInner:hover {
+	background: var(--frost-2);
+}
+
+.hrxSickness .hrxSickYearBtn .sapMBtnIcon {
+	width: 13px;
+	height: 13px;
+	font-size: 0;
+	background-color: var(--txt-2);
+	-webkit-mask: var(--hrx-sick-chevron) center / contain no-repeat;
+	mask: var(--hrx-sick-chevron) center / contain no-repeat;
+}
+
+.hrxSickness .hrxSickYearPrev .sapMBtnIcon {
+	-webkit-mask-image: var(--hrx-sick-chevron-left);
+	mask-image: var(--hrx-sick-chevron-left);
+}
+
+.hrxSickness .hrxSickYearBtn .sapMBtnIcon::before {
+	content: none;
+}
+
+.hrxSickness .hrxSickYearBtn.sapMBtnDisabled {
+	opacity: .35;
+}
+
+/* ── CARDS (.card), STACK AND EMPTY STATE ─────────────────────────────────── */
+
+.hrxSickness .hrxSickCard {
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxSickness .hrxSickStack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* .empty-state: 44px above and below a display-face line */
+.hrxSickness .hrxSickEmpty {
+	padding: 44px 24px;
+}
+
+.hrxSickness .hrxSickEmptyTitle.sapMText {
+	display: block;
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 13px;
+	text-transform: uppercase;
+	color: var(--ink);
+	margin-bottom: 6px;
+}
+
+/* ── PILLS (.pill) AND AVATARS (.avatar-sm, .grad-av) ─────────────────────── */
+
+.hrxSickness .hrxSickPill.sapMText {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 13px;
+}
+
+.hrxSickness .hrxSickPill[data-kind="crit"] {
+	background: var(--signal-soft);
+	color: #991b1b;
+}
+
+.hrxSickness .hrxSickPill[data-kind="warn"] {
+	background: var(--amber-soft);
+	color: #92400e;
+}
+
+.hrxSickness .hrxSickPill[data-kind="ok"] {
+	background: var(--mint-soft);
+	color: #0F7B4F;
+}
+
+.hrxSickness .hrxSickPill[data-kind="info"] {
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+}
+
+.hrxSickness .hrxSickAvatar.sapMText {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: var(--ice-glow);
+	color: var(--ice-deep);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.hrxSickness .hrxSickAvatar.hrxSickAvatarGrad {
+	background: linear-gradient(135deg, var(--ice), #756EE5);
+	color: #fff;
+}
+
+.hrxSickness .hrxSickAvatar.hrxSickAvatarBig {
+	width: 42px;
+	height: 42px;
+	font-size: 14px;
+}
+
+/* .person: avatar, a bold name and a small line under it */
+.hrxSickness .hrxSickPerson {
+	gap: 10px;
+	min-width: 0;
+}
+
+.hrxSickness .hrxSickPersonName.sapMText {
+	font-size: 13.5px;
+	font-weight: 600;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickPersonSub.sapMText {
+	display: block;
+	font-size: 11.5px;
+	font-weight: 500;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* ── SMALL GHOST / PRIMARY BUTTONS (.btn.sm) ──────────────────────────────── */
+
+.hrxSickness .hrxSickBtnSm.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 7.26px 12px 4.74px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	color: var(--txt);
+	text-shadow: none;
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnInner:hover {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnInner.sapMBtnEmphasized {
+	border-color: transparent;
+	background: var(--ice);
+	color: #fff;
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnInner.sapMBtnEmphasized:hover {
+	background: var(--ice-deep);
+	color: #fff;
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 14px;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+.hrxSickness .hrxSickBtnSm .sapMBtnContent > bdi {
+	line-height: 14px;
+}
+
+/* the design's mail glyph, 14px, 5px before the text and lifted by the same
+   .12em the text is pushed down */
+.hrxSickness .hrxSickBtnMail .sapMBtnIcon {
+	width: 14px;
+	height: 14px;
+	margin: 0 5px 0 0;
+	position: relative;
+	top: -1.26px;
+	font-size: 0;
+	background-color: currentColor;
+	min-width: 0;
+	flex-shrink: 0;
+	padding: 0;
+	color: inherit;
+	-webkit-mask: var(--hrx-sick-mail) center / contain no-repeat;
+	mask: var(--hrx-sick-mail) center / contain no-repeat;
+}
+
+.hrxSickness .hrxSickBtnMail .sapMBtnIcon::before {
+	content: none;
+}
+
+.hrxSickness .hrxSickBtnMail .sapMBtnInner.sapMBtnIconFirst {
+	padding-left: 12px;
+}
+
+/* ── POLICY TRIGGER CARD (.trig) ──────────────────────────────────────────── */
+
+.hrxSickness .hrxSickTrigger:not([data-status="OPEN"]) {
+	opacity: .85;
+}
+
+.hrxSickness .hrxSickTrigHead {
+	gap: 14px;
+	padding: 16px 22px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxSickness .hrxSickTrigWho {
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxSickness .hrxSickTrigName.sapMText {
+	display: block;
+	font-family: var(--disp);
+	font-size: 15px;
+	font-weight: 800;
+	line-height: 13px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickTrigSub.sapMText {
+	display: block;
+	font-size: 12.5px;
+	line-height: 15px;
+	color: var(--txt-3);
+}
+
+/* Block layout, so the design's vertical margins collapse between the lines as
+   they do in the prototype (a flex column would add them up). */
+.hrxSickness .hrxSickTrigBody {
+	display: block;
+	padding: 18px 22px 20px;
+}
+
+.hrxSickness .hrxSickTrigRule.sapMText,
+.hrxSickness .hrxSickTrigSum.sapMText {
+	display: block;
+	font-size: 13.5px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickTrigSum.sapMText {
+	font-weight: 700;
+	margin: 4px 0 6px;
+}
+
+/* .trig-lbl: the small uppercase labels inside a card */
+.hrxSickness .hrxSickLabel.sapMText {
+	display: block;
+	margin: 18px 0 8px;
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 12px;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxSickness .hrxSickLabel.hrxSickLabelFirst {
+	margin-top: 0;
+}
+
+.hrxSickness .hrxSickTrigRec.sapMText {
+	display: block;
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: var(--ink);
+}
+
+/* .trig-note: the follow-up already sent */
+.hrxSickness .hrxSickTrigNote.sapMText {
+	display: block;
+	margin-top: 16px;
+	padding: 10px 14px;
+	border-radius: var(--radius-s);
+	background: var(--frost);
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+.hrxSickness .hrxSickTrigActs {
+	gap: 10px;
+	margin-top: 18px;
+}
+
+/* .trig-toggle: the absence history disclosure row */
+/* Closed, the next label sits 24px under the row (as the design measures);
+   open, the table follows 8px under it. */
+.hrxSickness .hrxSickToggleRow {
+	margin: 18px 0 24px;
+	height: 14px;
+}
+
+.hrxSickness .hrxSickToggleRow[data-open="yes"] {
+	margin-bottom: 8px;
+}
+
+.hrxSickness .hrxSickToggle.sapMBtn {
+	height: 14px;
+	padding: 0;
+	flex: 1;
+}
+
+.hrxSickness .hrxSickToggle .sapMBtnInner {
+	justify-content: flex-start;
+	height: 14px;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--txt-3);
+}
+
+.hrxSickness .hrxSickToggle .sapMBtnInner:hover,
+.hrxSickness .hrxSickToggle .sapMBtnInner:hover .sapMBtnIcon {
+	background: transparent;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickToggle .sapMBtnContent {
+	padding: 0;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	line-height: 14px;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+.hrxSickness .hrxSickToggle .sapMBtnIcon,
+.hrxSickness .hrxSickAllToggle .sapMBtnIcon {
+	width: 13px;
+	height: 13px;
+	margin: 0 8px 0 0;
+	font-size: 0;
+	color: inherit;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-sick-chevron) center / contain no-repeat;
+	mask: var(--hrx-sick-chevron) center / contain no-repeat;
+	min-width: 0;
+	flex-shrink: 0;
+	padding: 0;
+	transition: transform .15s;
+}
+
+.hrxSickness .hrxSickToggle .sapMBtnIcon::before,
+.hrxSickness .hrxSickAllToggle .sapMBtnIcon::before {
+	content: none;
+}
+
+.hrxSickness .hrxSickToggleRow[data-open="yes"] .sapMBtnIcon,
+.hrxSickness .hrxSickAll[data-open="yes"] .hrxSickAllToggle .sapMBtnIcon {
+	transform: rotate(90deg);
+}
+
+.hrxSickness .hrxSickToggleCount.sapMText {
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* .tscroll round the history table */
+.hrxSickness .hrxSickHistory {
+	border: 1px solid var(--line-soft);
+	border-radius: var(--radius-s);
+	overflow: hidden;
+}
+
+/* ── TABLES (the design's table / thead / tbody) ──────────────────────────── */
+
+.hrxSickness .hrxSickTable.sapMListTbl,
+.hrxSickness .hrxSickTable .sapMListTbl {
+	background: var(--surface);
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+	table-layout: fixed;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeader {
+	height: 29.5px;
+	border-bottom: 1px solid var(--line);
+	background: var(--frost);
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeaderCell,
+.hrxSickness .hrxSickTable .sapMListTblCell.sapMListTblHeaderCell {
+	height: 29.5px;
+	padding: 0 18px;
+	background: var(--frost);
+	box-sizing: border-box;
+	border: none;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeaderCell .sapMColumnHeader {
+	padding: 0;
+	min-height: 0;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeaderCell .sapMText {
+	line-height: 12px;
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+	white-space: nowrap;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblRow {
+	height: auto;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxSickness .hrxSickTable .sapMListTblRow:last-child {
+	border-bottom: none;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblCell {
+	height: auto;
+	padding: 12px 18px;
+	vertical-align: middle;
+	border: none;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeaderCell:first-child,
+.hrxSickness .hrxSickTable .sapMListTblCell:first-child,
+.hrxSickness .hrxSickTable .sapMListTblHighlightCell + .sapMListTblCell,
+.hrxSickness .hrxSickTable .sapMListTblHighlightCol + .sapMListTblHeaderCell {
+	padding-left: 20px;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblHeaderCell:last-child,
+.hrxSickness .hrxSickTable .sapMListTblCell:last-child,
+.hrxSickness .hrxSickTable .sapMListTblCell:nth-last-child(2) {
+	padding-right: 20px;
+}
+
+/* the highlight and navigation columns UI5 adds take no room */
+.hrxSickness .hrxSickTable .sapMListTblHighlightCell,
+.hrxSickness .hrxSickTable .sapMListTblHighlightCol,
+.hrxSickness .hrxSickTable .sapMListTblNavigatedCol,
+.hrxSickness .hrxSickTable .sapMListTblNavigatedCell,
+.hrxSickness .hrxSickTable .sapMListTblNavCol,
+.hrxSickness .hrxSickTable .sapMListTblDummyCell {
+	width: 0;
+	padding: 0;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblCell > .sapMText {
+	font-size: 13px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickTable .sapMListTblCell .hrxSickPill.sapMText {
+	font-size: 11px;
+	line-height: 13px;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblCell > .hrxSickPill[data-kind="warn"] {
+	color: #92400e;
+}
+
+.hrxSickness .hrxSickTable .sapMListTblCell > .hrxSickPill[data-kind="ok"] {
+	color: #0F7B4F;
+}
+
+.hrxSickness .hrxSickAllName.sapMText {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickTable .sapMListNoData {
+	padding: 44px 24px;
+	font-size: 12.5px;
+	color: var(--txt-3);
+	justify-content: center;
+}
+
+.hrxSickness .hrxSickTable .sapMGrowingList {
+	border-top: 1px solid var(--line-soft);
+}
+
+/* ── RETURN TO WORK (.rtw-grid, .rtw, .steps) ─────────────────────────────── */
+
+.hrxSickness .hrxSickRtwGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+	gap: 16px;
+}
+
+.hrxSickness .hrxSickRtwHead {
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxSickness .hrxSickRtwBody {
+	display: block;
+	padding: 18px 20px;
+}
+
+.hrxSickness .hrxSickSteps {
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxSickness .hrxSickStep {
+	gap: 12px;
+	padding: 11px 0;
+	border-bottom: 1px solid var(--line-soft);
+	min-height: 43px;
+	box-sizing: border-box;
+}
+
+.hrxSickness .hrxSickStep:last-child {
+	border-bottom: none;
+}
+
+/* .step-i: an empty ring, filled mint with the design's tick once done */
+.hrxSickness .hrxSickStepIcon.sapUiIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	border: 2px solid var(--line);
+	border-radius: 50%;
+	font-size: 0;
+	color: #fff;
+}
+
+.hrxSickness .hrxSickStepIcon.sapUiIcon::before {
+	content: none;
+}
+
+.hrxSickness .hrxSickStep[data-done="yes"] .hrxSickStepIcon {
+	background: var(--mint);
+	border-color: var(--mint);
+}
+
+.hrxSickness .hrxSickStep[data-done="yes"] .hrxSickStepIcon::after {
+	content: "";
+	width: 11px;
+	height: 11px;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-sick-check) center / contain no-repeat;
+	mask: var(--hrx-sick-check) center / contain no-repeat;
+}
+
+.hrxSickness .hrxSickStepText.sapMText {
+	flex: 1;
+	min-width: 0;
+	font-size: 13.5px;
+	line-height: 16px;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickStep[data-done="yes"] .hrxSickStepText {
+	color: var(--txt-2);
+}
+
+/* "Mark done" is 23px tall in a step row: 6px padding either side of the text */
+.hrxSickness .hrxSickStep .hrxSickBtnSm .sapMBtnInner {
+	padding-top: 5.76px;
+	padding-bottom: 1.24px;
+}
+
+.hrxSickness .hrxSickRtwFoot {
+	gap: 10px;
+	margin-top: 16px;
+}
+
+/* ── ALL SICKNESS CARD (#sickAllCard, a .card-head.toggle) ────────────────── */
+
+.hrxSickness .hrxSickAll {
+	margin-top: 16px;
+}
+
+.hrxSickness .hrxSickAllHead {
+	padding: 14px 20px;
+	min-height: 43px;
+	box-sizing: border-box;
+}
+
+.hrxSickness .hrxSickAll[data-open="yes"] .hrxSickAllHead {
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxSickness .hrxSickAllToggle.sapMBtn {
+	height: 15px;
+	padding: 0;
+}
+
+.hrxSickness .hrxSickAllToggle .sapMBtnInner {
+	height: 15px;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--txt-2);
+}
+
+.hrxSickness .hrxSickAllToggle .sapMBtnInner:hover {
+	background: transparent;
+}
+
+.hrxSickness .hrxSickAllToggle .sapMBtnIcon {
+	width: 15px;
+	height: 15px;
+	margin-right: 10px;
+}
+
+.hrxSickness .hrxSickAllToggle .sapMBtnContent {
+	padding: 0;
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 13px;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxSickness .hrxSickAllToggle .sapMBtnInner:hover .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxSickness .hrxSickAllHint.sapMText {
+	font-size: 11.5px;
+	line-height: 14px;
+	color: var(--txt-3);
+}
+
+/* ── DIALOGS ──────────────────────────────────────────────────────────────── */
+
+/* The modal itself - head, body padding, foot, buttons, labels - is the shared
+   hrxModal (css/style.css). What follows is only this page's form: the fields,
+   the check box and the strips. */
+.hrxSicknessDialog .hrxSickDlgBody {
+	display: block;
+}
+
+/* UI5 keeps room under the body for its own 40px footer bar; the design's foot
+   (frost, 14px 22px round 33px buttons) is 62px, so the body ends above it
+   rather than running under it. */
+.hrxApp .sapMDialog.hrxModal.hrxSicknessDialog {
+	padding-bottom: 62px;
+}
+
+/* .fld: label 6px over the control, 16px under each field */
+.hrxSicknessDialog .hrxSickField {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 16px;
+}
+
+.hrxSicknessDialog .hrxSickField.hrxSickFieldAfterStrip {
+	margin-top: 16px;
+}
+
+.hrxSicknessDialog .hrxSickField > .sapMLabel.hrxModalLabel {
+	height: 12px;
+	padding: 0;
+	line-height: 12px;
+}
+
+.hrxSicknessDialog .hrxSickField > .sapMLabel .sapMLabelTextWrapper {
+	line-height: 12px;
+}
+
+/* .req: the red asterisk, 3px after the label */
+.hrxSicknessDialog .hrxSickField > .sapMLabel.sapMLabelRequired .sapMLabelColonAndRequired::after,
+.hrxSicknessDialog .hrxSickField > .sapMLabel.sapMLabelRequired::after {
+	color: var(--signal);
+	font-size: 10.5px;
+	margin-left: 3px;
+}
+
+/* inputs, the combo box and the date range: 35px, 11px corners, 9px 12px */
+.hrxSicknessDialog .sapMInputBase {
+	height: 35px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxSicknessDialog .sapMInputBaseContentWrapper {
+	height: 35px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+}
+
+.hrxSicknessDialog .sapMInputBaseInner {
+	height: 33px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.hrxSicknessDialog .sapMInputBaseInner::placeholder {
+	color: var(--txt-2);
+	font-style: normal;
+}
+
+.hrxSicknessDialog .sapMInputBaseIconContainer {
+	height: 33px;
+}
+
+.hrxSicknessDialog .sapMInputBaseIconContainer .sapUiIcon {
+	color: var(--txt-2);
+	font-size: 14px;
+}
+
+.hrxSicknessDialog .sapMInputBase.sapMTextArea {
+	margin: 0 !important;
+}
+
+/* the TextArea's height property sizes its frame; the text box fills it */
+.hrxSicknessDialog .sapMTextArea .sapMInputBaseContentWrapper,
+.hrxSicknessDialog .sapMTextArea .sapMTextAreaInner {
+	height: 100%;
+	box-sizing: border-box;
+}
+
+.hrxSicknessDialog .sapMTextArea .sapMTextAreaInner {
+	resize: none;
+}
+
+.hrxSicknessDialog .sapMInputBaseContentWrapper:hover {
+	border-color: var(--ice);
+}
+
+/* .chk: "Fit note received", 12px above the strip */
+.hrxSicknessDialog .hrxSickCheck.sapMCb {
+	height: 16px;
+	margin: 0 0 12px;
+	padding: 0 0 0 23px;
+}
+
+.hrxSicknessDialog .hrxSickCheck .sapMCbBg {
+	top: 1.5px;
+	left: 0;
+	width: 13px;
+	height: 13px;
+	min-width: 0;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	border-radius: 3px;
+	box-sizing: border-box;
+	border: 1px solid #767676;
+}
+
+.hrxSicknessDialog .hrxSickCheck .sapMCbBg.sapMCbMarkChecked {
+	background: var(--ice);
+	border-color: var(--ice);
+}
+
+.hrxSicknessDialog .hrxSickCheck .sapMCbBg.sapMCbMarkChecked::after {
+	font-size: 9px;
+	line-height: 11px;
+	width: 11px;
+	color: #fff;
+}
+
+.hrxSicknessDialog .hrxSickCheck .sapMCbLabel {
+	padding: 0;
+	height: 16px;
+	line-height: 16px;
+	font-family: var(--sans);
+	font-size: 13.5px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+/* .strip: info (ice), warn (amber), or crit when the dates hold no working day */
+.hrxSicknessDialog .hrxSickStrip {
+	gap: 10px;
+	padding: 10px 14px;
+	border: 1px solid #B9DDF0;
+	border-radius: var(--radius-s);
+	background: #E6F4FB;
+	color: var(--ice-deep);
+	box-sizing: border-box;
+	--hrx-sick-alert-icon: var(--hrx-sick-info);
+}
+
+.hrxSicknessDialog .hrxSickStrip[data-kind="warn"] {
+	border-color: #F5D488;
+	background: var(--amber-soft);
+	color: #92400e;
+	--hrx-sick-alert-icon: var(--hrx-sick-tri);
+}
+
+.hrxSicknessDialog .hrxSickStrip[data-kind="crit"] {
+	border-color: #F3C4C6;
+	background: var(--signal-soft);
+	color: #991b1b;
+	--hrx-sick-alert-icon: var(--hrx-sick-xc);
+}
+
+.hrxSicknessDialog .hrxSickStripIcon.sapUiIcon {
+	width: 16px;
+	height: 16px;
+}
+
+.hrxSicknessDialog .hrxSickStripText.sapMText {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 500;
+	line-height: 16px;
+	color: inherit;
+}

@@ -1,67 +1,37 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
-	xmlns:core="sap.ui.core"
-	xmlns:u="sap.ui.unified"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:core="sap.ui.core">
 
+	<!-- The design's "New client" modal: name, location and contact name. The logo and
+	     the contact's email and phone are filled in on the client's Basic Info tab,
+	     which opens as soon as the client is created. -->
 	<Dialog
 		id="addClientDialog"
 		title="{i18n>mcAddTitle}"
-		contentWidth="36rem"
 		busy="{mcView>/saving}"
-		busyIndicatorDelay="0">
+		busyIndicatorDelay="0"
+		class="hrxModal hrxModalWide hrxManageClientsDialog">
 		<content>
-			<form:SimpleForm
-				id="addClientForm"
-				editable="true"
-				layout="ResponsiveGridLayout"
-				labelSpanXL="4"
-				labelSpanL="4"
-				labelSpanM="4"
-				labelSpanS="12"
-				adjustLabelSpan="false"
-				emptySpanXL="0"
-				emptySpanL="0"
-				emptySpanM="0"
-				emptySpanS="0"
-				columnsXL="1"
-				columnsL="1"
-				columnsM="1"
-				singleContainerFullSize="false">
-				<form:content>
-					<Label text="{i18n>mcFieldName}" required="true" />
+			<VBox renderType="Bare" class="hrxMcGrid">
+				<VBox renderType="Bare" class="hrxMcFld hrxMcSpan2">
+					<Label text="{i18n>mcFieldName}" required="true" labelFor="newClientName" class="hrxModalLabel hrxMcLbl" />
 					<Input id="newClientName" value="{mcForm>/ClientDesc}" placeholder="{i18n>mcFieldNamePlaceholder}" />
-
-					<Label text="{i18n>mcFieldLocation}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldLocation}" labelFor="newClientLocation" class="hrxModalLabel hrxMcLbl" />
 					<Input id="newClientLocation" value="{mcForm>/ClientLocation}" placeholder="{i18n>mcFieldLocationPlaceholder}" />
-
-					<Label text="{i18n>mcFieldContactName}" />
+				</VBox>
+				<VBox renderType="Bare" class="hrxMcFld">
+					<Label text="{i18n>mcFieldContactName}" labelFor="newClientContact" class="hrxModalLabel hrxMcLbl" />
 					<Input id="newClientContact" value="{mcForm>/ClientContactName}" placeholder="{i18n>mcFieldContactNamePlaceholder}" />
-
-					<Label text="{i18n>mcFieldContactEmail}" />
-					<Input id="newClientEmail" value="{mcForm>/ClientContactEmail}" type="Email" placeholder="{i18n>mcFieldContactEmailPlaceholder}" />
-
-					<Label text="{i18n>mcFieldContactPhone}" />
-					<Input id="newClientPhone" value="{mcForm>/ClientContactMobile}" type="Tel" placeholder="{i18n>mcFieldContactPhonePlaceholder}" />
-
-					<Label text="{i18n>mcFieldLogo}" />
-					<u:FileUploader
-						id="newClientLogoUploader"
-						name="newClientLogo"
-						uploadUrl=""
-						width="100%"
-						fileType="png,jpg,jpeg"
-						placeholder="{i18n>mcLogoPlaceholder}"
-						change=".onNewLogoChange"
-						typeMissmatch=".onLogoTypeMismatch" />
-				</form:content>
-			</form:SimpleForm>
+				</VBox>
+			</VBox>
 		</content>
 		<beginButton>
-			<Button id="newClientConfirm" text="{i18n>mcAddConfirm}" type="Emphasized" press=".onCreateClient" />
+			<Button id="newClientConfirm" text="{i18n>mcAddConfirm}" type="Emphasized" press=".onCreateClient" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="newClientCancel" text="{i18n>mcCancel}" press=".onCancelAddClient" />
+			<Button id="newClientCancel" text="{i18n>mcCancel}" press=".onCancelAddClient" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

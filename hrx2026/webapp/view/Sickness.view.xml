@@ -2,48 +2,13 @@
 	controllerName="bsx.hrx.hrx2026.controller.Sickness"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
 	xmlns:core="sap.ui.core"
-	xmlns:layout="sap.ui.layout"
 	displayBlock="true"
 	class="hrxSickness">
 
+	<!-- The 15.10.26 design's Sickness page. "Record sickness" is the page action in
+	     the shell's top bar, which calls onPageAction on this page's controller. -->
 	<Page id="sicknessPage" showHeader="false" title="{i18n>skTitle}" showNavButton="false" class="hrxPageContent">
-
-		<subHeader>
-			<OverflowToolbar id="sicknessToolbar" class="hrxFilterBar" visible="{app>/user/isManager}">
-				<Button
-					id="sicknessPrevYear"
-					icon="sap-icon://navigation-left-arrow"
-					type="Transparent"
-					tooltip="{i18n>skPreviousYear}"
-					press=".onStepYear">
-					<customData>
-						<core:CustomData key="step" value="previous" />
-					</customData>
-				</Button>
-				<Text text="{skView>/year/label}" class="hrxSkYearLabel" />
-				<Button
-					id="sicknessNextYear"
-					icon="sap-icon://navigation-right-arrow"
-					type="Transparent"
-					tooltip="{i18n>skNextYear}"
-					enabled="{= !${skView>/isCurrentYear} }"
-					press=".onStepYear">
-					<customData>
-						<core:CustomData key="step" value="next" />
-					</customData>
-				</Button>
-				<ToolbarSpacer />
-				<Button
-					id="sicknessRecord"
-					text="{i18n>skRecord}"
-					icon="sap-icon://add"
-					type="Emphasized"
-					press=".onOpenRecord" />
-			</OverflowToolbar>
-		</subHeader>
-
 		<content>
 			<!-- Manager rights come from the signed-in profile, so a direct link to this
 			     page still lands on the notice rather than on anyone's sickness record. -->
@@ -53,13 +18,16 @@
 				title="{i18n>skTitle}"
 				description="{i18n>adminRestricted}" />
 
-			<VBox visible="{app>/user/isManager}" busy="{skView>/busy}" busyIndicatorDelay="0" class="hrxSkBody">
+			<VBox visible="{app>/user/isManager}" busy="{skView>/busy}" busyIndicatorDelay="0" renderType="Bare" class="hrxSickBody">
 
-				<MessageStrip
-					text="{skView>/alert/text}"
-					type="{skView>/alert/type}"
-					showIcon="true"
-					class="hrxSkAlert" />
+				<!-- the policy alert: crit while any trigger is open, ok otherwise -->
+				<HBox alignItems="Center" renderType="Bare" class="hrxSickAlert">
+					<customData>
+						<core:CustomData key="state" value="{skView>/alert/state}" writeToDom="true" />
+					</customData>
+					<core:Icon src="sap-icon://message-information" class="hrxSickAlertIcon" />
+					<Text text="{skView>/alert/text}" class="hrxSickAlertText" />
+				</HBox>
 
 				<MessageStrip
 					text="{i18n>serviceNeededSickness}"
@@ -67,49 +35,84 @@
 					showIcon="true"
 					enableFormattedText="true"
 					visible="{= !${skView>/reviewBound} }"
-					class="sapUiSmallMarginBottom" />
+					class="hrxSickServiceNeeded" />
 
-				<!-- policy triggers -->
-				<Title text="{i18n>skTriggersTitle}" level="H2" class="hrxSectionTitle hrxSkSectionTitle" />
+				<!-- ============================ policy triggers ============================ -->
+				<!-- The financial year being looked at sits at the end of the section head:
+				     the design has one period only, the app can step back through past years. -->
+				<HBox alignItems="Center" justifyContent="SpaceBetween" renderType="Bare" class="hrxSickSectionHead">
+					<Title text="{i18n>skTriggersTitle}" level="H2" class="hrxSickSectionTitle" />
+					<HBox alignItems="Center" renderType="Bare" class="hrxSickYearNav">
+						<Button
+							id="sicknessPrevYear"
+							icon="sap-icon://navigation-left-arrow"
+							type="Transparent"
+							tooltip="{i18n>skPreviousYear}"
+							press=".onStepYear"
+							class="hrxSickYearBtn hrxSickYearPrev">
+							<customData>
+								<core:CustomData key="step" value="previous" />
+							</customData>
+						</Button>
+						<Text text="{skView>/year/label}" class="hrxSickYearLabel" />
+						<Button
+							id="sicknessNextYear"
+							icon="sap-icon://navigation-right-arrow"
+							type="Transparent"
+							tooltip="{i18n>skNextYear}"
+							enabled="{= !${skView>/isCurrentYear} }"
+							press=".onStepYear"
+							class="hrxSickYearBtn hrxSickYearNext">
+							<customData>
+								<core:CustomData key="step" value="next" />
+							</customData>
+						</Button>
+					</HBox>
+				</HBox>
 
-				<VBox class="hrxSkCard hrxSkEmpty" visible="{= ${sk>/triggers}.length === 0 }">
-					<Text text="{skView>/noTriggersText}" textAlign="Center" />
+				<VBox visible="{= ${sk>/triggers}.length === 0 }" renderType="Bare" class="hrxSickCard hrxSickEmpty">
+					<Text text="{skView>/noTriggersText}" textAlign="Center" class="hrxSickEmptyTitle" />
 				</VBox>
 
-				<VBox items="{path: 'sk>/triggers', templateShareable: false}" class="hrxSkStack">
-					<VBox class="hrxSkCard hrxSkTrigger">
+				<VBox items="{path: 'sk>/triggers', templateShareable: false}" renderType="Bare" class="hrxSickStack">
+					<VBox renderType="Bare" class="hrxSickCard hrxSickTrigger">
 						<customData>
 							<core:CustomData key="status" value="{sk>status}" writeToDom="true" />
 						</customData>
 
-						<HBox alignItems="Center" class="hrxSkCardHead">
-							<f:Avatar initials="{sk>initials}" displaySize="S" backgroundColor="Accent6" class="hrxSkAvatar" />
-							<VBox class="hrxSkCardWho">
-								<Text text="{sk>Name}" class="hrxSkName" />
-								<Text text="{skView>/year/label}" class="hrxSkSub" />
+						<HBox alignItems="Center" renderType="Bare" class="hrxSickTrigHead">
+							<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar hrxSickAvatarGrad hrxSickAvatarBig" />
+							<VBox renderType="Bare" class="hrxSickTrigWho">
+								<Text text="{sk>Name}" class="hrxSickTrigName" />
+								<Text text="{skView>/year/label}" class="hrxSickTrigSub" />
 							</VBox>
-							<ObjectStatus
-								text="{i18n>skEmailSent}"
-								icon="sap-icon://email"
-								state="Information"
-								inverted="true"
-								visible="{= ${sk>emailed} &amp;&amp; ${sk>status} === 'OPEN' }"
-								class="hrxSkPill" />
+							<Text text="{sk>pillText}" wrapping="false" class="hrxSickPill">
+								<customData>
+									<core:CustomData key="kind" value="{sk>pillKind}" writeToDom="true" />
+								</customData>
+							</Text>
 						</HBox>
 
-						<VBox class="hrxSkCardBody">
-							<Text text="{skView>/ruleText}" class="hrxSkRule" />
-							<Text text="{sk>summary}" class="hrxSkSummary" />
+						<VBox renderType="Bare" class="hrxSickTrigBody">
+							<Text text="{skView>/ruleText}" class="hrxSickTrigRule" />
+							<Text text="{sk>summary}" class="hrxSickTrigSum" />
 
-							<Panel expandable="true" expanded="{sk>expanded}" class="hrxSkHistory">
-								<headerToolbar>
-									<Toolbar style="Clear" height="auto">
-										<Text text="{i18n>skHistory}" class="hrxSkLabel" />
-										<ToolbarSpacer />
-										<Text text="{sk>historyCount}" class="hrxSkCount" />
-									</Toolbar>
-								</headerToolbar>
-								<Table items="{path: 'sk>absences', templateShareable: false}" class="hrxSkTable">
+							<!-- absence history: collapsed until asked for -->
+							<HBox alignItems="Center" renderType="Bare" class="hrxSickToggleRow">
+								<customData>
+									<core:CustomData key="open" value="{= ${sk>expanded} ? 'yes' : 'no' }" writeToDom="true" />
+								</customData>
+								<Button
+									text="{i18n>skHistory}"
+									icon="sap-icon://navigation-right-arrow"
+									type="Transparent"
+									press=".onToggleHistory"
+									class="hrxSickToggle" />
+								<Text text="{sk>historyCount}" wrapping="false" class="hrxSickToggleCount" />
+							</HBox>
+
+							<VBox visible="{sk>expanded}" renderType="Bare" class="hrxSickHistory">
+								<Table items="{path: 'sk>absences', templateShareable: false}" class="hrxSickTable">
 									<columns>
 										<Column width="40%"><Text text="{i18n>skColDate}" /></Column>
 										<Column width="20%" hAlign="Center"><Text text="{i18n>skColDuration}" /></Column>
@@ -125,132 +128,153 @@
 										</ColumnListItem>
 									</items>
 								</Table>
-							</Panel>
+							</VBox>
 
-							<Text text="{i18n>skRecommended}" class="hrxSkLabel" />
-							<Text text="{i18n>skRecommendation}" class="hrxSkRec" />
+							<Text text="{i18n>skRecommended}" class="hrxSickLabel" />
+							<Text text="{i18n>skRecommendation}" class="hrxSickTrigRec" />
 
 							<Text
 								text="{sk>emailedText}"
 								visible="{= ${sk>emailed} &amp;&amp; ${sk>status} === 'OPEN' }"
-								class="hrxSkNote hrxSkNoteEmailed" />
-							<HBox wrap="Wrap" visible="{= ${sk>status} === 'OPEN' }" class="hrxSkActions">
+								class="hrxSickTrigNote" />
+							<HBox wrap="Wrap" visible="{= ${sk>status} === 'OPEN' }" renderType="Bare" class="hrxSickTrigActs">
 								<Button
 									text="{= ${sk>emailed} ? ${i18n>skSendAnother} : ${i18n>skSendFollowUp} }"
 									icon="sap-icon://email"
-									press=".onSendFollowUp" />
+									press=".onSendFollowUp"
+									class="hrxSickBtnSm hrxSickBtnMail" />
 								<Button
 									text="{sk>dismissText}"
-									press=".onOpenDismiss" />
+									press=".onOpenDismiss"
+									class="hrxSickBtnSm" />
 							</HBox>
 						</VBox>
 					</VBox>
 				</VBox>
 
-				<!-- return to work -->
-				<Title text="{i18n>skRtwTitle}" level="H2" class="hrxSectionTitle hrxSkSectionTitle" />
+				<!-- ============================ return to work ============================= -->
+				<HBox alignItems="Center" renderType="Bare" class="hrxSickSectionHead">
+					<Title text="{i18n>skRtwTitle}" level="H2" class="hrxSickSectionTitle" />
+				</HBox>
 
-				<VBox class="hrxSkCard hrxSkEmpty" visible="{= ${sk>/rtw}.length === 0 }">
-					<Text text="{i18n>skNoRtw}" />
+				<VBox visible="{= ${sk>/rtw}.length === 0 }" renderType="Bare" class="hrxSickCard hrxSickEmpty">
+					<Text text="{i18n>skNoRtw}" textAlign="Center" class="hrxSickEmptyTitle" />
 				</VBox>
 
-				<layout:Grid
-					content="{path: 'sk>/rtw', templateShareable: false}"
-					defaultSpan="XL6 L6 M12 S12"
-					hSpacing="1"
-					vSpacing="1"
-					class="hrxSkRtwGrid">
-					<VBox class="hrxSkCard hrxSkRtw">
-						<HBox alignItems="Center" class="hrxSkCardHead">
-							<f:Avatar initials="{sk>initials}" displaySize="XS" backgroundColor="Accent6" class="hrxSkAvatar" />
-							<VBox class="hrxSkCardWho">
-								<Text text="{sk>Name}" class="hrxResourceName" />
-								<Text text="{sk>Title}" class="hrxResourceMeta" />
-							</VBox>
-							<ObjectStatus text="{i18n>skInProgress}" state="Warning" inverted="true" class="hrxSkPill" />
+				<!-- auto-fill columns of at least 380px, as the design's .rtw-grid -->
+				<FlexBox
+					items="{path: 'sk>/rtw', templateShareable: false}"
+					visible="{= ${sk>/rtw}.length > 0 }"
+					renderType="Bare"
+					class="hrxSickRtwGrid">
+					<VBox renderType="Bare" class="hrxSickCard hrxSickRtw">
+						<HBox alignItems="Center" justifyContent="SpaceBetween" renderType="Bare" class="hrxSickRtwHead">
+							<HBox alignItems="Center" renderType="Bare" class="hrxSickPerson">
+								<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar hrxSickAvatarGrad" />
+								<VBox renderType="Bare">
+									<Text text="{sk>Name}" class="hrxSickPersonName" />
+									<Text text="{sk>Title}" visible="{= !!${sk>Title} }" class="hrxSickPersonSub" />
+								</VBox>
+							</HBox>
+							<Text text="{i18n>skInProgress}" wrapping="false" class="hrxSickPill">
+								<customData>
+									<core:CustomData key="kind" value="warn" writeToDom="true" />
+								</customData>
+							</Text>
 						</HBox>
 
-						<VBox class="hrxSkCardBody">
-							<Text text="{i18n>skSteps}" class="hrxSkLabel hrxSkLabelFirst" />
-							<VBox items="{path: 'sk>steps', templateShareable: false}" class="hrxSkSteps">
-								<HBox alignItems="Center" class="hrxSkStep">
+						<VBox renderType="Bare" class="hrxSickRtwBody">
+							<Text text="{i18n>skSteps}" class="hrxSickLabel hrxSickLabelFirst" />
+							<VBox items="{path: 'sk>steps', templateShareable: false}" renderType="Bare" class="hrxSickSteps">
+								<HBox alignItems="Center" renderType="Bare" class="hrxSickStep">
 									<customData>
 										<core:CustomData key="done" value="{= ${sk>done} ? 'yes' : 'no' }" writeToDom="true" />
 									</customData>
-									<core:Icon src="{= ${sk>done} ? 'sap-icon://accept' : '' }" class="hrxSkStepIcon" />
-									<Text text="{sk>Text}" class="hrxSkStepText">
-										<layoutData>
-											<FlexItemData growFactor="1" />
-										</layoutData>
-									</Text>
+									<core:Icon src="sap-icon://accept" class="hrxSickStepIcon" />
+									<Text text="{sk>Text}" class="hrxSickStepText" />
 									<Button
 										text="{i18n>skMarkDone}"
 										visible="{= !${sk>done} }"
-										type="Transparent"
-										press=".onMarkStepDone" />
+										press=".onMarkStepDone"
+										class="hrxSickBtnSm" />
 								</HBox>
 							</VBox>
 
-							<HBox justifyContent="End" wrap="Wrap" class="hrxSkActions">
+							<HBox justifyContent="End" renderType="Bare" class="hrxSickRtwFoot">
 								<Button
 									text="{i18n>skEmail}"
 									icon="sap-icon://email"
 									enabled="{= !!${sk>Email} }"
-									press=".onEmailRtw" />
+									press=".onEmailRtw"
+									class="hrxSickBtnSm hrxSickBtnMail" />
 								<Button
 									text="{i18n>skCompleteRtw}"
 									type="Emphasized"
-									press=".onCompleteRtw" />
+									press=".onCompleteRtw"
+									class="hrxSickBtnSm" />
 							</HBox>
 						</VBox>
 					</VBox>
-				</layout:Grid>
+				</FlexBox>
 
-				<!-- every absence in the year, collapsed until asked for -->
-				<Panel expandable="true" expanded="{skView>/allExpanded}" class="hrxSkAll">
-					<headerToolbar>
-						<Toolbar style="Clear" class="hrxSkAllHead">
-							<Title text="{i18n>skAllTitle}" level="H3" class="hrxSkAllTitle" />
-							<ToolbarSpacer />
-							<Text text="{skView>/allCount}" class="hrxSkHint" />
-						</Toolbar>
-					</headerToolbar>
+				<!-- ============== every absence in the year, collapsed until asked for ============== -->
+				<VBox renderType="Bare" class="hrxSickCard hrxSickAll">
+					<customData>
+						<core:CustomData key="open" value="{= ${skView>/allExpanded} ? 'yes' : 'no' }" writeToDom="true" />
+					</customData>
+					<HBox alignItems="Center" justifyContent="SpaceBetween" renderType="Bare" class="hrxSickAllHead">
+						<Button
+							text="{i18n>skAllTitle}"
+							icon="sap-icon://navigation-right-arrow"
+							type="Transparent"
+							press=".onToggleAll"
+							class="hrxSickAllToggle" />
+						<Text text="{skView>/allCount}" wrapping="false" class="hrxSickAllHint" />
+					</HBox>
 					<Table
 						id="sicknessTable"
 						items="{sk>/absences}"
+						visible="{skView>/allExpanded}"
 						noDataText="{i18n>skNoAbsences}"
 						growing="true"
 						growingThreshold="50"
-						class="hrxSkTable">
+						class="hrxSickTable hrxSickAllTable">
 						<columns>
-							<Column width="28%"><Text text="{i18n>skColEmployee}" /></Column>
-							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
-							<Column width="6rem" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
-							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
+							<!-- the widths the design's table settles on at full width -->
+							<Column width="24%"><Text text="{i18n>skColEmployee}" /></Column>
+							<Column width="29%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
+							<Column width="13%" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
+							<Column width="18%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
+							<Column hAlign="End"><Text text="{i18n>skColStatus}" /></Column>
 						</columns>
 						<items>
 							<ColumnListItem>
 								<cells>
-									<HBox alignItems="Center">
-										<f:Avatar initials="{sk>initials}" displaySize="XS" backgroundColor="Accent6" class="sapUiTinyMarginEnd" />
-										<VBox>
-											<Text text="{sk>Name}" class="hrxResourceName" />
+									<HBox alignItems="Center" renderType="Bare" class="hrxSickPerson">
+										<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar" />
+										<VBox renderType="Bare">
+											<Text text="{sk>Name}" class="hrxSickAllName" />
 											<Text
 												text="{sk>dismissedNote}"
 												tooltip="{sk>dismissedTooltip}"
 												visible="{sk>dismissed}"
 												maxLines="2"
-												class="hrxResourceMeta hrxSkDismissedNote" />
+												class="hrxSickPersonSub" />
 										</VBox>
 									</HBox>
 									<Text text="{sk>dateText}" />
 									<Text text="{sk>durationText}" />
 									<Text text="{sk>Reason}" />
+									<Text text="{sk>statusText}" wrapping="false" class="hrxSickPill">
+										<customData>
+											<core:CustomData key="kind" value="{sk>statusKind}" writeToDom="true" />
+										</customData>
+									</Text>
 								</cells>
 							</ColumnListItem>
 						</items>
 					</Table>
-				</Panel>
+				</VBox>
 			</VBox>
 		</content>
 	</Page>

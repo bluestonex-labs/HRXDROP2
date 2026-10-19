@@ -1,40 +1,49 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
+	<!-- The design's "Dismiss policy trigger" modal (.modal, 460px): a warning that
+	     dismissals are auditable, and the reason, which is required. -->
 	<Dialog
 		id="dismissTriggerDialog"
 		title="{i18n>skDismissTitle}"
-		contentWidth="30rem"
-		class="sapUiContentPadding"
+		class="hrxModal hrxSicknessDialog"
 		afterClose=".onDismissAfterClose">
 		<content>
-			<VBox busy="{skDismiss>/saving}" busyIndicatorDelay="0">
-				<MessageStrip
-					text="{i18n>skDismissAudit}"
-					type="Warning"
-					showIcon="true"
-					class="sapUiSmallMarginBottom" />
-				<Label text="{i18n>skFieldReason}" required="true" labelFor="skDismissReason" />
-				<TextArea
-					id="skDismissReason"
-					width="100%"
-					rows="4"
-					maxLength="1000"
-					valueLiveUpdate="true"
-					value="{skDismiss>/Note}"
-					liveChange=".onDismissInput"
-					placeholder="{i18n>skDismissPlaceholder}" />
+			<VBox busy="{skDismiss>/saving}" busyIndicatorDelay="0" renderType="Bare" class="hrxSickDlgBody">
+				<HBox alignItems="Center" renderType="Bare" class="hrxSickStrip">
+					<customData>
+						<core:CustomData key="kind" value="warn" writeToDom="true" />
+					</customData>
+					<core:Icon src="sap-icon://message-warning" class="hrxSickStripIcon" />
+					<Text text="{i18n>skDismissAudit}" class="hrxSickStripText" />
+				</HBox>
+
+				<VBox renderType="Bare" class="hrxSickField hrxSickFieldAfterStrip">
+					<Label text="{i18n>skFieldReason}" required="true" labelFor="skDismissReason" class="hrxModalLabel" />
+					<TextArea
+						id="skDismissReason"
+						width="100%"
+						height="80px"
+						rows="4"
+						maxLength="1000"
+						valueLiveUpdate="true"
+						value="{skDismiss>/Note}"
+						liveChange=".onDismissInput"
+						placeholder="{i18n>skDismissPlaceholder}"
+						class="hrxSickReason" />
+				</VBox>
 			</VBox>
 		</content>
 		<beginButton>
 			<Button
 				text="{i18n>skDismissConfirm}"
 				type="Emphasized"
+				class="hrxModalBtn hrxModalBtnPrimary"
 				enabled="{= ${skDismiss>/canSave} &amp;&amp; !${skDismiss>/saving} }"
 				press=".onConfirmDismiss" />
 		</beginButton>
 		<endButton>
-			<Button text="{i18n>skCancel}" press=".onCancelDismiss" />
+			<Button text="{i18n>skCancel}" press=".onCancelDismiss" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

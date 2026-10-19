@@ -42,6 +42,33 @@ sap.ui.define([
 
 	var pReferences = null;
 
+	var MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+	/**
+	 * A date range as the design writes it, whatever the browser's locale:
+	 * "3 Oct 2026", "14 – 15 Jul 2026", "29 Aug – 2 Sep 2026".
+	 * @param {Date|string} vFrom the first day (a Date or "yyyy-MM-dd")
+	 * @param {Date|string} vTo the last day
+	 * @returns {string} the label
+	 */
+	function rangeLabel(vFrom, vTo) {
+		var oFrom = formatter.toDate(vFrom);
+		var oTo = formatter.toDate(vTo) || oFrom;
+		if (!oFrom) {
+			return "";
+		}
+		var fnDay = function (oDate) {
+			return oDate.getDate() + " " + MONTHS_SHORT[oDate.getMonth()];
+		};
+		if (oFrom.toDateString() === oTo.toDateString()) {
+			return fnDay(oFrom) + " " + oFrom.getFullYear();
+		}
+		if (oFrom.getMonth() === oTo.getMonth() && oFrom.getFullYear() === oTo.getFullYear()) {
+			return oFrom.getDate() + " – " + fnDay(oTo) + " " + oTo.getFullYear();
+		}
+		return fnDay(oFrom) + " – " + fnDay(oTo) + " " + oTo.getFullYear();
+	}
+
 	/**
 	 * @param {string} sCode a leave type code (HOLIL, SICKL, ...)
 	 * @returns {string} the colour the calendar and the legend use for it
@@ -86,6 +113,8 @@ sap.ui.define([
 		STATUS: STATUS,
 
 		colourOf: colourOf,
+
+		rangeLabel: rangeLabel,
 
 		/**
 		 * Everybody, the leave types, everybody's working pattern and the sites, read
@@ -198,7 +227,7 @@ sap.ui.define([
 					initials: formatter.nameInitials(oPerson.Name),
 					from: sFrom,
 					to: sTo,
-					dates: sFrom === sTo ? formatter.date(sFrom) : formatter.dateRange(sFrom, sTo),
+					dates: rangeLabel(sFrom, sTo),
 					days: fDays,
 					daysNum: fDays.toFixed(1),
 					daysText: fnText(fDays === 1 ? "lmOneDay" : "lmDays", [fDays]),
@@ -301,7 +330,7 @@ sap.ui.define([
 			var oMonthOn = new Date(oStart.getFullYear(), oStart.getMonth() + 1, oStart.getDate());
 			var aPeriods = [{
 				key: "next",
-				text: fnText("tlPeriodNext", [formatter.dateRange(oStart, oMonthOn)]),
+				text: fnText("tlPeriodNext", [rangeLabel(oStart, oMonthOn)]),
 				from: oStart,
 				to: oMonthOn
 			}];

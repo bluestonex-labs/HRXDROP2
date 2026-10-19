@@ -21,7 +21,9 @@ sap.ui.define([
 			if (sRoute) {
 				this.getOwnerComponent().getRouter().navTo(sRoute);
 			} else {
-				MessageToast.show(oContext.getProperty("title"));
+				// An app in the design's catalogue that this app has no page for yet
+				var oBundle = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+				MessageToast.show(oBundle.getText("aeNotInApp", [oContext.getProperty("title")]));
 			}
 		}
 	});

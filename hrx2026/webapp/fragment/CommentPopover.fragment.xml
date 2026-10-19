@@ -2,15 +2,18 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 
-	<Popover
-		id="timesheetCommentPopover"
+	<!-- A day's work description, as the design's modal (hrxModal in css/style.css).
+	     The design asks for it in a modal prompt with OK and Cancel: Save writes it
+	     back onto the day, Cancel leaves the day as it was. -->
+	<Dialog
+		id="timesheetCommentDialog"
 		title="{i18n>tsCommentTitle}"
-		placement="Auto"
-		contentWidth="22rem"
-		afterClose=".onCommentClosed"
-		class="sapUiContentPadding">
-		<VBox>
-			<Text text="{tsComment>/label}" class="hrxResourceMeta sapUiTinyMarginBottom" />
+		class="hrxModal">
+		<content>
+			<Label
+				text="{tsComment>/label}"
+				labelFor="timesheetCommentText"
+				class="hrxModalLabel" />
 			<TextArea
 				id="timesheetCommentText"
 				value="{tsComment>/comment}"
@@ -19,6 +22,22 @@
 				width="100%"
 				growing="true"
 				placeholder="{i18n>tsCommentPlaceholder}" />
-		</VBox>
-	</Popover>
+		</content>
+		<beginButton>
+			<Button
+				id="timesheetCommentSave"
+				text="{i18n>btnSave}"
+				type="Emphasized"
+				visible="{tsComment>/editable}"
+				press=".onSaveComment"
+				class="hrxModalBtn hrxModalBtnPrimary" />
+		</beginButton>
+		<endButton>
+			<Button
+				id="timesheetCommentCancel"
+				text="{i18n>tsCancel}"
+				press=".onCancelComment"
+				class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
+	</Dialog>
 </core:FragmentDefinition>

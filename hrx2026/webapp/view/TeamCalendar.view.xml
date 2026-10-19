@@ -2,17 +2,16 @@
 	controllerName="bsx.hrx.hrx2026.controller.TeamCalendar"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:unified="sap.ui.unified"
 	xmlns:core="sap.ui.core"
 	displayBlock="true"
 	height="100%"
 	class="hrxTeamCalendar">
 
 	<!-- Team Calendar, as the 15.10.26 design has it: a manager's Team leave card
-	     (what was Leave Management) above everybody's availability. -->
+	     above the week's availability grid. -->
 	<Page id="teamCalPage" showHeader="false" title="{i18n>teamCalendarTitle}" showNavButton="false" class="hrxPageContent">
 		<content>
-			<VBox class="hrxSkStack hrxTcStack">
+			<VBox class="hrxTcStack">
 
 				<!-- ── Team leave (managers only) ─────────────────────────────── -->
 				<VBox
@@ -20,19 +19,20 @@
 					visible="{tcView>/isManager}"
 					busy="{tlView>/busy}"
 					busyIndicatorDelay="0"
-					class="hrxSkCard hrxTrCard">
-					<HBox alignItems="Center" wrap="Wrap" class="hrxTrCardHead">
-						<VBox class="hrxTrCardHeadText">
-							<Title text="{i18n>lmTeamLeave}" level="H3" wrapping="true" class="hrxTrCardTitle" />
-							<Text text="{tl>/countText}" class="hrxSkHint" />
+					class="hrxTcCard">
+					<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="hrxTcCardHead">
+						<VBox renderType="Bare" class="hrxTcCardHeadText">
+							<Title text="{i18n>lmTeamLeave}" level="H3" class="hrxTcCardTitle" />
+							<Text text="{tl>/countText}" class="hrxTcCardHint" />
 						</VBox>
-						<HBox alignItems="Center" wrap="Wrap" class="hrxTlTools">
+						<HBox alignItems="Center" wrap="Wrap" renderType="Bare" class="hrxTlTools">
 							<Select
 								id="teamLeavePeriod"
 								selectedKey="{tlView>/period}"
 								items="{path: 'tl>/periods', templateShareable: false}"
 								change=".onPeriodChange"
-								width="17rem">
+								width="250px"
+								class="hrxTcSelect">
 								<core:Item key="{tl>key}" text="{tl>text}" />
 							</Select>
 							<DateRangeSelection
@@ -43,24 +43,26 @@
 								displayFormat="d MMM yyyy"
 								placeholder="{i18n>tlSelectDates}"
 								change=".onRangeChange"
-								width="14rem" />
+								width="210px"
+								class="hrxTcInput" />
 							<SearchField
 								id="teamLeaveSearch"
 								value="{tlView>/q}"
 								placeholder="{i18n>lmSearch}"
 								liveChange=".onLeaveSearch"
-								width="14rem" />
+								width="260px"
+								class="hrxTcSearch" />
 						</HBox>
 					</HBox>
 
 					<!-- Pending / Approved / Rejected, each with its count -->
-					<HBox wrap="Wrap" items="{path: 'tl>/chips', templateShareable: false}" class="hrxDocFilterRow hrxDocChips">
-						<Button
-							text="{tl>text}"
-							type="{= ${tl>selected} ? 'Emphasized' : 'Default' }"
-							press=".onStatusChip"
-							class="hrxDocChip">
-							<customData><core:CustomData key="status" value="{tl>status}" /></customData>
+					<HBox wrap="Wrap" items="{path: 'tl>/chips', templateShareable: false}" class="hrxTcChips">
+						<Button text="{tl>text}" press=".onStatusChip" class="hrxTcChip">
+							<customData>
+								<core:CustomData key="status" value="{tl>status}" />
+								<core:CustomData key="count" value="{tl>count}" writeToDom="true" />
+								<core:CustomData key="on" value="{= ${tl>selected} ? 'yes' : 'no' }" writeToDom="true" />
+							</customData>
 						</Button>
 					</HBox>
 
@@ -70,36 +72,42 @@
 						noDataText="{tl>/noDataText}"
 						growing="true"
 						growingThreshold="25"
-						class="hrxSkTable">
+						class="hrxTcTable">
 						<columns>
-							<Column width="24%"><Text text="{i18n>mgrColEmployee}" /></Column>
+							<Column><Text text="{i18n>mgrColEmployee}" /></Column>
 							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>lmColDates}" /></Column>
 							<Column hAlign="Center" width="5rem"><Text text="{i18n>lmColDays}" /></Column>
 							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>lmColType}" /></Column>
-							<Column width="8rem"><Text text="{i18n>mgrColStatus}" /></Column>
+							<Column width="9rem"><Text text="{i18n>mgrColStatus}" /></Column>
 							<Column hAlign="End" width="13rem"><Text text="" /></Column>
 						</columns>
 						<items>
 							<!-- Click a request to see it on the calendar -->
 							<ColumnListItem type="Active" press=".onLeaveRowPress">
 								<cells>
-									<HBox alignItems="Center">
-										<Avatar initials="{tl>initials}" displaySize="XS" class="sapUiTinyMarginEnd" />
-										<Text text="{tl>Name}" class="hrxResourceName" />
+									<HBox alignItems="Center" class="hrxTcPersonCell">
+										<HBox alignItems="Center" justifyContent="Center" class="hrxTcAvatar">
+											<Text text="{tl>initials}" class="hrxTcAvatarText" />
+										</HBox>
+										<Text text="{tl>Name}" class="hrxTcPersonName" />
 									</HBox>
 									<Text text="{tl>dates}" />
 									<Text text="{tl>daysNum}" />
-									<HBox alignItems="Center" wrap="Wrap" class="hrxLmType">
-										<core:Icon src="sap-icon://circle-task-2" color="{tl>colour}" size="0.6rem" class="hrxTlDot" />
-										<Text text="{tl>type}" />
-										<Text text="{tl>duration}" class="hrxLmDur" />
+									<HBox alignItems="Center" class="hrxTcType">
+										<HBox class="hrxTcTypeDot">
+											<customData><core:CustomData key="type" value="{tl>typeCode}" writeToDom="true" /></customData>
+										</HBox>
+										<Text text="{tl>type}" class="hrxTcTypeName" />
+										<Text text="{tl>duration}" class="hrxTcDur" />
 									</HBox>
-									<ObjectStatus text="{tl>statusText}" state="{tl>statusState}" inverted="true" class="hrxSkPill" />
-									<HBox justifyContent="End" visible="{= ${tl>status} === 'REQ' }" class="hrxRowActions">
-										<Button text="{i18n>btnApprove}" icon="sap-icon://accept" type="Accept"
-											press=".onApproveRow" class="sapUiTinyMarginEnd" />
-										<Button text="{i18n>btnReject}" icon="sap-icon://decline" type="Reject"
-											press=".onRejectRow" />
+									<HBox>
+										<Text text="{tl>statusText}" class="hrxTcPill">
+											<customData><core:CustomData key="state" value="{tl>status}" writeToDom="true" /></customData>
+										</Text>
+									</HBox>
+									<HBox justifyContent="End" visible="{= ${tl>status} === 'REQ' }" class="hrxTcRowActions">
+										<Button text="{i18n>btnApprove}" icon="sap-icon://accept" press=".onApproveRow" class="hrxTcBtn hrxTcBtnApprove" />
+										<Button text="{i18n>btnReject}" icon="sap-icon://decline" press=".onRejectRow" class="hrxTcBtn hrxTcBtnReject" />
 									</HBox>
 								</cells>
 							</ColumnListItem>
@@ -107,148 +115,134 @@
 					</Table>
 				</VBox>
 
-				<!-- ── Availability ───────────────────────────────────────────── -->
-				<VBox id="teamCalCard" class="hrxSkCard hrxTcCard">
-					<OverflowToolbar id="teamCalToolbar" class="hrxFilterBar hrxTcFilters">
-						<!-- A manager starts on their own team; Everyone is a step away -->
-						<Label text="{i18n>tcTeam}" labelFor="teamCalTeam" visible="{tcView>/isManager}" />
-						<Select
-							id="teamCalTeam"
-							selectedKey="{tcView>/team}"
-							visible="{tcView>/isManager}"
-							change=".onFilterChange"
-							width="9rem">
-							<core:Item key="mine" text="{i18n>tcTeamMine}" />
-							<core:Item key="all" text="{i18n>tcTeamAll}" />
-						</Select>
+				<!-- ── The week ───────────────────────────────────────────────── -->
+				<VBox id="teamCalCard" class="hrxTcCard hrxTcWeekCard">
+					<HBox alignItems="Center" justifyContent="SpaceBetween" wrap="Wrap" class="hrxTcTop">
+						<HBox alignItems="Center" renderType="Bare" class="hrxTcWeekNav">
+							<Button icon="sap-icon://slim-arrow-left" tooltip="{i18n>tcPreviousWeek}" press=".onPreviousWeek" class="hrxTcIconBtn" />
+							<Title text="{tcView>/weekLabel}" level="H3" class="hrxTcWeekLabel" />
+							<Button icon="sap-icon://slim-arrow-right" tooltip="{i18n>tcNextWeek}" press=".onNextWeek" class="hrxTcIconBtn" />
+						</HBox>
 
-						<MultiComboBox
-							id="teamCalResourceFilter"
-							items="{path: 'tc>/pool', templateShareable: false}"
-							selectedKeys="{tcView>/selectedResources}"
-							width="15rem"
-							selectionFinish=".onFilterChange"
-							placeholder="{i18n>tcResourceFilterPlaceholder}">
-							<core:Item key="{tc>EmpID}" text="{tc>Name}" />
-						</MultiComboBox>
+						<HBox alignItems="End" wrap="Wrap" class="hrxTcFilters">
+							<!-- A manager starts on their own team; Everyone is a step away -->
+							<VBox visible="{tcView>/isManager}" class="hrxTcFilter">
+								<Label text="{i18n>tcTeam}" labelFor="teamCalTeam" class="hrxTcFilterLabel" />
+								<Select id="teamCalTeam" selectedKey="{tcView>/team}" change=".onFilterChange" width="130px" class="hrxTcSelect">
+									<core:Item key="mine" text="{i18n>tcTeamMine}" />
+									<core:Item key="all" text="{i18n>tcTeamAll}" />
+								</Select>
+							</VBox>
 
-						<Label text="{i18n>tcSite}" labelFor="teamCalSite" />
-						<Select
-							id="teamCalSite"
-							selectedKey="{tcView>/site}"
-							items="{path: 'tc>/sites', templateShareable: false}"
-							change=".onFilterChange"
-							width="9rem">
-							<core:Item key="{tc>key}" text="{tc>text}" />
-						</Select>
+							<!-- "Select resource(s)": opens a list to tick people in -->
+							<Input
+								id="teamCalResources"
+								value="{tcView>/resourcesText}"
+								placeholder="{i18n>tcSelectResources}"
+								valueHelpOnly="true"
+								showValueHelp="true"
+								valueHelpRequest=".onOpenResources"
+								width="200px"
+								class="hrxTcInput hrxTcResourceInput" />
 
-						<Label text="{i18n>tcProject}" labelFor="teamCalProject" />
-						<ObjectStatus text="{i18n>tcNotInMvp}" state="Warning" inverted="true" class="hrxSkPill" />
-						<Select
-							id="teamCalProject"
-							selectedKey="{tcView>/project}"
-							items="{path: 'tc>/projects', templateShareable: false}"
-							change=".onFilterChange"
-							width="11rem">
-							<core:Item key="{tc>key}" text="{tc>text}" />
-						</Select>
+							<VBox class="hrxTcFilter">
+								<Label text="{i18n>tcSite}" labelFor="teamCalSite" class="hrxTcFilterLabel" />
+								<Select
+									id="teamCalSite"
+									selectedKey="{tcView>/site}"
+									items="{path: 'tc>/sites', templateShareable: false}"
+									change=".onFilterChange"
+									width="130px"
+									class="hrxTcSelect">
+									<core:Item key="{tc>key}" text="{tc>text}" />
+								</Select>
+							</VBox>
 
-						<ToolbarSpacer />
-
-						<Button
-							id="teamCalBookLeave"
-							text="{i18n>tcBookLeave}"
-							icon="sap-icon://create-leave-request"
-							type="Transparent"
-							visible="{tcView>/isManager}"
-							press=".onOpenBookLeave" />
-					</OverflowToolbar>
-
-					<PlanningCalendar
-						id="teamPlanningCalendar"
-						startDate="{tcView>/startDate}"
-						rows="{tc>/people}"
-						busy="{tcView>/busy}"
-						busyIndicatorDelay="0"
-						viewKey="week"
-						appointmentsVisualization="Filled"
-						appointmentHeight="Automatic"
-						showEmptyIntervalHeaders="false"
-						showWeekNumbers="false"
-						stickyHeader="true"
-						noDataText="{i18n>tcNoData}"
-						startDateChange=".onStartDateChange"
-						viewChange=".onViewChange"
-						appointmentSelect=".onAppointmentSelect"
-						legend="teamCalLegend">
-						<views>
-							<!-- Day intervals, so every booking in the period is laid out on the timeline.
-							     The month's interval count is set by the controller to the number of
-							     days that month actually has. -->
-							<PlanningCalendarView key="week" intervalType="Day" description="{i18n>tcViewWeek}" intervalsL="7" intervalsM="7" intervalsS="7" />
-							<PlanningCalendarView id="teamCalMonthView" key="month" intervalType="Day" description="{i18n>tcViewMonth}" intervalsL="31" intervalsM="31" intervalsS="7" />
-						</views>
-						<toolbarContent>
-							<Title text="{tcView>/title}" level="H3" />
-							<ToolbarSpacer />
-							<Text text="{tcView>/periodLabel}" class="hrxResourceMeta" />
-						</toolbarContent>
-						<rows>
-							<PlanningCalendarRow
-								nonWorkingDays="0,6"
-								title="{tc>Name}"
-								appointments="{path: 'tc>Leave', templateShareable: true}">
-								<!-- Who, their job title and site, and - for a manager - how many
-								     of their requests are waiting -->
-								<headerContent>
-									<HBox alignItems="Center" class="hrxTcPerson">
-										<Avatar
-											src="{path: 'tc>Pic', formatter: '.formatter.imageSrc'}"
-											initials="{tc>initials}"
-											displaySize="XS"
-											class="sapUiTinyMarginEnd" />
-										<VBox class="hrxTcPersonText">
-											<Text text="{tc>Name}" wrapping="false" class="hrxResourceName" />
-											<Text text="{tc>subText}" wrapping="false" class="hrxTcSub" />
-											<Button
-												text="{tc>pendingText}"
-												visible="{= ${tcView>/isManager} &amp;&amp; ${tc>pendingCount} > 0 }"
-												press=".onPersonPendingPress"
-												class="hrxTcPend" />
-										</VBox>
-									</HBox>
-								</headerContent>
-								<appointments>
-									<unified:CalendarAppointment
-										startDate="{tc>start}"
-										endDate="{tc>end}"
-										title="{tc>title}"
-										text="{tc>info}"
-										color="{tc>colour}"
-										tentative="{tc>tentative}"
-										selected="{tc>selected}"
-										tooltip="{tc>tooltip}" />
-								</appointments>
-							</PlanningCalendarRow>
-						</rows>
-					</PlanningCalendar>
+							<VBox class="hrxTcFilter">
+								<HBox alignItems="Center" class="hrxTcFilterLabelRow">
+									<Label text="{i18n>tcProject}" labelFor="teamCalProject" class="hrxTcFilterLabel" />
+									<Text text="{i18n>tcNotInMvp}" class="hrxTcPill hrxTcNotMvp" />
+								</HBox>
+								<Select
+									id="teamCalProject"
+									selectedKey="{tcView>/project}"
+									items="{path: 'tc>/projects', templateShareable: false}"
+									change=".onFilterChange"
+									width="170px"
+									class="hrxTcSelect">
+									<core:Item key="{tc>key}" text="{tc>text}" />
+								</Select>
+							</VBox>
+						</HBox>
+					</HBox>
 
 					<!-- The leave type colour key, and how a request still waiting is drawn -->
 					<HBox alignItems="Center" wrap="Wrap" class="hrxTcLegend">
-						<PlanningCalendarLegend
-							id="teamCalLegend"
-							standardItems="Today,NonWorkingDay"
-							appointmentItemsHeader="{i18n>tcLegendLeaveHeader}"
-							appointmentItems="{path: 'tc>/legend', templateShareable: false}">
-							<appointmentItems>
-								<unified:CalendarLegendItem text="{tc>text}" color="{tc>colour}" />
-							</appointmentItems>
-						</PlanningCalendarLegend>
-						<HBox alignItems="Center" visible="{tcView>/isManager}" class="hrxTcHatchKey">
-							<core:HTML content="&lt;span class=&quot;hrxTcHatchSwatch&quot;&gt;&lt;/span&gt;" />
-							<Text text="{i18n>tcHatched}" class="hrxResourceMeta" />
+						<HBox items="{path: 'tc>/legend', templateShareable: false}" class="hrxTcLegendTypes">
+							<HBox alignItems="Center" class="hrxTcLegendItem">
+								<HBox class="hrxTcLegendDot">
+									<customData><core:CustomData key="type" value="{tc>code}" writeToDom="true" /></customData>
+								</HBox>
+								<Text text="{tc>text}" />
+							</HBox>
+						</HBox>
+						<HBox alignItems="Center" visible="{tcView>/isManager}" class="hrxTcLegendItem">
+							<HBox class="hrxTcLegendHatch" />
+							<Text text="{i18n>tcHatched}" />
 						</HBox>
 					</HBox>
+
+					<!-- The grid: who, then Monday to Sunday -->
+					<VBox busy="{tcView>/busy}" busyIndicatorDelay="0" class="hrxTcScroll">
+						<HBox class="hrxTcRow hrxTcHeadRow">
+							<Text text="{i18n>tcTeamMember}" class="hrxTcHead" />
+							<HBox items="{path: 'tc>/days', templateShareable: false}" class="hrxTcDays">
+								<Text text="{tc>label}" class="hrxTcHead">
+									<customData><core:CustomData key="today" value="{= ${tc>isToday} ? 'yes' : 'no' }" writeToDom="true" /></customData>
+								</Text>
+							</HBox>
+						</HBox>
+
+						<VBox visible="{= ${tc>/people}.length === 0 }" class="hrxTcEmpty">
+							<Title text="{i18n>tcNobodyTitle}" level="H4" />
+							<Text text="{i18n>tcNobodyText}" />
+						</VBox>
+
+						<VBox items="{path: 'tc>/people', templateShareable: false}">
+							<HBox class="hrxTcRow">
+								<HBox alignItems="Center" class="hrxTcPerson">
+									<Avatar
+										src="{path: 'tc>Pic', formatter: '.formatter.imageSrc'}"
+										initials="{tc>initials}"
+										displaySize="Custom"
+										customDisplaySize="26px"
+										customFontSize="10.5px"
+										class="hrxTcPersonAvatar" />
+									<VBox renderType="Bare" class="hrxTcPersonText">
+										<Text text="{tc>Name}" wrapping="false" class="hrxTcPersonName" />
+										<Text text="{tc>subText}" visible="{= !!${tc>subText} }" class="hrxTcSub" />
+										<Button
+											text="{tc>pendingText}"
+											visible="{= ${tcView>/isManager} &amp;&amp; ${tc>pendingCount} > 0 }"
+											press=".onPersonPendingPress"
+											class="hrxTcPend" />
+									</VBox>
+								</HBox>
+								<HBox items="{path: 'tc>cells', templateShareable: false}" class="hrxTcDays">
+									<VBox items="{path: 'tc>pills', templateShareable: false}" class="hrxTcCell">
+										<customData><core:CustomData key="weekend" value="{= ${tc>weekend} ? 'yes' : 'no' }" writeToDom="true" /></customData>
+										<Button text="{tc>text}" tooltip="{tc>tooltip}" press=".onPillPress" class="hrxTcp">
+											<customData>
+												<core:CustomData key="type" value="{tc>typeCode}" writeToDom="true" />
+												<core:CustomData key="pending" value="{= ${tc>pending} ? 'yes' : 'no' }" writeToDom="true" />
+												<core:CustomData key="selected" value="{= ${tc>selected} ? 'yes' : 'no' }" writeToDom="true" />
+											</customData>
+										</Button>
+									</VBox>
+								</HBox>
+							</HBox>
+						</VBox>
+					</VBox>
 				</VBox>
 			</VBox>
 		</content>
