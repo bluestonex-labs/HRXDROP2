@@ -3,7 +3,7 @@
 ## What the user asked for
 "Make the UI an exact 1:1 replica of the HTML file, make no mistakes, and make sure all the services are still working."
 
-- Design (single-file HTML prototype, open it read-only): `/Users/davidakilapa/Downloads/HRX Drop 2 - 15.10.26.html`
+- Design (single-file HTML prototype, open it read-only): `docs/handoff-design-15-10-26/design/HRX Drop 2 - 15.10.26.html` (in this branch)
 - App: `/Users/davidakilapa/Documents/GitHub/HRXDROP2/hrx2026/webapp` - SAPUI5 1.150, XML views + controllers + fragments + i18n, branch `Functional-UI-Services`.
 - The side rail (sidebar) and the page header/strip above every page are done centrally - do not change them (`view/App.view.xml`, `controller/App.controller.js`, `Component.js`, `manifest.json`).
 - Team Calendar is done centrally too - do not touch `view/TeamCalendar.view.xml`, `controller/TeamCalendar.controller.js`, `fragment/TeamLeavePopover.fragment.xml`, `model/TeamLeave.js`.

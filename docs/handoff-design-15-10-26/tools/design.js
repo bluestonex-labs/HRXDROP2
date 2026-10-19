@@ -7,7 +7,7 @@ const opt = (k) => { const i = a.indexOf(k); return i === -1 ? null : (a[i + 1] 
 (async () => {
 	const b = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"] });
 	const p = await b.newPage(); await p.setViewport({ width: 1440, height: 1000 });
-	await p.goto("file:///Users/davidakilapa/Downloads/HRX%20Drop%202%20-%2015.10.26.html", { waitUntil: "networkidle0", timeout: 60000 });
+	await p.goto("file://" + require("path").resolve(__dirname, "../design/HRX Drop 2 - 15.10.26.html").split("/").map(encodeURIComponent).join("/"), { waitUntil: "networkidle0", timeout: 60000 });
 	await new Promise((r) => setTimeout(r, 800));
 	if (opt("--role")) { await p.evaluate((r) => { const s = document.getElementById("roleToggle"); s.value = r; s.dispatchEvent(new Event("change")); }, opt("--role")); await new Promise((r) => setTimeout(r, 400)); }
 	await p.evaluate((v) => { const n = document.querySelector('.sidenav button[data-view="' + v + '"]'); if (n) n.click(); }, view);

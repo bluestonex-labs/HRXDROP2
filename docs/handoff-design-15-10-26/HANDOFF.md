@@ -11,8 +11,8 @@ that must not be broken, what is done, what is half-done, and how to carry on.
 > "Make the UI an exact 1:1 replica of the html file, make no mistakes, and make sure
 > all the services are still working."
 
-- **Design file:** `HRX Drop 2 - 15.10.26.html`, a single-file HTML prototype. The user has it at
-  `~/Downloads/HRX Drop 2 - 15.10.26.html`; ask for it if you don't have it.
+- **Design file:** [`design/HRX Drop 2 - 15.10.26.html`](design/HRX%20Drop%202%20-%2015.10.26.html)
+  (in this branch), a single-file HTML prototype. `tools/design.js` opens it from there.
   - It must be opened directly in a browser. In the SharePoint preview its scripts are
     blocked and the page looks broken.
 - **App:** `hrx2026/webapp`, SAPUI5 1.150 (XML views + controllers + fragments + i18n),
