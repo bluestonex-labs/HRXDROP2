@@ -900,6 +900,7 @@
 
 .hrxApp .hrxMyLeavePicker .sapMPopoverCont {
 	margin: 0;
+	padding: 0;
 	background: var(--surface);
 }
 

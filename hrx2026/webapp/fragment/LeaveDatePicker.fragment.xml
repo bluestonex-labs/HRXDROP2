@@ -5,14 +5,17 @@
 	<!-- The design's date range picker (.date-popover): a month grid under the Dates
 	     field. The first click picks the start date, the second the end date; days
 	     before today cannot be picked. Filled from the mlPicker model by the
-	     Leave controller. -->
+	     Leave controller. 282px inside its 1px border: the design's 284px.
+	     initialFocus is the popover itself: as in the design, opening it puts no
+	     focus ring on the month arrows (Tab still reaches them). -->
 	<Popover
 		id="leaveDatePopover"
+		initialFocus="leaveDatePopover"
 		showHeader="false"
 		showArrow="false"
 		placement="Bottom"
-		contentWidth="284px"
-		offsetY="6"
+		contentWidth="282px"
+		offsetY="5"
 		class="hrxMyLeavePicker">
 		<content>
 			<VBox renderType="Bare" class="hrxLeavePicker">

@@ -1482,6 +1482,12 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	color: var(--ice-deep) !important;
 }
 
+/* The dialog focuses its first button when it opens. Like the design's own
+   buttons, it shows the focus ring only when the focus came from the keyboard. */
+.hrxApp .hrxModal .sapMBtn:focus:not(:focus-visible) .sapMBtnInner.sapMFocusable::before {
+	display: none;
+}
+
 /* ── TOOLBARS ─────────────────────────────────────────────────────────────── */
 
 .hrxApp .sapMTB-Transparent-CTX,

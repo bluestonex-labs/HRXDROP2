@@ -201,21 +201,25 @@ sap.ui.define([
 		},
 
 		/**
-		 * The service lists leave one day at a time; the table shows one row per
-		 * request (LeaveID), as the design does - "14 – 15 Jul 2026", not two rows.
+		 * The service lists leave one day at a time, and keeps each day of a request
+		 * as its own record, with the request's LeaveGrpID; the table shows one row
+		 * per request, as the design does - "14 – 15 Jul 2026", not two rows. Days of
+		 * one request that were decided differently stay apart, one row per status.
 		 * The days arrive newest first, so the requests keep that order.
 		 * @param {object[]} aDays the availedLeaves list from fetchUser
 		 * @returns {object[]} one entry per request
 		 */
 		_groupRequests: function (aDays) {
 			var aRequests = [];
-			var mById = {};
+			var mByKey = {};
 
 			aDays.forEach(function (oDay) {
-				var oRequest = mById[oDay.LeaveID];
+				var sKey = (oDay.LeaveGrpID || oDay.LeaveID) + "|" + oDay.StatusID;
+				var oRequest = mByKey[sKey];
 				if (!oRequest) {
 					oRequest = {
 						LeaveID: oDay.LeaveID,
+						LeaveIDs: [],
 						LeaveTypeID: oDay.LeaveTypeID,
 						LeaveType: oDay.LeaveType,
 						Absence: oDay.Absence,
@@ -224,10 +228,13 @@ sap.ui.define([
 						RequesterComments: oDay.RequesterComments,
 						Dates: []
 					};
-					mById[oDay.LeaveID] = oRequest;
+					mByKey[sKey] = oRequest;
 					aRequests.push(oRequest);
 				}
 				oRequest.Dates.push(oDay.Date);
+				if (oRequest.LeaveIDs.indexOf(oDay.LeaveID) === -1) {
+					oRequest.LeaveIDs.push(oDay.LeaveID);
+				}
 			});
 
 			aRequests.forEach(function (oRequest) {
@@ -706,21 +713,28 @@ sap.ui.define([
 		},
 
 		/**
-		 * Removes the request - every day of it, as the service deletes by LeaveID.
+		 * Removes the request - every day of it: each day is its own record in the
+		 * service, deleted by its LeaveID.
 		 */
 		onConfirmCancelLeave: function () {
 			var oLeave = this.getModel("mlEdit").getData();
+			var aPayloads = oLeave.LeaveIDs.map(function (sLeaveID) {
+				return {
+					OrgID: this._sOrgId,
+					LeaveID: sLeaveID,
+					Date: oLeave.Date,
+					LeaveType: oLeave.LeaveTypeID,
+					Absence: oLeave.Absence
+				};
+			}, this);
 
-			this._save(LEAVE_SERVICE + "?cmd=delete", {
-				OrgID: this._sOrgId,
-				LeaveID: oLeave.LeaveID,
-				Date: oLeave.Date,
-				LeaveType: oLeave.LeaveTypeID,
-				Absence: oLeave.Absence
-			}, "mlCancelled", "mlErrorDelete").then(function () {
+			this._saveEach(LEAVE_SERVICE + "?cmd=delete", aPayloads, "mlCancelled", "mlErrorDelete").then(function () {
 				this._closeFragment("_pCancelLeaveDialog");
 				return this._loadUser();
-			}.bind(this)).catch(function () { /* reported by _save */ });
+			}.bind(this)).catch(function () {
+				// Reported by _saveEach; reload, as some days may already be gone.
+				return this._loadUser();
+			}.bind(this));
 		},
 
 		/* =========================================================== */
@@ -756,6 +770,39 @@ sap.ui.define([
 				oViewModel.setProperty("/saving", false);
 				MessageToast.show(oResult.msg || this.getText(sSuccessKey));
 				return oResult;
+			}.bind(this)).catch(function (oError) {
+				oViewModel.setProperty("/saving", false);
+				this._showError(sErrorKey, oError);
+				throw oError;
+			}.bind(this));
+		},
+
+		/**
+		 * _save for several records: posts each payload in turn, then reports once.
+		 * @param {string} sUrl the service url
+		 * @param {object[]} aPayloads one body per call
+		 * @param {string} sSuccessKey the i18n key of the success toast
+		 * @param {string} sErrorKey the i18n key of the error message
+		 * @returns {Promise} settles when every call has been made, or the first fails
+		 */
+		_saveEach: function (sUrl, aPayloads, sSuccessKey, sErrorKey) {
+			var oViewModel = this.getModel("mlView");
+			oViewModel.setProperty("/saving", true);
+
+			var pSaved = Promise.resolve();
+			aPayloads.forEach(function (oPayload) {
+				pSaved = pSaved.then(function () {
+					return this._request(sUrl, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(oPayload)
+					});
+				}.bind(this));
+			}, this);
+
+			return pSaved.then(function () {
+				oViewModel.setProperty("/saving", false);
+				MessageToast.show(this.getText(sSuccessKey));
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/saving", false);
 				this._showError(sErrorKey, oError);

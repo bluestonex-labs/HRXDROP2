@@ -16,7 +16,7 @@
 			<HBox renderType="Bare" class="hrxLeaveKpis">
 
 				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiNeutral">
-					<core:Icon src="sap-icon://appointment-2" class="hrxLeaveKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/calendar-stats" class="hrxLeaveKpiGlyph" />
 					<Text text="{i18n>kpiAnnualQuota}" class="hrxLeaveKpiLabel" />
 					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
 						<Text id="leaveKpiQuota" text="{mlView>/kpis/quota}" class="hrxLeaveKpiNumber" />
@@ -26,7 +26,7 @@
 				</VBox>
 
 				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiGood">
-					<core:Icon src="sap-icon://check-availability" class="hrxLeaveKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/calendar-check" class="hrxLeaveKpiGlyph" />
 					<Text text="{i18n>kpiDaysRemaining}" class="hrxLeaveKpiLabel" />
 					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
 						<Text id="leaveKpiBalance" text="{mlView>/kpis/balance}" class="hrxLeaveKpiNumber" />
@@ -36,7 +36,7 @@
 				</VBox>
 
 				<VBox renderType="Bare" class="hrxLeaveKpi hrxLeaveKpiWarning">
-					<core:Icon src="sap-icon://calendar" class="hrxLeaveKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/calendar-event" class="hrxLeaveKpiGlyph" />
 					<Text text="{i18n>kpiDaysBooked}" class="hrxLeaveKpiLabel" />
 					<HBox renderType="Bare" class="hrxLeaveKpiFigure">
 						<Text id="leaveKpiBooked" text="{mlView>/kpis/used}" class="hrxLeaveKpiNumber" />
@@ -52,7 +52,7 @@
 				<!-- New Leave Request: the design's featured (dark) card head -->
 				<VBox id="newLeaveRequestCard" renderType="Bare" class="hrxLeaveCard">
 					<HBox renderType="Bare" class="hrxLeaveCardHead hrxLeaveCardHeadFeatured">
-						<core:Icon src="sap-icon://add-calendar" class="hrxLeaveCardHeadIcon" />
+						<core:Icon src="sap-icon://tabler/calendar-plus" class="hrxLeaveCardHeadIcon" />
 						<Title text="{i18n>newLeaveRequestTitle}" level="H2" class="hrxLeaveCardTitle" />
 					</HBox>
 

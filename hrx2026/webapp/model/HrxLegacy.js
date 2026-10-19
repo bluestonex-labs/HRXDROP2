@@ -809,6 +809,8 @@ sap.ui.define([
 							var fDays = oDay.absence === "Full Day" ? 1 : 0.5;
 							aAvailed.push({
 								LeaveID: oLeave.ID,
+								// the days asked for together share one group (the service sets it)
+								LeaveGrpID: oLeave.LeaveGrpID || "",
 								Date: oDay.date,
 								DisplayDate: displayDate(oDay.day),
 								LeaveTypeID: oType.code,
