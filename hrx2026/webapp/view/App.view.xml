@@ -50,8 +50,10 @@
 						<Title text="{app>/page/title}" level="H1" class="hrxPageTitle"/>
 					</VBox>
 					<!-- The page action: Record sickness, Upload document, Refresh from service.
-					     Pressing it calls the page controller's onPageAction (see App.controller). -->
-					<HBox alignItems="Center" class="hrxTopBarActions" visible="{= !!${app>/page/action} }">
+					     Pressing it calls the page controller's onPageAction (see App.controller).
+					     Each is on an admin page, so it is for managers only: an employee who
+					     opens one sees its "only available to managers" note and no action. -->
+					<HBox alignItems="Center" class="hrxTopBarActions" visible="{= !!${app>/page/action} &amp;&amp; !!${app>/user/isManager} }">
 						<Text
 							id="pageStamp"
 							text="{app>/page/stamp}"

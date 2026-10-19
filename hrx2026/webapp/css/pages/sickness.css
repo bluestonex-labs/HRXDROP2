@@ -432,16 +432,12 @@
 	margin-top: 18px;
 }
 
-/* .trig-toggle: the absence history disclosure row */
-/* Closed, the next label sits 24px under the row (as the design measures);
-   open, the table follows 8px under it. */
+/* .trig-toggle: the absence history disclosure row. Its 8px under it folds into
+   the next label's 18px above, as in the design: closed, "Recommended action"
+   sits 18px under the row; open, the table follows 8px under it. */
 .hrxSickness .hrxSickToggleRow {
-	margin: 18px 0 24px;
+	margin: 18px 0 8px;
 	height: 14px;
-}
-
-.hrxSickness .hrxSickToggleRow[data-open="yes"] {
-	margin-bottom: 8px;
 }
 
 .hrxSickness .hrxSickToggle.sapMBtn {
@@ -870,8 +866,10 @@
 	font-size: 14px;
 }
 
+/* !important: the theme's input margin rule is more specific. The 3px under it is
+   the line gap the design's inline textarea leaves. */
 .hrxSicknessDialog .sapMInputBase.sapMTextArea {
-	margin: 0 !important;
+	margin: 0 0 3px !important;
 }
 
 /* the TextArea's height property sizes its frame; the text box fills it */
@@ -942,6 +940,12 @@
 	color: var(--ice-deep);
 	box-sizing: border-box;
 	--hrx-sick-alert-icon: var(--hrx-sick-info);
+}
+
+/* .strip's own 4px above it shows where it opens the modal's body; after a field,
+   the field's 16px under it is the gap (the design's margins fold together). */
+.hrxSicknessDialog .hrxSickStrip:first-child {
+	margin-top: 4px;
 }
 
 .hrxSicknessDialog .hrxSickStrip[data-kind="warn"] {

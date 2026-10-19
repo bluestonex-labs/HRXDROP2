@@ -8,7 +8,9 @@
 const puppeteer = require("puppeteer-core");
 const a = process.argv.slice(2); const email = a[0], route = a[1], out = a[2];
 const opt = (k) => { const i = a.indexOf(k); return i === -1 ? null : (a[i + 1] || true); };
-const NOISE = /fioriSandboxConfig|\/user-api\/currentUser|\/sap\/bc\/lrep\/|LrepConnector|\/changes\/[a-z-]*bundle\.json|\/test\/i18n\/|Merging of arrays|FUTURE FATAL|fallback locale|Failed to load resource|font configuration/;
+// Launchpad sandbox noise; library-preload 404s (UI5 served from source, e.g. from npm) and
+// the old services.xsodata, which the local test service does not answer.
+const NOISE = /fioriSandboxConfig|\/user-api\/currentUser|\/sap\/bc\/lrep\/|LrepConnector|\/changes\/[a-z-]*bundle\.json|\/test\/i18n\/|Merging of arrays|FUTURE FATAL|fallback locale|Failed to load resource|font configuration|library-preload|services\.xsodata|ODataMetadata|HTTP request failed|metadata could not be loaded/;
 (async () => {
 	const b = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new", args: ["--hide-scrollbars"].concat(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(" ") : []) });
 	const c = await b.createBrowserContext(); const p = await c.newPage(); await p.setViewport({ width: 1440, height: 1052 });

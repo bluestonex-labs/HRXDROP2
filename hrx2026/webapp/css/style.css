@@ -585,6 +585,8 @@ body.hrxApp {
 	width: 14px !important;
 	min-width: 14px;
 	margin: 0 5px 0 0;
+	/* the theme pads the icon 6px on the right; the design's gap is the 5px margin */
+	padding: 0;
 	font-size: 12px;
 	color: inherit;
 }
@@ -1387,9 +1389,10 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 }
 
 /* textarea: no theme margin above it (label.f's 6px is the gap) and no inner
-   padding round the text box, so 3 rows come out the design's 65px */
+   padding round the text box, so 3 rows come out the design's 65px. The design's
+   textarea is inline, which leaves a 3px line gap under it: kept as a margin. */
 .hrxApp .hrxModal .sapMTextArea {
-	margin: 0;
+	margin: 0 0 3px;
 }
 
 .hrxApp .hrxModal .sapMTextArea .sapMInputBaseContentWrapper {
