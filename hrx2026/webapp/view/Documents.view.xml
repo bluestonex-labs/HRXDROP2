@@ -74,8 +74,8 @@
 
 						<VBox renderType="Bare" class="hrxDmRows">
 							<VBox visible="{= ${dm>/rows}.length === 0 }" renderType="Bare" class="hrxPdEmpty">
-								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatch} : ${i18n>dmNoDocuments} }" class="hrxPdEmptyTitle" />
-								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatchText} : ${i18n>dmNoDocumentsText} }" class="hrxPdEmptyText" />
+								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatch} : ${i18n>dmNoDocuments} }" textAlign="Center" class="hrxPdEmptyTitle" />
+								<Text text="{= ${dm>/total} ? ${i18n>dmNoMatchText} : ${i18n>dmNoDocumentsText} }" textAlign="Center" class="hrxPdEmptyText" />
 							</VBox>
 
 							<VBox id="documentsList" items="{path: 'dm>/rows', templateShareable: false}" renderType="Bare">
@@ -130,8 +130,8 @@
 
 						<VBox renderType="Bare" class="hrxDmRows">
 							<VBox visible="{= !!${dm>/detailEmptyTitle} }" renderType="Bare" class="hrxPdEmpty">
-								<Text text="{dm>/detailEmptyTitle}" class="hrxPdEmptyTitle" />
-								<Text text="{dm>/detailEmptyText}" visible="{= !!${dm>/detailEmptyText} }" class="hrxPdEmptyText" />
+								<Text text="{dm>/detailEmptyTitle}" textAlign="Center" class="hrxPdEmptyTitle" />
+								<Text text="{dm>/detailEmptyText}" visible="{= !!${dm>/detailEmptyText} }" textAlign="Center" class="hrxPdEmptyText" />
 							</VBox>
 
 							<VBox items="{path: 'dm>/outstanding', templateShareable: false}" renderType="Bare">

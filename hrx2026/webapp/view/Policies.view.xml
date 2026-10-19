@@ -23,7 +23,7 @@
 				<HBox renderType="Bare" class="hrxPdKpis">
 					<VBox renderType="Bare" class="hrxPdKpi">
 						<HBox renderType="Bare" class="hrxPdGlyph">
-							<core:Icon src="sap-icon://document-text" />
+							<core:Icon src="sap-icon://tabler/file-text" />
 						</HBox>
 						<Text text="{i18n>pdKpiAvailable}" class="hrxPdKlab" />
 						<Text text="{pd>/kpis/available}" class="hrxPdKnum" />
@@ -31,7 +31,7 @@
 					</VBox>
 					<VBox renderType="Bare" class="hrxPdKpi">
 						<HBox renderType="Bare" class="hrxPdGlyph">
-							<core:Icon src="sap-icon://task" />
+							<core:Icon src="sap-icon://tabler/checklist" />
 						</HBox>
 						<Text text="{i18n>pdKpiNeed}" class="hrxPdKlab" />
 						<Text text="{pd>/kpis/need}" class="hrxPdKnum" />
@@ -54,8 +54,8 @@
 					</HBox>
 
 					<VBox visible="{= ${pd>/rows}.length === 0 }" renderType="Bare" class="hrxPdEmpty">
-						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstanding} : ${i18n>pdNoDocuments} }" class="hrxPdEmptyTitle" />
-						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstandingText} : ${i18n>pdNoDocumentsText} }" class="hrxPdEmptyText" />
+						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstanding} : ${i18n>pdNoDocuments} }" textAlign="Center" class="hrxPdEmptyTitle" />
+						<Text text="{= ${pdView>/onlyOutstanding} ? ${i18n>pdNothingOutstandingText} : ${i18n>pdNoDocumentsText} }" textAlign="Center" class="hrxPdEmptyText" />
 					</VBox>
 
 					<VBox items="{path: 'pd>/rows', templateShareable: false}" renderType="Bare" class="hrxPdRows">
