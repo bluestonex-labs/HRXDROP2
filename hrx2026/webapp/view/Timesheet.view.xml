@@ -17,21 +17,21 @@
 			<FlexBox renderType="Bare" class="hrxTsKpis">
 
 				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiNeutral">
-					<core:Icon src="sap-icon://target-group" class="hrxTsKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/target-arrow" class="hrxTsKpiGlyph" />
 					<Text text="{i18n>kpiTargetBillable}" class="hrxTsKpiLabel" />
 					<Text text="{tsView>/kpis/targetDays}" class="hrxTsKpiNum" />
 					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
 
 				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiWarning">
-					<core:Icon src="sap-icon://pending" class="hrxTsKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/clock-hour-4" class="hrxTsKpiGlyph" />
 					<Text text="{i18n>kpiActualBilled}" class="hrxTsKpiLabel" />
 					<Text text="{tsView>/kpis/actualDays}" class="hrxTsKpiNum" />
 					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
 
 				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiGood">
-					<core:Icon src="sap-icon://vertical-bar-chart" class="hrxTsKpiGlyph" />
+					<core:Icon src="sap-icon://tabler/chart-bar" class="hrxTsKpiGlyph" />
 					<Text text="{i18n>kpiUtilisation}" class="hrxTsKpiLabel" />
 					<HBox renderType="Bare" class="hrxTsKpiNum">
 						<Text text="{tsView>/kpis/utilisation}" />
