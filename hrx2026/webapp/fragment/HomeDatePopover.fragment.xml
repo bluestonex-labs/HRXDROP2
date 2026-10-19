@@ -5,13 +5,16 @@
 	     the month name and two arrows above it and a hint below. Quick Leave picks a
 	     range in it (days before today cannot be picked); Quick Timesheet picks a
 	     single day. The grid is built by Home.controller _renderCalendar into
-	     home>/cal. Styled in css/pages/home.css (.hrxHomeDatePop). -->
+	     home>/cal. Styled in css/pages/home.css (.hrxHomeDatePop).
+	     initialFocus is the popover itself: as in the design, opening it puts no
+	     focus ring on the month arrows (Tab still reaches them). -->
 	<Popover
 		id="homeDatePopover"
+		initialFocus="homeDatePopover"
 		showHeader="false"
 		showArrow="false"
 		placement="Bottom"
-		offsetY="6"
+		offsetY="5"
 		contentWidth="282px"
 		horizontalScrolling="false"
 		verticalScrolling="false"

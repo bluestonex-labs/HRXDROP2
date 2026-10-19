@@ -636,9 +636,13 @@ sap.ui.define([
 				oModel.setProperty("/quick/loggedTitle", bToday
 					? this.getText("homeLoggedToday")
 					: this.getText("homeLoggedOn", [this._dayLabel(oDay)]));
-				oModel.setProperty("/quick/loggedSub", this.getText("homeLoggedSub", [
-					oModel.getProperty("/quick/dayFullLabel"), Backend.fromMinutes(iBooked)
-				]));
+				// Today reads as the design's "Monday, 19th October — resets automatically
+				// at midnight" (the card goes back to the form on the next day); another
+				// day picked from "Today" says how much is booked on it.
+				var sLoggedSub = bToday
+					? this.getText("homeLoggedTodaySub", [this._longDayLabel(oDay)])
+					: this.getText("homeLoggedSub", [oModel.getProperty("/quick/dayFullLabel"), Backend.fromMinutes(iBooked)]);
+				oModel.setProperty("/quick/loggedSub", sLoggedSub);
 
 				oModel.setProperty("/quick/projects", aProjects);
 				oModel.setProperty("/quick/entries", aEntries);
@@ -700,7 +704,8 @@ sap.ui.define([
 					// The design's row: "14 – 15 Jul 2026", "Holiday · Full day", "2 days"
 					var fDays = this._leaveDays(oGroup.LeaveList);
 					oGroup.rangeLabel = this._shortRange(aDates[0], aDates[aDates.length - 1]);
-					oGroup.typeLabel = oGroup.LeaveType + " · " + this._durationLabel(oGroup.LeaveList);
+					oGroup.durationLabel = this._durationLabel(oGroup.LeaveList);
+					oGroup.typeLabel = oGroup.LeaveType + " · " + oGroup.durationLabel;
 					oGroup.daysLabel = this.getText(fDays === 1 ? "homeDay" : "homeDays", [fDays]);
 					return oGroup;
 				}, this));
@@ -760,8 +765,10 @@ sap.ui.define([
 			var aFlags = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 			oModel.setProperty("/dash/loadingTeam", true);
-			oModel.setProperty("/dash/todayLabel", oToday.toLocaleDateString("en-GB",
-				{ weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+			// The design writes the day as "Monday, 13 July 2026": en-GB leaves out the comma.
+			var sWeekday = oToday.toLocaleDateString("en-GB", { weekday: "long" });
+			var sDate = oToday.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+			oModel.setProperty("/dash/todayLabel", sWeekday + ", " + sDate);
 
 			return Promise.all([
 				this._pDashPeople,
@@ -839,7 +846,10 @@ sap.ui.define([
 						a.Name.localeCompare(b.Name);
 				});
 
-				var aParts = Object.keys(mBySite).sort().map(function (sSite) {
+				// Busiest site first, as the design's "24 Oswestry · 16 Aurangabad"
+				var aParts = Object.keys(mBySite).sort(function (a, b) {
+					return mBySite[b] - mBySite[a] || a.localeCompare(b);
+				}).map(function (sSite) {
 					return mBySite[sSite] + " " + sSite;
 				});
 				aParts.push(this.getText("mgrOnLeaveCount", [iOnLeave]));
@@ -1582,8 +1592,11 @@ sap.ui.define([
 				title: this.getText("mgrDeclineTitle"),
 				content: new VBox({
 					items: [
-						new Text({ text: oGroup.RequesterName + " · " + oGroup.rangeLabel + " · " + oGroup.typeLabel })
-							.addStyleClass("hrxModalText"),
+						// The design: "Sam Evans · 14 – 15 Jul 2026 · Holiday (Full day)"
+						new Text({
+							text: oGroup.RequesterName + " · " + oGroup.rangeLabel + " · " +
+								oGroup.LeaveType + " (" + oGroup.durationLabel + ")"
+						}).addStyleClass("hrxModalText"),
 						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("hrxModalLabel"),
 						oNote
 					]
@@ -1605,7 +1618,7 @@ sap.ui.define([
 				afterClose: function () {
 					oDialog.destroy();
 				}
-			}).addStyleClass("hrxModal");
+			}).addStyleClass("hrxModal hrxHomeDeclineModal");
 			this.getView().addDependent(oDialog);
 			oDialog.open();
 		},
@@ -1693,6 +1706,17 @@ sap.ui.define([
 				return this.getText("today");
 			}
 			return oDate.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+		},
+
+		/**
+		 * @param {Date} oDate a day
+		 * @returns {string} the day as the design writes it under "Logged for today":
+		 * "Monday, 19th October"
+		 */
+		_longDayLabel: function (oDate) {
+			var sWeekday = oDate.toLocaleDateString("en-GB", { weekday: "long" });
+			var sMonth = oDate.toLocaleDateString("en-GB", { month: "long" });
+			return sWeekday + ", " + this._ordinal(oDate.getDate()) + " " + sMonth;
 		},
 
 		/**

@@ -1273,6 +1273,13 @@ body.hrxApp {
 	width: 560px;
 }
 
+/* The theme keeps 2.5rem under the body for the footer bar, which sits over that
+   space; the design's foot is 62px (14px + a 33px button + 14px + its line), so
+   room is kept for all of it and the body is not covered. */
+.hrxApp .sapMDialog.hrxModal:not(.sapMDialog-NoFooter) {
+	padding-bottom: 62px;
+}
+
 /* .modal-ov: the darkened page behind an open modal */
 body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	background: rgba(10, 10, 11, .55);
@@ -1323,6 +1330,7 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 }
 
 .hrxApp .sapMDialog.hrxModal .sapMDialogTitleGroup .sapMTitle {
+	border: none;
 	font-family: var(--disp);
 	font-size: 15px;
 	font-weight: 800;
@@ -1378,7 +1386,14 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	color: var(--txt-2);
 }
 
+/* textarea: no theme margin above it (label.f's 6px is the gap) and no inner
+   padding round the text box, so 3 rows come out the design's 65px */
+.hrxApp .hrxModal .sapMTextArea {
+	margin: 0;
+}
+
 .hrxApp .hrxModal .sapMTextArea .sapMInputBaseContentWrapper {
+	padding: 0;
 	border: 1px solid var(--line);
 	border-radius: var(--radius-s);
 	background: var(--surface);

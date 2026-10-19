@@ -3,8 +3,9 @@ sap.ui.define([
     "sap/ui/model/json/JSONModel",
     "bsx/hrx/hrx2026/model/models",
     "bsx/hrx/hrx2026/model/CurrentUser",
-    "bsx/hrx/hrx2026/model/HrxServices"
-], (UIComponent, JSONModel, models, CurrentUser, HrxServices) => {
+    "bsx/hrx/hrx2026/model/HrxServices",
+    "sap/ui/core/IconPool"
+], (UIComponent, JSONModel, models, CurrentUser, HrxServices, IconPool) => {
     "use strict";
 
     return UIComponent.extend("bsx.hrx.hrx2026.Component", {
@@ -27,6 +28,17 @@ sap.ui.define([
             // launchpad session that leaves HRX for another app is handed back an
             // untouched theme even though the stylesheet itself stays cached.
             document.body.classList.add("hrxApp");
+
+            // The design's own icons (its "ti ti-*" glyphs, from Tabler Icons, MIT):
+            // the glyphs it uses, in fonts/tabler (built by the handoff's
+            // build-tabler-font.py). Views use them as sap-icon://tabler/<name>,
+            // e.g. sap-icon://tabler/users.
+            IconPool.registerFont({
+                collectionName: "tabler",
+                fontFamily: "tabler-icons-hrx",
+                fontURI: sap.ui.require.toUrl("bsx/hrx/hrx2026/fonts/tabler"),
+                lazy: true
+            });
 
             // set the device model
             this.setModel(models.createDeviceModel(), "device");

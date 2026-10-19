@@ -23,7 +23,7 @@
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingTeam}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="Neutral" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
-						<core:Icon src="sap-icon://group" />
+						<core:Icon src="sap-icon://tabler/users" />
 					</HBox>
 					<Text text="{i18n>mgrKpiTeam}" class="hrxHomeKpiLabel" />
 					<HBox renderType="Bare" class="hrxHomeKpiFigure">
@@ -41,7 +41,7 @@
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
-						<core:Icon src="sap-icon://activity-items" />
+						<core:Icon src="sap-icon://tabler/clipboard-check" />
 					</HBox>
 					<Text text="{i18n>mgrKpiCompliance}" class="hrxHomeKpiLabel" />
 					<HBox renderType="Bare" class="hrxHomeKpiFigure">
@@ -59,7 +59,7 @@
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingTriggers}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/triggers/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
-						<core:Icon src="sap-icon://warning2" />
+						<core:Icon src="sap-icon://tabler/alert-triangle" />
 					</HBox>
 					<Text text="{i18n>homeKpiTriggers}" class="hrxHomeKpiLabel" />
 					<HBox renderType="Bare" class="hrxHomeKpiFigure">
@@ -76,7 +76,7 @@
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingDocs}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/docs/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
-						<core:Icon src="sap-icon://document-text" />
+						<core:Icon src="sap-icon://tabler/file-text" />
 					</HBox>
 					<Text text="{i18n>mgrKpiDocs}" class="hrxHomeKpiLabel" />
 					<HBox renderType="Bare" class="hrxHomeKpiFigure">
@@ -333,7 +333,7 @@
 					<!-- Already booked: what the day holds, straight from the service -->
 					<VBox renderType="Bare" visible="{home>/quick/logged}" class="hrxHomeLogged">
 						<HBox renderType="Bare" class="hrxHomeLoggedIcon">
-							<core:Icon src="sap-icon://accept" />
+							<core:Icon src="sap-icon://tabler/check" />
 						</HBox>
 						<Text text="{home>/quick/loggedTitle}" class="hrxHomeLoggedTitle" />
 						<Text text="{home>/quick/loggedSub}" class="hrxHomeLoggedSub" />
