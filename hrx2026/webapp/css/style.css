@@ -1491,6 +1491,15 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	display: none;
 }
 
+/* ── EMPTY TABLES ───────────────────────────────────────────────────────────── */
+
+/* sap.m.Table with no rows draws one wide "no data" cell between two empty cells
+   for its highlight and navigation columns; in an auto-layout table those take
+   width and draw stray borders. The design's .tbl-empty is the one cell. */
+.hrxApp .sapMListTblRowNoData > td:not(.sapMListTblCellNoData) {
+	display: none;
+}
+
 /* ── TOOLBARS ─────────────────────────────────────────────────────────────── */
 
 .hrxApp .sapMTB-Transparent-CTX,

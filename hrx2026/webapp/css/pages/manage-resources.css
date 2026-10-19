@@ -631,6 +631,8 @@
 
 .hrxApp .hrxMrFld .sapMInputBaseInner::placeholder,
 .hrxApp .hrxMrSearch .sapMInputBaseInner::placeholder {
+	/* the theme sizes the placeholder on its own (14px); the design's is 13px */
+	font-size: 13px;
 	font-style: normal;
 	color: var(--txt-2);
 }

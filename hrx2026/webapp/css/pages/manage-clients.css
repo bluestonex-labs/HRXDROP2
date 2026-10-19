@@ -140,6 +140,8 @@
 }
 
 .hrxApp .hrxManageClients .hrxMcSearch .sapMSFI::placeholder {
+	/* the theme sizes the placeholder on its own (14px); the design's is 13px */
+	font-size: 13px;
 	font-style: normal;
 	color: #757575;
 }
@@ -925,18 +927,19 @@
 }
 
 /* No rows: the design's .tbl-empty */
-.hrxApp .hrxManageClients .hrxMcTable .sapMListNoData {
-	height: auto;
-	padding: 26px 20px;
+.hrxApp .hrxManageClients .hrxMcTable .sapMListTblRowNoData {
 	border: none;
 	background: var(--surface);
 }
 
-.hrxApp .hrxManageClients .hrxMcTable .sapMListNoDataText,
-.hrxApp .hrxManageClients .hrxMcTable .sapMListNoData .sapMText {
-	width: 100%;
+.hrxApp .hrxManageClients .hrxMcTable td.sapMListTblCell.sapMListTblCellNoData {
+	height: auto;
+	padding: 26px 20px !important;
+	border: none;
 	text-align: center;
+	font-family: var(--sans);
 	font-size: 13px;
+	line-height: 15.5px;
 	color: var(--txt-3);
 }
 
