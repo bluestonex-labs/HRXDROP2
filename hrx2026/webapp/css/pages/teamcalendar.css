@@ -1094,3 +1094,30 @@
 .hrxApp .hrxTeamCalendar .hrxTcType .sapMText {
 	white-space: nowrap;
 }
+
+/* Under Pending: requests waiting outside the chosen dates, with the link that
+   lists them. A quiet strip at the foot of the card, like the timesheet's note. */
+.hrxApp .hrxTeamCalendar .hrxTlOutside {
+	gap: 8px;
+	padding: 12px 20px;
+	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTlOutsideIcon.sapUiIcon {
+	font-size: 15px;
+	color: var(--amber);
+}
+
+.hrxApp .hrxTeamCalendar .sapMText.hrxTlOutsideText {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxTeamCalendar .hrxTlOutsideLink.sapMLnk {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--ice-deep);
+}

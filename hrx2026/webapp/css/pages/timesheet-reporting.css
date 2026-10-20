@@ -129,6 +129,26 @@
 	mask: url("../../img/icons/tsreport-mail.svg") center / 14px 14px no-repeat;
 }
 
+/* The glyph is on ::before, where the theme draws its focus ring: it stays put
+   when the button has focus, and the button gets its own ring instead. */
+.hrxTimesheetReport .hrxTsBtnMail.sapMBtn:focus > .sapMBtnInner::before,
+.hrxTimesheetReport .hrxTsBtnMail .sapMBtnInner.sapMFocus::before {
+	position: relative !important;
+	inset: auto !important;
+	top: -.12em !important;
+	width: 14px !important;
+	height: 14px !important;
+	border: none !important;
+	border-radius: 0 !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.hrxTimesheetReport .hrxTsBtnMail.sapMBtn:focus-visible > .sapMBtnInner {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
+}
+
 /* ── Inputs and selects: the design's 35px fields ──────────────────────────── */
 
 .hrxTimesheetReport .hrxTsInput.sapMInputBase {

@@ -114,6 +114,14 @@
 							</ColumnListItem>
 						</items>
 					</Table>
+
+					<!-- Pending only: requests waiting outside the chosen dates, and the
+					     link that lists them (or goes back to the dates) -->
+					<HBox alignItems="Center" wrap="Wrap" visible="{= !!${tl>/outside/visible} }" class="hrxTlOutside">
+						<core:Icon src="sap-icon://tabler/calendar-event" class="hrxTlOutsideIcon" />
+						<Text text="{tl>/outside/text}" class="hrxTlOutsideText" />
+						<Link text="{tl>/outside/linkText}" press=".onTogglePendingDates" class="hrxTlOutsideLink" />
+					</HBox>
 				</VBox>
 
 				<!-- ── The week ───────────────────────────────────────────────── -->

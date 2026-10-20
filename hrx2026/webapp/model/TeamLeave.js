@@ -221,6 +221,7 @@ sap.ui.define([
 						return oRow.ID;
 					}),
 					EmpID: oFirst.EmpID_EmployeeID,
+					ApproverID: oFirst.ApproverID_EmployeeID || "",
 					Name: oPerson.Name,
 					FirstName: oPerson.FirstName || String(oPerson.Name || "").split(" ")[0],
 					Email: oPerson.Email,

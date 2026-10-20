@@ -155,6 +155,9 @@
 }
 
 .hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 30px;
 	min-width: 30px;
 	height: 30px;
@@ -166,11 +169,14 @@
 	color: var(--txt-2);
 }
 
+/* The arrow in the middle of its 30px box: the icon's box and its line are the
+   same 16px (a 28px line in a 24px box drew the glyph 2px low). */
 .hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnIcon {
-	font-size: 14px;
-	line-height: 28px;
-	width: 28px;
+	width: 16px;
+	height: 16px;
 	margin: 0;
+	font-size: 14px;
+	line-height: 16px;
 	color: var(--txt-2);
 }
 
@@ -578,13 +584,14 @@
 	background: transparent;
 }
 
-/* An empty day reads "00:00", as in the design */
+/* An empty day reads "hh:mm" in a quiet grey until time is entered, as in the
+   live app, so a real 00:00 is never mistaken for the empty prompt. */
 .hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner::placeholder {
-	font-family: monospace;
+	font-family: var(--sans);
 	font-size: 12px;
 	font-weight: 400;
-	font-style: normal;
-	color: var(--ink);
+	font-style: italic;
+	color: var(--txt-3);
 	opacity: 1;
 }
 
@@ -598,41 +605,57 @@
 	border-color: var(--ice);
 }
 
-/* Work-description button (design: .cmt-btn, .has / .missing) */
+/* Work-description button, as the live app has it: a plain speech bubble until
+   something happens - red once Save finds time booked without a description
+   ("missing"), green once there is one ("has"). The icon sits in the middle of
+   the 30px box (a comfortable click target): the inner is a centring flex box and the icon has no width or
+   margin of its own to pull it off centre. */
 .hrxApp .hrxTimesheet .hrxTsCommentButton.sapMBtn {
-	height: 22px;
+	height: 30px;
 	padding: 0;
-	flex: 0 0 22px;
+	flex: 0 0 30px;
 }
 
 .hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnInner {
-	width: 22px;
-	min-width: 22px;
-	height: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	min-width: 30px;
+	height: 30px;
 	padding: 0;
 	box-sizing: border-box;
-	border: 1px solid var(--line);
-	border-radius: 6px;
-	background: var(--surface);
+	border: 1px solid transparent;
+	border-radius: 7px;
+	background: transparent;
 	box-shadow: none;
 	transition: .12s;
 }
 
+.hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnContent {
+	display: none;
+}
+
 .hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnIcon {
-	width: 20px;
+	width: auto;
+	height: auto;
 	margin: 0;
-	font-size: 12px;
-	line-height: 20px;
-	color: var(--txt-3);
+	font-size: 18px;
+	line-height: 1;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCommentButton:hover .sapMBtnInner {
+	background: var(--frost);
 }
 
 .hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="has"] .sapMBtnInner {
-	border-color: var(--ice);
-	background: var(--ice-glow);
+	border-color: #B7E3CF;
+	background: var(--mint-soft);
 }
 
 .hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="has"] .sapMBtnIcon {
-	color: var(--ice-deep);
+	color: #0F7B4F;
 }
 
 .hrxApp .hrxTimesheet .hrxTsCommentButton[data-comment="missing"] .sapMBtnInner {
@@ -719,26 +742,31 @@
 
 /* ── FOOTNOTE (design: .cmt-note) ─────────────────────────────────────────── */
 
+/* As the live app has it: a soft grey bar under the grid, an amber "i" and the
+   note in the body text colour. */
 .hrxApp .hrxTimesheet .hrxTsNote {
-	gap: 7px;
-	padding: 12px 20px;
+	gap: 10px;
+	padding: 14px 20px;
 	border-top: 1px solid var(--line-soft);
+	background: var(--frost);
 }
 
 .hrxApp .hrxTimesheet .hrxTsNote .sapMText {
 	font-family: var(--sans);
-	font-size: 11px;
-	line-height: 13px;
-	color: var(--txt-3);
+	font-size: 13px;
+	line-height: 17px;
+	color: var(--ink);
 }
 
 .hrxApp .hrxTimesheet .hrxTsNoteIcon {
 	flex-shrink: 0;
-	font-size: 14px;
-	width: 14px;
-	height: 14px;
-	line-height: 14px;
-	color: var(--signal);
+	width: 17px;
+	height: 17px;
+	fill: none;
+	stroke: var(--amber);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
 /* ── DIALOGS AND POP-OVERS ───────────────────────────────────────────────── */
@@ -859,4 +887,23 @@
 	font-weight: 800;
 	line-height: 14px;
 	color: var(--ink);
+}
+
+/* On a narrow screen a day's column is only just wide enough for the time box
+   and its button, so the button steps down to fit beside the box. */
+@media (max-width: 1100px) {
+	.hrxApp .hrxTimesheet .hrxTsCommentButton.sapMBtn {
+		height: 24px;
+		flex: 0 0 24px;
+	}
+
+	.hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnInner {
+		width: 24px;
+		min-width: 24px;
+		height: 24px;
+	}
+
+	.hrxApp .hrxTimesheet .hrxTsCommentButton .sapMBtnIcon {
+		font-size: 15px;
+	}
 }

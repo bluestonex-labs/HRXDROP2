@@ -76,6 +76,13 @@ sap.ui.define([
 		formatter: formatter,
 
 		onInit: function () {
+			// Compact, always: the design was built and measured in it. The launchpad
+			// would otherwise pick cozy (touch) sizing on some devices, which enlarges
+			// the theme's icons and fields and pushes the design's icon buttons, ticks
+			// and arrows off centre. Dialogs and popovers take the class over from the
+			// view they belong to. (index.html sets it on the body for a local run.)
+			this.getView().addStyleClass("sapUiSizeCompact");
+
 			var oToolPage = this.byId("toolPage");
 			// start expanded on desktop, collapsed on smaller screens
 			oToolPage.setSideExpanded(Device.resize.width > 1024);
@@ -83,29 +90,26 @@ sap.ui.define([
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
 
+			// The health strip's pills are plain boxes; a click or Enter/Space on one
+			// opens the page it is about. Handled on the strip, as its pills are
+			// re-created whenever the home page refills it.
+			var oStrip = this.byId("healthStrip");
+			oStrip.attachBrowserEvent("click", this._onHealthPillPress, this);
+			oStrip.attachBrowserEvent("keydown", function (oEvent) {
+				if (oEvent.key === "Enter" || oEvent.key === " ") {
+					oEvent.preventDefault();
+					this._onHealthPillPress(oEvent);
+				}
+			}, this);
+			oStrip.addEventDelegate({
+				onAfterRendering: this._makeHealthPillsFocusable
+			}, this);
+
 			// Each row of the rail carries its key in the DOM (data-nav-key), so the
 			// stylesheet can draw the design's own line icon for it.
 			this.byId("sideNavigation").getItem().addEventDelegate({
 				onAfterRendering: this._markNavigationRows.bind(this)
 			});
-
-			// A click on a health-strip pill opens the page it is about
-			this.byId("healthStrip").addEventDelegate({
-				onclick: this._onHealthPillClick.bind(this)
-			});
-		},
-
-		/**
-		 * Opens the page a health-strip pill points to: the hours still to book open My
-		 * Timesheet, the approvals Team Calendar, the leave balance My Leave.
-		 * @param {jQuery.Event} oEvent the click anywhere in the strip
-		 */
-		_onHealthPillClick: function (oEvent) {
-			var oPill = oEvent.target.closest(".hrxHealthPill[data-route]");
-			var sRoute = oPill && oPill.getAttribute("data-route");
-			if (sRoute) {
-				this.getOwnerComponent().getRouter().navTo(sRoute);
-			}
 		},
 
 		_markNavigationRows: function () {
@@ -384,6 +388,36 @@ sap.ui.define([
 			if (oNavList) {
 				oNavList.setSelectedKey(bUtilisation ? "utilisation" : (mRouteToNavKey[sRoute] || sRoute));
 			}
+		},
+
+		/**
+		 * Opens the page a health-strip pill is about: the timesheet, Team Calendar for
+		 * approvals, My Leave for the balance.
+		 * @param {jQuery.Event} oEvent the click or keydown on the strip
+		 */
+		_onHealthPillPress: function (oEvent) {
+			var oPill = oEvent.target.closest && oEvent.target.closest(".hrxHealthPill[data-route]");
+			var sRoute = oPill && oPill.getAttribute("data-route");
+			if (sRoute) {
+				this.getOwnerComponent().getRouter().navTo(sRoute);
+			}
+		},
+
+		/**
+		 * Lets the keyboard reach the pills that open a page, and tells screen readers
+		 * they are links.
+		 */
+		_makeHealthPillsFocusable: function () {
+			var oDomRef = this.byId("healthStrip").getDomRef();
+			if (!oDomRef) {
+				return;
+			}
+			oDomRef.querySelectorAll(".hrxHealthPill[data-route]").forEach(function (oPill) {
+				if (oPill.getAttribute("data-route")) {
+					oPill.setAttribute("tabindex", "0");
+					oPill.setAttribute("role", "link");
+				}
+			});
 		},
 
 		/**

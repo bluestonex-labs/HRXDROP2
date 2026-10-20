@@ -299,7 +299,6 @@ body.hrxApp {
 .hrxApp .hrxToolPage [data-nav-key="leave"] { --hrx-nav-icon: url("../img/nav/leave.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="teamcal"] { --hrx-nav-icon: url("../img/nav/teamcal.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="policies"] { --hrx-nav-icon: url("../img/nav/policies.svg"); }
-.hrxApp .hrxToolPage [data-nav-key="expenses"] { --hrx-nav-icon: url("../img/nav/expenses.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="explorer"] { --hrx-nav-icon: url("../img/nav/explorer.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="sickness"] { --hrx-nav-icon: url("../img/nav/sickness.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="documents"] { --hrx-nav-icon: url("../img/nav/documents.svg"); }
@@ -346,81 +345,13 @@ body.hrxApp {
 	outline-offset: -1px;
 }
 
-/* Expenses: coming soon, faded, with its SOON tag on the right */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled {
-	opacity: .45;
-	cursor: not-allowed;
-}
-
-/* The theme fades every span in a disabled row; nested spans (the tag's text is
-   three deep) compounded it to near-black. The row's own .45 is the only fade. */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span {
-	opacity: 1;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span.sapTntNLIIcon {
-	opacity: .85;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover {
-	background: none;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover > a {
-	color: #A7C0CE;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer {
-	margin-left: auto;
-	height: 16px;
-	align-items: center;
-	justify-content: flex-end;
-}
-
-/* Its screen-reader label must not take room beside the tag. */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer > .sapUiInvisibleText {
-	position: absolute;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon.sapMObjStatus {
-	display: inline-flex;
-	align-items: center;
-	box-sizing: border-box;
-	height: 16px;
-	margin: 0 !important;
-	padding: 0 6px !important;
-	border: 1px solid rgba(255, 255, 255, .14);
-	border-radius: 5px;
-	background: transparent;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusWrapper,
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
-	padding: 0;
-	background: transparent;
-	border: none;
-	height: auto;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
-	font-family: var(--sans);
-	font-size: 9px;
-	font-weight: 700;
-	letter-spacing: .08em;
-	line-height: 12px;
-	text-transform: uppercase;
-	text-shadow: none;
-	color: #7C93A0;
-}
-
 /* Collapsed: icons only, centred, and the groups become thin rules */
 .hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLI.sapTntNLIFirstLevel > a {
 	justify-content: center;
 	padding: 10px 0 !important;
 }
 
-.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLIText,
-.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLITagContainer {
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLIText {
 	display: none;
 }
 
@@ -764,6 +695,67 @@ body.hrxApp {
 
 .hrxApp .hrxHealthPill[data-state="Error"] .hrxHealthDot {
 	background: var(--signal);
+}
+
+/* A pill that opens a page reads as a link: pointer, a little lift on hover and
+   a focus ring for the keyboard. */
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]) {
+	cursor: pointer;
+	transition: filter .12s, box-shadow .12s;
+}
+
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]):hover {
+	filter: brightness(.96);
+	box-shadow: 0 1px 3px rgba(10, 10, 11, .08);
+}
+
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]):focus-visible {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
+}
+
+/* ── FIELD ICONS ─────────────────────────────────────────────────────────── */
+
+/* Every field's icon - a dropdown's chevron, a date's calendar, a search glass -
+   in the middle of the field's height, on every page and in every dialog. The
+   theme keeps the icon at its own 25px with a 26px line and pins it to the top
+   of the field, which left it 3-4px high in the design's 33-36px fields. The
+   container centres a 16px icon instead, the theme's sizes overridden (hence
+   !important). A page's own colour or width for the icon still applies. */
+.hrxApp .sapMInputBaseIconContainer {
+	display: flex;
+	align-items: center;
+	height: 100%;
+}
+
+.hrxApp .sapMInputBaseIconContainer > .sapMInputBaseIcon {
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	height: 16px !important;
+	line-height: 16px !important;
+	margin: 0 !important;
+}
+
+/* The same for a Select's arrow. The theme pins the arrow's box to the top of
+   the field (absolute, top 0) at its compact 26px, inside the design's 35-36px
+   fields, and draws the glyph on a 28px line within it - 3-5px high. Pinned to
+   the bottom as well, the box's auto margins centre it in the field (a page that
+   sizes it to the field's height keeps it where it was), and the glyph is
+   centred in the box; whether the arrow shows at all,
+   and how it is drawn, is left to each page (Home hides it and draws its own). */
+.hrxApp .sapMSlt .sapMSltArrow {
+	bottom: 0;
+	margin-top: auto;
+	margin-bottom: auto;
+}
+
+.hrxApp .sapMSlt .sapMSltArrow::before {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	line-height: 1;
 }
 
 /* ── PAGE / CONTENT ───────────────────────────────────────────────────────── */
@@ -2066,27 +2058,31 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	content: none !important;
 }
 
-/* The design's .bell-badge: a red pill on the bell's top-right corner */
+/* The count: an 18px rounded square (the dark ring inside it, as border-box)
+   centred on the bell box's top-right corner, the number in its middle. The
+   bell's box sits 3px below its wrapper, hence -6px / -9px. "9+" widens it a
+   little rather than wrapping. */
 .hrxApp .sapMText.hrxBellBadge {
 	position: absolute;
-	top: -5px;
-	right: -5px;
+	top: -6px;
+	right: -9px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-sizing: content-box;
-	min-width: 16px;
-	height: 16px;
-	padding: 0 4px;
-	border-radius: 8px;
+	box-sizing: border-box;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 3px;
+	border-radius: 6px;
 	border: 2px solid #0A0A0B;
 	background: var(--signal);
 	color: #FFFFFF;
 	font-family: var(--sans);
-	font-size: 9.5px;
+	font-size: 10px;
 	font-weight: 700;
 	line-height: 1;
 	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 	pointer-events: none;
 }
 

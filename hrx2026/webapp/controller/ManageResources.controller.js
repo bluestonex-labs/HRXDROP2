@@ -22,8 +22,9 @@ sap.ui.define([
 	var LEAVE_SERVICE = SERVICE_ROOT + "/hrx/leaveReqs.xsjs";
 	var LEAVE_APPROVALS_SERVICE = SERVICE_ROOT + "/hrx/leaveApprovals.xsjs";
 
-	// Everything except PicB. Pic is the address of the stored picture (Document
-	// Management), shown on each row.
+	// Everything the list shows. Pic is a link to the picture in the document
+	// service (not the picture itself), so the list can show it beside each name;
+	// PicB is not needed.
 	var LIST_FIELDS = [
 		"ID", "UserID", "EmpID", "OrgID", "FName", "LName", "Email", "Mobile", "Pic",
 		"UserTypeKey", "BaseSiteKey", "ManagerID", "IsActive", "TargetUtilization",

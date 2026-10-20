@@ -88,7 +88,9 @@ sap.ui.define([
 				rangeFrom: null,
 				rangeTo: null,
 				q: "",
-				status: "REQ"
+				status: "REQ",
+				// "Show all" under Pending: every waiting request, whatever its dates
+				showAllPending: false
 			}), "tlView");
 
 			this.setModel(new JSONModel({
@@ -283,15 +285,23 @@ sap.ui.define([
 
 		/**
 		 * @returns {Array<object>} the people the Team choice covers: a manager's direct
-		 * reports (or everyone), and everyone for an employee
+		 * reports (or everyone), and everyone for an employee. "My team" also takes in
+		 * anyone with a request routed to the manager to approve, as the home page's
+		 * Pending approvals does, so every request listed there can be found here.
 		 */
 		_pool: function () {
 			var oViewModel = this.getModel("tcView");
 			var sMe = oViewModel.getProperty("/myEmpId");
 			var bMineOnly = oViewModel.getProperty("/isManager") && oViewModel.getProperty("/team") === "mine";
+			var mApprovesFor = {};
+			(this._aPending || []).forEach(function (oRequest) {
+				if (oRequest.ApproverID === sMe) {
+					mApprovesFor[oRequest.EmpID] = true;
+				}
+			});
 
 			return this._aCalendarPeople.filter(function (oPerson) {
-				return !bMineOnly || oPerson.ManagerID === sMe;
+				return !bMineOnly || oPerson.ManagerID === sMe || !!mApprovesFor[oPerson.EmpID];
 			});
 		},
 
@@ -433,8 +443,10 @@ sap.ui.define([
 		},
 
 		/**
-		 * Fills the Team leave card: the period's requests for the people shown, by the
-		 * chosen status.
+		 * Fills the Team leave card for the people shown, by the chosen status and the
+		 * chosen dates. Requests still waiting outside those dates are never lost: a
+		 * line under Pending counts them, and "Show all" lists every waiting request
+		 * whatever its dates - the same ones as the home page's Pending approvals.
 		 */
 		_renderLeave: function () {
 			var oLeaveView = this.getModel("tlView").getData();
@@ -446,9 +458,20 @@ sap.ui.define([
 			});
 			var sQuery = (oLeaveView.q || "").trim().toLowerCase();
 
-			var aInScope = this._aPeriodRequests.filter(function (oRequest) {
+			var fnInScope = function (oRequest) {
 				return mShown[oRequest.EmpID] && (!sQuery || oRequest.Name.toLowerCase().indexOf(sQuery) !== -1);
+			};
+			var aPeriod = this._aPeriodRequests.filter(fnInScope);
+			var mInPeriod = {};
+			aPeriod.forEach(function (oRequest) {
+				mInPeriod[oRequest.key] = true;
 			});
+			var aPendingElsewhere = this._aPending.filter(function (oRequest) {
+				return fnInScope(oRequest) && !mInPeriod[oRequest.key];
+			});
+			var bAllPending = oLeaveView.status === "REQ" && !!oLeaveView.showAllPending;
+
+			var aInScope = bAllPending ? aPeriod.concat(aPendingElsewhere) : aPeriod;
 			var fnCount = function (sStatus) {
 				return aInScope.filter(function (oRequest) {
 					return oRequest.status === sStatus;
@@ -473,11 +496,22 @@ sap.ui.define([
 			oModel.setProperty("/rows", aRows);
 
 			var bMyTeam = this.getModel("tcView").getProperty("/team") === "mine";
-			var sPeriod = oPeriod ? TeamLeave.rangeLabel(oPeriod.from, oPeriod.to) : this.getText("tlSelectDates");
+			var sPeriod = bAllPending ? this.getText("tlAnyDates")
+				: oPeriod ? TeamLeave.rangeLabel(oPeriod.from, oPeriod.to) : this.getText("tlSelectDates");
 			oModel.setProperty("/countText", this.getText(bMyTeam ? "tlCountMine" : "tlCount", [
 				this.getText(aRows.length === 1 ? "tlOneRequest" : "tlRequests", [aRows.length]), sPeriod]));
+			// Under Pending: how many more are waiting outside the dates, or that every
+			// waiting request is shown, each with the link that switches between them.
+			var iElsewhere = aPendingElsewhere.length;
+			oModel.setProperty("/outside", {
+				visible: oLeaveView.status === "REQ" && (bAllPending || iElsewhere > 0),
+				text: bAllPending ? this.getText("tlShowingAllPending")
+					: this.getText(iElsewhere === 1 ? "tlOneMoreOutside" : "tlMoreOutside", [iElsewhere]),
+				linkText: this.getText(bAllPending ? "tlBackToDates" : "tlShowAll")
+			});
+
 			oModel.setProperty("/noDataText", oLeaveView.status === "REQ"
-				? this.getText("tlNothingPending")
+				? this.getText(bAllPending ? "tlNothingPendingAnywhere" : "tlNothingPending")
 				: this.getText("tlNothingDecided", [this.getText(TeamLeave.STATUS[oLeaveView.status].textKey).toLowerCase()]));
 		},
 
@@ -557,7 +591,18 @@ sap.ui.define([
 		/* Team leave events                                           */
 		/* =========================================================== */
 
+		/**
+		 * Switches Pending between the chosen dates and every waiting request.
+		 */
+		onTogglePendingDates: function () {
+			var oLeaveViewModel = this.getModel("tlView");
+			oLeaveViewModel.setProperty("/showAllPending", !oLeaveViewModel.getProperty("/showAllPending"));
+			this._renderLeave();
+		},
+
 		onPeriodChange: function () {
+			// Picking dates means looking at those dates.
+			this.getModel("tlView").setProperty("/showAllPending", false);
 			if (this.getModel("tlView").getProperty("/period") === "custom") {
 				if (this._leavePeriod()) {
 					this._loadRequests();
@@ -575,6 +620,7 @@ sap.ui.define([
 
 		onRangeChange: function (oEvent) {
 			if (oEvent.getParameter("valid") && oEvent.getParameter("from") && oEvent.getParameter("to")) {
+				this.getModel("tlView").setProperty("/showAllPending", false);
 				this._loadRequests();
 			}
 		},

@@ -368,14 +368,16 @@
 				<Text text="{i18n>homeThisWeek}" tooltip="{home>/week/label}" class="hrxHomeCardHint" />
 			</HBox>
 			<VBox renderType="Bare" class="hrxHomeCardBody" busy="{home>/loadingWeek}" busyIndicatorDelay="0">
-				<!-- One column per day: the day, its ring and, on leave, the word "Leave".
-				     The hover text sits on the whole column and gives the exact hours. -->
+				<!-- One column per day: the day, its ring (hours booked) and under it the
+				     hours due - or, on leave, the word "Leave". The hover text sits on the
+				     whole column and gives the exact hours. -->
 				<HBox renderType="Bare" items="{home>/weekRings}" class="hrxHomeRings">
 					<VBox renderType="Bare" tooltip="{home>tooltip}" class="hrxHomeRingDay">
 						<Text text="{home>day}" class="hrxHomeRingDayName" />
 						<!-- A 44px SVG ring built by Home.controller _ringSvg -->
 						<core:HTML content="{home>svg}" sanitizeContent="false" />
 						<Text text="{i18n>homeRingLeave}" visible="{home>onLeave}" class="hrxHomeRingLeave" />
+						<Text text="{home>due}" visible="{= !${home>onLeave} &amp;&amp; !!${home>due} }" class="hrxHomeRingDue" />
 					</VBox>
 				</HBox>
 

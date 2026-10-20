@@ -195,10 +195,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -206,7 +206,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -217,10 +217,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -228,7 +228,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -239,10 +239,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -250,7 +250,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -261,10 +261,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -272,7 +272,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -283,10 +283,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -294,7 +294,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -305,10 +305,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -316,7 +316,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -327,10 +327,10 @@
 										value="{ts>time}"
 										visible="{ts>editable}"
 										change=".onTimeChange"
-										placeholder="00:00"
+										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
 									<Button
-										icon="sap-icon://comment"
+										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
 										visible="{ts>editable}"
 										press=".onOpenComment"
@@ -338,7 +338,7 @@
 										<customData>
 											<core:CustomData
 												key="comment"
-												value="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentState'}"
+												value="{parts: ['ts>comment', 'ts>commentError'], formatter: '.formatCommentState'}"
 												writeToDom="true" />
 										</customData>
 									</Button>
@@ -350,7 +350,9 @@
 				</hrx:TimesheetTable>
 
 				<HBox renderType="Bare" alignItems="Center" class="hrxTsNote">
-					<core:Icon src="sap-icon://high-priority" class="hrxTsNoteIcon" />
+					<!-- The live app's outline "i" (Tabler info-circle), drawn inline: the icon
+					     fonts only have a filled one. Coloured by .hrxTsNoteIcon. -->
+					<core:HTML content="&lt;svg class=&quot;hrxTsNoteIcon&quot; viewBox=&quot;0 0 24 24&quot; aria-hidden=&quot;true&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;9&quot;/&gt;&lt;path d=&quot;M12 8h.01M11 12h1v4h1&quot;/&gt;&lt;/svg&gt;" />
 					<Text text="{i18n>commentRequiredNote}" />
 				</HBox>
 			</VBox>
