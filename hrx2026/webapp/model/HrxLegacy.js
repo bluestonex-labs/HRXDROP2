@@ -992,15 +992,17 @@ sap.ui.define([
 				});
 
 				// The signed-in manager's own team: requests they are the approver of, and
-				// requests from anybody reporting to them. (Everybody's pending leave is on
-				// Team Calendar, under Team: Everyone.)
+				// requests from anybody reporting to them - current staff only, as on Team
+				// Calendar, so the two always list the same requests. (Everybody's pending
+				// leave is on Team Calendar, under Team: Everyone.)
 				return Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }).then(function (aLeaves) {
 					var aPending = [];
 					aLeaves.filter(function (oLeave) {
 						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
 						var bMine = oLeave.ApproverID_EmployeeID === oMe.EmployeeID ||
 							(!!oRequester && oRequester.Manager_EmployeeID === oMe.EmployeeID);
-						return bMine && leaveStatus(oLeave) === "REQ";
+						var bCurrent = !oRequester || oRequester.IsActive !== false;
+						return bMine && bCurrent && leaveStatus(oLeave) === "REQ";
 					}).forEach(function (oLeave) {
 						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
 						var oType = mTypes[oLeave.LeaveCategoryId_ID] || { code: "", desc: "" };

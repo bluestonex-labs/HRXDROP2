@@ -60,6 +60,17 @@ sap.ui.define([
 
 			this.getOwnerComponent().getRouter().getRoute("home")
 				.attachPatternMatched(this._onRouteMatched, this);
+
+			// The cards' drop-downs always open under their field. By default a long
+			// list with little room below flips above it, away from the field it
+			// belongs to; below, it stops at the window's edge and scrolls instead.
+			["qtProject", "qlType", "qlDuration"].forEach(function (sId) {
+				var oPicker = this.byId(sId).getPicker();
+				// On a phone the picker is a full-screen dialog, with no placement.
+				if (oPicker && typeof oPicker.setPlacement === "function") {
+					oPicker.setPlacement("Bottom");
+				}
+			}, this);
 		},
 
 
@@ -613,15 +624,20 @@ sap.ui.define([
 				oModel.setProperty("/quick/dayEditableReason",
 					oLeaveEntry ? this.getText("legendOnLeave") : (!bWorking ? this.getText("qtNonWorkingDay") : ""));
 
+				// An assignment whose project the service no longer has (no name to
+				// show) is left out, rather than listed as an empty "—" line.
 				aAssignments.forEach(function (oAssignment) {
-					if (!mSeen[oAssignment.ProjectID]) {
-						mSeen[oAssignment.ProjectID] = true;
-						aProjects.push({
-							ProjectID: oAssignment.ProjectID,
-							ClientKey: oAssignment.ClientKey,
-							label: (oAssignment.ClientDesc || "") + " — " + oAssignment.ProjectDesc
-						});
+					var sProject = (oAssignment.ProjectDesc || "").trim();
+					if (!sProject || mSeen[oAssignment.ProjectID]) {
+						return;
 					}
+					mSeen[oAssignment.ProjectID] = true;
+					var sClient = (oAssignment.ClientDesc || "").trim();
+					aProjects.push({
+						ProjectID: oAssignment.ProjectID,
+						ClientKey: oAssignment.ClientKey,
+						label: sClient ? sClient + " — " + sProject : sProject
+					});
 				});
 
 				this._timeEntries(oData).forEach(function (oItem) {

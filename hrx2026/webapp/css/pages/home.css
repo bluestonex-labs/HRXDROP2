@@ -964,6 +964,15 @@
 	background-color: var(--surface);
 }
 
+/* Open: the theme drops the field's border while its list is showing, which left
+   the field looking like plain text with the list floating under it. The field
+   keeps its outline (in the focus colour) instead. */
+.hrxHomePage .hrxHomeField.sapMSlt.sapMSltExpanded,
+.hrxHomePage .hrxHomeField.sapMSlt.sapMSltPressed {
+	border: 1px solid var(--ice) !important;
+	background-color: var(--surface) !important;
+}
+
 .hrxHomePage .hrxHomeField.sapMSlt .sapMSltArrow,
 .hrxHomePage .hrxHomeField.sapMSlt .sapMSltIconCont,
 .hrxHomePage .hrxHomeField.sapMSlt .sapMSltIcon {
