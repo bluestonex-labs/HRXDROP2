@@ -84,7 +84,9 @@ const shot = (oPage, sName) => oPage.screenshot({ path: OUT + sName + ".png", cl
 	await shot(oKyle, "h2-quick-timesheet");
 	await run(oKyle, () => sap.ui.core.Element.registry.filter((o) => o.isA && o.isA("sap.m.Button") && o.getDomRef() && o.hasStyleClass("hrxHomeSaveBtn"))[0].firePress());
 	await sleep(4000);
-	const aTime = (await api(KYLE, "TimeLog?$filter=Date eq 2026-10-19")).value || [];
+	// Quick Timesheet books today
+	const sToday = new Date().toLocaleDateString("en-CA");
+	const aTime = (await api(KYLE, "TimeLog?$filter=Date eq " + sToday)).value || [];
 	check("Quick Timesheet saved 07:30 on " + sProject, aTime.some((o) => /^07:30/.test(o.Hours)), JSON.stringify(aTime.map((o) => o.Hours + " " + o.Comment)));
 	const sStrip = await run(oKyle, () => [...document.querySelectorAll(".hrxHealthStrip .hrxHealthText, .hrxHealthText")].map((e) => e.innerText).join(" | "));
 	check("Employee strip: timesheet first, no approvals pill", /^(Timesheet on track|[0-9:]+ hrs still)/.test(sStrip) && !/approval/.test(sStrip), sStrip);

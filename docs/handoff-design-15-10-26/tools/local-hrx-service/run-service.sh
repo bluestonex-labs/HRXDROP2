@@ -26,6 +26,9 @@ for MAIL_USER in "$COPY_DIR/srv" "$COPY_DIR/srv/lib" "$COPY_DIR/srv/handlers"; d
 		*) echo "REFUSING TO START: nodemailer resolves to $RESOLVED from $MAIL_USER" >&2; exit 1 ;;
 	esac
 done
+# Never the real Document Management key, even if this shell has it: the copy falls
+# back to the fake server below (srv/hrx-services.js readSdmCredentials).
+unset HRX_DMS_CREDENTIALS
 export VCAP_SERVICES='{"sdm":[{"name":"dms","credentials":{"uaa":{"url":"http://localhost:4005","clientid":"test","clientsecret":"test"},"endpoints":{"ecmservice":{"url":"http://localhost:4005/"}}}}]}'
 export CDS_CONFIG='{"requires":{"auth":{"kind":"mocked","users":{"sam.evans@example.test":{"password":"","ID":"sam.evans@example.test"},"dan.barton@example.test":{"password":"","ID":"dan.barton@example.test"},"kyle.barnfield@example.test":{"password":"","ID":"kyle.barnfield@example.test"}}}}}'
 export HRX_MAIL_DRY_RUN=true
