@@ -242,6 +242,8 @@ def build():
         ["View as (demo)", "Testing aid: a picker under the signed-in user switches between Actual, Admin and Employee",
          "Admin shows every manager page and everyone; Employee hides them", "CurrentUser.js `demoRole` — to be removed before go-live"],
     ], [2.4, 4.4, 6.2, 3.6])
+    para(document, "The rail shows the Admin only pages to managers only, and each of those pages shows an employee who opens "
+                   "its link directly the notice \"This area is only available to managers and administrators\" instead of its contents.")
     note(document, "**These roles only shape the UI.** The service checks that a caller is signed in, not what they may do: an "
                    "employee who calls the service directly could do anything a manager can. See risk R3 in section 13.",
          fill=AMBER_SOFT, border=AMBER)
@@ -291,8 +293,9 @@ def build():
          "Basic info (location, logo, primary contact), Support team (client users), SLA (response and resolution hours per "
          "severity), Components (licensed software), Application services."],
         ["Manage Projects\n(manageprojects)", "Projects, their resourcing and billing.", "Search, filter, Add project. Detail tabs: "
-         "Info (type, dates, PO, booking open, areas), Resourcing (assign, edit, release a resource with billing scheme, day "
-         "rate, billable days, start date, areas), Contacts (the client's primary and secondary contact), Attachments."],
+         "Info (type, dates, PO, booking open, areas), Resourcing (assign, edit, release a resource with a billing scheme by "
+         "office — UK office, India office, Internal billing or a custom rate — day rate, billable days, start date, areas), "
+         "Client team (the client's primary and secondary contact), Attachments."],
         ["Missing timesheets\n(missingtimesheets)", "Who has not booked their time.", "Reached from App Explorer and the Admin tiles."],
         ["Admin\n(admin)", "A tile page of the admin apps (model/apps.json).", "Open a page."],
     ], [3.4, 3.8, 9.4])
@@ -617,7 +620,9 @@ def build():
 
     # ── 12 Known issues ──
     heading(document, "12  Known issues", 1)
-    para(document, "Found by checking every call the app makes against HRXService `dev`. Issues with a fix waiting are marked with its branch.")
+    para(document, "Found by checking every call the app makes against HRXService `dev`. Issues with a fix waiting are marked with its "
+                   "branch; the branches are on the fork davida012/HRXService, each from `dev`, for a pull request into "
+                   "bluestonex-labs/HRXService `dev`.")
     add_table(document, ["#", "Issue", "Effect", "Status"], [
         ["I1", "createLeaveRequest emails the requester's manager and throws when there is none", "Anyone without a manager "
          "(a director) cannot request leave: 500, nothing saved", "Fixed on HRXService branch fix/leave-requests-email-case"],
@@ -632,6 +637,9 @@ def build():
         ["I6", "Project attachments' \"uploaded by\" is Document Management's technical user", "The uploader's name is not shown correctly", "Open"],
         ["I7", "Client and project codes are the service's UUIDs", "Lists show a long ID where the design shows a short code", "Open (no short code in the service)"],
         ["I8", "My Bonus and Manage Bonus have no service in the app", "App Explorer marks them as service needed", "Open"],
+        ["I9", "Assign resource offers billing schemes by office and matches each to a BillingScheme record by name "
+               "(model/BillingSchemes.js)", "Without records whose names contain \"UK\", \"India\", \"Internal\" and \"Custom\", "
+         "that choice cannot be saved (the dialog says so)", "Check the BillingScheme records in the TDD service"],
     ], [0.8, 6.0, 5.8, 4.0])
 
     # ── 13 Risks ──
