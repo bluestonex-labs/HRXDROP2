@@ -261,6 +261,7 @@ sap.ui.define([
 						}).slice(0, 2).join(""),
 						siteID: oUser.SiteID || "",
 						jobTitle: oUser.JobTitle || "",
+						pic: oUser.Pic || "",
 						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};

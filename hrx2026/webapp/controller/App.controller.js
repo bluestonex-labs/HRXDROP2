@@ -128,6 +128,7 @@ sap.ui.define([
 					initials: oProfile.initials,
 					email: oProfile.email,
 					empID: oProfile.empID,
+					pic: oProfile.pic || "",
 					isManager: oProfile.isManager,
 					// "Consultant · BSX000052", as under the name in the design
 					subtitle: [oProfile.jobTitle, oProfile.empID].filter(Boolean).join(" · ")

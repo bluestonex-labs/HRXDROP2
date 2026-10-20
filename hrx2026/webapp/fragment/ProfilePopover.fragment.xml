@@ -8,6 +8,7 @@
 		class="hrxProfilePopover">
 		<VBox class="sapUiSmallMargin" alignItems="Center">
 			<Avatar
+				src="{app>/user/pic}"
 				initials="{app>/user/initials}"
 				displaySize="M"
 				backgroundColor="Accent6"

@@ -1133,6 +1133,7 @@ sap.ui.define([
 						Email: lower(oMe.WorkEmail),
 						SiteID: oMe.BaseSite_ID || "",
 						JobTitle: oMe.JobTitle || "",
+						Pic: pictureOf(oMe),
 						IsManager: yn(bManager),
 						HasPendingLeaves: "N"
 					}] : [],

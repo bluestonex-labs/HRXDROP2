@@ -492,6 +492,16 @@ body.hrxApp {
 	min-width: 0;
 }
 
+.hrxApp .hrxRailAvatar {
+	overflow: hidden;
+}
+
+.hrxApp .sapMImg.hrxRailAvatarImg {
+	width: 28px;
+	height: 28px;
+	object-fit: cover;
+}
+
 .hrxApp .sapMText.hrxRailAvatarText {
 	font-family: var(--sans);
 	font-size: 11px;

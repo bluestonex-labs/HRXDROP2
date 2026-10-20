@@ -22,10 +22,10 @@ sap.ui.define([
 	var LEAVE_SERVICE = SERVICE_ROOT + "/hrx/leaveReqs.xsjs";
 	var LEAVE_APPROVALS_SERVICE = SERVICE_ROOT + "/hrx/leaveApprovals.xsjs";
 
-	// Everything except Pic/PicB - the pictures are base64 blobs of several hundred KB
-	// each and are only needed once a single resource is opened.
+	// Everything except PicB. Pic is the address of the stored picture (Document
+	// Management), shown on each row.
 	var LIST_FIELDS = [
-		"ID", "UserID", "EmpID", "OrgID", "FName", "LName", "Email", "Mobile",
+		"ID", "UserID", "EmpID", "OrgID", "FName", "LName", "Email", "Mobile", "Pic",
 		"UserTypeKey", "BaseSiteKey", "ManagerID", "IsActive", "TargetUtilization",
 		"TargetHrsPerWeek", "AnnualLeaveQuota", "BonusPercent", "PensionRate",
 		"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"
@@ -560,12 +560,29 @@ sap.ui.define([
 				this.getModel("mrView").setProperty("/saving", false);
 				MessageToast.show(oResult.msg || this.getText("mrSaved"));
 				return this._loadResources().then(function () {
+					this._updateOwnPicture(oDetail.EmpID);
 					return this._showResource(oDetail.EmpID);
 				}.bind(this));
 			}.bind(this)).catch(function (oError) {
 				this.getModel("mrView").setProperty("/saving", false);
 				this._showError("mrErrorSave", oError);
 			}.bind(this));
+		},
+
+		/**
+		 * When the resource just saved is the signed-in user, shows their (possibly new)
+		 * picture in the side rail and profile straight away.
+		 * @param {string} sEmpId the saved resource's employee ID
+		 */
+		_updateOwnPicture: function (sEmpId) {
+			var oAppModel = this.getOwnerComponent().getModel("app");
+			if (!sEmpId || oAppModel.getProperty("/user/empID") !== sEmpId) {
+				return;
+			}
+			var oSaved = (this.getModel("mr").getProperty("/allResources") || []).filter(function (oResource) {
+				return oResource.EmpID === sEmpId;
+			})[0];
+			oAppModel.setProperty("/user/pic", (oSaved && oSaved.Pic) || "");
 		},
 
 		/**

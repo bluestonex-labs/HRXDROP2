@@ -132,7 +132,8 @@
 		tooltip="{app>/user/email}"
 		class="hrxRailUser">
 		<HBox alignItems="Center" justifyContent="Center" class="hrxRailAvatar">
-			<Text text="{app>/user/initials}" class="hrxRailAvatarText"/>
+			<Image src="{app>/user/pic}" visible="{= !!${app>/user/pic} }" alt="{app>/user/name}" class="hrxRailAvatarImg"/>
+			<Text text="{app>/user/initials}" visible="{= !${app>/user/pic} }" class="hrxRailAvatarText"/>
 		</HBox>
 		<VBox class="hrxRailUserInfo">
 			<Text text="{app>/user/name}" wrapping="false" class="hrxRailUserName"/>
