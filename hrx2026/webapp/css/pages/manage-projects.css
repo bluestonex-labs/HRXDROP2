@@ -661,27 +661,11 @@
 	color: var(--ink);
 }
 
-/* The arrow and calendar sit in the middle of the field's height. The theme
-   keeps its icon at its own 25px and pins it to the top of the 33px container,
-   which left them 4px high; the container centres them instead, with the
-   theme's height overridden (hence !important). */
 .hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseIconContainer,
 .hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseIconContainer {
-	display: flex;
-	align-items: center;
 	height: 33px;
 	padding: 0 12px 0 0;
 	background: transparent;
-}
-
-.hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseIconContainer > .sapMInputBaseIcon,
-.hrxApp .hrxMpDialog .hrxMpInput .sapMInputBaseIconContainer > .sapMInputBaseIcon {
-	display: flex !important;
-	align-items: center;
-	justify-content: center;
-	height: 16px !important;
-	line-height: 16px !important;
-	margin: 0 !important;
 }
 
 .hrxApp .hrxManageProjects .hrxMpInput .sapMInputBaseIcon,

@@ -680,6 +680,50 @@ body.hrxApp {
 	outline-offset: 2px;
 }
 
+/* ── FIELD ICONS ─────────────────────────────────────────────────────────── */
+
+/* Every field's icon - a dropdown's chevron, a date's calendar, a search glass -
+   in the middle of the field's height, on every page and in every dialog. The
+   theme keeps the icon at its own 25px with a 26px line and pins it to the top
+   of the field, which left it 3-4px high in the design's 33-36px fields. The
+   container centres a 16px icon instead, the theme's sizes overridden (hence
+   !important). A page's own colour or width for the icon still applies. */
+.hrxApp .sapMInputBaseIconContainer {
+	display: flex;
+	align-items: center;
+	height: 100%;
+}
+
+.hrxApp .sapMInputBaseIconContainer > .sapMInputBaseIcon {
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	height: 16px !important;
+	line-height: 16px !important;
+	margin: 0 !important;
+}
+
+/* The same for a Select's arrow. The theme pins the arrow's box to the top of
+   the field (absolute, top 0) at its compact 26px, inside the design's 35-36px
+   fields, and draws the glyph on a 28px line within it - 3-5px high. Pinned to
+   the bottom as well, the box's auto margins centre it in the field (a page that
+   sizes it to the field's height keeps it where it was), and the glyph is
+   centred in the box; whether the arrow shows at all,
+   and how it is drawn, is left to each page (Home hides it and draws its own). */
+.hrxApp .sapMSlt .sapMSltArrow {
+	bottom: 0;
+	margin-top: auto;
+	margin-bottom: auto;
+}
+
+.hrxApp .sapMSlt .sapMSltArrow::before {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	line-height: 1;
+}
+
 /* ── PAGE / CONTENT ───────────────────────────────────────────────────────── */
 
 /* The design's .scroll: 26px above the content, 28px either side */

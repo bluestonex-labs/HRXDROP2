@@ -307,6 +307,27 @@
 	mask: var(--hrx-mc-icon) center / contain no-repeat;
 }
 
+/* The icon is drawn on ::before, the same layer the theme draws its focus ring
+   on. Once a button has focus (after a dialog it opened closes, say) the theme
+   made that layer absolute, which threw the icon into the top-left corner. The
+   icon keeps its place whatever the focus, and the button gets its own ring. */
+.hrxApp .hrxManageClients .hrxMcIconBtn.sapMBtn:focus > .sapMBtnInner::before,
+.hrxApp .hrxManageClients .hrxMcIconBtn .sapMBtnInner.sapMFocus::before {
+	position: static !important;
+	inset: auto !important;
+	width: 15px !important;
+	height: 15px !important;
+	border: none !important;
+	border-radius: 0 !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.hrxApp .hrxManageClients .hrxMcIconBtn.sapMBtn:focus-visible > .sapMBtnInner {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
+}
+
 .hrxApp .hrxManageClients .hrxMcIconBtn:hover .sapMBtnInner,
 .hrxApp .hrxManageClients .hrxMcIconBtn .sapMBtnInner.sapMBtnActive {
 	color: var(--ice-deep);
@@ -1026,6 +1047,25 @@
 	background-color: currentColor;
 	-webkit-mask: var(--hrx-mc-icon) center / contain no-repeat;
 	mask: var(--hrx-mc-icon) center / contain no-repeat;
+}
+
+/* As the icon buttons above: the glyph stays put when the button has focus. */
+.hrxApp .hrxManageClients .hrxMcGhostSm.sapMBtn:focus > .sapMBtnInner::before,
+.hrxApp .hrxManageClients .hrxMcGhostSm .sapMBtnInner.sapMFocus::before {
+	position: relative !important;
+	inset: auto !important;
+	top: -1.26px !important;
+	width: 13px !important;
+	height: 13px !important;
+	border: none !important;
+	border-radius: 0 !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.hrxApp .hrxManageClients .hrxMcGhostSm.sapMBtn:focus-visible > .sapMBtnInner {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
 }
 
 .hrxApp .hrxManageClients .hrxMcGhostSm .sapMBtnContent {
