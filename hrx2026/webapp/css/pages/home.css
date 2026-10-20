@@ -1019,19 +1019,29 @@
 	padding: 10px 4px 4px;
 }
 
+/* The tick in the middle of its circle. Flex, as for the tiles' glyphs: grid's
+   place-items left the block-level sap.ui.core.Icon against the left edge. */
 .hrxHomePage .hrxHomeLoggedIcon {
 	width: 40px;
 	height: 40px;
 	margin-bottom: 12px;
 	border-radius: 50%;
-	display: grid;
-	place-items: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	background: var(--mint-soft);
 	color: var(--mint);
 }
 
 .hrxHomePage .hrxHomeLoggedIcon .sapUiIcon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin: 0;
 	font-size: 20px;
+	line-height: 20px;
 	color: inherit;
 }
 
