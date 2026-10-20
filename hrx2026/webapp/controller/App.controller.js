@@ -76,6 +76,13 @@ sap.ui.define([
 		formatter: formatter,
 
 		onInit: function () {
+			// Compact, always: the design was built and measured in it. The launchpad
+			// would otherwise pick cozy (touch) sizing on some devices, which enlarges
+			// the theme's icons and fields and pushes the design's icon buttons, ticks
+			// and arrows off centre. Dialogs and popovers take the class over from the
+			// view they belong to. (index.html sets it on the body for a local run.)
+			this.getView().addStyleClass("sapUiSizeCompact");
+
 			var oToolPage = this.byId("toolPage");
 			// start expanded on desktop, collapsed on smaller screens
 			oToolPage.setSideExpanded(Device.resize.width > 1024);

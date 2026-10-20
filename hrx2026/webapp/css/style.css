@@ -1980,27 +1980,31 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	content: none !important;
 }
 
-/* The design's .bell-badge: a red pill on the bell's top-right corner */
+/* The count: an 18px rounded square (the dark ring inside it, as border-box)
+   centred on the bell box's top-right corner, the number in its middle. The
+   bell's box sits 3px below its wrapper, hence -6px / -9px. "9+" widens it a
+   little rather than wrapping. */
 .hrxApp .sapMText.hrxBellBadge {
 	position: absolute;
-	top: -5px;
-	right: -5px;
+	top: -6px;
+	right: -9px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-sizing: content-box;
-	min-width: 16px;
-	height: 16px;
-	padding: 0 4px;
-	border-radius: 8px;
+	box-sizing: border-box;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 3px;
+	border-radius: 6px;
 	border: 2px solid #0A0A0B;
 	background: var(--signal);
 	color: #FFFFFF;
 	font-family: var(--sans);
-	font-size: 9.5px;
+	font-size: 10px;
 	font-weight: 700;
 	line-height: 1;
 	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 	pointer-events: none;
 }
 

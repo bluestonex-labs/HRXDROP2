@@ -155,6 +155,9 @@
 }
 
 .hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 30px;
 	min-width: 30px;
 	height: 30px;
@@ -166,11 +169,14 @@
 	color: var(--txt-2);
 }
 
+/* The arrow in the middle of its 30px box: the icon's box and its line are the
+   same 16px (a 28px line in a 24px box drew the glyph 2px low). */
 .hrxApp .hrxTimesheet .hrxTsIconButton .sapMBtnIcon {
-	font-size: 14px;
-	line-height: 28px;
-	width: 28px;
+	width: 16px;
+	height: 16px;
 	margin: 0;
+	font-size: 14px;
+	line-height: 16px;
 	color: var(--txt-2);
 }
 
