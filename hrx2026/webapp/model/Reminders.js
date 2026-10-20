@@ -17,7 +17,7 @@ sap.ui.define([
 
 	function draftInMailApp(oReminder) {
 		Mail.open(oReminder.draft);
-		return "drafted";
+		return { outcome: "drafted", sent: 0, failed: [] };
 	}
 
 	return {
@@ -29,8 +29,10 @@ sap.ui.define([
 		 *   subject     the email's subject
 		 *   message     the email's text, sent as written
 		 *   draft       the Mail.open() draft to fall back on ({ to | bcc, subject, body })
-		 * @returns {Promise<string>} "sent" when the service sent it, "drafted" when a
-		 * draft was opened in the mail app instead
+		 * @returns {Promise<object>} outcome: "sent" when the service sent it, "drafted"
+		 * when a draft was opened in the mail app instead; sent: how many emails went;
+		 * failed: who could not be emailed, as the service reports them ("BSX000012
+		 * (reason)"). The service only fails the whole call when nobody could be emailed.
 		 */
 		send: function (oReminder) {
 			if (!HrxServices.has("sendReminder")) {
@@ -41,8 +43,13 @@ sap.ui.define([
 				EmployeeIDs: oReminder.employeeIds,
 				Subject: oReminder.subject,
 				Message: oReminder.message
-			}).then(function () {
-				return "sent";
+			}).then(function (oResult) {
+				var aFailed = (oResult && oResult.failed) || [];
+				return {
+					outcome: "sent",
+					sent: (oResult && oResult.sent) || oReminder.employeeIds.length - aFailed.length,
+					failed: aFailed
+				};
 			}, function (oError) {
 				var bEmailNotSetUp = /not set up/i.test((oError && oError.message) || "");
 				if (bEmailNotSetUp) {

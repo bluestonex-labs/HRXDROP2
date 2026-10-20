@@ -136,6 +136,13 @@ sap.ui.define([
 			}).then(function (oPolicy) {
 				return Hrx.upload("Policy", oPolicy.ID, "", oDocument.file, oDocument.file.name).then(function () {
 					return { data: { DocumentID: oPolicy.ID } };
+				}, function (oError) {
+					// Without its file the policy would be published empty: take it back
+					// down, then report the upload's own error.
+					var fnRethrow = function () {
+						throw oError;
+					};
+					return Hrx.callAction("removePolicy", { PolicyID: oPolicy.ID }).then(fnRethrow, fnRethrow);
 				});
 			});
 		},

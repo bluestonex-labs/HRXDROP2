@@ -297,7 +297,8 @@ sap.ui.define([
 		 */
 		assignedProjects: function () {
 			return Hrx.list("UserToProject", {
-				$filter: "IsActive eq true",
+				// Assignments saved before IsActive was set hold null: they count as active.
+				$filter: "IsActive eq true or IsActive eq null",
 				$select: "Employee_EmployeeID,Project_ID",
 				$expand: "Project($select=ID,ProjectDesc)"
 			}).then(function (aAssignments) {

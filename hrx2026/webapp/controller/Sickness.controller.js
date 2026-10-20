@@ -529,8 +529,8 @@ sap.ui.define([
 				subject: sSubject,
 				message: sBody,
 				draft: { to: oTrigger.Email, subject: sSubject, body: sBody }
-			}).then(function (sResult) {
-				sOutcome = sResult;
+			}).then(function (oResult) {
+				sOutcome = oResult.outcome;
 				return this._review(oTrigger, "EMAILED", sBody);
 			}.bind(this)).then(function () {
 				this.byId("sicknessMessageDialog").close();

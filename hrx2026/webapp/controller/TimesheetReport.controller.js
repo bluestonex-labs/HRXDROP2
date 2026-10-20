@@ -906,13 +906,25 @@ sap.ui.define([
 				subject: sSubject,
 				message: sMessage,
 				draft: oDraft
-			}).then(function (sOutcome) {
-				if (sOutcome === "sent") {
-					MessageToast.show(this.getText("reminderSentCount", [aRows.length]));
+			}).then(function (oResult) {
+				if (oResult.outcome === "sent") {
+					this._reportReminders(oResult);
 				}
 			}.bind(this)).catch(function (oError) {
 				MessageBox.error(this.getText("reminderFailed", [oError.message]));
 			}.bind(this));
+		},
+
+		/**
+		 * Says how many reminders went, and who the service could not email.
+		 * @param {object} oResult Reminders.send's answer: sent, failed
+		 */
+		_reportReminders: function (oResult) {
+			if (oResult.failed.length) {
+				MessageBox.warning(this.getText("reminderPartlySent", [oResult.sent, oResult.failed.join(", ")]));
+				return;
+			}
+			MessageToast.show(this.getText("reminderSentCount", [oResult.sent]));
 		},
 
 		onUtilShow: function () {

@@ -954,10 +954,13 @@ sap.ui.define([
 				var oType = aTypes.filter(function (o) {
 					return o.code === oBody.LeaveType || o.ID === oBody.LeaveType;
 				})[0];
+				var sDayTime = oBody.Absence || "Full Day";
 				var oChange = {
 					StartDate: oBody.Date,
 					EndDate: oBody.Date,
-					DayTime: oBody.Absence || "Full Day"
+					DayTime: sDayTime,
+					// one row per day, so its length follows the part of the day taken
+					NoOfDays: /^(AM|PM)$/i.test(sDayTime) ? "0.5" : "1"
 				};
 				if (oType) {
 					oChange.LeaveCategoryId_ID = oType.ID;
