@@ -32,6 +32,10 @@ async function post(sPath, oBody) {
 	const oClient = await post("Clients", { OrgID_ID: oOrg.ID, ClientName: "Croda", BaseSite: oOswestry.ID, IsActive: true });
 	const oProject = await post("Projects", { OrgID_ID: oOrg.ID, ClientID_ID: oClient.ID, ProjectDesc: "Croda UX Support", ProjectType: "TNM", IsActive: true, IsTimeBookingAllowed: true, StartDate: "2026-01-01" });
 	const oScheme = await post("BillingScheme", { Org_ID: oOrg.ID, BillingDesc: "Consultant", DayRate: "500", Currency: "GBP" });
+	// The schemes Manage Projects offers by office (model/BillingSchemes.js matches them by name)
+	for (const [sDesc, sRate] of [["UK office", "950"], ["India office", "475"], ["Internal billing", "0"], ["Custom billing rate", "0"]]) {
+		await post("BillingScheme", { Org_ID: oOrg.ID, BillingDesc: sDesc, DayRate: sRate, Currency: "GBP" });
+	}
 	for (const oUser of [oKyle, oPriya]) {
 		await post("UserToProject", { Employee_EmployeeID: oUser.EmployeeID, Project_ID: oProject.ID, BillingID_ID: oScheme.ID, DayRate: "500", BillableDays: "10", TotalCharge: "5000", IsActive: true });
 	}

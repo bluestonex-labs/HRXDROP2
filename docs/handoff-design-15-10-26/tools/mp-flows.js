@@ -89,7 +89,7 @@ const assignments = (oPage) => run(oPage, () => (m("mpTabs").assignments || []).
 	await run(oSam, () => {
 		const o = model("mpForm");
 		o.setProperty("/EmpID", m("mpForm").resources.find((r) => /Tom/.test(r.FullName || r.FName || "")).EmpID);
-		o.setProperty("/BillingID", m("mp").billing[0].BillingID);
+		o.setProperty("/schemeKey", "UK");
 		o.setProperty("/DayRate", "450");
 		o.setProperty("/BillableDays", "10");
 	});

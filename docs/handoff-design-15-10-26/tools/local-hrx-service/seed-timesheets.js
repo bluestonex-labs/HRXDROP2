@@ -18,7 +18,7 @@ const isoDate = (oDate) => oDate.toISOString().slice(0, 10);
 	const user = (sFirst) => aUsers.find((o) => o.FirstName === sFirst);
 	const oCroda = (await call("GET", "Projects?$filter=ProjectDesc eq 'Croda UX Support'")).value[0];
 	const oSite = (await call("GET", "Sites")).value[0];
-	const oScheme = (await call("GET", "BillingScheme")).value[0];
+	const oScheme = (await call("GET", "BillingScheme?$filter=BillingDesc eq 'Internal billing'")).value[0];
 
 	// An internal project for Bluestonex itself
 	const oBsx = await call("POST", "Clients", { OrgID_ID: oOrg.ID, ClientName: "Bluestonex", BaseSite: oSite.ID, IsActive: true });

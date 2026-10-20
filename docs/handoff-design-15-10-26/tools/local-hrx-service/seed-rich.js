@@ -151,12 +151,11 @@ const day = (sDate, oFields) => Object.assign({ StartDate: sDate, EndDate: sDate
 	await call(SAM, "POST", "ClientApplications", { Client_ID: oCroda.ID, AppName: "HRX", ServiceName: "Support", ValidFrom: "2026-01-01", ValidTill: "2026-12-31", DeployedVersion: "1.4.0" });
 
 	// ── Project areas, Kyle's area, Ben on the client team, a project file ──
-	const aAreas = [];
-	for (const sArea of ["Basis", "Development", "UX"]) {
-		aAreas.push(await call(SAM, "POST", "ProjectAreas", { AreaName: sArea, IsActive: true }));
-	}
-	await call(SAM, "POST", "setProjectAreas", { ProjectID: oProject.ID, AreaIDs: [aAreas[1].ID, aAreas[2].ID] });
-	await call(SAM, "POST", "setResourceAreas", { ProjectID: oProject.ID, EmployeeID: user("Kyle"), AreaIDs: [aAreas[2].ID] });
+	// The service comes with its areas of work (Basis, Development, ... UX Design)
+	const aAreas = await get("ProjectAreas");
+	const area = (sName) => aAreas.find((o) => o.AreaName === sName).ID;
+	await call(SAM, "POST", "setProjectAreas", { ProjectID: oProject.ID, AreaIDs: [area("Development"), area("UX Design")] });
+	await call(SAM, "POST", "setResourceAreas", { ProjectID: oProject.ID, EmployeeID: user("Kyle"), AreaIDs: [area("UX Design")] });
 	await call(SAM, "POST", "ProjectClientTeam", { Project_ID: oProject.ID, ClientUser_ID: oBen.ID, IsActive: true });
 	await upload("Project", oProject.ID, oPdf, "statement-of-work.pdf", "application/pdf");
 
