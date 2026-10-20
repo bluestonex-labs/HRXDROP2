@@ -663,6 +663,23 @@ body.hrxApp {
 	background: var(--signal);
 }
 
+/* A pill that opens a page reads as a link: pointer, a little lift on hover and
+   a focus ring for the keyboard. */
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]) {
+	cursor: pointer;
+	transition: filter .12s, box-shadow .12s;
+}
+
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]):hover {
+	filter: brightness(.96);
+	box-shadow: 0 1px 3px rgba(10, 10, 11, .08);
+}
+
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]):focus-visible {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
+}
+
 /* ── PAGE / CONTENT ───────────────────────────────────────────────────────── */
 
 /* The design's .scroll: 26px above the content, 28px either side */

@@ -83,6 +83,21 @@ sap.ui.define([
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
 
+			// The health strip's pills are plain boxes; a click or Enter/Space on one
+			// opens the page it is about. Handled on the strip, as its pills are
+			// re-created whenever the home page refills it.
+			var oStrip = this.byId("healthStrip");
+			oStrip.attachBrowserEvent("click", this._onHealthPillPress, this);
+			oStrip.attachBrowserEvent("keydown", function (oEvent) {
+				if (oEvent.key === "Enter" || oEvent.key === " ") {
+					oEvent.preventDefault();
+					this._onHealthPillPress(oEvent);
+				}
+			}, this);
+			oStrip.addEventDelegate({
+				onAfterRendering: this._makeHealthPillsFocusable
+			}, this);
+
 			// Each row of the rail carries its key in the DOM (data-nav-key), so the
 			// stylesheet can draw the design's own line icon for it.
 			this.byId("sideNavigation").getItem().addEventDelegate({
@@ -365,6 +380,36 @@ sap.ui.define([
 			if (oNavList) {
 				oNavList.setSelectedKey(bUtilisation ? "utilisation" : (mRouteToNavKey[sRoute] || sRoute));
 			}
+		},
+
+		/**
+		 * Opens the page a health-strip pill is about: the timesheet, Team Calendar for
+		 * approvals, My Leave for the balance.
+		 * @param {jQuery.Event} oEvent the click or keydown on the strip
+		 */
+		_onHealthPillPress: function (oEvent) {
+			var oPill = oEvent.target.closest && oEvent.target.closest(".hrxHealthPill[data-route]");
+			var sRoute = oPill && oPill.getAttribute("data-route");
+			if (sRoute) {
+				this.getOwnerComponent().getRouter().navTo(sRoute);
+			}
+		},
+
+		/**
+		 * Lets the keyboard reach the pills that open a page, and tells screen readers
+		 * they are links.
+		 */
+		_makeHealthPillsFocusable: function () {
+			var oDomRef = this.byId("healthStrip").getDomRef();
+			if (!oDomRef) {
+				return;
+			}
+			oDomRef.querySelectorAll(".hrxHealthPill[data-route]").forEach(function (oPill) {
+				if (oPill.getAttribute("data-route")) {
+					oPill.setAttribute("tabindex", "0");
+					oPill.setAttribute("role", "link");
+				}
+			});
 		},
 
 		/**

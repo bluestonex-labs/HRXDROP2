@@ -409,9 +409,13 @@ sap.ui.define([
 
 			// The design's strip leads with this week's timesheet: on track, or the
 			// hours still to book.
+			// Each pill names the page it opens (see App.controller _onHealthPillPress).
 			var oWeekStatus = this._weekStatus(this._oWeekTotals);
 			if (oWeekStatus.text) {
-				aStrip.push(oWeekStatus);
+				aStrip.push(Object.assign({}, oWeekStatus, {
+					route: "timesheet",
+					tooltip: this.getText("stripOpenTimesheet")
+				}));
 			}
 
 			// One pill per person waiting, not per day, so it lines up with the
@@ -420,7 +424,9 @@ sap.ui.define([
 			if (iPending) {
 				aStrip.push({
 					text: this.getText(iPending === 1 ? "homeStripApproval" : "homeStripApprovals", [iPending]),
-					state: "Warning"
+					state: "Warning",
+					route: "teamcal",
+					tooltip: this.getText("stripOpenApprovals")
 				});
 			}
 
@@ -429,7 +435,9 @@ sap.ui.define([
 				var fBalance = parseFloat(oUser.balanceLeaves) || 0;
 				aStrip.push({
 					text: this.getText("stripLeaveBalance", [fBalance]),
-					state: fBalance > 0 ? "Success" : "Error"
+					state: fBalance > 0 ? "Success" : "Error",
+					route: "leave",
+					tooltip: this.getText("stripOpenLeave")
 				});
 			}
 
