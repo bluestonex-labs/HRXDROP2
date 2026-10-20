@@ -16,7 +16,8 @@
 				<HBox alignItems="Center" class="hrxTcResourceRow">
 					<CheckBox selected="{tc>selected}" select=".onResourceToggle" />
 					<HBox alignItems="Center" justifyContent="Center" class="hrxTcResourceAvatar">
-						<Text text="{tc>initials}" />
+						<Image src="{= ${pictures>/users}[${tc>EmpID}] || '' }" visible="{= !!${pictures>/users}[${tc>EmpID}] }" width="24px" height="24px" class="hrxAvatarPic" />
+						<Text text="{tc>initials}" visible="{= !${pictures>/users}[${tc>EmpID}] }" />
 					</HBox>
 					<Text text="{tc>Name}" class="hrxTcResourceName" />
 				</HBox>

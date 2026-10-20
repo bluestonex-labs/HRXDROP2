@@ -112,10 +112,18 @@
 			busyIndicatorDelay="0"
 			class="hrxMpCard hrxMpDetail">
 
-			<!-- Head: the project's initials, its name with the booking pill, client · ID -->
+			<!-- Head: the client's logo (else the project's initials), its name with the booking pill, client · ID -->
 			<HBox renderType="Bare" class="hrxMpHead">
+				<Image
+					src="{= ${pictures>/clients}[${mpDetail>/ClientKey}] || '' }"
+					visible="{= !!${pictures>/clients}[${mpDetail>/ClientKey}] }"
+					alt="{mpDetail>/ClientDesc}"
+					width="52px"
+					height="52px"
+					class="hrxAvatarPic hrxAvatarLogo" />
 				<Text
 					text="{path: 'mpDetail>/ProjectDesc', formatter: '.formatter.nameInitials'}"
+					visible="{= !${pictures>/clients}[${mpDetail>/ClientKey}] }"
 					wrapping="false"
 					class="hrxMpLogo" />
 				<VBox renderType="Bare" class="hrxMpHeadText">

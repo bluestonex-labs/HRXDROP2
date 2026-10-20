@@ -446,7 +446,7 @@ sap.ui.define([
 			// hours still to book.
 			var oWeekStatus = this._weekStatus(this._oWeekTotals);
 			if (oWeekStatus.text) {
-				aStrip.push(oWeekStatus);
+				aStrip.push(Object.assign({ route: "timesheet" }, oWeekStatus));
 			}
 
 			// One pill per person waiting, not per day, so it lines up with the
@@ -455,7 +455,9 @@ sap.ui.define([
 			if (iPending) {
 				aStrip.push({
 					text: this.getText(iPending === 1 ? "homeStripApproval" : "homeStripApprovals", [iPending]),
-					state: "Warning"
+					state: "Warning",
+					// Team Calendar lists the requests waiting, with Approve and Reject
+					route: "teamcal"
 				});
 			}
 
@@ -464,7 +466,8 @@ sap.ui.define([
 				var fBalance = parseFloat(oUser.balanceLeaves) || 0;
 				aStrip.push({
 					text: this.getText("stripLeaveBalance", [fBalance]),
-					state: fBalance > 0 ? "Success" : "Error"
+					state: fBalance > 0 ? "Success" : "Error",
+					route: "leave"
 				});
 			}
 

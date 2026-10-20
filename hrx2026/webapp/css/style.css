@@ -496,6 +496,21 @@ body.hrxApp {
 	overflow: hidden;
 }
 
+/* An uploaded picture in place of an initials circle (model/Pictures.js); each view
+   gives it the circle's size. A client logo keeps its whole shape on white. */
+.hrxApp .sapMImg.hrxAvatarPic {
+	flex-shrink: 0;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.hrxApp .sapMImg.hrxAvatarLogo {
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	background: #FFFFFF;
+	object-fit: contain;
+}
+
 .hrxApp .sapMImg.hrxRailAvatarImg {
 	width: 28px;
 	height: 28px;
@@ -703,6 +718,15 @@ body.hrxApp {
 	background: transparent;
 	color: var(--txt-2);
 	box-sizing: border-box;
+}
+
+/* A pill that opens a page (data-route, see App.controller) */
+.hrxApp .hrxHealthPill[data-route] {
+	cursor: pointer;
+}
+
+.hrxApp .hrxHealthPill[data-route]:hover {
+	border-color: currentColor;
 }
 
 .hrxApp .hrxHealthPill .sapMText.hrxHealthText {

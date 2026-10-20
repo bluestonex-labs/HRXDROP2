@@ -69,8 +69,10 @@
 					</HBox>
 				</HBox>
 
-				<!-- The signed-in user's own week at a glance; the home page fills it. -->
+				<!-- The signed-in user's own week at a glance; the home page fills it. A pill
+				     with a route opens that page when clicked (App.controller). -->
 				<HBox
+					id="healthStrip"
 					alignItems="Center"
 					wrap="Wrap"
 					visible="{app>/page/showStrip}"
@@ -79,6 +81,7 @@
 					<HBox alignItems="Center" class="hrxHealthPill">
 						<customData>
 							<core:CustomData key="state" value="{app>state}" writeToDom="true"/>
+							<core:CustomData key="route" value="{app>route}" writeToDom="true"/>
 						</customData>
 						<core:Icon src="sap-icon://warning2" visible="{= ${app>state} === 'Warning' }" class="hrxHealthIcon"/>
 						<core:HTML content="&lt;span class=&quot;hrxHealthDot&quot;&gt;&lt;/span&gt;" visible="{= ${app>state} !== 'Warning' }"/>

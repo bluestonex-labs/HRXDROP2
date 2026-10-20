@@ -87,7 +87,8 @@
 								<cells>
 									<HBox alignItems="Center" class="hrxTcPersonCell">
 										<HBox alignItems="Center" justifyContent="Center" class="hrxTcAvatar">
-											<Text text="{tl>initials}" class="hrxTcAvatarText" />
+											<Image src="{= ${pictures>/users}[${tl>EmpID}] || '' }" visible="{= !!${pictures>/users}[${tl>EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+											<Text text="{tl>initials}" visible="{= !${pictures>/users}[${tl>EmpID}] }" class="hrxTcAvatarText" />
 										</HBox>
 										<Text text="{tl>Name}" class="hrxTcPersonName" />
 									</HBox>
@@ -212,7 +213,7 @@
 							<HBox class="hrxTcRow">
 								<HBox alignItems="Center" class="hrxTcPerson">
 									<Avatar
-										src="{path: 'tc>Pic', formatter: '.formatter.imageSrc'}"
+										src="{= ${pictures>/users}[${tc>EmpID}] || '' }"
 										initials="{tc>initials}"
 										displaySize="Custom"
 										customDisplaySize="26px"

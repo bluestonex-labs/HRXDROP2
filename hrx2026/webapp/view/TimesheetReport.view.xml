@@ -466,7 +466,8 @@
 								<VBox renderType="Bare" items="{path: 'tr>/sub/rows', templateShareable: false}">
 									<HBox renderType="Bare" class="hrxTsTr hrxTsSubCols">
 										<HBox renderType="Bare" class="hrxTsPerson">
-											<Text text="{tr>initials}" class="hrxTsAvatar" />
+											<Image src="{= ${pictures>/users}[${tr>UserID}] || '' }" visible="{= !!${pictures>/users}[${tr>UserID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+											<Text text="{tr>initials}" visible="{= !${pictures>/users}[${tr>UserID}] }" class="hrxTsAvatar" />
 											<Text text="{tr>Name}" class="hrxTsPersonName" />
 										</HBox>
 										<VBox renderType="Bare" class="hrxTsAck">

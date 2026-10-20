@@ -123,7 +123,8 @@
 								<ColumnListItem>
 									<cells>
 										<HBox renderType="Bare" class="hrxHomePerson">
-											<Text text="{home>initials}" class="hrxHomeAvatar" />
+											<Image src="{= ${pictures>/users}[${home>EmpID}] || '' }" visible="{= !!${pictures>/users}[${home>EmpID}] }" width="28px" height="28px" class="hrxAvatarPic" />
+											<Text text="{home>initials}" visible="{= !${pictures>/users}[${home>EmpID}] }" class="hrxHomeAvatar" />
 											<Text text="{home>Name}" class="hrxHomePersonName" />
 										</HBox>
 										<Text text="{home>site}" />

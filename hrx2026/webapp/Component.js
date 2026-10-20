@@ -4,8 +4,9 @@ sap.ui.define([
     "bsx/hrx/hrx2026/model/models",
     "bsx/hrx/hrx2026/model/CurrentUser",
     "bsx/hrx/hrx2026/model/HrxServices",
+    "bsx/hrx/hrx2026/model/Pictures",
     "sap/ui/core/IconPool"
-], (UIComponent, JSONModel, models, CurrentUser, HrxServices, IconPool) => {
+], (UIComponent, JSONModel, models, CurrentUser, HrxServices, Pictures, IconPool) => {
     "use strict";
 
     return UIComponent.extend("bsx.hrx.hrx2026.Component", {
@@ -79,6 +80,11 @@ sap.ui.define([
                 };
             }.bind(this));
 
+            // Everybody's picture and every client's logo, for any avatar in the app
+            // (see model/Pictures.js). Until they arrive, avatars show initials.
+            this.setModel(new JSONModel({ users: {}, clients: {} }), "pictures");
+            this.reloadPictures();
+
             // Which HRX services are deployed decides how several pages load, so routing
             // waits for it (one small $metadata read, which never fails the app).
             this.setModel(new JSONModel(HrxServices.flags()), "services");
@@ -86,6 +92,14 @@ sap.ui.define([
                 this.getModel("services").setData(HrxServices.flags());
                 this.getRouter().initialize();
             }.bind(this));
+        },
+
+        /**
+         * Re-reads the pictures and logos - after one is uploaded, replaced or removed.
+         * @returns {Promise} resolves once the "pictures" model is up to date
+         */
+        reloadPictures() {
+            return Pictures.load(this.getModel("pictures"));
         },
 
         exit() {

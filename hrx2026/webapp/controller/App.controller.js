@@ -88,6 +88,24 @@ sap.ui.define([
 			this.byId("sideNavigation").getItem().addEventDelegate({
 				onAfterRendering: this._markNavigationRows.bind(this)
 			});
+
+			// A click on a health-strip pill opens the page it is about
+			this.byId("healthStrip").addEventDelegate({
+				onclick: this._onHealthPillClick.bind(this)
+			});
+		},
+
+		/**
+		 * Opens the page a health-strip pill points to: the hours still to book open My
+		 * Timesheet, the approvals Team Calendar, the leave balance My Leave.
+		 * @param {jQuery.Event} oEvent the click anywhere in the strip
+		 */
+		_onHealthPillClick: function (oEvent) {
+			var oPill = oEvent.target.closest(".hrxHealthPill[data-route]");
+			var sRoute = oPill && oPill.getAttribute("data-route");
+			if (sRoute) {
+				this.getOwnerComponent().getRouter().navTo(sRoute);
+			}
 		},
 
 		_markNavigationRows: function () {

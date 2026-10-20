@@ -14,7 +14,8 @@
 			<Text text="{i18n>homeNoPending}" visible="{= ${home>/approvals}.length === 0 }" class="hrxHomeApprEmpty" />
 			<VBox renderType="Bare" items="{path: 'home>/approvals', templateShareable: false}">
 				<HBox renderType="Bare" class="hrxHomeApprRow">
-					<Text text="{home>initials}" class="hrxHomeApprAvatar" />
+					<Image src="{= ${pictures>/users}[${home>RequesterID}] || '' }" visible="{= !!${pictures>/users}[${home>RequesterID}] }" width="38px" height="38px" class="hrxAvatarPic" />
+					<Text text="{home>initials}" visible="{= !${pictures>/users}[${home>RequesterID}] }" class="hrxHomeApprAvatar" />
 					<VBox renderType="Bare" class="hrxHomeApprMain">
 						<Text text="{home>RequesterName}" class="hrxHomeApprName" />
 						<Text text="{home>rangeLabel}" class="hrxHomeApprMeta" />

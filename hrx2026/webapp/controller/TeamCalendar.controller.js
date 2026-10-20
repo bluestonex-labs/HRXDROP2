@@ -745,6 +745,7 @@ sap.ui.define([
 			this.getModel("tcPop").setData({
 				kind: "person",
 				saving: false,
+				EmpID: oPerson.EmpID,
 				name: oPerson.Name,
 				initials: oPerson.initials,
 				pending: aPending,

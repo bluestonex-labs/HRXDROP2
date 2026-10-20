@@ -454,6 +454,8 @@ sap.ui.define([
 				ClientContactMobile: oDetail.ClientContactMobile || "",
 				ClientContactEmail: oDetail.ClientContactEmail || ""
 			}, "mcSaved", "mcErrorSave").then(function () {
+				// Other pages show the logo too (the project head)
+				this.getOwnerComponent().reloadPictures();
 				return this._loadClients().then(function () {
 					return this._showClient(oDetail.ClientKey);
 				}.bind(this));

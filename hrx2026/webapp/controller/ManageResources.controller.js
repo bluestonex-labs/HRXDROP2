@@ -559,6 +559,8 @@ sap.ui.define([
 			this._postJson(USERS_SERVICE + "?cmd=update&visitorx=", oPayload).then(function (oResult) {
 				this.getModel("mrView").setProperty("/saving", false);
 				MessageToast.show(oResult.msg || this.getText("mrSaved"));
+				// Every page that shows this person shows their picture
+				this.getOwnerComponent().reloadPictures();
 				return this._loadResources().then(function () {
 					this._updateOwnPicture(oDetail.EmpID);
 					return this._showResource(oDetail.EmpID);

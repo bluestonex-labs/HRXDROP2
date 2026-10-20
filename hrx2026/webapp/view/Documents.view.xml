@@ -136,7 +136,8 @@
 
 							<VBox items="{path: 'dm>/outstanding', templateShareable: false}" renderType="Bare">
 								<HBox renderType="Bare" class="hrxDmWhoRow">
-									<Text text="{dm>initials}" class="hrxDmAvatar" />
+									<Image src="{= ${pictures>/users}[${dm>EmpID}] || '' }" visible="{= !!${pictures>/users}[${dm>EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+									<Text text="{dm>initials}" visible="{= !${pictures>/users}[${dm>EmpID}] }" class="hrxDmAvatar" />
 									<VBox renderType="Bare">
 										<Text text="{dm>Name}" class="hrxDmWhoName" />
 										<Text text="{dm>siteName}" class="hrxDmWhoSite" />

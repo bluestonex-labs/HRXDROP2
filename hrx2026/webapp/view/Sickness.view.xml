@@ -81,7 +81,8 @@
 						</customData>
 
 						<HBox alignItems="Center" renderType="Bare" class="hrxSickTrigHead">
-							<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar hrxSickAvatarGrad hrxSickAvatarBig" />
+							<Image src="{= ${pictures>/users}[${sk>EmpID}] || '' }" visible="{= !!${pictures>/users}[${sk>EmpID}] }" width="42px" height="42px" class="hrxAvatarPic" />
+							<Text text="{sk>initials}" wrapping="false" visible="{= !${pictures>/users}[${sk>EmpID}] }" class="hrxSickAvatar hrxSickAvatarGrad hrxSickAvatarBig" />
 							<VBox renderType="Bare" class="hrxSickTrigWho">
 								<Text text="{sk>Name}" class="hrxSickTrigName" />
 								<Text text="{skView>/year/label}" class="hrxSickTrigSub" />
@@ -170,7 +171,8 @@
 					<VBox renderType="Bare" class="hrxSickCard hrxSickRtw">
 						<HBox alignItems="Center" justifyContent="SpaceBetween" renderType="Bare" class="hrxSickRtwHead">
 							<HBox alignItems="Center" renderType="Bare" class="hrxSickPerson">
-								<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar hrxSickAvatarGrad" />
+								<Image src="{= ${pictures>/users}[${sk>EmpID}] || '' }" visible="{= !!${pictures>/users}[${sk>EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+								<Text text="{sk>initials}" wrapping="false" visible="{= !${pictures>/users}[${sk>EmpID}] }" class="hrxSickAvatar hrxSickAvatarGrad" />
 								<VBox renderType="Bare">
 									<Text text="{sk>Name}" class="hrxSickPersonName" />
 									<Text text="{sk>Title}" visible="{= !!${sk>Title} }" class="hrxSickPersonSub" />
@@ -251,7 +253,8 @@
 							<ColumnListItem>
 								<cells>
 									<HBox alignItems="Center" renderType="Bare" class="hrxSickPerson">
-										<Text text="{sk>initials}" wrapping="false" class="hrxSickAvatar" />
+										<Image src="{= ${pictures>/users}[${sk>EmpID}] || '' }" visible="{= !!${pictures>/users}[${sk>EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+										<Text text="{sk>initials}" wrapping="false" visible="{= !${pictures>/users}[${sk>EmpID}] }" class="hrxSickAvatar" />
 										<VBox renderType="Bare">
 											<Text text="{sk>Name}" class="hrxSickAllName" />
 											<Text

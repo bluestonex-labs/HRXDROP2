@@ -23,7 +23,8 @@
 				<VBox visible="{= ${tcPop>/kind} === 'request' }">
 					<HBox alignItems="Center" class="hrxTlPopHead">
 						<HBox alignItems="Center" justifyContent="Center" class="hrxTlPopAvatar">
-							<Text text="{tcPop>/request/initials}" />
+							<Image src="{= ${pictures>/users}[${tcPop>/request/EmpID}] || '' }" visible="{= !!${pictures>/users}[${tcPop>/request/EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+							<Text text="{tcPop>/request/initials}" visible="{= !${pictures>/users}[${tcPop>/request/EmpID}] }" />
 						</HBox>
 						<VBox class="hrxTlPopWho">
 							<Text text="{tcPop>/request/Name}" class="hrxResourceName" />
@@ -74,7 +75,8 @@
 				<VBox visible="{= ${tcPop>/kind} === 'person' }">
 					<HBox alignItems="Center" class="hrxTlPopHead">
 						<HBox alignItems="Center" justifyContent="Center" class="hrxTlPopAvatar">
-							<Text text="{tcPop>/initials}" />
+							<Image src="{= ${pictures>/users}[${tcPop>/EmpID}] || '' }" visible="{= !!${pictures>/users}[${tcPop>/EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
+							<Text text="{tcPop>/initials}" visible="{= !${pictures>/users}[${tcPop>/EmpID}] }" />
 						</HBox>
 						<VBox class="hrxTlPopWho">
 							<Text text="{tcPop>/name}" class="hrxResourceName" />
