@@ -2,13 +2,12 @@
 	controllerName="bsx.hrx.hrx2026.controller.MissingTimesheets"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:f="sap.f"
 	xmlns:core="sap.ui.core"
 	xmlns:layout="sap.ui.layout"
 	displayBlock="true"
 	class="hrxMissingTimesheets">
 
-	<Page id="missingTimesheetsPage" showHeader="false" title="{i18n>mtTitle}" showNavButton="false" class="hrxPageContent">
+	<Page id="missingTimesheetsPage" showHeader="false" showSubHeader="{app>/user/isManager}" title="{i18n>mtTitle}" showNavButton="false" class="hrxPageContent">
 
 		<subHeader>
 			<OverflowToolbar id="missingTimesheetsToolbar" class="hrxFilterBar sapUiSmallMarginBottom">
@@ -57,7 +56,16 @@
 		</subHeader>
 
 		<content>
+			<!-- Manager rights come from the signed-in profile, so a direct link to this
+			     page lands on the notice, as on the other manager pages. -->
+			<IllustratedMessage
+				visible="{= !${app>/user/isManager} }"
+				illustrationType="sapIllus-UnableToLoad"
+				title="{i18n>mtTitle}"
+				description="{i18n>adminRestricted}" />
+
 			<layout:Grid
+				visible="{app>/user/isManager}"
 				defaultSpan="XL4 L4 M4 S12"
 				hSpacing="1"
 				vSpacing="1"
@@ -89,6 +97,7 @@
 			</layout:Grid>
 
 			<Table
+				visible="{app>/user/isManager}"
 				id="missingTimesheetTable"
 				items="{mt>/rows}"
 				busy="{mtView>/busy}"
@@ -116,10 +125,11 @@
 					<ColumnListItem>
 						<cells>
 							<HBox alignItems="Center">
-								<f:Avatar
+								<!-- Their picture (pictures model, as on every page), else their initials -->
+								<Avatar
 									displaySize="S"
 									backgroundColor="Accent6"
-									src="{path: 'mt>Pic', formatter: '.formatter.imageSrc'}"
+									src="{= ${pictures>/users}[${mt>UserID}] || '' }"
 									initials="{parts: ['mt>FName', 'mt>LName'], formatter: '.formatter.initials'}"
 									class="sapUiTinyMarginEnd" />
 								<VBox>

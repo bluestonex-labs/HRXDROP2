@@ -14,7 +14,15 @@
 	     to the DOM as data-layout, which manage-clients.css reads to size the two cards. -->
 	<Page id="clientsPage" showHeader="false" enableScrolling="false" class="hrxMcPage">
 		<content>
-			<HBox id="clientsMasterDetail" renderType="Bare" class="hrxMcMd">
+			<!-- Manager rights come from the signed-in profile, so a direct link to this
+			     page lands on the notice, as on the other manager pages. -->
+			<IllustratedMessage
+				visible="{= !${app>/user/isManager} }"
+				illustrationType="sapIllus-UnableToLoad"
+				title="{i18n>navManageClients}"
+				description="{i18n>adminRestricted}" />
+
+			<HBox id="clientsMasterDetail" visible="{app>/user/isManager}" renderType="Bare" class="hrxMcMd">
 				<customData>
 					<core:CustomData key="layout" value="{mcView>/layout}" writeToDom="true" />
 				</customData>
@@ -73,7 +81,7 @@
 										displaySize="Custom"
 										customDisplaySize="38px"
 										customFontSize="12px"
-										src="{path: 'mc>ClientLogo', formatter: '.formatter.imageSrc'}"
+										src="{= ${pictures>/clients}[${mc>ClientKey}] || '' }"
 										imageFitType="Contain"
 										initials="{path: 'mc>ClientDesc', formatter: '.formatter.nameInitials'}"
 										class="hrxMcLogo" />

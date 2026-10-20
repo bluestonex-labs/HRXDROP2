@@ -12,7 +12,15 @@
 	<!-- The design's master / detail (.md): the project list card, and beside it the
 	     open project's card. data-mode on the wrapper is "list" (nothing open, the list
 	     takes the full width), "open" (list 360px + detail) or "full" (detail only). -->
-	<HBox id="projectsLayout" renderType="Bare" class="hrxMpMd">
+	<!-- Manager rights come from the signed-in profile, so a direct link to this
+	     page lands on the notice, as on the other manager pages. -->
+	<IllustratedMessage
+		visible="{= !${app>/user/isManager} }"
+		illustrationType="sapIllus-UnableToLoad"
+		title="{i18n>navManageProjects}"
+		description="{i18n>adminRestricted}" />
+
+	<HBox id="projectsLayout" visible="{app>/user/isManager}" renderType="Bare" class="hrxMpMd">
 		<customData>
 			<core:CustomData key="mode" value="{mpView>/layout}" writeToDom="true" />
 		</customData>

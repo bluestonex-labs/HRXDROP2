@@ -11,7 +11,15 @@
 	<!-- The design's master / detail (.md): the resource list card on the left and,
 	     once a resource is chosen, its detail card beside it. data-mr-open and
 	     data-mr-full drive the column widths in css/pages/manage-resources.css. -->
-	<HBox id="resourcesLayout" renderType="Bare" class="hrxMrMd">
+	<!-- Manager rights come from the signed-in profile, so a direct link to this
+	     page lands on the notice, as on the other manager pages. -->
+	<IllustratedMessage
+		visible="{= !${app>/user/isManager} }"
+		illustrationType="sapIllus-UnableToLoad"
+		title="{i18n>navManageResources}"
+		description="{i18n>adminRestricted}" />
+
+	<HBox id="resourcesLayout" visible="{app>/user/isManager}" renderType="Bare" class="hrxMrMd">
 		<customData>
 			<core:CustomData key="mr-open" value="{= ${mrView>/selectedId} ? 'yes' : 'no' }" writeToDom="true" />
 			<core:CustomData key="mr-full" value="{= ${mrView>/fullScreen} ? 'yes' : 'no' }" writeToDom="true" />
