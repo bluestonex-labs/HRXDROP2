@@ -30,7 +30,8 @@
     "start-variants-management": "fiori run --open \"/preview.html#app-preview\"",
     "unit-test": "fiori run --config ./ui5-mock.yaml --open \"test/unit/unitTests.qunit.html\"",
     "build:cf": "ui5 build preload --clean-dest --config ui5-deploy.yaml --include-task=generateCachebusterInfo",
-    "start-bas": "fiori run --config ./ui5-bas.yaml --open \"test/flp.html#app-preview\""
+    "start-bas": "fiori run --config ./ui5-bas.yaml --open \"/index.html?sap-ui-xx-viewCache=false\"",
+    "start-bas-flp": "fiori run --config ./ui5-bas.yaml --open \"test/flp.html#app-preview\""
   },
   "sapuxLayer": "CUSTOMER_BASE"
 }

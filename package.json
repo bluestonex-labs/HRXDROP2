@@ -7,7 +7,8 @@
     "build": "rimraf resources mta_archives && mbt build --mtar archive",
     "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
     "undeploy": "cf undeploy HRX2026 --delete-services --delete-service-keys --delete-service-brokers",
-    "start-bas": "npm --prefix hrx2026 run start-bas"
+    "start-bas": "npm --prefix hrx2026 run start-bas",
+    "start-bas-flp": "npm --prefix hrx2026 run start-bas-flp"
   },
   "devDependencies": {
     "mbt": "^1.2.49",

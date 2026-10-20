@@ -11,11 +11,27 @@ sap.ui.define([
 
 	/**
 	 * @param {sap.ui.core.UIComponent} oComponent the app component
-	 * @returns {object} the startup parameters the launchpad passed in
+	 * @returns {object} the startup parameters the launchpad passed in (or, in a
+	 * development preview opened without the launchpad, the page's ?email= and ?org=)
 	 */
 	function startupParameters(oComponent) {
 		var oComponentData = oComponent && oComponent.getComponentData();
-		return (oComponentData && oComponentData.startupParameters) || {};
+		var oLaunchpadParameters = (oComponentData && oComponentData.startupParameters) || {};
+		if (oLaunchpadParameters.email || !isDevPreview()) {
+			return oLaunchpadParameters;
+		}
+
+		// Opened on its own (index.html, no launchpad) in a development preview, the
+		// page's own ?email= and ?org= stand in for the launchpad's startup parameters,
+		// so a developer can still preview as somebody else. Never on a deployment.
+		var oPageQuery = new URLSearchParams(window.location.search);
+		var oParameters = Object.assign({}, oLaunchpadParameters);
+		["email", "org"].forEach(function (sName) {
+			if (oPageQuery.get(sName)) {
+				oParameters[sName] = [oPageQuery.get(sName)];
+			}
+		});
+		return oParameters;
 	}
 
 	function firstOf(oParameters, sName) {
