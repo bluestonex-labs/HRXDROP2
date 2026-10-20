@@ -299,7 +299,6 @@ body.hrxApp {
 .hrxApp .hrxToolPage [data-nav-key="leave"] { --hrx-nav-icon: url("../img/nav/leave.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="teamcal"] { --hrx-nav-icon: url("../img/nav/teamcal.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="policies"] { --hrx-nav-icon: url("../img/nav/policies.svg"); }
-.hrxApp .hrxToolPage [data-nav-key="expenses"] { --hrx-nav-icon: url("../img/nav/expenses.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="explorer"] { --hrx-nav-icon: url("../img/nav/explorer.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="sickness"] { --hrx-nav-icon: url("../img/nav/sickness.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="documents"] { --hrx-nav-icon: url("../img/nav/documents.svg"); }
@@ -346,81 +345,13 @@ body.hrxApp {
 	outline-offset: -1px;
 }
 
-/* Expenses: coming soon, faded, with its SOON tag on the right */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled {
-	opacity: .45;
-	cursor: not-allowed;
-}
-
-/* The theme fades every span in a disabled row; nested spans (the tag's text is
-   three deep) compounded it to near-black. The row's own .45 is the only fade. */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span {
-	opacity: 1;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled span.sapTntNLIIcon {
-	opacity: .85;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover {
-	background: none;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLI.sapTntNLIDisabled:hover > a {
-	color: #A7C0CE;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer {
-	margin-left: auto;
-	height: 16px;
-	align-items: center;
-	justify-content: flex-end;
-}
-
-/* Its screen-reader label must not take room beside the tag. */
-.hrxApp .hrxToolPage .sapTntSideNavigation .sapTntNLITagContainer > .sapUiInvisibleText {
-	position: absolute;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon.sapMObjStatus {
-	display: inline-flex;
-	align-items: center;
-	box-sizing: border-box;
-	height: 16px;
-	margin: 0 !important;
-	padding: 0 6px !important;
-	border: 1px solid rgba(255, 255, 255, .14);
-	border-radius: 5px;
-	background: transparent;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusWrapper,
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
-	padding: 0;
-	background: transparent;
-	border: none;
-	height: auto;
-}
-
-.hrxApp .hrxToolPage .sapTntSideNavigation .hrxNavSoon .sapMObjStatusText {
-	font-family: var(--sans);
-	font-size: 9px;
-	font-weight: 700;
-	letter-spacing: .08em;
-	line-height: 12px;
-	text-transform: uppercase;
-	text-shadow: none;
-	color: #7C93A0;
-}
-
 /* Collapsed: icons only, centred, and the groups become thin rules */
 .hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLI.sapTntNLIFirstLevel > a {
 	justify-content: center;
 	padding: 10px 0 !important;
 }
 
-.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLIText,
-.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLITagContainer {
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLIText {
 	display: none;
 }
 

@@ -479,10 +479,14 @@ sap.ui.define([
 					serviceTime: "",
 					serviceComment: "",
 					commentRequired: !!bCommentRequired,
+					// Set by Save on a day booked without its work description; the
+					// button only shows red then, and goes green once one is added.
+					commentError: false,
 					working: this._isWorkingDay(oDay.schedule),
 					// A project row's own cell is locked on any day that is fully covered by
 					// leave or a bank holiday, same as the dedicated absence rows, and on any
-					// day the user's work schedule doesn't flag "Y".
+					// day the user's work schedule doesn't flag "Y". Half a day of leave
+					// leaves the day open, so the other half can still be booked.
 					editable: this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) && !mNonWorkingDates[sIsoDate]
 				};
 			}, this);
@@ -490,16 +494,27 @@ sap.ui.define([
 
 		/**
 		 * @param {object} oData the service response
-		 * @returns {object} a set of this week's leave/bank-holiday dates, keyed by ISO date
+		 * @returns {object} a set of this week's dates taken by a full day of leave or a
+		 * bank holiday, keyed by ISO date. A half day of leave (AM or PM) is not in it.
 		 */
 		_nonWorkingDates: function (oData) {
 			var mDates = {};
 
-			Backend.countedLeaves(oData.leaves).concat(oData.bankHolidays || []).forEach(function (oEntry) {
+			Backend.countedLeaves(oData.leaves).filter(function (oLeave) {
+				return !this._isHalfDay(oLeave);
+			}, this).concat(oData.bankHolidays || []).forEach(function (oEntry) {
 				mDates[Backend.dayKey(oEntry.Date)] = true;
 			});
 
 			return mDates;
+		},
+
+		/**
+		 * @param {object} oLeave a leave day from the timesheet response
+		 * @returns {boolean} true when it is a morning or an afternoon only
+		 */
+		_isHalfDay: function (oLeave) {
+			return /^(AM|PM)$/i.test(String(oLeave.Absence || "").trim());
 		},
 
 		/**
@@ -769,6 +784,10 @@ sap.ui.define([
 
 			oInput.setValueState("None");
 			this.getModel("ts").setProperty(oContext.getPath() + "/time", sNormalised || "");
+			// Clearing the time takes away the need for a description too.
+			if (!sNormalised) {
+				this.getModel("ts").setProperty(oContext.getPath() + "/commentError", false);
+			}
 			this._recalculate();
 		},
 
@@ -835,8 +854,11 @@ sap.ui.define([
 		 */
 		onSaveComment: function () {
 			if (this._sCommentPath) {
-				this.getModel("ts").setProperty(this._sCommentPath + "/comment",
-					(this.getModel("tsComment").getProperty("/comment") || "").trim());
+				var sComment = (this.getModel("tsComment").getProperty("/comment") || "").trim();
+				this.getModel("ts").setProperty(this._sCommentPath + "/comment", sComment);
+				if (sComment) {
+					this.getModel("ts").setProperty(this._sCommentPath + "/commentError", false);
+				}
 			}
 			this._sCommentPath = null;
 			this._closeDialog("_pCommentDialog");
@@ -942,17 +964,18 @@ sap.ui.define([
 
 		/**
 		 * The state of a cell's work-description button, written to the DOM as
-		 * data-comment: "has" once there is a description, "missing" while a row that
-		 * needs one has none (the design marks these red), otherwise "none".
+		 * data-comment, as the live app has it: "has" (green) once there is a
+		 * description, "missing" (red) only after Save found time booked on the day
+		 * without one, otherwise "none" - a plain button.
 		 * @param {string} sComment the work description
-		 * @param {boolean} bRequired whether the row needs a description
+		 * @param {boolean} bError whether Save flagged the day for a missing description
 		 * @returns {string} has, missing or none
 		 */
-		formatCommentState: function (sComment, bRequired) {
+		formatCommentState: function (sComment, bError) {
 			if (sComment) {
 				return "has";
 			}
-			return bRequired ? "missing" : "none";
+			return bError ? "missing" : "none";
 		},
 
 		/**
@@ -1207,7 +1230,9 @@ sap.ui.define([
 					var bBooked = !!oDay.time && oDay.time !== "00:00";
 					var bCleared = !oDay.time && !!oDay.serviceTime;
 
-					if (bBooked && this._needsComment(oRow) && !oDay.comment) {
+					// Marks the day red until a description is added (formatCommentState)
+					oDay.commentError = bBooked && this._needsComment(oRow) && !oDay.comment;
+					if (oDay.commentError) {
 						bCommentMissing = true;
 						return;
 					}
@@ -1233,9 +1258,11 @@ sap.ui.define([
 			}, this);
 
 			if (bCommentMissing) {
+				this.getModel("ts").refresh(true);
 				MessageBox.error(this.getText("tsErrorCommentMissing"));
 				return;
 			}
+			this.getModel("ts").refresh(true);
 			if (!aEntries.length) {
 				MessageToast.show(this.getText("tsNothingToSave"));
 				return;

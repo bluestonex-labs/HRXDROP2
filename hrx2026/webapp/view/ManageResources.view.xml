@@ -77,10 +77,13 @@
 							selected="{= ${mr>EmpID} === ${mrView>/selectedId} }"
 							class="hrxMrRowItem">
 							<HBox renderType="Bare" class="hrxMrRow">
+								<!-- Their picture when they have one; the initials otherwise, and
+								     while it loads or if it cannot be fetched -->
 								<Avatar
 									displaySize="Custom"
 									customDisplaySize="38px"
 									customFontSize="12.5px"
+									src="{parts: ['mr>Pic'], formatter: '.formatter.pendingImageSrc'}"
 									initials="{parts: ['mr>FName', 'mr>LName'], formatter: '.formatter.initials'}"
 									class="hrxMrAvatar" />
 								<VBox renderType="Bare" class="hrxMrRowMain">

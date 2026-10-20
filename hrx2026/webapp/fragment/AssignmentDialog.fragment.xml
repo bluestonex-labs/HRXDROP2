@@ -32,15 +32,18 @@
 				</VBox>
 				<VBox renderType="Bare" class="hrxMpField">
 					<Label text="{i18n>mpFieldBillingScheme}" labelFor="assignmentBilling" required="true" class="hrxModalLabel" />
+					<!-- By office, with each office's default day rate on the right, as the
+					     live app has it (model/BillingSchemes) -->
 					<ComboBox
 						id="assignmentBilling"
-						selectedKey="{mpForm>/BillingID}"
-						items="{mp>/billing}"
+						selectedKey="{mpForm>/schemeKey}"
+						items="{path: 'mpForm>/schemes', templateShareable: false}"
+						showSecondaryValues="true"
 						width="100%"
 						selectionChange=".onBillingSchemeChange"
 						placeholder="{i18n>mpFieldBillingSchemePlaceholder}"
 						class="hrxMpInput hrxMpSelect">
-						<core:ListItem key="{mp>BillingID}" text="{mp>BillingDesc}" />
+						<core:ListItem key="{mpForm>key}" text="{mpForm>text}" additionalText="{mpForm>rateText}" />
 					</ComboBox>
 				</VBox>
 				<VBox renderType="Bare" class="hrxMpField">

@@ -3,7 +3,8 @@ sap.ui.define([
 	"bsx/hrx/hrx2026/test/unit/model/SicknessPolicy",
 	"bsx/hrx/hrx2026/test/unit/model/TimesheetReport",
 	"bsx/hrx/hrx2026/test/unit/model/Documents",
-	"bsx/hrx/hrx2026/test/unit/model/Notifications"
+	"bsx/hrx/hrx2026/test/unit/model/Notifications",
+	"bsx/hrx/hrx2026/test/unit/model/BillingSchemes"
 ], function () {
 	"use strict";
 });

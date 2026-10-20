@@ -314,8 +314,11 @@ sap.ui.define([
 					// nothing can be judged either way, so no day is called overbooked.
 					var iDayTarget = bWorking ? iTargetPerDay : 0;
 					var bOverbooked = iTargetPerDay > 0 && iBooked > iDayTarget;
+					// The ring never fills past 100%: what was booked is in its middle, what
+					// was due underneath, so an overbooked day reads as hours, not 140%.
 					var fPercent = iDayTarget ? Math.min(iBooked * 100 / iDayTarget, 100) : 0;
 					var sHours = this._hoursLabel(iBooked);
+					var sDue = iDayTarget ? this.getText("homeRingDue", [Backend.fromMinutes(iDayTarget)]) : "";
 
 					if (mLeave[sDate]) {
 						aRings.push(this._ring(oDay.label, "leave", 100, "", this.getText("legendOnLeave")));
@@ -329,7 +332,7 @@ sap.ui.define([
 							Backend.fromMinutes(iBooked),
 							Backend.fromMinutes(iDayTarget),
 							Backend.fromMinutes(iBooked - iDayTarget)
-						])));
+						]), sDue));
 						return;
 					}
 
@@ -337,14 +340,14 @@ sap.ui.define([
 						aRings.push(this._ring(oDay.label, "notdue", fPercent, iBooked ? sHours : "–",
 							bWorking
 								? this.getText("ringTooltipNotDue", [Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)])
-								: this.getText("qtNonWorkingDay")));
+								: this.getText("qtNonWorkingDay"), sDue));
 						return;
 					}
 
 					var sTone = iBooked >= iDayTarget ? "complete" : (iBooked > 0 ? "short" : "missing");
 					aRings.push(this._ring(oDay.label, sTone, fPercent, sHours, this.getText("ringTooltipBooked", [
 						Backend.fromMinutes(iBooked), Backend.fromMinutes(iDayTarget)
-					])));
+					]), sDue));
 				}, this);
 
 				oModel.setProperty("/weekRings", aRings);
@@ -458,13 +461,15 @@ sap.ui.define([
 		 * @param {number} fPercent how much of the ring to fill, 0 to 100
 		 * @param {string} sText the figure inside the ring
 		 * @param {string} sTooltip the hover text on the day
+		 * @param {string} [sDue] the hours due that day, shown under the ring
 		 * @returns {object} the ring's row in home>/weekRings
 		 */
-		_ring: function (sDay, sTone, fPercent, sText, sTooltip) {
+		_ring: function (sDay, sTone, fPercent, sText, sTooltip, sDue) {
 			return {
 				day: sDay,
 				tone: sTone,
 				onLeave: sTone === "leave",
+				due: sDue || "",
 				tooltip: sTooltip,
 				svg: this._ringSvg(sTone, fPercent, sText)
 			};
@@ -513,12 +518,16 @@ sap.ui.define([
 		},
 
 		/**
-		 * Minutes as the design's ring figure: "8h", or "7.5h" for part of an hour.
+		 * Minutes as the ring's figure: whole hours as a plain number ("0", "8"), so
+		 * most days read cleanly, and part of an hour as hours and minutes ("3:30").
 		 * @param {number} iMinutes the minutes booked
 		 * @returns {string} the hours
 		 */
 		_hoursLabel: function (iMinutes) {
-			return (Math.round(iMinutes / 6) / 10) + "h";
+			if (iMinutes % 60 === 0) {
+				return String(iMinutes / 60);
+			}
+			return Backend.fromMinutes(iMinutes);
 		},
 
 		/**

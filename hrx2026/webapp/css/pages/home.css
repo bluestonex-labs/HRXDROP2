@@ -261,7 +261,9 @@
 .hrxHomePage .hrxHomeKpi[data-state="Warning"] { border-top-color: var(--amber); }
 .hrxHomePage .hrxHomeKpi[data-state="Critical"] { border-top-color: var(--signal); }
 
-/* .glyph: a 34px rounded square in the tile's top right corner */
+/* .glyph: a 34px rounded square in the tile's top right corner, the icon in its
+   middle. Flex rather than grid: the grid's place-items left the icon against
+   the box's left edge, as sap.ui.core.Icon renders as a block. */
 .hrxHomePage .hrxHomeKpiGlyph {
 	position: absolute;
 	top: 16px;
@@ -269,14 +271,22 @@
 	width: 34px;
 	height: 34px;
 	border-radius: 10px;
-	display: grid;
-	place-items: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	background: var(--ice-glow);
 	color: var(--ice-deep);
 }
 
 .hrxHomePage .hrxHomeKpiGlyph .sapUiIcon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 17px;
+	height: 17px;
+	margin: 0;
 	font-size: 17px;
+	line-height: 17px;
 	color: inherit;
 }
 
@@ -329,15 +339,20 @@
 
 .hrxHomePage .hrxHomeKpiSub.sapMText {
 	margin-top: 4px;
+	margin-bottom: 12px;
 	font-family: var(--sans);
 	font-size: 12px;
 	line-height: 14px;
 	color: var(--txt-3);
 }
 
-/* .klink: a small ghost button under the figure */
+/* .klink: a small ghost button at the foot of the tile, bottom left. The tiles
+   share the row's height, so pushing each link down with an auto margin keeps
+   all four on one line however many lines the text above them takes. The
+   sub-line's bottom margin (above) is the gap when a tile is at its tallest. */
 .hrxHomePage .hrxHomeKpiLink.sapMBtn {
-	margin-top: 12px;
+	margin-top: auto;
+	align-self: flex-start;
 }
 
 /* ── MANAGER GRID ─────────────────────────────────────────────────────────── */
@@ -444,12 +459,15 @@
 	background: var(--surface);
 }
 
-.hrxHomePage .hrxHomeTeamTable .sapMListTblRow > td {
-	border-bottom: 1px solid var(--line-soft);
+/* The theme paints the first rows' cell borders transparent (its sticky-header
+   rules), which left the first people with no line under them: the line is set
+   with !important so every row gets the same one. */
+.hrxHomePage .hrxHomeTeamTable .sapMListTblRow:not(.sapMListTblHeader) > td.sapMListTblCell {
+	border-bottom: 1px solid var(--line-soft) !important;
 }
 
-.hrxHomePage .hrxHomeTeamTable .sapMListTblRow:last-child > td {
-	border-bottom: none;
+.hrxHomePage .hrxHomeTeamTable .sapMListTblRow:not(.sapMListTblHeader):last-child > td.sapMListTblCell {
+	border-bottom: none !important;
 }
 
 .hrxHomePage .hrxHomeTeamTable .sapMListTblRow:hover {
@@ -1172,6 +1190,17 @@
 	font-weight: 600;
 	line-height: 12px;
 	color: var(--ice-deep);
+}
+
+/* The hours due that day, under its ring: the same size as "Leave", quieter */
+.hrxHomePage .hrxHomeRingDue.sapMText {
+	margin-top: 2px;
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 12px;
+	color: var(--txt-3);
+	white-space: nowrap;
 }
 
 /* .legend: 9px rounded squares, 12px apart */

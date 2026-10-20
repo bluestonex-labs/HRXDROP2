@@ -9,8 +9,10 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
-], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+	"../model/formatter",
+	"../model/BillingSchemes"
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
+	BillingSchemes) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -554,6 +556,8 @@ sap.ui.define([
 				}),
 				AssignmentID: "",
 				EmpID: "",
+				schemes: this._billingOptions(),
+				schemeKey: "",
 				BillingID: "",
 				DayRate: "",
 				BillableDays: "",
@@ -574,6 +578,8 @@ sap.ui.define([
 				resources: this.getModel("mp").getProperty("/managers") || [],
 				AssignmentID: oAssignment.ASSIGNMENTID,
 				EmpID: oAssignment.EmpID,
+				schemes: this._billingOptions(),
+				schemeKey: BillingSchemes.keyOf(oAssignment.BillingID, this.getModel("mp").getProperty("/billing")),
 				BillingID: oAssignment.BillingID || "",
 				DayRate: formatter.clean(oAssignment.DayRate),
 				DayCost: formatter.clean(oAssignment.DayCost),
@@ -592,17 +598,29 @@ sap.ui.define([
 		},
 
 		/**
-		 * Picking a billing scheme fills in its day rate, which stays editable.
+		 * The billing schemes the Assign resource dialog offers: by office, as the
+		 * live app has them (see model/BillingSchemes).
+		 * @returns {Array<object>} key, text and the default day rate shown beside it
+		 */
+		_billingOptions: function () {
+			return BillingSchemes.OPTIONS.map(function (oOption) {
+				return {
+					key: oOption.key,
+					text: this.getText(oOption.textKey),
+					rateText: oOption.dayRate === null ? "" : this.getText("mpBillingRate", [oOption.dayRate])
+				};
+			}, this);
+		},
+
+		/**
+		 * Picking a billing scheme fills in its office's default day rate, which stays
+		 * editable; a custom rate is left for the user to type.
 		 * @param {sap.ui.base.Event} oEvent the selection change event
 		 */
 		onBillingSchemeChange: function (oEvent) {
-			var sBillingId = oEvent.getSource().getSelectedKey();
-			var oScheme = (this.getModel("mp").getProperty("/billing") || []).filter(function (oEntry) {
-				return oEntry.BillingID === sBillingId;
-			})[0];
-
-			if (oScheme) {
-				this.getModel("mpForm").setProperty("/DayRate", oScheme.DayRate);
+			var oOption = BillingSchemes.option(oEvent.getSource().getSelectedKey());
+			if (oOption && oOption.dayRate !== null) {
+				this.getModel("mpForm").setProperty("/DayRate", String(oOption.dayRate));
 			}
 		},
 
@@ -613,10 +631,23 @@ sap.ui.define([
 
 			if (!this._validateSelection([
 				{ id: "assignmentResource", value: oForm.EmpID },
-				{ id: "assignmentBilling", value: oForm.BillingID }
+				{ id: "assignmentBilling", value: oForm.schemeKey }
 			])) {
 				return;
 			}
+
+			// The chosen office's record in the service. On an edit that keeps a scheme
+			// of no office (Custom), the assignment's own record stays as it is.
+			var sBillingId = BillingSchemes.billingId(oForm.schemeKey, this.getModel("mp").getProperty("/billing"));
+			if (!sBillingId && bEdit && oForm.schemeKey === BillingSchemes.keyOf(oForm.BillingID, this.getModel("mp").getProperty("/billing"))) {
+				sBillingId = oForm.BillingID;
+			}
+			if (!sBillingId) {
+				var oOption = BillingSchemes.option(oForm.schemeKey);
+				MessageBox.error(this.getText("mpBillingNotInService", [oOption ? this.getText(oOption.textKey) : oForm.schemeKey]));
+				return;
+			}
+			oForm.BillingID = sBillingId;
 			if (!this._validateRequired([
 				{ id: "assignmentDayRate", value: oForm.DayRate },
 				{ id: "assignmentDays", value: oForm.BillableDays }

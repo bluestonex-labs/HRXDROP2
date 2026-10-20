@@ -8,8 +8,8 @@
 		</tnt:header>
 		<tnt:sideContent>
 			<!-- As the 15.10.26 design has it: Overview for everyone, then the admin
-			     pages listed straight in the rail, for managers only. Expenses is the
-			     design's placeholder for a separate app still to come. -->
+			     pages listed straight in the rail, for managers only. The design's
+			     Expenses placeholder is left out until that app exists. -->
 			<tnt:SideNavigation id="sideNavigation" itemSelect=".onItemSelect">
 				<tnt:NavigationList selectedKey="home">
 					<tnt:NavigationListGroup text="{i18n>navGroupOverview}" hasExpander="false">
@@ -18,11 +18,6 @@
 						<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
 						<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
 						<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
-						<tnt:NavigationListItem key="expenses" text="{i18n>navExpenses}" icon="sap-icon://expense-report" enabled="false" selectable="false" tooltip="{i18n>navExpensesSoon}">
-							<tnt:tag>
-								<ObjectStatus text="{i18n>navSoon}" class="hrxNavSoon"/>
-							</tnt:tag>
-						</tnt:NavigationListItem>
 						<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
 					</tnt:NavigationListGroup>
 					<!-- Managers only: the controller takes the group out for anybody else (a
