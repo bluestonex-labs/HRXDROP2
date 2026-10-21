@@ -191,15 +191,20 @@ sap.ui.define([
 		}
 	};
 
-	/** A person's working days (index by getDay) and minutes in a working day. */
+	/**
+	 * A person's working days (index by getDay) and the minutes they owe. Every
+	 * working day owes 8 hours, so the week is 8 hours times the days they work. The
+	 * weekly target on their record (TargetHrsPerWeek) is not used: spread over the
+	 * week it gave odd days (a 25-hour record made every day owe 5:00, and a day's
+	 * leave count as 5 hours) for people who work 8-hour days.
+	 */
 	function scheduleOf(oUser) {
 		var oSchedule = oUser && oUser.WorkSchedule;
 		var aWorks = DAY_FLAGS.map(function (sFlag, iDay) {
 			return oSchedule ? oSchedule[sFlag] === true : iDay >= 1 && iDay <= 5;
 		});
 		var iDays = aWorks.filter(Boolean).length || 5;
-		var iWeek = HrxTime.minutes((oSchedule && oSchedule.TargetHrsPerWeek) || (oUser && oUser.TargetHrsPerWeek)) || 40 * 60;
-		return { works: aWorks, dayMinutes: iWeek / iDays || DEFAULT_DAY_MINUTES, weekMinutes: iWeek };
+		return { works: aWorks, dayMinutes: HrxTime.WORKING_DAY_MINUTES, weekMinutes: HrxTime.WORKING_DAY_MINUTES * iDays };
 	}
 
 	function isHalf(sDayTime) {
