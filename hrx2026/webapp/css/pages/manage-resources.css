@@ -723,6 +723,23 @@
 	margin: 0;
 }
 
+/* The app's field styling also boxes a file chooser's inner wrapper, which is taller
+   than the button and showed as a second outline under it - as on Manage Clients,
+   the button alone draws the box. The layers inside it take the button's height. */
+.hrxApp .hrxMrFileButton .sapMInputBaseContentWrapper {
+	height: 25px;
+	border: none;
+	background: transparent;
+}
+
+.hrxApp .hrxMrFileButton form,
+.hrxApp .hrxMrFileButton .sapUiFupInputMask,
+.hrxApp .hrxMrFileButton .sapUiFupInputMask input,
+.hrxApp .hrxMrFileButton .sapUiFupVisual {
+	height: 25px;
+	cursor: pointer;
+}
+
 .hrxApp .hrxMrFileButton .sapMBtn {
 	height: 25px;
 	padding: 0;

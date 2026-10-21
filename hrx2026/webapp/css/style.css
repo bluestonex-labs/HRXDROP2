@@ -651,15 +651,6 @@ body.hrxApp {
 	box-sizing: border-box;
 }
 
-/* A pill that opens a page (data-route, see App.controller) */
-.hrxApp .hrxHealthPill[data-route] {
-	cursor: pointer;
-}
-
-.hrxApp .hrxHealthPill[data-route]:hover {
-	border-color: currentColor;
-}
-
 .hrxApp .hrxHealthPill .sapMText.hrxHealthText {
 	font-family: var(--sans);
 	font-size: 12px;
@@ -702,6 +693,11 @@ body.hrxApp {
 .hrxApp .hrxHealthPill[data-route]:not([data-route=""]) {
 	cursor: pointer;
 	transition: filter .12s, box-shadow .12s;
+}
+
+/* The pill's text and icon keep the pointing hand, not the text cursor */
+.hrxApp .hrxHealthPill[data-route]:not([data-route=""]) * {
+	cursor: pointer;
 }
 
 .hrxApp .hrxHealthPill[data-route]:not([data-route=""]):hover {
