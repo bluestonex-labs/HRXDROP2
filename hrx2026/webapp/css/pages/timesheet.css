@@ -4,10 +4,10 @@
 
 /* ── KPI TILES (design: .kpis / .kpi) ─────────────────────────────────────── */
 
-/* Four columns as in the design; the timesheet only fills three with figures. */
+/* Three equal tiles spanning the full width of the week card below. */
 .hrxApp .hrxTimesheet .hrxTsKpis {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 16px;
 	margin-bottom: 16px;
 }

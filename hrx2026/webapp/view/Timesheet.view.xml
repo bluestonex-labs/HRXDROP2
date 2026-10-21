@@ -11,8 +11,7 @@
 
 		<content>
 
-			<!-- The month's billing figures, laid out as the design's four-column KPI grid.
-			     The design leaves the fourth column empty. -->
+			<!-- The month's billing figures: three tiles, as wide together as the week card. -->
 			<FlexBox renderType="Bare" class="hrxTsKpis">
 
 				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiNeutral">

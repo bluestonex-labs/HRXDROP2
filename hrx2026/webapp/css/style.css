@@ -354,6 +354,14 @@ body.hrxApp {
 	display: none;
 }
 
+/* The theme gives the collapsed list a fixed 64px, wider than the 44px the rail
+   leaves inside its padding, which pushed every icon 10px right of the toggle,
+   the bell and the avatar. It takes the rail's width instead, so they all share
+   one centre line. */
+.hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNL {
+	width: auto !important;
+}
+
 .hrxApp .hrxToolPage .sapTntSideNavigationNotExpanded .sapTntNLGroup {
 	height: 1px;
 	padding: 0;
@@ -598,8 +606,17 @@ body.hrxApp {
 	color: #E6F0F5;
 }
 
+/* The glyph fills the square and is centred in it both ways - left to the
+   theme, it sat at the top left of a box narrower and shorter than the square. */
 .hrxApp .hrxToolPage .hrxNavToggle .sapMBtnIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	margin: 0;
 	font-size: 13px;
+	line-height: 1;
 	color: inherit;
 }
 
