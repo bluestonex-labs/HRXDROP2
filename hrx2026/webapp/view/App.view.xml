@@ -25,7 +25,9 @@
 					<tnt:NavigationListGroup id="adminNavGroup" text="{i18n>navGroupAdmin}" hasExpander="false">
 						<tnt:NavigationListItem key="sickness" text="{i18n>navSickness}" icon="sap-icon://stethoscope"/>
 						<tnt:NavigationListItem key="documents" text="{i18n>navDocuments}" icon="sap-icon://folder-blank"/>
-						<tnt:NavigationListItem key="timesheetreport" text="{i18n>navTimesheetReport}" icon="sap-icon://clipboard"/>
+						<!-- "timesheet", not "clipboard": the UI5 the launchpad serves (1.153) has no
+						     clipboard icon and then draws the row with no icon at all -->
+						<tnt:NavigationListItem key="timesheetreport" text="{i18n>navTimesheetReport}" icon="sap-icon://timesheet"/>
 						<tnt:NavigationListItem key="utilisation" text="{i18n>navUtilisation}" icon="sap-icon://line-chart"/>
 						<tnt:NavigationListItem key="resources" text="{i18n>navManageResources}" icon="sap-icon://group"/>
 						<tnt:NavigationListItem key="clients" text="{i18n>navManageClients}" icon="sap-icon://building"/>
