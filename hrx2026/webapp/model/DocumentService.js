@@ -112,6 +112,33 @@ sap.ui.define([
 		 * @param {object} oAck DocumentID
 		 * @returns {Promise} settles once recorded
 		 */
+		/**
+		 * Which documents the signed-in employee has acknowledged, as the service
+		 * itself sees them (fetchMyPolicies). The service ties an acknowledgement to
+		 * whoever is signed in, which is not always the employee ID the app's profile
+		 * holds (a development preview signs in as a stand-in, for one), so matching
+		 * acknowledgements to the profile's ID could miss them: the Acknowledge button
+		 * worked, but the tag never changed.
+		 * @returns {Promise<object|null>} DocumentID -> true for each acknowledged, or
+		 * null where the service has no fetchMyPolicies (callers then match by ID)
+		 */
+		getMyAcknowledged: function () {
+			if (!isBound() || !HrxServices.has("fetchMyPolicies")) {
+				return Promise.resolve(null);
+			}
+			return Hrx.callFunction("fetchMyPolicies").then(function (aPolicies) {
+				var mMine = {};
+				(aPolicies || []).forEach(function (vPolicy) {
+					// Each comes back as a JSON string (returns array of String)
+					var oPolicy = typeof vPolicy === "string" ? JSON.parse(vPolicy) : vPolicy;
+					if (oPolicy && oPolicy.Acknowledged) {
+						mMine[oPolicy.ID] = true;
+					}
+				});
+				return mMine;
+			});
+		},
+
 		acknowledge: function (oAck) {
 			if (!isBound()) {
 				return notBound();

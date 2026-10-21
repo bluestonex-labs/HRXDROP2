@@ -21,6 +21,13 @@ sap.ui.define([
 	 *
 	 * If the browser blocks the new tab, the draft is shown instead, to copy, with a
 	 * button to try Outlook again and one for the machine's own email app.
+	 *
+	 * Outlook on the web's compose link takes To, Cc, the subject and the body, but
+	 * not Bcc - a Bcc list sent to it is dropped and the draft opens with nobody on
+	 * it. So a draft with Bcc recipients (a reminder to several people, who should
+	 * not see each other's addresses) opens a short step first: the addresses are
+	 * copied to paste into Bcc in Outlook, or the machine's own email app (desktop
+	 * Outlook) is used, whose mailto: link does fill in Bcc.
 	 */
 	var OUTLOOK_COMPOSE = "https://outlook.office.com/mail/deeplink/compose";
 
@@ -181,12 +188,82 @@ sap.ui.define([
 		oDialog.open();
 	}
 
+	/**
+	 * A draft to several people in Bcc: copy the addresses and open Outlook on the
+	 * web (they are pasted into Bcc there), or open the email app with Bcc filled in.
+	 * @param {object} oDraft the draft, with bcc
+	 */
+	function showBccDraft(oDraft) {
+		var iCount = oDraft.bcc.split(",").filter(function (sAddress) {
+			return sAddress.trim();
+		}).length;
+		var oDialog = new Dialog({
+			title: "Email " + iCount + (iCount === 1 ? " person" : " people"),
+			contentWidth: "34rem",
+			content: new VBox({
+				items: [
+					new MessageStrip({
+						text: "Outlook on the web can't fill in Bcc by itself, which keeps everyone's address private. " +
+							"Choose \"Copy addresses and open Outlook\", then paste into the Bcc line. " +
+							"Or use your email app, which fills Bcc in for you.",
+						type: "Information",
+						showIcon: true
+					}).addStyleClass("sapUiSmallMarginBottom"),
+					field("Bcc", oDraft.bcc),
+					oDraft.subject ? field("Subject", oDraft.subject) : null,
+					oDraft.body ? field("Message", oDraft.body, true) : null
+				].filter(Boolean)
+			}),
+			buttons: [
+				new Button({
+					text: "Copy addresses and open Outlook",
+					type: "Emphasized",
+					icon: "sap-icon://email",
+					press: function () {
+						// In the click itself, where the browser allows both
+						if (navigator.clipboard && navigator.clipboard.writeText) {
+							navigator.clipboard.writeText(oDraft.bcc).then(function () {
+								MessageToast.show("Addresses copied - paste them into Bcc");
+							}, function () { /* the Copy button above still works */ });
+						}
+						var oWithoutBcc = Object.assign({}, oDraft, { bcc: "" });
+						if (openOutlook(oWithoutBcc)) {
+							oDialog.close();
+						}
+					}
+				}),
+				new Button({
+					text: "Use my email app",
+					press: function () {
+						openMailApp(oDraft);
+						oDialog.close();
+					}
+				}),
+				new Button({
+					text: "Close",
+					press: function () {
+						oDialog.close();
+					}
+				})
+			],
+			afterClose: function () {
+				oDialog.destroy();
+			}
+		}).addStyleClass("sapUiContentPadding");
+		oDialog.open();
+	}
+
 	return {
 
 		/**
 		 * @param {object} oDraft to (comma-separated), cc, bcc, subject and body
 		 */
 		open: function (oDraft) {
+			// Bcc cannot go through Outlook on the web's link: the next step for it
+			if (oDraft.bcc) {
+				showBccDraft(oDraft);
+				return;
+			}
 			if (!openOutlook(oDraft)) {
 				showDraft(oDraft);
 			}
