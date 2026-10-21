@@ -41,16 +41,6 @@ sap.ui.define([
 	// A closed month can still be corrected during the first few working days of the next one.
 	var GRACE_WORKING_DAYS = 3;
 
-	// The "viewing as" picker normally offers a manager their own direct reports.
-	// These people need every timesheet in the organisation regardless of who
-	// reports to whom.
-	var TIMESHEET_ALL_ACCESS = [
-		"tina.porter@bluestonex.com",
-		"tia.menhennet@bluestonex.com",
-		"vicky.williams@bluestonex.com",
-		"dan.barton@bluestonex.com"
-	];
-
 	return Controller.extend("bsx.hrx.hrx2026.controller.Timesheet", {
 
 		formatter: formatter,
@@ -74,7 +64,6 @@ sap.ui.define([
 				saving: false,
 				weekStart: this._mondayOf(new Date()),
 				weekLabel: "",
-				isManager: false,
 				currentEmail: "",
 				userId: "",
 				selectedCount: 0,
@@ -125,22 +114,10 @@ sap.ui.define([
 					return undefined;
 				}
 
-				// Every entry to the screen starts on whoever is signed in, with their
-				// own name showing in the picker - the view is reused across
-				// navigations, so without this it would come back holding whatever was
-				// last looked at.
-				this._sViewAsEmail = this._sUserEmail;
+				// Everybody sees only their own timesheet.
 				this.getModel("tsView").setProperty("/currentEmail", this._sUserEmail);
 
-				// The directory is filtered against the signed-in user, so it can only
-				// be read once that user is known - loading it from onInit filtered
-				// against "" and came back empty on every refresh.
-				this._pDirectoryLoaded = this._pDirectoryLoaded || this._loadDirectory();
-
-				return this._pDirectoryLoaded.then(function () {
-					this._restoreViewAs();
-					return this._loadWeek();
-				}.bind(this));
+				return this._loadWeek();
 			}.bind(this));
 		},
 
@@ -174,59 +151,6 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
-		 * Loads the resource directory that backs the "viewing as" picker. Only managers
-		 * get to use it, but the list is cheap and stable so it is fetched once.
-		 * Scoped to the signed-in manager's own direct reports (plus themselves) - not
-		 * the whole org - so a manager can only view timesheets they are entitled to see.
-		 * The resourcing/payroll roles in TIMESHEET_ALL_ACCESS are the exception and get
-		 * everybody.
-		 * @returns {Promise} resolved once the directory is in the model
-		 */
-		_loadDirectory: function () {
-			var oProfile = CurrentUser.get() || {};
-			var sManagerId = oProfile.empID;
-			// Somebody entitled to look at everybody's timesheet, not only at the people
-			// who report to them - see TIMESHEET_ALL_ACCESS.
-			var bSeesEveryone = this._seesEveryone();
-
-			return this._read("/Resources", {
-				urlParameters: { "$select": "EmpID,FName,LName,Email,IsActive,ManagerID" },
-				filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-			}).then(function (oData) {
-				this.getModel("ts").setProperty("/directory", this._strip(oData)
-					.filter(function (oResource) {
-						return oResource.IsActive === "Y" && oResource.Email &&
-							(bSeesEveryone || CurrentUser.sameEmail(oResource.Email, this._sUserEmail) ||
-								oResource.ManagerID === sManagerId);
-					}.bind(this))
-					.map(function (oResource) {
-						oResource.FullName = ((oResource.FName || "") + " " + (oResource.LName || "")).trim();
-						return oResource;
-					})
-					.sort(function (a, b) {
-						return a.FullName.localeCompare(b.FullName);
-					}));
-
-				// The picker is only rendered for a manager. These three are not
-				// necessarily managers but still need it, so it is switched on for them
-				// here rather than waiting on the flag the timesheet service returns.
-				if (bSeesEveryone) {
-					this.getModel("tsView").setProperty("/isManager", true);
-				}
-			}.bind(this)).catch(function (oError) {
-				this._showError("tsErrorDirectory", oError);
-			}.bind(this));
-		},
-
-		/**
-		 * @returns {boolean} true when the signed-in user may open anybody's timesheet
-		 */
-		_seesEveryone: function () {
-			return CurrentUser.hasFullAccess() ||
-				TIMESHEET_ALL_ACCESS.indexOf((this._sUserEmail || "").toLowerCase()) !== -1;
-		},
-
-		/**
 		 * Loads the bookings of the week on screen and rebuilds the grid.
 		 * @returns {Promise} resolved once the week is in the model
 		 */
@@ -257,13 +181,6 @@ sap.ui.define([
 
 				oViewModel.setProperty("/userId", oUser.empID || "");
 				oViewModel.setProperty("/pic", oUser.pic || "");
-
-				// Manager rights belong to whoever is signed in, not to the person being
-				// viewed - otherwise opening a colleague's week would hide the picker that
-				// gets you back.
-				if (oViewModel.getProperty("/currentEmail") === this._sUserEmail) {
-					oViewModel.setProperty("/isManager", oUser.isManager === "Y" || this._seesEveryone());
-				}
 				this._oWorkSchedule = aResults[1];
 				this._iDayMinutes = this._dayMinutes(oUser);
 				this._oNonWorkingDates = this._nonWorkingDates(oData);
@@ -708,65 +625,8 @@ sap.ui.define([
 			this._loadWeek();
 		},
 
-		onViewAsChange: function (oEvent) {
-			var sEmail = oEvent.getSource().getSelectedKey();
-			if (!sEmail) {
-				// The picker has been cleared. Nothing to load, and the week already on
-				// screen still belongs to _sViewAsEmail, so leave it be - onRefresh is
-				// where an empty picker gets answered.
-				return;
-			}
-			this._sViewAsEmail = sEmail;
-			this.getModel("tsView").setProperty("/currentEmail", sEmail);
-			this._loadWeek();
-		},
-
-		/**
-		 * Reloads the week on screen. Clearing the "viewing as" picker leaves no user to
-		 * load, so rather than silently reloading whoever was there before - or asking
-		 * the service for an empty Email, which matches everybody - say what is missing
-		 * and put the last valid person back.
-		 */
 		onRefresh: function () {
-			var oViewModel = this.getModel("tsView");
-			var oViewAs = this.byId("timesheetViewAs");
-
-			if (oViewModel.getProperty("/isManager") && oViewAs && !oViewAs.getSelectedKey()) {
-				MessageBox.information(this.getText("tsSelectUser"));
-				this._restoreViewAs();
-			}
-
 			this._loadWeek();
-		},
-
-		/**
-		 * Puts the "viewing as" picker back to the last person actually chosen, falling
-		 * back to whoever is signed in.
-		 */
-		_restoreViewAs: function () {
-			var sEmail = this._sViewAsEmail || this._sUserEmail;
-			var oViewAs = this.byId("timesheetViewAs");
-
-			this.getModel("tsView").setProperty("/currentEmail", sEmail);
-			if (oViewAs) {
-				// setSelectedKey alone leaves the typed-into text box empty, so the name
-				// is written back from the directory entry as well.
-				oViewAs.setSelectedKey(sEmail);
-				oViewAs.setValue(this._viewAsName(sEmail));
-				oViewAs.setValueState("None");
-			}
-		},
-
-		/**
-		 * @param {string} sEmail the resource's email
-		 * @returns {string} that resource's name from the directory, or the email itself
-		 */
-		_viewAsName: function (sEmail) {
-			var aDirectory = this.getModel("ts").getProperty("/directory") || [];
-			var oMatch = aDirectory.filter(function (oResource) {
-				return CurrentUser.sameEmail(oResource.Email, sEmail);
-			})[0];
-			return (oMatch && oMatch.FullName) || sEmail;
 		},
 
 		/* =========================================================== */

@@ -16,8 +16,17 @@ sap.ui.define([
 	 */
 	function startupParameters(oComponent) {
 		var oComponentData = oComponent && oComponent.getComponentData();
-		var oLaunchpadParameters = (oComponentData && oComponentData.startupParameters) || {};
-		if (oLaunchpadParameters.email || !isDevPreview()) {
+		var oLaunchpadParameters = Object.assign({}, (oComponentData && oComponentData.startupParameters) || {});
+
+		// Who is signed in comes from the login, never from the link, on a real
+		// deployment: an email= in the launchpad link there would let anyone open the
+		// app as somebody else. Only a development preview, which has no login at all,
+		// takes the email from the link.
+		if (!isDevPreview()) {
+			delete oLaunchpadParameters.email;
+			return oLaunchpadParameters;
+		}
+		if (oLaunchpadParameters.email) {
 			return oLaunchpadParameters;
 		}
 
@@ -47,31 +56,16 @@ sap.ui.define([
 		"vicky.williams@bluestonex.com"
 	];
 
-	/*
-	 * TESTING AID - remove before go-live, with the "View as (demo)" picker in
-	 * App.view.xml. Lets whoever is building the app look at it with full admin access
-	 * (every manager page, everyone in every directory) or as a plain employee,
-	 * whatever their real permissions are. Kept in this browser only.
-	 */
-	var DEMO_ROLE_KEY = "hrx.demoRole";
-	var DEMO_ROLES = ["actual", "admin", "employee"];
+	// The browser key of the "View as (demo)" testing switch, now removed. A value
+	// left behind in a browser is cleared on start so it can never be read again.
+	var OLD_DEMO_ROLE_KEY = "hrx.demoRole";
 
-	function demoRole() {
+	function clearOldDemoRole() {
 		try {
-			var sRole = window.localStorage.getItem(DEMO_ROLE_KEY);
-			return DEMO_ROLES.indexOf(sRole) !== -1 ? sRole : "actual";
+			window.localStorage.removeItem(OLD_DEMO_ROLE_KEY);
 		} catch (oError) {
-			return "actual";
+			// storage blocked - nothing stored either
 		}
-	}
-
-	function applyDemoRole(oLoaded) {
-		var sRole = demoRole();
-		if (oLoaded && sRole !== "actual") {
-			oLoaded.isManager = sRole === "admin";
-			oLoaded.fullAccess = sRole === "admin";
-		}
-		return oLoaded;
 	}
 
 	/**
@@ -79,9 +73,6 @@ sap.ui.define([
 	 * @returns {boolean} true when that person is treated as a manager regardless of the service's flag
 	 */
 	function isManagerException(sEmail) {
-		if (demoRole() === "admin") {
-			return true;
-		}
 		return MANAGER_EXCEPTIONS.indexOf((sEmail || "").toLowerCase()) !== -1;
 	}
 
@@ -110,32 +101,6 @@ sap.ui.define([
 	return {
 
 		isManagerException: isManagerException,
-
-		/**
-		 * TESTING AID - see DEMO_ROLE_KEY.
-		 * @returns {string} "actual", "admin" or "employee"
-		 */
-		demoRole: demoRole,
-
-		/**
-		 * TESTING AID - switches the view and reloads, so every page starts again under it.
-		 * @param {string} sRole "actual", "admin" or "employee"
-		 */
-		setDemoRole: function (sRole) {
-			try {
-				window.localStorage.setItem(DEMO_ROLE_KEY, DEMO_ROLES.indexOf(sRole) !== -1 ? sRole : "actual");
-			} catch (oError) {
-				// storage blocked - nothing to remember it in
-			}
-			window.location.reload();
-		},
-
-		/**
-		 * @returns {boolean} true when the user sees everyone, not just their own reports
-		 */
-		hasFullAccess: function () {
-			return demoRole() === "admin";
-		},
 
 		/**
 		 * Only meaningful once {@link load} has resolved - before that, there is no
@@ -194,6 +159,8 @@ sap.ui.define([
 				return pProfile;
 			}
 
+			clearOldDemoRole();
+
 			var sParamEmail = firstOf(startupParameters(oComponent), "email");
 			var sOrgId = this.orgId(oComponent);
 			var sToday = Backend.isoDate(new Date());
@@ -212,8 +179,7 @@ sap.ui.define([
 			// xsjs services match an email whatever its case, but the OData /Resources
 			// filter does not, and the identity the launchpad and the team service hand
 			// back is sometimes upper case - which silently left the work schedule on
-			// its Mon-Fri fallback and dropped the signed-in user out of their own
-			// "viewing as" directory.
+			// its Mon-Fri fallback.
 			var sResolvedEmail = (sParamEmail || sEmail ||
 				(isDevPreview() ? "gaurav.kumar@bluestonex.com" : "")).toLowerCase();
 
@@ -287,7 +253,6 @@ sap.ui.define([
 				});
 			});
 
-			pProfile = pProfile.then(applyDemoRole);
 			return pProfile;
 		},
 

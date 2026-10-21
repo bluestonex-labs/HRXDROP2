@@ -144,7 +144,6 @@ sap.ui.define([
 			Promise.all([pUser, oModel.dataLoaded()]).then(function (aResult) {
 				var oProfile = aResult[0];
 
-				oModel.setProperty("/demoRole", CurrentUser.demoRole());
 				oModel.setProperty("/user", {
 					name: oProfile.name,
 					initials: oProfile.initials,
@@ -485,14 +484,6 @@ sap.ui.define([
 			this._pProfilePopover.then(function (oPopover) {
 				oPopover.openBy(oAvatar);
 			});
-		},
-
-		/**
-		 * TESTING AID - switches the "View as (demo)" role; the page reloads under it.
-		 * @param {sap.ui.base.Event} oEvent the select's change event
-		 */
-		onDemoRoleChange: function (oEvent) {
-			CurrentUser.setDemoRole(oEvent.getParameter("selectedItem").getKey());
 		},
 
 		onMenuButtonPress: function () {

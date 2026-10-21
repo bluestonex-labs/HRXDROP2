@@ -94,28 +94,6 @@
 		</tnt:mainContents>
 	</tnt:ToolPage>
 
-	<!-- TESTING AID - remove before go-live, with the demo role in CurrentUser.js.
-	     The prototype's "View as (demo)" switch: look at the app with full admin
-	     access or as a plain employee, whatever the signed-in user's own rights.
-	     Laid over the rail just below the signed-in user, as in the design. -->
-	<HBox
-		id="railDemo"
-		alignItems="Center"
-		visible="{= !${device>/system/phone} }"
-		class="hrxRailDemo">
-		<Label text="{i18n>viewAsDemo}" labelFor="railDemoRole" class="hrxRailDemoLabel" />
-		<Select
-			id="railDemoRole"
-			selectedKey="{app>/demoRole}"
-			change=".onDemoRoleChange"
-			width="100%"
-			class="hrxRailDemoSelect">
-			<core:Item key="actual" text="{i18n>demoRoleActual}" />
-			<core:Item key="admin" text="{i18n>demoRoleAdmin}" />
-			<core:Item key="employee" text="{i18n>demoRoleEmployee}" />
-		</Select>
-	</HBox>
-
 	<!-- Who is signed in, pinned to the foot of the side rail as the design has it:
 	     their initials, their name, and their job title and employee ID.
 	     sap.tnt.SideNavigation's own

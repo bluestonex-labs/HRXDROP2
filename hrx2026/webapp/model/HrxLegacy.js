@@ -632,7 +632,7 @@ sap.ui.define([
 							user: {
 								empID: oUser.EmployeeID,
 								siteID: oUser.BaseSite_ID || "",
-								isManager: yn(demoRole() === "admin" || (demoRole() !== "employee" && aResults[3].length > 0)),
+								isManager: yn(aResults[3].length > 0),
 								pic: pictureOf(oUser),
 								targetHrsPerWeek: hhmm(oSchedule.weekMinutes),
 								utilizationTargetPercentage: fTargetPct,
@@ -755,12 +755,6 @@ sap.ui.define([
 	/* ----------------------------------------------------------------- */
 	/* leaveReqs.xsjs, leaveApprovals.xsjs, teamCalendar1.xsjs           */
 	/* ----------------------------------------------------------------- */
-
-	/** TESTING AID - the "View as (demo)" choice, from CurrentUser. */
-	function demoRole() {
-		var CurrentUser = sap.ui.require("bsx/hrx/hrx2026/model/CurrentUser");
-		return CurrentUser ? CurrentUser.demoRole() : "actual";
-	}
 
 	function signedInEmpId() {
 		var CurrentUser = sap.ui.require("bsx/hrx/hrx2026/model/CurrentUser");
@@ -1134,7 +1128,7 @@ sap.ui.define([
 				var CurrentUser = sap.ui.require("bsx/hrx/hrx2026/model/CurrentUser");
 				var bManager = !!oMe && (aUsers.some(function (o) {
 					return o.Manager_EmployeeID === oMe.EmployeeID;
-				}) || !!(CurrentUser && CurrentUser.isManagerException(oMe.WorkEmail))) && demoRole() !== "employee";
+				}) || !!(CurrentUser && CurrentUser.isManagerException(oMe.WorkEmail)));
 
 				var oResult = {
 					loggedinUser: oMe ? [{

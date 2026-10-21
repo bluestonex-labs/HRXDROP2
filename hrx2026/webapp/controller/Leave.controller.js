@@ -67,7 +67,6 @@ sap.ui.define([
 				leaves: [],
 				bankHolidays: [],
 				leaveTypes: [],
-				directory: [],
 				dates: []
 			}), "ml");
 
@@ -110,8 +109,6 @@ sap.ui.define([
 					return undefined;
 				}
 
-				// The directory is filtered against the signed-in user, so it can only be
-				// read once that user is known.
 				this._pLookupsLoaded = this._pLookupsLoaded || this._loadLookups();
 				return this._pLookupsLoaded.then(this._loadUser.bind(this));
 			}.bind(this));
@@ -122,39 +119,16 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
-		 * Loads the leave type value help and the resource directory that backs the
-		 * "viewing as" picker. Both are stable, so they are fetched once.
-		 * Scoped to the signed-in manager's own direct reports (plus themselves) - not
-		 * the whole org - so a manager can only view leave they are entitled to see.
-		 * @returns {Promise} resolved once the lookups are in the model
+		 * Loads the leave type value help. It is stable, so it is fetched once.
+		 * @returns {Promise} resolved once the leave types are in the model
 		 */
 		_loadLookups: function () {
 			var oModel = this.getModel("ml");
-			var sManagerId = CurrentUser.get() && CurrentUser.get().empID;
 
-			return Promise.all([
-				this._read("/LeaveTypes", {
-					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-				}),
-				this._read("/Resources", {
-					urlParameters: { "$select": "EmpID,FName,LName,Email,IsActive,ManagerID" },
-					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
-				})
-			]).then(function (aResults) {
-				oModel.setProperty("/leaveTypes", this._strip(aResults[0]));
-				oModel.setProperty("/directory", this._strip(aResults[1])
-					.filter(function (oResource) {
-						return oResource.IsActive === "Y" && oResource.Email &&
-							(CurrentUser.hasFullAccess() || CurrentUser.sameEmail(oResource.Email, this._sUserEmail) ||
-								oResource.ManagerID === sManagerId);
-					}.bind(this))
-					.map(function (oResource) {
-						oResource.FullName = ((oResource.FName || "") + " " + (oResource.LName || "")).trim();
-						return oResource;
-					})
-					.sort(function (a, b) {
-						return a.FullName.localeCompare(b.FullName);
-					}));
+			return this._read("/LeaveTypes", {
+				filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
+			}).then(function (oData) {
+				oModel.setProperty("/leaveTypes", this._strip(oData));
 			}.bind(this)).catch(function (oError) {
 				this._showError("mlErrorLookups", oError);
 			}.bind(this));
@@ -266,16 +240,6 @@ sap.ui.define([
 		onStatusFilter: function (oEvent) {
 			this.getModel("mlView").setProperty("/statusFilter", oEvent.getParameter("item").getKey());
 			this._applyStatusFilter();
-		},
-
-		onViewAsChange: function (oEvent) {
-			var sEmail = oEvent.getSource().getSelectedKey();
-			if (!sEmail) {
-				return;
-			}
-			this.getModel("mlView").setProperty("/currentEmail", sEmail);
-			this._resetRequestForm();
-			this._loadUser();
 		},
 
 		onRefresh: function () {

@@ -135,10 +135,10 @@ sap.ui.define([
 					}), mMine);
 				})) : Promise.resolve(null),
 
-				// Requests waiting for a manager: their own (everyone's with full access)
+				// Requests waiting for this manager to decide
 				oProfile.isManager ? settle(Hrx.list("Leaves", {
 					$filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested +
-						(CurrentUser.hasFullAccess() ? "" : " and ApproverID_EmployeeID eq " + sMe)
+						" and ApproverID_EmployeeID eq " + sMe
 				}).then(function (aLeaves) {
 					return Notifications.approvals(aLeaves.filter(function (oLeave) {
 						return HrxLegacy.leaveStatus(oLeave) === "REQ";

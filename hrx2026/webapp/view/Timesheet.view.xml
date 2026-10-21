@@ -12,8 +12,7 @@
 		<content>
 
 			<!-- The month's billing figures, laid out as the design's four-column KPI grid.
-			     The design leaves the fourth column empty; a manager gets the "viewing as"
-			     picker there, so it never pushes the tiles or the week card down. -->
+			     The design leaves the fourth column empty. -->
 			<FlexBox renderType="Bare" class="hrxTsKpis">
 
 				<VBox renderType="Bare" class="hrxTsKpi hrxTsKpiNeutral">
@@ -40,24 +39,6 @@
 					<Text text="{tsView>/kpis/month}" class="hrxTsKpiSub" />
 				</VBox>
 
-				<!-- Managers can look at somebody else's week -->
-				<VBox renderType="Bare" visible="{tsView>/isManager}" class="hrxTsKpi hrxTsViewAs">
-					<Label
-						text="{i18n>tsViewingAs}"
-						labelFor="timesheetViewAs"
-						class="hrxTsKpiLabel" />
-					<ComboBox
-						id="timesheetViewAs"
-						selectedKey="{tsView>/currentEmail}"
-						items="{ts>/directory}"
-						width="100%"
-						change=".onViewAsChange"
-						selectionChange=".onViewAsChange"
-						placeholder="{i18n>tsViewingAsPlaceholder}"
-						class="hrxTsViewAsField">
-						<core:ListItem key="{ts>Email}" text="{ts>FullName}" />
-					</ComboBox>
-				</VBox>
 			</FlexBox>
 
 			<!-- The week itself, as one card: week navigation, progress, grid, footnote -->
