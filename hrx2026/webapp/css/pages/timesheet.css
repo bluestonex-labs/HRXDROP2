@@ -354,7 +354,7 @@
 
 .hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th {
 	height: 29.5px;
-	padding: 0 18px;
+	padding: 8px 18px;
 	background: var(--frost);
 	border: none;
 	border-bottom: 1px solid var(--line);
@@ -382,6 +382,35 @@
 
 .hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th:last-child {
 	padding-right: 20px;
+}
+
+/* A day's header: the day, its date and the time booked on it, one under the
+   other and centred over the day's time box and comment button. */
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader > th:has(.hrxTsDayHead) {
+	padding: 8px 4px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .sapMColumnHeader:has(.hrxTsDayHead) {
+	justify-content: center !important;
+	text-align: center !important;
+}
+
+.hrxApp .hrxTimesheet .hrxTsDayHead {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .hrxTsDayHead .sapMText {
+	line-height: 13px;
+	text-align: center;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .hrxTsDayHead .hrxTsDayTotal {
+	font-family: monospace;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: .3px;
 }
 
 /* The selection column (design: .chk-col, 30px with the box 14px in) */
@@ -497,11 +526,25 @@
 	gap: 6px;
 }
 
+.hrxApp .hrxTimesheet .hrxTsProjectCell {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
 .hrxApp .hrxTimesheet .hrxTsProjectName {
 	font-family: var(--sans);
-	font-size: 13px;
-	line-height: 15px;
+	font-size: 14.5px;
+	font-weight: 600;
+	line-height: 18px;
 	color: var(--ink);
+}
+
+.hrxApp .hrxTimesheet .hrxTsProjectType {
+	font-family: var(--sans);
+	font-size: 12px;
+	line-height: 14px;
+	color: var(--txt-3);
 }
 
 .hrxApp .hrxTimesheet .hrxTsOverbooked.sapMObjStatus {
@@ -516,27 +559,33 @@
 	font-size: 10.5px;
 }
 
-/* A day: time box and comment button (design: .te-cell). The time box takes
-   auto margins, so the comment button sits at the cell's right edge. */
+/* A day: the time box with its comment button just after it, the pair centred
+   under the day's header. On a narrow screen the box gives up width first. */
 .hrxApp .hrxTimesheet .hrxTsTimeCell {
-	gap: 6px;
+	gap: 4px;
 	justify-content: center;
+	container-type: inline-size;
+}
+
+.hrxApp .hrxTimesheet .hrxTsTable .sapMListTblRow:not(.sapMListTblHeader) > td:has(.hrxTsTimeCell) {
+	padding: 10px 4px;
 }
 
 .hrxApp .hrxTimesheet .hrxTsTimeInput.sapMInputBase {
-	width: 64px !important;
-	height: 34px;
-	margin: 0 auto;
+	width: 84px !important;
+	min-width: 48px;
+	height: 30px;
+	margin: 0;
 	padding: 0;
-	flex: 0 0 64px;
+	flex: 0 1 84px;
 }
 
 .hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseContentWrapper {
-	width: 64px;
-	height: 34px;
+	width: 100%;
+	height: 30px;
 	box-sizing: border-box;
 	border: 1px solid var(--line);
-	border-radius: var(--radius-s);
+	border-radius: 10px;
 	background: var(--surface);
 	box-shadow: none;
 }
@@ -547,11 +596,11 @@
 }
 
 .hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner {
-	height: 32px;
+	height: 28px;
 	padding: 0 4px;
 	text-align: center;
 	font-family: monospace;
-	font-size: 12px;
+	font-size: 14px;
 	font-style: normal;
 	color: var(--ink);
 	background: transparent;
@@ -561,11 +610,25 @@
    live app, so a real 00:00 is never mistaken for the empty prompt. */
 .hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner::placeholder {
 	font-family: var(--sans);
-	font-size: 12px;
+	font-size: 15px;
 	font-weight: 400;
 	font-style: italic;
 	color: var(--txt-3);
 	opacity: 1;
+}
+
+/* A day squeezed narrower than its full box and button (a smaller screen, or
+   the side bar open): the box has given up width, so its text steps down to
+   keep "hh:mm" whole rather than cut to "hh:m...". */
+@container (max-width: 124px) {
+	.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner {
+		padding: 0 2px;
+		font-size: 12px;
+	}
+
+	.hrxApp .hrxTimesheet .hrxTsTimeInput .sapMInputBaseInner::placeholder {
+		font-size: 12px;
+	}
 }
 
 .hrxApp .hrxTimesheet .hrxTsTimeInput.sapMInputBaseContentWrapperError .sapMInputBaseContentWrapper,
@@ -613,7 +676,7 @@
 	width: auto;
 	height: auto;
 	margin: 0;
-	font-size: 18px;
+	font-size: 19px;
 	line-height: 1;
 	color: var(--txt-2);
 }
@@ -640,12 +703,35 @@
 	color: #991B1B;
 }
 
-/* A day that cannot be booked (design: td.mono "—"), or leave and holiday hours */
-.hrxApp .hrxTimesheet .hrxTsCellText {
+/* A day that cannot be booked - a weekend, a closed month, a day of leave - or
+   the leave and holiday hours: a grey box the size of a time box, with a dashed
+   line along its foot, holding the hours if there are any. */
+.hrxApp .hrxTimesheet .hrxTsCellBox.sapMText {
+	display: block;
+	width: 84px;
+	min-width: 48px;
+	height: 30px;
+	flex: 0 1 84px;
+	box-sizing: border-box;
+	padding: 0 4px;
+	border-radius: 10px;
+	position: relative;
+	background: #ECEFF2;
 	font-family: monospace;
 	font-variant-numeric: tabular-nums;
-	font-size: 12px;
-	color: var(--txt-3);
+	font-size: 14px;
+	line-height: 30px;
+	text-align: center;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTimesheet .hrxTsCellBox.sapMText::after {
+	content: "";
+	position: absolute;
+	left: 8px;
+	right: 8px;
+	bottom: 2px;
+	border-bottom: 1px dashed #A9B4BD;
 }
 
 /* Client group rows (design: tr.group-row) */

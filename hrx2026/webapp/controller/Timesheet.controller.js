@@ -68,7 +68,7 @@ sap.ui.define([
 				userId: "",
 				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
-					return { label: oDay.label };
+					return { label: oDay.label, date: "", total: "" };
 				}),
 				weekBooked: "00:00",
 				weekTarget: "00:00",
@@ -555,12 +555,19 @@ sap.ui.define([
 				return !oRow.readOnly;
 			});
 
-			// Column titles as the design writes them: "Mon 13"
+			// Each column title: the day, its date ("19 Oct") and the time booked on it
 			var aHeaders = DAYS.map(function (oDay, iIndex) {
+				var iMinutes = aBookableRows.reduce(function (iTotal, oRow) {
+					return iTotal + this._toMinutes(oRow.days[iIndex].time);
+				}.bind(this), 0);
+
 				return {
-					label: oDay.label + " " + aDates[iIndex].getDate()
+					label: oDay.label,
+					date: aDates[iIndex].getDate() + " " + aDates[iIndex].toLocaleDateString("en-GB", { month: "short" }),
+					// "0:00", "7:30": no leading zero on the hours, as the old screen had it
+					total: this._fromMinutes(iMinutes).replace(/^0(?=\d)/, "")
 				};
-			});
+			}, this);
 
 			var iBooked = aBookableRows.reduce(function (iTotal, oRow) {
 				return iTotal + oRow.days.reduce(function (iRowTotal, oDay) {

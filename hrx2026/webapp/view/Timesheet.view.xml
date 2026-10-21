@@ -120,29 +120,60 @@
 					selectionChange=".onSelectionChange"
 					updateFinished=".onTableUpdated">
 					<hrx:columns>
-						<Column width="13.48%" vAlign="Middle">
+						<!-- The seven days take an equal tenth of the width each, weekend included,
+						     and the project the rest; and everything in a day is centred
+						     under its header: the day, its date and the time booked on it. -->
+						<Column vAlign="Middle">
 							<Text text="{i18n>tsColProject}" />
 						</Column>
-						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/0/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/0/label}" />
+								<Text text="{tsView>/dayHeaders/0/date}" />
+								<Text text="{tsView>/dayHeaders/0/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/1/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/1/label}" />
+								<Text text="{tsView>/dayHeaders/1/date}" />
+								<Text text="{tsView>/dayHeaders/1/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/2/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/2/label}" />
+								<Text text="{tsView>/dayHeaders/2/date}" />
+								<Text text="{tsView>/dayHeaders/2/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/3/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/3/label}" />
+								<Text text="{tsView>/dayHeaders/3/date}" />
+								<Text text="{tsView>/dayHeaders/3/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column width="13.65%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/4/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/4/label}" />
+								<Text text="{tsView>/dayHeaders/4/date}" />
+								<Text text="{tsView>/dayHeaders/4/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column width="7.54%" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/5/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/5/label}" />
+								<Text text="{tsView>/dayHeaders/5/date}" />
+								<Text text="{tsView>/dayHeaders/5/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
-						<Column vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
-							<Text text="{tsView>/dayHeaders/6/label}" />
+						<Column width="10.3%" hAlign="Center" vAlign="Middle" minScreenWidth="Tablet" demandPopin="true">
+							<VBox renderType="Bare" alignItems="Center" class="hrxTsDayHead">
+								<Text text="{tsView>/dayHeaders/6/label}" />
+								<Text text="{tsView>/dayHeaders/6/date}" />
+								<Text text="{tsView>/dayHeaders/6/total}" class="hrxTsDayTotal" />
+							</VBox>
 						</Column>
 					</hrx:columns>
 					<hrx:items>
@@ -162,14 +193,17 @@
 									writeToDom="true" />
 							</hrx:customData>
 							<hrx:cells>
-								<HBox alignItems="Center" wrap="Wrap" class="hrxTsProject">
-									<Text text="{ts>project}" class="hrxTsProjectName" />
-									<ObjectStatus
-										text="{i18n>tsOverbooked}"
-										state="Warning"
-										visible="{ts>Overbooked}"
-										class="hrxTsOverbooked" />
-								</HBox>
+								<VBox renderType="Bare" class="hrxTsProjectCell">
+									<HBox alignItems="Center" wrap="Wrap" class="hrxTsProject">
+										<Text text="{ts>project}" class="hrxTsProjectName" />
+										<ObjectStatus
+											text="{i18n>tsOverbooked}"
+											state="Warning"
+											visible="{ts>Overbooked}"
+											class="hrxTsOverbooked" />
+									</HBox>
+									<Text text="{ts>ProjectTypeText}" visible="{= !!${ts>ProjectTypeText} }" class="hrxTsProjectType" />
+								</VBox>
 								<HBox renderType="Bare" binding="{ts>days/0}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
@@ -190,7 +224,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/1}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -212,7 +246,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/2}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -234,7 +268,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/3}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -256,7 +290,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/4}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -278,7 +312,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/5}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -300,7 +334,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/6}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
@@ -322,7 +356,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
-									<Text text="{= ${ts>time} || '—' }" visible="{= !${ts>editable} }" class="hrxTsCellText" />
+									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 								</HBox>
 							</hrx:cells>
 						</hrx:TimesheetRow>
