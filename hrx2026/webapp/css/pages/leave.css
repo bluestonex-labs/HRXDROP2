@@ -126,13 +126,33 @@
 	margin-top: 4px;
 }
 
-/* ── Request card + calendar (.grid-2, 340px | 1fr) ───────────────────────── */
+/* ── Request card + calendar ─────────────────────────────────────────────── */
 
+/* On the balance tiles' three columns: the request card takes one tile's width and
+   the calendar the other two, so both gaps line up with the tiles' gaps above
+   (the design's fixed 340px left them out of line). The tiles keep their own
+   equal widths. */
 .hrxApp .hrxMyLeave .hrxLeaveMainGrid {
 	display: grid;
-	grid-template-columns: 340px minmax(0, 1fr);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 16px;
 	align-items: stretch;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveMainGrid > [id$="leaveCalendarCard"] {
+	grid-column: span 2;
+}
+
+/* Narrow: one tile's width is too little for the request form, so the two cards
+   stack instead */
+@media (max-width: 1100px) {
+	.hrxApp .hrxMyLeave .hrxLeaveMainGrid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.hrxApp .hrxMyLeave .hrxLeaveMainGrid > [id$="leaveCalendarCard"] {
+		grid-column: auto;
+	}
 }
 
 .hrxApp .hrxMyLeave .hrxLeaveCard {

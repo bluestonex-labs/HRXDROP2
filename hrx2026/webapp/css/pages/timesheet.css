@@ -99,33 +99,6 @@
 	margin-top: 4px;
 }
 
-/* The manager's "viewing as" picker in the grid's free fourth column */
-.hrxApp .hrxTimesheet .hrxTsViewAs {
-	border-top-width: 1px;
-	justify-content: flex-start;
-}
-
-.hrxApp .hrxTimesheet .hrxTsViewAs .hrxTsKpiLabel {
-	padding-right: 0;
-	margin-bottom: 10px;
-}
-
-.hrxApp .hrxTimesheet .hrxTsViewAsField .sapMInputBaseContentWrapper {
-	height: 38px;
-	border: 1px solid var(--line);
-	border-radius: var(--radius-s);
-	background: var(--surface);
-	box-shadow: none;
-}
-
-.hrxApp .hrxTimesheet .hrxTsViewAsField .sapMInputBaseInner {
-	height: 36px;
-	font-family: var(--sans);
-	font-size: 13px;
-	color: var(--ink);
-	padding-left: 12px;
-}
-
 /* ── THE WEEK CARD (design: .tablecard) ───────────────────────────────────── */
 
 .hrxApp .hrxTimesheet .hrxTsCard {

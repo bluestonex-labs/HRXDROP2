@@ -822,11 +822,19 @@
 
 /* ── Billed days overview ──────────────────────────────────────────────────── */
 
+/* The pie box a little wider than the two beside it, which are the same width as
+   each other, so it sits in the middle of the row; all three the height of the
+   tallest. */
 .hrxTimesheetReport .hrxTsDaysGrid {
 	display: grid;
-	grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr) minmax(0, 1.3fr);
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
 	gap: 16px;
-	align-items: start;
+	align-items: stretch;
+}
+
+.hrxTimesheetReport .hrxTsDaysGrid > .hrxTsCard {
+	height: 100%;
+	box-sizing: border-box;
 }
 
 .hrxTimesheetReport .hrxTsStat {

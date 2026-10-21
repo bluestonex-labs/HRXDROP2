@@ -359,9 +359,12 @@
 
 /* .dash-grid: Team today, then the stack of Pending approvals and Utilisation.
    The design's 32px before "For you" is the section head's own top margin. */
+/* Two equal halves, so the gap between Team today and the cards beside it sits
+   on the middle gap of the four tiles above (the design's 1fr / 1.15fr split left
+   it 39px to the left of it). The tiles keep their own equal widths. */
 .hrxHomePage .hrxHomeDashGrid {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 16px;
 	align-items: stretch;
 	margin-bottom: 32px;

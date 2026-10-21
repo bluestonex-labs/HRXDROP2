@@ -11,9 +11,8 @@
 	<Page id="homePage" showHeader="false" showNavButton="false" class="hrxPageContent hrxHomePage">
 
 		<!-- ═════════ Manager dashboard ═════════
-		     Managers and admins only. Keyed off the profile's isManager flag, so the
-		     shell's "View as (demo)" switch applies to it, as the design's role switch
-		     hides #managerDash for an employee. -->
+		     Managers and admins only. Keyed off the signed-in user's own isManager
+		     flag, so an employee never sees it. -->
 		<VBox id="managerDash" renderType="Bare" visible="{app>/user/isManager}" class="hrxHomeMgrDash">
 
 			<!-- Four KPI tiles: a CSS grid of four equal columns -->

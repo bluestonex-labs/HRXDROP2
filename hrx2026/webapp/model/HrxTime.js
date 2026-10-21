@@ -29,6 +29,10 @@ sap.ui.define([
 
 	var HrxTime = {
 
+		/** What a working day owes: 8 hours, everywhere time is due (see HrxLegacy scheduleOf). */
+		WORKING_DAY_MINUTES: 8 * 60,
+
+
 		/**
 		 * @param {string} sTime "hh:mm" or "hh:mm:ss"
 		 * @returns {number} minutes
@@ -206,9 +210,8 @@ sap.ui.define([
 					var aWorks = DAY_FLAGS.map(function (sFlag, iDay) {
 						return oSchedule ? oSchedule[sFlag] === true : iDay >= 1 && iDay <= 5;
 					});
-					var iWorkDays = aWorks.filter(Boolean).length || 5;
-					var iWeekMinutes = HrxTime.minutes(oSchedule && oSchedule.TargetHrsPerWeek) || oPerson.weekMinutes;
-					var fDayMinutes = iWeekMinutes / iWorkDays;
+					// Every working day owes 8 hours, as on Home and My Timesheet
+					var fDayMinutes = HrxTime.WORKING_DAY_MINUTES;
 					var mPersonLeave = mLeave[oPerson.EmpID] || {};
 					var fExpected = 0;
 					var fLeave = 0;

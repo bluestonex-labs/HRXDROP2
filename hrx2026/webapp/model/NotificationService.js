@@ -114,25 +114,31 @@ sap.ui.define([
 				// Documents to acknowledge - none until the document service is bound
 				DocumentService.isBound() ? settle(Promise.all([
 					DocumentService.getDocuments(oProfile.orgId),
-					DocumentService.getAcknowledgements(oProfile.orgId)
+					DocumentService.getAcknowledgements(oProfile.orgId),
+					DocumentService.getMyAcknowledged()
 				]).then(function (aResults) {
 					var oMe = { EmpID: oProfile.empID, SiteID: oProfile.siteID };
-					var mAcks = Documents.ackIndex(aResults[1]);
-					var mMine = {};
-					Object.keys(mAcks).forEach(function (sDocumentId) {
-						if (mAcks[sDocumentId][oProfile.empID]) {
-							mMine[sDocumentId] = true;
-						}
-					});
+					// The service's own answer for the signed-in employee where it has one,
+					// otherwise matched by the profile's employee ID
+					var mMine = aResults[2];
+					if (!mMine) {
+						var mAcks = Documents.ackIndex(aResults[1]);
+						mMine = {};
+						Object.keys(mAcks).forEach(function (sDocumentId) {
+							if (mAcks[sDocumentId][oProfile.empID]) {
+								mMine[sDocumentId] = true;
+							}
+						});
+					}
 					return Notifications.documents((aResults[0] || []).filter(function (oDocument) {
 						return Documents.isFor(oDocument, oMe);
 					}), mMine);
 				})) : Promise.resolve(null),
 
-				// Requests waiting for a manager: their own (everyone's with full access)
+				// Requests waiting for this manager to decide
 				oProfile.isManager ? settle(Hrx.list("Leaves", {
 					$filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested +
-						(CurrentUser.hasFullAccess() ? "" : " and ApproverID_EmployeeID eq " + sMe)
+						" and ApproverID_EmployeeID eq " + sMe
 				}).then(function (aLeaves) {
 					return Notifications.approvals(aLeaves.filter(function (oLeave) {
 						return HrxLegacy.leaveStatus(oLeave) === "REQ";

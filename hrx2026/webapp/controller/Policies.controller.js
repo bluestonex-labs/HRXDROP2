@@ -56,14 +56,18 @@ sap.ui.define([
 
 			return Promise.all([
 				DocumentService.getDocuments(this._oProfile.orgId),
-				DocumentService.getAcknowledgements(this._oProfile.orgId)
+				DocumentService.getAcknowledgements(this._oProfile.orgId),
+				DocumentService.getMyAcknowledged()
 			]).then(function (aResults) {
 				this._aDocuments = aResults[0] || [];
 				this._mAcks = Documents.ackIndex(aResults[1]);
+				// The service's own answer for the signed-in employee, where it has one
+				this._mMine = aResults[2];
 				this._render();
 			}.bind(this)).catch(function (oError) {
 				this._aDocuments = [];
 				this._mAcks = {};
+				this._mMine = null;
 				this._render();
 				this._showError("pdErrorLoad", oError);
 			}.bind(this)).then(function () {
@@ -82,7 +86,9 @@ sap.ui.define([
 			var aMine = (this._aDocuments || []).filter(function (oDocument) {
 				return Documents.isFor(oDocument, oMe);
 			}).map(function (oDocument) {
-				var bDone = !!(this._mAcks[oDocument.DocumentID] || {})[oMe.EmpID];
+				var bDone = this._mMine
+					? !!this._mMine[oDocument.DocumentID]
+					: !!(this._mAcks[oDocument.DocumentID] || {})[oMe.EmpID];
 				var bOutstanding = !!oDocument.AckRequired && !bDone;
 				return Object.assign({}, oDocument, {
 					outstanding: bOutstanding,
@@ -142,6 +148,10 @@ sap.ui.define([
 				EmpID: this._oProfile.empID
 			}).then(function () {
 				MessageToast.show(this.getText("pdAckToast", [oDocument.Name]));
+				// Shown as acknowledged straight away; the reload then confirms it.
+				this._mMine = Object.assign({}, this._mMine || {});
+				this._mMine[oDocument.DocumentID] = true;
+				this._render();
 				this._load();
 			}.bind(this)).catch(function (oError) {
 				this._showError("pdErrorAcknowledge", oError);

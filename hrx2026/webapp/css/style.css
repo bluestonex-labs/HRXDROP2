@@ -132,8 +132,7 @@ body.hrxApp {
 /* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
 
 /* The 15.10.26 design's rail (.side): 248px wide, dark, the wordmark at the top,
-   "Overview" and "Admin only" groups, the signed-in user and "View as" at the
-   foot. In UI5 1.150 the rail is the SideNavigation itself; a group heading is
+   "Overview" and "Admin only" groups and the signed-in user at the foot. In UI5 1.150 the rail is the SideNavigation itself; a group heading is
    .sapTntNLGroup, a row .sapTntNLI with .sapTntNLIIcon and .sapTntNLIText inside. */
 .hrxApp .hrxToolPage .sapTntSideNavigation {
 	width: 248px !important;
@@ -144,7 +143,7 @@ body.hrxApp {
 	position: relative;
 	overflow: hidden;
 	box-sizing: border-box;
-	padding: 90px 16px 150px;
+	padding: 90px 16px 111px;
 	/* the wordmark, as .brandimg: 26px high, centred, 28px from the top */
 	background-image: url("../img/hrx-logo.png");
 	background-repeat: no-repeat;
@@ -374,9 +373,8 @@ body.hrxApp {
 /* ── SIGNED-IN USER ───────────────────────────────────────────────────────── */
 
 /* The design's .side-foot: a rule, the initials, the name with the job title and
-   employee ID under it, and the bell; "View as (demo)" sits below it. Both are
-   laid over the foot of the rail from outside it (see App.view.xml), so the
-   view is their positioning context. */
+   employee ID under it, and the bell. It is laid over the foot of the rail from
+   outside it (see App.view.xml), so the view is its positioning context. */
 .hrxAppRoot {
 	position: relative;
 }
@@ -384,7 +382,7 @@ body.hrxApp {
 .hrxApp .hrxRailUser {
 	position: absolute;
 	left: 16px;
-	bottom: 55px;
+	bottom: 16px;
 	z-index: 5;
 	width: 216px;
 	box-sizing: border-box;
@@ -1952,50 +1950,6 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .hrxApp .hrxKpi[data-state="Good"] .hrxKpiGlyph { color: #0F7B4F; background: var(--mint-soft); }
 .hrxApp .hrxKpi[data-state="Warning"] .hrxKpiGlyph { color: #92400E; background: var(--amber-soft); }
 .hrxApp .hrxKpi[data-state="Critical"] .hrxKpiGlyph { color: #991B1B; background: var(--signal-soft); }
-
-/* TESTING AID - the "View as (demo)" switch, laid over the rail above the user. */
-/* "View as (demo)", below the signed-in user as in the design (.role-demo) */
-.hrxApp .hrxRailDemo {
-	position: absolute;
-	left: 16px;
-	bottom: 18px;
-	z-index: 5;
-	width: 216px;
-	box-sizing: border-box;
-	padding: 10px 4px 0;
-	gap: 6px;
-}
-
-.hrxApp .hrxToolPage.hrxSideCollapsed ~ .hrxRailDemo {
-	display: none;
-}
-
-.hrxApp .hrxRailDemo > .sapMFlexItem:last-child {
-	flex: 1 1 auto !important;
-	min-width: 0 !important;
-}
-
-.hrxApp .hrxRailDemoLabel.sapMLabel {
-	font-family: var(--sans);
-	font-size: 10px;
-	color: #5A7180;
-	white-space: nowrap;
-}
-
-.hrxApp .hrxRailDemoSelect.sapMSlt {
-	height: 24px;
-	background: rgba(255, 255, 255, .06);
-	border: 1px solid rgba(255, 255, 255, .12);
-	border-radius: 6px;
-}
-
-.hrxApp .hrxRailDemoSelect .sapMSltLabel,
-.hrxApp .hrxRailDemoSelect .sapMSltArrow {
-	color: #CADAE4;
-	font-family: var(--sans);
-	font-size: 11px;
-	line-height: 22px;
-}
 
 /* ── DOCUMENTS AND POLICIES TO READ ───────────────────────────────────────── */
 

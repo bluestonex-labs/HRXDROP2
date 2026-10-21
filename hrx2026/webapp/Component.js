@@ -116,7 +116,7 @@ sap.ui.define([
          * connection, a gateway hiccup, the service still waking up - the model has no
          * metadata for the rest of the session and every read against it fails from
          * then on. That is how the leave type picker on the dashboard, the resource
-         * directory behind "viewing as" and the work schedules all came to be empty at
+         * directory and the work schedules all came to be empty at
          * the same time while the xsjs-backed parts of the same page were fine.
          *
          * A handful of spaced-out retries turns that permanent, session-long failure
