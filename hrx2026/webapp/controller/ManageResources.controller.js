@@ -9,9 +9,10 @@ sap.ui.define([
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter",
+	"../model/TeamLeave",
 	"./BookLeave"
 ], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
-	BookLeave) {
+	TeamLeave, BookLeave) {
 	"use strict";
 
 	// Root path of the backend services. Both the local dev proxy (ui5.yaml) and the
@@ -331,6 +332,7 @@ sap.ui.define([
 					loaded: true,
 					user: oData.user || {},
 					availedLeaves: oData.availedLeaves || [],
+					requests: this._leaveRequests(oData.availedLeaves || []),
 					bankHolidays: oData.bankHolidays || [],
 					analyticsData: oData.analyticsData || []
 				});
@@ -340,6 +342,62 @@ sap.ui.define([
 				this.getModel("mrLeave").setData(this._emptyLeaveData());
 				MessageToast.show(this.getText("mrErrorLeaves") + " " + this._errorText(oError));
 			}.bind(this));
+		},
+
+		/**
+		 * Gathers the resource's leave days into requests, one row each, as My Leave
+		 * and Team Calendar show them. Deciding a request decides all its days in one
+		 * call, so the employee gets one email for it rather than one per day.
+		 * @param {Array<object>} aDays fetchUser's availedLeaves, one entry per day
+		 * @returns {Array<object>} requests, newest first: ids, DisplayDate (the range),
+		 * DaysText, LeaveType, Absence, Status and StatusID
+		 */
+		_leaveRequests: function (aDays) {
+			var mGroups = {};
+			var aOrder = [];
+
+			aDays.forEach(function (oDay) {
+				var sKey = (oDay.LeaveGrpID || oDay.LeaveID) + "|" + oDay.StatusID;
+				if (!mGroups[sKey]) {
+					mGroups[sKey] = { days: [] };
+					aOrder.push(sKey);
+				}
+				mGroups[sKey].days.push(oDay);
+			});
+
+			return aOrder.map(function (sKey) {
+				var aGroup = mGroups[sKey].days.slice().sort(function (a, b) {
+					return a.Date.localeCompare(b.Date);
+				});
+				var oFirst = aGroup[0];
+				var fDays = aGroup.reduce(function (fTotal, oDay) {
+					return fTotal + (oDay.Absence === "Full Day" ? 1 : 0.5);
+				}, 0);
+				var aAbsences = aGroup.map(function (oDay) {
+					return oDay.Absence;
+				}).filter(function (sAbsence, iIndex, aAll) {
+					return aAll.indexOf(sAbsence) === iIndex;
+				});
+				// One leave row (LeaveID) can cover several days: decide each once
+				var aIds = aGroup.map(function (oDay) {
+					return oDay.LeaveID;
+				}).filter(function (sId, iIndex, aAll) {
+					return aAll.indexOf(sId) === iIndex;
+				});
+
+				return {
+					ids: aIds,
+					from: oFirst.Date,
+					DisplayDate: TeamLeave.rangeLabel(oFirst.Date, aGroup[aGroup.length - 1].Date),
+					DaysText: this.getText(fDays === 1 ? "lmOneDay" : "lmDays", [fDays]),
+					LeaveType: oFirst.LeaveType,
+					Absence: aAbsences.length === 1 ? aAbsences[0] : this.getText("mrLeaveMixed"),
+					Status: oFirst.Status,
+					StatusID: oFirst.StatusID
+				};
+			}, this).sort(function (a, b) {
+				return b.from.localeCompare(a.from);
+			});
 		},
 
 		/* =========================================================== */
@@ -408,8 +466,8 @@ sap.ui.define([
 		},
 
 		/**
-		 * Approves or rejects one requested day of the resource's leave.
-		 * @param {object} oLeave the leave record (from mrLeave>/availedLeaves)
+		 * Approves or rejects a request, every day of it in one call (one email).
+		 * @param {object} oLeave the request (from mrLeave>/requests)
 		 * @param {string} sStatus "APR" or "REJ"
 		 * @param {string} sNote the approver's note to the employee, may be empty
 		 */
@@ -420,19 +478,21 @@ sap.ui.define([
 			this.getModel("mrView").setProperty("/leaveBusy", true);
 
 			this._postJson(LEAVE_APPROVALS_SERVICE + "?cmd=action", {
-				LeaveReqSet: [{
-					LeaveID: oLeave.LeaveID,
-					RequesterID: oDetail.EmpID,
-					RequesterName: oDetail.FullName,
-					RequesterEmail: oDetail.Email,
-					Status: sStatus,
-					OrgID: this._sOrgId,
-					ApprovedOn: this._isoDate(new Date()),
-					ApprovedBy: oProfile.empID || "",
-					ApproverName: oProfile.name || "",
-					ApproverEmail: oProfile.email || "",
-					ApproverComments: sNote
-				}]
+				LeaveReqSet: oLeave.ids.map(function (sLeaveId) {
+					return {
+						LeaveID: sLeaveId,
+						RequesterID: oDetail.EmpID,
+						RequesterName: oDetail.FullName,
+						RequesterEmail: oDetail.Email,
+						Status: sStatus,
+						OrgID: this._sOrgId,
+						ApprovedOn: this._isoDate(new Date()),
+						ApprovedBy: oProfile.empID || "",
+						ApproverName: oProfile.name || "",
+						ApproverEmail: oProfile.email || "",
+						ApproverComments: sNote
+					};
+				}, this)
 			}).then(function () {
 				MessageToast.show(this.getText(sStatus === "APR" ? "mrLeaveApproved" : "mrLeaveRejected",
 					[oLeave.DisplayDate]));
@@ -964,6 +1024,7 @@ sap.ui.define([
 				loaded: false,
 				user: {},
 				availedLeaves: [],
+				requests: [],
 				bankHolidays: [],
 				analyticsData: []
 			};

@@ -372,9 +372,10 @@
 									class="hrxMrBtnGhost hrxMrBtnSm hrxMrIcoCal" />
 							</HBox>
 
+							<!-- One row per request: deciding it decides all its days at once -->
 							<Table
 								id="resourceLeaveTable"
-								items="{mrLeave>/availedLeaves}"
+								items="{mrLeave>/requests}"
 								noDataText="{i18n>mrLeaveNoData}"
 								showSeparators="Inner"
 								growing="true"
@@ -383,6 +384,7 @@
 								class="hrxMrTable">
 								<columns>
 									<Column><Text text="{i18n>mrLeaveColDate}" /></Column>
+									<Column hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mrLeaveColDays}" /></Column>
 									<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>mrLeaveColType}" /></Column>
 									<Column hAlign="End"><Text text="{i18n>mrLeaveColStatus}" /></Column>
 								</columns>
@@ -390,6 +392,7 @@
 									<ColumnListItem type="Inactive">
 										<cells>
 											<Text text="{mrLeave>DisplayDate}" />
+											<Text text="{mrLeave>DaysText}" />
 											<Text text="{mrLeave>LeaveType} · {mrLeave>Absence}" />
 											<!-- A request still waiting can be decided here (.icon-btn sm ok / no) -->
 											<HBox renderType="Bare" class="hrxMrRowActs">
