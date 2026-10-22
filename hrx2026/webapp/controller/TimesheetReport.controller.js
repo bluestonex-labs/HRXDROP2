@@ -510,19 +510,34 @@ sap.ui.define([
 					return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[sChar];
 				});
 			};
-			var fCircumference = 2 * Math.PI * 42;
-			var fOffset = 0;
+			var fShareBefore = 0;
 			var bDrill = !!this.getModel("trView").getProperty("/drill");
+			// A point on the ring, a share of the way round clockwise from twelve o'clock
+			var fnPoint = function (fShare) {
+				var fAngle = fShare * 2 * Math.PI - Math.PI / 2;
+				return (50 + 42 * Math.cos(fAngle)).toFixed(3) + " " + (50 + 42 * Math.sin(fAngle)).toFixed(3);
+			};
 
+			// Each slice is an open arc from its own start to its own end. They used to
+			// be dashes along one circle, and the dash that ended at twelve o'clock -
+			// where a circle's outline starts and closes - ran a hair over the join and
+			// drew a pointed corner there.
 			var sArcs = aSlices.map(function (oSlice, iIndex) {
-				var fLength = oSlice.value / fTotal * fCircumference;
-				var sArc = "<circle data-i=\"" + iIndex + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
-					" cx=\"50\" cy=\"50\" r=\"42\" fill=\"none\" stroke=\"" + oSlice.color + "\" stroke-width=\"13\"" +
-					" stroke-dasharray=\"" + fLength + " " + (fCircumference - fLength) + "\"" +
-					" stroke-dashoffset=\"" + (-fOffset) + "\" transform=\"rotate(-90 50 50)\">" +
-					"<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title></circle>";
-				fOffset += fLength;
-				return sArc;
+				var fShare = oSlice.value / fTotal;
+				var sAttributes = "data-i=\"" + iIndex + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
+					" fill=\"none\" stroke=\"" + oSlice.color + "\" stroke-width=\"13\"";
+				var sTitle = "<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title>";
+				var sShape;
+
+				if (fShare >= 0.9999) {
+					// One slice is the whole ring; an arc cannot start and end on one point.
+					sShape = "<circle " + sAttributes + " cx=\"50\" cy=\"50\" r=\"42\">" + sTitle + "</circle>";
+				} else {
+					sShape = "<path " + sAttributes + " d=\"M " + fnPoint(fShareBefore) +
+						" A 42 42 0 " + (fShare > 0.5 ? 1 : 0) + " 1 " + fnPoint(fShareBefore + fShare) + "\">" + sTitle + "</path>";
+				}
+				fShareBefore += fShare;
+				return sShape;
 			}).join("");
 
 			var sTrack = "<circle cx=\"50\" cy=\"50\" r=\"42\" fill=\"none\" class=\"hrxTsDonutTrack\" stroke-width=\"13\"/>";
