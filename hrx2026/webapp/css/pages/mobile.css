@@ -85,33 +85,42 @@
 	border-top: 1px solid var(--line);
 }
 
+/* The tab is drawn on the button itself - the icon on its ::before, the label in
+   the inner box - because the theme takes the inner box's ::before for its focus
+   ring (see FOCUS below). */
 .hrxApp .hrxPhone .hrxPhoneTab.sapMBtn {
-	height: auto;
-	padding: 0;
-}
-
-.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnInner {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	gap: 3px;
 	height: auto;
 	min-height: 52px;
 	padding: 8px 0;
-	border: none;
+	box-sizing: border-box;
 	border-radius: 12px;
-	background: transparent;
-	box-shadow: none;
 	color: var(--txt-3);
 }
 
-.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnInner::before {
+.hrxApp .hrxPhone .hrxPhoneTab.sapMBtn::before {
 	content: "";
 	width: 23px;
 	height: 23px;
 	background-color: currentColor;
 	-webkit-mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
 	mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnInner,
+.hrxApp .hrxPhone .hrxPhoneTab:hover .sapMBtnInner,
+.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
 }
 
 .hrxApp .hrxPhone .hrxPhoneTab[data-tab="home"] { --hrx-tab-icon: url("../../img/nav/home.svg"); }
@@ -128,7 +137,7 @@
 
 /* The lit tab: a soft ice square behind the whole tab, as the rail lights the
    page it is on (style.css, .sapTntNLISelected) */
-.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
+.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] {
 	background: var(--ice-glow);
 	color: var(--ice-deep);
 }
@@ -329,6 +338,8 @@
 
 .hrxApp .hrxPhone .hrxMbBar .sapMPIBar {
 	height: 100%;
+	/* the theme lifts the fill 2px, which left a gap under it in the track */
+	margin: 0;
 	border: none;
 	border-radius: 6px;
 	background: var(--ice);
@@ -1150,33 +1161,36 @@
 }
 
 .hrxApp .hrxPhone .hrxMbTypeBtn.sapMBtn {
-	width: 100%;
-	height: auto;
-	padding: 0;
-}
-
-.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnInner {
 	display: flex;
 	align-items: center;
-	justify-content: flex-start;
 	gap: 10px;
 	width: 100%;
 	height: auto;
 	min-height: 52px;
 	padding: 0 14px;
+	box-sizing: border-box;
 	border: 1px solid var(--line);
 	border-radius: var(--radius-s);
 	background: var(--surface);
-	box-shadow: none;
 }
 
-.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnInner::before {
+.hrxApp .hrxPhone .hrxMbTypeBtn.sapMBtn::before {
 	content: "";
 	flex-shrink: 0;
 	width: 11px;
 	height: 11px;
 	border-radius: 4px;
 	background: var(--hrx-mb-leave);
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbTypeBtn:hover .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
 }
 
 .hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnContent {
@@ -1189,7 +1203,7 @@
 	color: var(--ink);
 }
 
-.hrxApp .hrxPhone .hrxMbTypeBtn[data-on="true"] .sapMBtnInner {
+.hrxApp .hrxPhone .hrxMbTypeBtn[data-on="true"] {
 	border-color: var(--ice);
 	background: var(--ice-glow);
 }
@@ -1685,13 +1699,19 @@
 
 /* ── FOCUS ────────────────────────────────────────────────────────────────── */
 
-/* The theme rings a clicked button's inner box (.sapMBtn:focus > .sapMFocusable),
-   which cut into a day chip's date and drew a second shape in a tab. These
-   buttons show their own selected state; a keyboard user gets a ring round the
+/* The theme rings a clicked button by drawing a ::before over its inner box
+   (html.sap-desktop .sapMBtn:focus > .sapMFocusable::before, and :focus-visible) -
+   it sat round a day chip's date and, on a tab, took the icon with it. None of
+   the phone's buttons use the inner box's ::before, so it is switched off; they
+   show their own selected state, and a keyboard user gets a ring round the
    whole button instead. */
+.hrxApp .hrxPhone .hrxPhoneTabs .sapMBtn > .sapMFocusable::before,
+.hrxApp .hrxPhone .hrxMbPage .sapMBtn > .sapMFocusable::before {
+	content: none !important;
+}
+
 .hrxApp .hrxPhone .hrxPhoneTabs .sapMBtn:focus > .sapMFocusable,
-.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus > .sapMFocusable,
-.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus > .sapMBtnInner {
+.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus > .sapMFocusable {
 	outline: none;
 }
 
