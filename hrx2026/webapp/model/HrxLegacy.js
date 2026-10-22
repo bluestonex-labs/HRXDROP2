@@ -266,6 +266,26 @@ sap.ui.define([
 	}
 
 	/**
+	 * A picture taken off on a page (Remove picture / Remove logo) arrives as "": the
+	 * record stops pointing at its stored image, so it shows initials again.
+	 * @param {string} sPath the record, e.g. "Users('S000000010')"
+	 * @param {string} sRootField its repository field (ImageRootID / LogoRootID)
+	 * @param {string} sObjectField its object field (ImageObjectID / LogoObjectID)
+	 * @returns {Promise} resolved once the record is cleared, or straight away when it had no picture
+	 */
+	function clearPicture(sPath, sRootField, sObjectField) {
+		return Hrx.get(sPath, { $select: sObjectField }).then(function (oStored) {
+			if (!oStored || !oStored[sObjectField]) {
+				return null;
+			}
+			var oChange = {};
+			oChange[sRootField] = null;
+			oChange[sObjectField] = null;
+			return Hrx.update(sPath, oChange);
+		});
+	}
+
+	/**
 	 * A picture chosen on a page arrives as a data: url; anything else (an existing
 	 * picture's url, or nothing) is not a new picture.
 	 */
@@ -1209,7 +1229,8 @@ sap.ui.define([
 
 			return Hrx.update(sPath, oUser).then(function () {
 				if (!newPicture(oBody.Pic)) {
-					return null;
+					// "" is a removed picture; the existing picture's address means no change
+					return oBody.Pic === "" ? clearPicture(sPath, "ImageRootID", "ImageObjectID") : null;
 				}
 				return Hrx.get(sPath, { $select: "ImageObjectID" }).then(function (oStored) {
 					return savePicture("User", sEmpId, (oStored && oStored.ImageObjectID) || "", oBody.Pic);
@@ -1310,7 +1331,8 @@ sap.ui.define([
 				return saveContact(oBody.ClientKey, oBody);
 			}).then(function () {
 				if (!newPicture(oBody.ClientLogo)) {
-					return null;
+					// "" is a removed logo; the existing logo's address means no change
+					return oBody.ClientLogo === "" ? clearPicture("Clients(" + oBody.ClientKey + ")", "LogoRootID", "LogoObjectID") : null;
 				}
 				return Hrx.get("Clients(" + oBody.ClientKey + ")", { $select: "LogoObjectID" }).then(function (oStored) {
 					return savePicture("Client", oBody.ClientKey, (oStored && oStored.LogoObjectID) || "", oBody.ClientLogo);
