@@ -109,8 +109,6 @@
 	content: "";
 	width: 23px;
 	height: 23px;
-	padding: 3px 16px;
-	border-radius: 999px;
 	background-color: currentColor;
 	-webkit-mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
 	mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
@@ -128,13 +126,11 @@
 	color: inherit;
 }
 
+/* The lit tab: a soft ice square behind the whole tab, as the rail lights the
+   page it is on (style.css, .sapTntNLISelected) */
 .hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
+	background: var(--ice-glow);
 	color: var(--ice-deep);
-}
-
-/* The lit tab's icon sits on a soft ice pill (the design's .tab.on .tab-i) */
-.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
-	background: radial-gradient(ellipse 28px 15px at 50% 19px, var(--ice-glow) 99%, transparent 100%);
 }
 
 /* ── SCREEN: scrolling content over a pinned action bar ──────────────────── */
@@ -319,9 +315,12 @@
 
 /* The design's .bar: an 8px track, ice (mint once the day or week is full) */
 .hrxApp .hrxPhone .hrxMbBar.sapMPI {
-	height: 8px;
+	height: 8px !important;
 	min-height: 8px;
+	/* the theme pads the bar for its value text, which is not shown here */
+	padding: 0 !important;
 	margin: 0;
+	overflow: hidden;
 	border: none;
 	border-radius: 6px;
 	background: var(--line-soft);
@@ -329,6 +328,8 @@
 }
 
 .hrxApp .hrxPhone .hrxMbBar .sapMPIBar {
+	height: 100%;
+	border: none;
 	border-radius: 6px;
 	background: var(--ice);
 	transition: width .25s;
@@ -338,8 +339,10 @@
 	background: var(--mint);
 }
 
+/* The theme draws the unfilled part as a second, outlined bar inside the track -
+   the faint shape in it. The track itself is the unfilled part here. */
 .hrxApp .hrxPhone .hrxMbBar .sapMPIBarRemaining {
-	background: transparent;
+	display: none;
 }
 
 .hrxApp .hrxPhone .hrxMbBar .sapMPITextLeft,
@@ -1678,4 +1681,23 @@
 .hrxApp .hrxPhone .hrxMbNextDetail.sapMText {
 	font-size: 13px;
 	color: var(--txt-2);
+}
+
+/* ── FOCUS ────────────────────────────────────────────────────────────────── */
+
+/* The theme rings a clicked button's inner box (.sapMBtn:focus > .sapMFocusable),
+   which cut into a day chip's date and drew a second shape in a tab. These
+   buttons show their own selected state; a keyboard user gets a ring round the
+   whole button instead. */
+.hrxApp .hrxPhone .hrxPhoneTabs .sapMBtn:focus > .sapMFocusable,
+.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus > .sapMFocusable,
+.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus > .sapMBtnInner {
+	outline: none;
+}
+
+.hrxApp .hrxPhone .hrxPhoneTabs .sapMBtn:focus-visible,
+.hrxApp .hrxPhone .hrxMbPage .sapMBtn:focus-visible {
+	outline: 2px solid var(--ice);
+	outline-offset: 2px;
+	border-radius: 12px;
 }
