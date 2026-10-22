@@ -554,6 +554,8 @@ sap.ui.define([
 
 		/**
 		 * Submits the request for approval by the user's manager.
+		 * @returns {Promise<boolean>|undefined} whether the request was sent (the phone's
+		 * request page shows its confirmation on true); nothing when it was not valid
 		 */
 		onSubmitLeave: function () {
 			var oForm = this.getModel("mlForm").getData();
@@ -606,12 +608,17 @@ sap.ui.define([
 				};
 			}, this);
 
-			this._save(LEAVE_SERVICE + "?cmd=requestLeave", { LeaveReqSet: aRequests },
+			return this._save(LEAVE_SERVICE + "?cmd=requestLeave", { LeaveReqSet: aRequests },
 				"mlRequested", "mlErrorRequest").then(function () {
 					this._resetRequestForm();
 					this.getModel("mlView").setProperty("/statusFilter", "All");
-					return this._loadUser();
-				}.bind(this)).catch(function () { /* reported by _save */ });
+					return this._loadUser().then(function () {
+						return true;
+					});
+				}.bind(this)).catch(function () {
+					// reported by _save
+					return false;
+				});
 		},
 
 		_resetRequestForm: function () {

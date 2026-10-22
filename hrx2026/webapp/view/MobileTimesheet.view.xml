@@ -1,0 +1,180 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.MobileTimesheet"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	height="100%">
+	<!-- My Timesheet on a phone (the mobile prototype's Timesheet tab). The rows are the
+	     desktop page's own (ts, tsView); "mts" lays out the chosen day. -->
+	<Page showHeader="false" enableScrolling="false" class="hrxMbPage">
+		<content>
+			<VBox renderType="Bare" busy="{tsView>/busy}" busyIndicatorDelay="0" class="hrxMbScreen">
+				<ScrollContainer vertical="true" horizontal="false" class="hrxMbContent">
+
+					<!-- The week: arrows either side, the hours booked against the week's target -->
+					<VBox renderType="Bare" class="hrxMbCard hrxMbCardBody hrxMbWeekCard">
+						<HBox renderType="Bare" class="hrxMbRowB">
+							<Button icon="sap-icon://tabler/chevron-left" tooltip="{i18n>tsPreviousWeek}" press=".onPreviousWeek" class="hrxMbIconBtn"/>
+							<Text text="{mts>/week/label}" textAlign="Center" class="hrxMbCardTitle"/>
+							<Button icon="sap-icon://tabler/chevron-right" tooltip="{i18n>tsNextWeek}" press=".onNextWeek" class="hrxMbIconBtn"/>
+						</HBox>
+						<ProgressIndicator percentValue="{= Math.min(${mts>/week/percent}, 100) }" showValue="false" class="hrxMbBar">
+							<customData>
+								<core:CustomData key="full" value="{= ${mts>/week/full} ? 'true' : 'false' }" writeToDom="true"/>
+							</customData>
+						</ProgressIndicator>
+						<HBox renderType="Bare" class="hrxMbRowB hrxMbMuted">
+							<Text text="{mts>/week/hoursText}" class="hrxMbWeekHours"/>
+							<Text text="{mts>/week/percent}%"/>
+						</HBox>
+					</VBox>
+
+					<!-- One chip per day: the day, its date and a dot for how it stands -->
+					<HBox renderType="Bare" items="{mts>/chips}" class="hrxMbDayChips">
+						<Button text="{mts>dn}" tooltip="{mts>label}" press=".onDayPress" class="hrxMbDayChip">
+							<customData>
+								<core:CustomData key="dw" value="{mts>dw}" writeToDom="true"/>
+								<core:CustomData key="status" value="{mts>status}" writeToDom="true"/>
+								<core:CustomData key="sel" value="{= ${mts>selected} ? 'true' : 'false' }" writeToDom="true"/>
+								<core:CustomData key="today" value="{= ${mts>today} ? 'true' : 'false' }" writeToDom="true"/>
+								<core:CustomData key="off" value="{= ${mts>off} ? 'true' : 'false' }" writeToDom="true"/>
+							</customData>
+						</Button>
+					</HBox>
+
+					<!-- The chosen day -->
+					<VBox renderType="Bare" class="hrxMbCard">
+						<HBox renderType="Bare" class="hrxMbDayHead">
+							<VBox renderType="Bare">
+								<Text text="{mts>/day/title}" class="hrxMbCardTitle"/>
+								<Text text="{mts>/day/hint}" class="hrxMbCardHint"/>
+							</VBox>
+							<Text text="{mts>/day/status}" class="hrxMbPill">
+								<customData>
+									<core:CustomData key="pill" value="{mts>/day/pill}" writeToDom="true"/>
+								</customData>
+							</Text>
+						</HBox>
+
+						<HBox renderType="Bare" visible="{= ${mts>/day/mode} === 'banner' }" class="hrxMbBanner">
+							<core:Icon src="sap-icon://tabler/alert-circle" class="hrxMbBannerIcon"/>
+							<Text text="{mts>/day/banner}"/>
+						</HBox>
+
+						<VBox renderType="Bare" visible="{= ${mts>/day/mode} === 'entries' }" items="{mts>/entries}">
+							<VBox renderType="Bare" class="hrxMbEntry">
+								<customData>
+									<core:CustomData key="error" value="{= ${mts>error} ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+								<HBox renderType="Bare" class="hrxMbRowB">
+									<VBox renderType="Bare" class="hrxMbEntryText">
+										<Text text="{mts>name}" class="hrxMbEntryName"/>
+										<Text text="{mts>client}" class="hrxMbEntryClient"/>
+									</VBox>
+									<Button
+										icon="sap-icon://tabler/trash"
+										tooltip="{i18n>mbRemoveProject}"
+										visible="{= ${mts>deletable} &amp;&amp; ${mts>editable} }"
+										press=".onPhoneRemove"
+										class="hrxMbIconBtn hrxMbIconBtnBare"/>
+								</HBox>
+								<HBox renderType="Bare" class="hrxMbStepper">
+									<Button text="−" tooltip="{i18n>mbLessTime}" enabled="{mts>editable}" press=".onStepDown" class="hrxMbStep"/>
+									<Text text="{mts>time}" class="hrxMbStepValue">
+										<customData>
+											<core:CustomData key="has" value="{= ${mts>has} ? 'true' : 'false' }" writeToDom="true"/>
+										</customData>
+									</Text>
+									<Button text="+" tooltip="{i18n>mbMoreTime}" enabled="{mts>editable}" press=".onStepUp" class="hrxMbStep"/>
+								</HBox>
+								<HBox renderType="Bare" class="hrxMbQuick">
+									<HBox renderType="Bare" items="{path: 'mts>quick', templateShareable: false}" class="hrxMbQuickSet">
+										<Button text="{mts>text}" enabled="{mts>editable}" press=".onQuickPick" class="hrxMbQuickBtn">
+											<customData>
+												<core:CustomData key="on" value="{= ${mts>on} ? 'true' : 'false' }" writeToDom="true"/>
+											</customData>
+										</Button>
+									</HBox>
+									<Button text="{i18n>mbClear}" enabled="{mts>editable}" press=".onQuickPick" class="hrxMbQuickBtn"/>
+								</HBox>
+								<VBox renderType="Bare">
+									<Label
+										text="{i18n>mbComment}"
+										required="{= ${mts>has} &amp;&amp; ${mts>commentRequired} }"
+										class="hrxMbLabel"/>
+									<TextArea
+										value="{mts>comment}"
+										rows="2"
+										width="100%"
+										editable="{mts>editable}"
+										placeholder="{i18n>mbCommentPlaceholder}"
+										liveChange=".onCommentInput"
+										class="hrxMbTextArea"/>
+									<Text text="{i18n>mbCommentRequiredMsg}" visible="{mts>error}" class="hrxMbErrMsg"/>
+								</VBox>
+							</VBox>
+						</VBox>
+
+						<VBox renderType="Bare" visible="{= ${mts>/day/mode} === 'entries' }" class="hrxMbAddWrap">
+							<Button text="{i18n>mbAddProject}" icon="sap-icon://add" press=".onPhoneAddProject" class="hrxMbBtn hrxMbBtnGhost"/>
+						</VBox>
+					</VBox>
+				</ScrollContainer>
+
+				<!-- Pinned above the tab bar: the week total, whether it is saved, Save -->
+				<VBox renderType="Bare" class="hrxMbActionBar">
+					<HBox renderType="Bare" class="hrxMbSum">
+						<HBox renderType="Bare" class="hrxMbSumText">
+							<Text text="{i18n>mbWeekTotal}"/>
+							<Text text="{mts>/week/booked} / {mts>/week/target}" class="hrxMbSumFigure"/>
+						</HBox>
+						<Text text="{= ${mts>/dirty} ? ${i18n>mbUnsaved} : ${i18n>mbAllSaved} }" class="hrxMbPill">
+							<customData>
+								<core:CustomData key="pill" value="{= ${mts>/dirty} ? 'warn' : 'ok' }" writeToDom="true"/>
+							</customData>
+						</Text>
+					</HBox>
+					<Button
+						text="{i18n>mbSaveTimesheet}"
+						icon="sap-icon://tabler/check"
+						enabled="{= ${mts>/dirty} &amp;&amp; !${tsView>/saving} }"
+						press=".onPhoneSave"
+						class="hrxMbBtn hrxMbBtnPrimary"/>
+				</VBox>
+			</VBox>
+
+			<!-- Bottom sheet: Add project, Remove project -->
+			<VBox renderType="Bare" class="hrxMbSheetLayer">
+				<customData>
+					<core:CustomData key="open" value="{= ${sheet>/open} ? 'true' : 'false' }" writeToDom="true"/>
+				</customData>
+				<Button tooltip="{i18n>mbClose}" press=".onCloseSheet" class="hrxMbSheetOverlay"/>
+				<VBox renderType="Bare" class="hrxMbSheet">
+					<HBox renderType="Bare" class="hrxMbSheetGrab"/>
+					<Text text="{sheet>/title}" class="hrxMbSheetTitle"/>
+					<ScrollContainer vertical="true" horizontal="false" class="hrxMbSheetBody">
+						<VBox renderType="Bare" visible="{= ${sheet>/kind} === 'add' }">
+							<List items="{ts>/available}" showSeparators="None" noDataText="{i18n>mbNoMoreProjects}" class="hrxMbPickList">
+								<CustomListItem type="Active" press=".onPickProject" class="hrxMbPick">
+									<HBox renderType="Bare" class="hrxMbPickRow">
+										<VBox renderType="Bare">
+											<Text text="{ts>ProjectDesc}" class="hrxMbPickName"/>
+											<Text text="{ts>ClientDesc}" class="hrxMbPickSub"/>
+										</VBox>
+										<core:Icon src="sap-icon://add" class="hrxMbPickIcon"/>
+									</HBox>
+								</CustomListItem>
+							</List>
+						</VBox>
+						<Text text="{sheet>/text}" visible="{= ${sheet>/kind} === 'remove' }" class="hrxMbSheetText"/>
+					</ScrollContainer>
+					<HBox renderType="Bare" visible="{= ${sheet>/kind} === 'remove' }" class="hrxMbSheetFoot">
+						<Button text="{i18n>mbKeep}" press=".onCloseSheet" class="hrxMbBtn hrxMbBtnGhost"/>
+						<Button text="{i18n>mbRemove}" press=".onConfirmRemove" class="hrxMbBtn hrxMbBtnDanger"/>
+					</HBox>
+				</VBox>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

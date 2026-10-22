@@ -64,6 +64,10 @@ sap.ui.define([
 		timesheetreport: { textKey: "pageActionRefresh", icon: "sap-icon://refresh" }
 	};
 
+	// The only pages a phone has (Component._usePhoneTargets); any other route sends
+	// it back to Home.
+	var PHONE_ROUTES = ["home", "timesheet", "leave"];
+
 	// Which nav row to light up for pages that have none of their own: Missing
 	// timesheets and the Admin page are opened from the App Explorer.
 	var mRouteToNavKey = {
@@ -86,6 +90,13 @@ sap.ui.define([
 			var oToolPage = this.byId("toolPage");
 			// start expanded on desktop, collapsed on smaller screens
 			oToolPage.setSideExpanded(Device.resize.width > 1024);
+
+			// A phone has the mobile design's app bar and tab bar instead of the rail,
+			// the top bar and the health strip (mobile.css hides those under hrxPhone).
+			if (Device.system.phone) {
+				this.getView().addStyleClass("hrxPhone");
+				oToolPage.setSideExpanded(false);
+			}
 			this._updateNavToggleIcon(oToolPage.getSideExpanded());
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
@@ -156,6 +167,11 @@ sap.ui.define([
 				});
 
 				this._showAdminNavigation(!!oProfile.isManager);
+
+				// No bell on a phone, so nothing to work out for it.
+				if (Device.system.phone) {
+					return;
+				}
 
 				this._oNotifProfile = oProfile;
 				this._loadNotifications(true);
@@ -358,6 +374,19 @@ sap.ui.define([
 			this._loadShell();
 			
 			var sRoute = oEvent.getParameter("name");
+
+			if (Device.system.phone) {
+				if (PHONE_ROUTES.indexOf(sRoute) === -1) {
+					this.getOwnerComponent().getRouter().navTo("home", {}, true);
+					return;
+				}
+				// After the catalogue has landed, as the title below: it replaces the model.
+				var oAppModel = this.getOwnerComponent().getModel("app");
+				oAppModel.dataLoaded().then(function () {
+					oAppModel.setProperty("/phoneTab", sRoute);
+				});
+			}
+
 			var sKey = mRouteToTitleKey[sRoute];
 			if (!sKey) {
 				return;
@@ -484,6 +513,14 @@ sap.ui.define([
 			this._pProfilePopover.then(function (oPopover) {
 				oPopover.openBy(oAvatar);
 			});
+		},
+
+		/**
+		 * A tab of the phone's tab bar: opens its page.
+		 * @param {sap.ui.base.Event} oEvent the tab's press event
+		 */
+		onPhoneTab: function (oEvent) {
+			this.getOwnerComponent().getRouter().navTo(oEvent.getSource().data("tab"));
 		},
 
 		onMenuButtonPress: function () {

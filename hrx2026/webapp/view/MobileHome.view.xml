@@ -1,0 +1,91 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.MobileHome"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	height="100%">
+	<!-- Home on a phone (the mobile prototype's Home tab): today, this week, leave. -->
+	<Page showHeader="false" enableScrolling="false" class="hrxMbPage">
+		<content>
+			<VBox renderType="Bare" busy="{tsView>/busy}" busyIndicatorDelay="0" class="hrxMbScreen">
+				<ScrollContainer vertical="true" horizontal="false" class="hrxMbContent">
+
+					<!-- Today -->
+					<VBox renderType="Bare" class="hrxMbCard">
+						<HBox renderType="Bare" class="hrxMbCardHead">
+							<Text text="{i18n>mbToday}" class="hrxMbCardTitle"/>
+							<Text text="{mh>/today/status}" class="hrxMbPill">
+								<customData>
+									<core:CustomData key="pill" value="{mh>/today/pill}" writeToDom="true"/>
+								</customData>
+							</Text>
+						</HBox>
+						<VBox renderType="Bare" class="hrxMbCardBody">
+							<VBox renderType="Bare">
+								<Text text="{mh>/today/date}" class="hrxMbEyebrow"/>
+								<HBox renderType="Bare" class="hrxMbBigLine">
+									<Text text="{mh>/today/booked}" class="hrxMbBig"/>
+									<Text text="{mh>/today/of}" class="hrxMbBigSmall"/>
+								</HBox>
+							</VBox>
+							<ProgressIndicator percentValue="{mh>/today/percent}" showValue="false" class="hrxMbBar">
+								<customData>
+									<core:CustomData key="full" value="{= ${mh>/today/full} ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+							</ProgressIndicator>
+							<Button text="{i18n>mbRecordTime}" icon="sap-icon://tabler/clock-hour-4" press=".onRecordToday" class="hrxMbBtn hrxMbBtnPrimary"/>
+						</VBox>
+					</VBox>
+
+					<!-- This week: a ring per working day; a tap opens that day -->
+					<VBox renderType="Bare" class="hrxMbCard">
+						<HBox renderType="Bare" class="hrxMbCardHead">
+							<Text text="{i18n>mbThisWeek}" class="hrxMbCardTitle"/>
+							<Text text="{mh>/week}" class="hrxMbCardHint"/>
+						</HBox>
+						<VBox renderType="Bare" class="hrxMbCardBody">
+							<List items="{mh>/rings}" showSeparators="None" class="hrxMbRings">
+								<CustomListItem type="Active" press=".onRingPress" tooltip="{mh>label}" class="hrxMbRingItem">
+									<VBox renderType="Bare" alignItems="Center" class="hrxMbRingCell">
+										<core:HTML content="{mh>html}"/>
+										<Text text="{mh>day}" class="hrxMbRingDay"/>
+									</VBox>
+								</CustomListItem>
+							</List>
+							<HBox renderType="Bare" wrap="Wrap" class="hrxMbLegend">
+								<Text text="{i18n>mbLegendMissing}" class="hrxMbLegendItem hrxMbLegendMissing"/>
+								<Text text="{i18n>mbLegendPartial}" class="hrxMbLegendItem hrxMbLegendPartial"/>
+								<Text text="{i18n>mbLegendComplete}" class="hrxMbLegendItem hrxMbLegendComplete"/>
+								<Text text="{i18n>mbLegendLeave}" class="hrxMbLegendItem hrxMbLegendLeave"/>
+								<Text text="{i18n>mbLegendNotDue}" class="hrxMbLegendItem hrxMbLegendNotDue"/>
+							</HBox>
+						</VBox>
+					</VBox>
+
+					<!-- Leave -->
+					<VBox renderType="Bare" class="hrxMbCard">
+						<HBox renderType="Bare" class="hrxMbCardHead">
+							<Text text="{i18n>mbLeaveCard}" class="hrxMbCardTitle"/>
+							<Text text="{mh>/leave/allowance}" class="hrxMbCardHint"/>
+						</HBox>
+						<VBox renderType="Bare" busy="{= !${mh>/leave/loaded} }" busyIndicatorDelay="0" class="hrxMbCardBody">
+							<HBox renderType="Bare" class="hrxMbBigLine">
+								<Text text="{mh>/leave/remaining}" class="hrxMbBig"/>
+								<Text text="{i18n>mbDaysRemaining}" class="hrxMbBigSmall"/>
+							</HBox>
+							<HBox renderType="Bare" visible="{= !!${mh>/leave/next} }" class="hrxMbNext">
+								<customData>
+									<core:CustomData key="leave" value="{mh>/leave/next/leave}" writeToDom="true"/>
+								</customData>
+								<Text text="{mh>/leave/next/text}" class="hrxMbNextText"/>
+								<Text text="· {mh>/leave/next/detail}" class="hrxMbNextDetail"/>
+							</HBox>
+							<Button text="{i18n>mbRequestLeave}" icon="sap-icon://add" press=".onRequestLeave" class="hrxMbBtn hrxMbBtnPrimary"/>
+						</VBox>
+					</VBox>
+				</ScrollContainer>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

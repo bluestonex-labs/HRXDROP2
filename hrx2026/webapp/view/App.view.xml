@@ -41,6 +41,21 @@
 			     own action (and when its data was last read) on the right; on Home only,
 			     the health strip under it. The launchpad shell supplies the bar above. -->
 			<VBox fitContainer="true" class="hrxMainStack">
+				<!-- Phone only (see Component._usePhoneTargets): the mobile design's app bar,
+				     HR SUITE over the page title with the HRX wordmark on the right. The
+				     desktop top bar, health strip and side rail are hidden on a phone. -->
+				<HBox
+					id="phoneBar"
+					visible="{device>/system/phone}"
+					alignItems="Center"
+					justifyContent="SpaceBetween"
+					class="hrxPhoneBar">
+					<VBox renderType="Bare">
+						<Text text="{i18n>appEyebrow}" class="hrxPhoneEyebrow"/>
+						<Title text="{app>/page/title}" level="H1" class="hrxPhoneTitle"/>
+					</VBox>
+					<HBox renderType="Bare" class="hrxPhoneLogo"/>
+				</HBox>
 				<HBox alignItems="Center" justifyContent="SpaceBetween" class="hrxTopBar">
 					<VBox class="hrxCrumb">
 						<Text text="{i18n>appEyebrow}" class="hrxEyebrow"/>
@@ -92,6 +107,27 @@
 						<FlexItemData growFactor="1" baseSize="0%"/>
 					</layoutData>
 				</NavContainer>
+				<!-- Phone only: the mobile design's tab bar - Home, Timesheet, Leave. -->
+				<HBox id="phoneTabs" visible="{device>/system/phone}" renderType="Bare" class="hrxPhoneTabs">
+					<Button text="{i18n>mbTabHome}" press=".onPhoneTab" class="hrxPhoneTab">
+						<customData>
+							<core:CustomData key="tab" value="home" writeToDom="true"/>
+							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'home' ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+					</Button>
+					<Button text="{i18n>mbTabTimesheet}" press=".onPhoneTab" class="hrxPhoneTab">
+						<customData>
+							<core:CustomData key="tab" value="timesheet" writeToDom="true"/>
+							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'timesheet' ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+					</Button>
+					<Button text="{i18n>mbTabLeave}" press=".onPhoneTab" class="hrxPhoneTab">
+						<customData>
+							<core:CustomData key="tab" value="leave" writeToDom="true"/>
+							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'leave' ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+					</Button>
+				</HBox>
 			</VBox>
 		</tnt:mainContents>
 	</tnt:ToolPage>

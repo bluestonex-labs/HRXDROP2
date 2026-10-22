@@ -1,0 +1,269 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.MobileLeave"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	height="100%">
+	<!-- My Leave on a phone (the mobile prototype's Leave tab). The balance and the
+	     requests are the desktop page's own (mlView, ml, mlForm, mlPicker); "mlp"
+	     holds the filters, the request form's check and which overlay is open. -->
+	<Page showHeader="false" enableScrolling="false" class="hrxMbPage">
+		<content>
+			<VBox renderType="Bare" busy="{mlView>/busy}" busyIndicatorDelay="0" class="hrxMbScreen">
+				<ScrollContainer vertical="true" horizontal="false" class="hrxMbContent">
+
+					<!-- The balance -->
+					<HBox renderType="Bare" class="hrxMbKpis">
+						<VBox renderType="Bare" class="hrxMbKpi hrxMbKpiOk">
+							<Text text="{i18n>mbRemaining}" class="hrxMbKpiLabel"/>
+							<Text text="{mlView>/kpis/balance}" class="hrxMbKpiNum"/>
+						</VBox>
+						<VBox renderType="Bare" class="hrxMbKpi">
+							<Text text="{i18n>mbBooked}" class="hrxMbKpiLabel"/>
+							<Text text="{mlView>/kpis/used}" class="hrxMbKpiNum"/>
+						</VBox>
+						<VBox renderType="Bare" class="hrxMbKpi">
+							<Text text="{i18n>mbQuota}" class="hrxMbKpiLabel"/>
+							<Text text="{mlView>/kpis/quota}" class="hrxMbKpiNum"/>
+						</VBox>
+					</HBox>
+
+					<Button text="{i18n>mbRequestLeave}" icon="sap-icon://add" press=".onOpenRequest" class="hrxMbBtn hrxMbBtnPrimary"/>
+
+					<Text text="{i18n>mbMyRequests}" class="hrxMbSectionTitle"/>
+
+					<HBox renderType="Bare" items="{mlp>/filters}" class="hrxMbChips">
+						<Button text="{mlp>text}" press=".onPhoneFilter" class="hrxMbChip">
+							<customData>
+								<core:CustomData key="count" value="{= String(${mlp>count}) }" writeToDom="true"/>
+								<core:CustomData key="on" value="{= ${mlp>on} ? 'true' : 'false' }" writeToDom="true"/>
+							</customData>
+						</Button>
+					</HBox>
+
+					<!-- One card per request, a bar down its side in the leave type's colour -->
+					<VBox renderType="Bare" items="{ml>/leaves}" class="hrxMbReqs">
+						<VBox renderType="Bare" class="hrxMbReq">
+							<customData>
+								<core:CustomData key="leave" value="{ml>LeaveTypeID}" writeToDom="true"/>
+							</customData>
+							<HBox renderType="Bare" class="hrxMbRowB hrxMbReqTop">
+								<VBox renderType="Bare">
+									<Text text="{ml>DisplayRange}" class="hrxMbReqTitle"/>
+									<Text text="{ml>subtitle}" class="hrxMbReqSub"/>
+								</VBox>
+								<Text text="{ml>Status}" class="hrxMbPill">
+									<customData>
+										<core:CustomData key="pill" value="{ml>pill}" writeToDom="true"/>
+									</customData>
+								</Text>
+							</HBox>
+							<Button
+								text="{i18n>mbCancelRequest}"
+								icon="sap-icon://tabler/x"
+								visible="{ml>cancellable}"
+								press=".onPhoneCancel"
+								class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+						</VBox>
+					</VBox>
+					<VBox renderType="Bare" visible="{= !${ml>/leaves}.length &amp;&amp; !${mlView>/busy} }" class="hrxMbCard">
+						<Text text="{i18n>mbNoRequests}" textAlign="Center" class="hrxMbEmpty"/>
+					</VBox>
+				</ScrollContainer>
+			</VBox>
+
+			<!-- New leave request: a full-screen page over the tabs -->
+			<VBox renderType="Bare" class="hrxMbFull">
+				<customData>
+					<core:CustomData key="open" value="{= ${mlp>/page} ? 'true' : 'false' }" writeToDom="true"/>
+				</customData>
+				<HBox renderType="Bare" class="hrxMbFullBar">
+					<Button
+						icon="sap-icon://tabler/arrow-left"
+						tooltip="{i18n>mbBack}"
+						visible="{= !${mlp>/done} }"
+						press=".onCloseRequest"
+						class="hrxMbIconBtn hrxMbIconBtnBare"/>
+					<Text text="{= ${mlp>/done} ? ${i18n>mbLeaveRequest} : ${i18n>mbNewLeave} }" class="hrxMbFullTitle"/>
+				</HBox>
+
+				<!-- The form -->
+				<ScrollContainer vertical="true" horizontal="false" visible="{= !${mlp>/done} }" class="hrxMbContent">
+					<VBox renderType="Bare">
+						<Label text="{i18n>mbLeaveType}" class="hrxMbLabel"/>
+						<HBox renderType="Bare" items="{ml>/leaveTypes}" class="hrxMbTypeGrid">
+							<Button text="{ml>LeaveCategoryDesc}" press=".onPickType" class="hrxMbTypeBtn">
+								<customData>
+									<core:CustomData key="leave" value="{ml>LeaveCategoryId}" writeToDom="true"/>
+									<core:CustomData key="on" value="{= ${ml>LeaveCategoryId} === ${mlForm>/LeaveCategoryId} ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+							</Button>
+						</HBox>
+					</VBox>
+
+					<VBox renderType="Bare">
+						<Label text="{i18n>mbDates}" class="hrxMbLabel"/>
+						<Button
+							text="{= ${mlForm>/DatesText} || ${i18n>mbSelectDates} }"
+							icon="sap-icon://tabler/calendar-month"
+							press=".onOpenPhoneDates"
+							class="hrxMbDateField">
+							<customData>
+								<core:CustomData key="empty" value="{= ${mlForm>/DatesText} ? 'false' : 'true' }" writeToDom="true"/>
+							</customData>
+						</Button>
+					</VBox>
+
+					<VBox renderType="Bare">
+						<Label text="{i18n>mbDuration}" class="hrxMbLabel"/>
+						<HBox renderType="Bare" class="hrxMbSeg">
+							<Button text="{i18n>mbFullDay}" press=".onPickDuration" class="hrxMbSegBtn">
+								<customData>
+									<core:CustomData key="duration" value="F"/>
+									<core:CustomData key="on" value="{= ${mlForm>/Duration} === 'F' ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+							</Button>
+							<Button text="{i18n>mbMorning}" enabled="{= !!${mlp>/amEnabled} }" press=".onPickDuration" class="hrxMbSegBtn">
+								<customData>
+									<core:CustomData key="duration" value="A"/>
+									<core:CustomData key="on" value="{= ${mlForm>/Duration} === 'A' ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+							</Button>
+							<Button text="{i18n>mbAfternoon}" enabled="{= !!${mlp>/pmEnabled} }" press=".onPickDuration" class="hrxMbSegBtn">
+								<customData>
+									<core:CustomData key="duration" value="P"/>
+									<core:CustomData key="on" value="{= ${mlForm>/Duration} === 'P' ? 'true' : 'false' }" writeToDom="true"/>
+								</customData>
+							</Button>
+						</HBox>
+						<Text text="{i18n>mbHalfDayHint}" class="hrxMbHint"/>
+					</VBox>
+
+					<VBox renderType="Bare">
+						<Label text="{i18n>mbComments}" class="hrxMbLabel"/>
+						<TextArea value="{mlForm>/Comments}" rows="3" width="100%" placeholder="{i18n>mbOptional}" class="hrxMbTextArea"/>
+					</VBox>
+
+					<VBox renderType="Bare">
+						<Label text="{i18n>mbApprover}" class="hrxMbLabel"/>
+						<HBox renderType="Bare" visible="{= !!${mlView>/user/managerName} }" class="hrxMbWho">
+							<Text text="{path: 'mlView>/user/managerName', formatter: '.formatter.nameInitials'}" class="hrxMbAvatar"/>
+							<VBox renderType="Bare">
+								<Text text="{mlView>/user/managerName}" class="hrxMbWhoName"/>
+								<Text text="{mlView>/user/managerEmail}" class="hrxMbWhoSub"/>
+							</VBox>
+						</HBox>
+						<Text text="{i18n>mbNoApprover}" visible="{= !${mlView>/user/managerName} }" class="hrxMbHint"/>
+					</VBox>
+
+					<!-- What the request comes to, and anything that stops it going in -->
+					<VBox renderType="Bare" visible="{mlp>/check/show}" class="hrxMbSumCard">
+						<customData>
+							<core:CustomData key="bad" value="{= ${mlp>/check/message} ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+						<Text text="{mlp>/check/message}" visible="{= !!${mlp>/check/message} }" class="hrxMbSumMsg"/>
+						<HBox renderType="Bare" class="hrxMbSumLine">
+							<Text text="{i18n>mbWorkingDays}"/>
+							<Text text="{mlp>/check/days}" class="hrxMbSumValue"/>
+						</HBox>
+						<HBox renderType="Bare" visible="{= ${mlp>/check/weekend} > 0 }" class="hrxMbSumLine">
+							<Text text="{i18n>mbWeekendNotCounted}"/>
+							<Text text="{mlp>/check/weekend}" class="hrxMbSumValue"/>
+						</HBox>
+						<HBox renderType="Bare" class="hrxMbSumLine">
+							<Text text="{mlp>/check/balanceLabel}"/>
+							<Text text="{mlp>/check/balanceText}" class="hrxMbSumValue"/>
+						</HBox>
+					</VBox>
+				</ScrollContainer>
+
+				<!-- Sent -->
+				<VBox renderType="Bare" visible="{= !!${mlp>/done} }" class="hrxMbSuccess">
+					<HBox renderType="Bare" class="hrxMbSuccessTick">
+						<core:Icon src="sap-icon://tabler/check"/>
+					</HBox>
+					<Text text="{i18n>mbRequestSent}" textAlign="Center" class="hrxMbSuccessTitle"/>
+					<Text text="{mlp>/done/text}" textAlign="Center" class="hrxMbSuccessText"/>
+					<VBox renderType="Bare" class="hrxMbSumCard hrxMbSuccessSum">
+						<HBox renderType="Bare" class="hrxMbSumLine">
+							<Text text="{i18n>mbDates}"/>
+							<Text text="{mlp>/done/dates}" class="hrxMbSumValue"/>
+						</HBox>
+						<HBox renderType="Bare" class="hrxMbSumLine">
+							<Text text="{i18n>mbType}"/>
+							<Text text="{mlp>/done/type}" class="hrxMbSumValue"/>
+						</HBox>
+						<HBox renderType="Bare" class="hrxMbSumLine">
+							<Text text="{i18n>mbLength}"/>
+							<Text text="{mlp>/done/length}" class="hrxMbSumValue"/>
+						</HBox>
+						<HBox renderType="Bare" visible="{= !!${mlp>/done/holiday} }" class="hrxMbSumLine">
+							<Text text="{i18n>mbBalanceNow}"/>
+							<Text text="{mlp>/done/balance}" class="hrxMbSumValue"/>
+						</HBox>
+					</VBox>
+				</VBox>
+
+				<VBox renderType="Bare" class="hrxMbActionBar">
+					<Button
+						text="{i18n>mbRequestLeave}"
+						visible="{= !${mlp>/done} }"
+						enabled="{= ${mlp>/check/ok} &amp;&amp; !${mlView>/saving} }"
+						press=".onPhoneSubmit"
+						class="hrxMbBtn hrxMbBtnPrimary"/>
+					<Button
+						text="{i18n>mbDone}"
+						visible="{= !!${mlp>/done} }"
+						press=".onCloseRequest"
+						class="hrxMbBtn hrxMbBtnPrimary"/>
+				</VBox>
+			</VBox>
+
+			<!-- Bottom sheet: Select dates, Cancel request -->
+			<VBox renderType="Bare" class="hrxMbSheetLayer">
+				<customData>
+					<core:CustomData key="open" value="{= ${mlp>/sheet} ? 'true' : 'false' }" writeToDom="true"/>
+				</customData>
+				<Button tooltip="{i18n>mbClose}" press=".onCloseSheet" class="hrxMbSheetOverlay"/>
+				<VBox renderType="Bare" class="hrxMbSheet">
+					<HBox renderType="Bare" class="hrxMbSheetGrab"/>
+					<Text text="{mlp>/sheetTitle}" class="hrxMbSheetTitle"/>
+					<ScrollContainer vertical="true" horizontal="false" class="hrxMbSheetBody">
+						<Text text="{mlp>/sheetText}" visible="{= ${mlp>/sheetKind} === 'cancel' }" class="hrxMbSheetText"/>
+
+						<VBox renderType="Bare" visible="{= ${mlp>/sheetKind} === 'dates' }">
+							<HBox renderType="Bare" class="hrxMbRowB hrxMbCalHead">
+								<Button icon="sap-icon://tabler/chevron-left" tooltip="{i18n>mbPreviousMonth}" press=".onPickerPrevious" class="hrxMbIconBtn"/>
+								<Text text="{mlPicker>/title}" class="hrxMbCalTitle"/>
+								<Button icon="sap-icon://tabler/chevron-right" tooltip="{i18n>mbNextMonth}" press=".onPickerNext" class="hrxMbIconBtn"/>
+							</HBox>
+							<HBox renderType="Bare" class="hrxMbCalWeek">
+								<Text text="Mo" textAlign="Center"/><Text text="Tu" textAlign="Center"/><Text text="We" textAlign="Center"/><Text text="Th" textAlign="Center"/><Text text="Fr" textAlign="Center"/><Text text="Sa" textAlign="Center"/><Text text="Su" textAlign="Center"/>
+							</HBox>
+							<HBox renderType="Bare" items="{mlPicker>/cells}" class="hrxMbCalGrid">
+								<Button text="{mlPicker>label}" enabled="{mlPicker>enabled}" press=".onPhonePickDay" class="hrxMbCalDay">
+									<customData>
+										<core:CustomData key="state" value="{mlPicker>state}" writeToDom="true"/>
+										<core:CustomData key="today" value="{= ${mlPicker>today} ? 'true' : 'false' }" writeToDom="true"/>
+										<core:CustomData key="weekend" value="{= ${mlPicker>weekend} ? 'true' : 'false' }" writeToDom="true"/>
+										<core:CustomData key="booked" value="{mlPicker>booked}" writeToDom="true"/>
+									</customData>
+								</Button>
+							</HBox>
+							<Text text="{mlp>/calendarHint}" textAlign="Center" class="hrxMbCalHint"/>
+						</VBox>
+					</ScrollContainer>
+					<HBox renderType="Bare" visible="{= ${mlp>/sheetKind} === 'cancel' }" class="hrxMbSheetFoot">
+						<Button text="{i18n>mbKeep}" press=".onCloseSheet" class="hrxMbBtn hrxMbBtnGhost"/>
+						<Button text="{i18n>mbCancelRequest}" press=".onPhoneConfirmCancel" class="hrxMbBtn hrxMbBtnDanger"/>
+					</HBox>
+					<HBox renderType="Bare" visible="{= ${mlp>/sheetKind} === 'dates' }" class="hrxMbSheetFoot">
+						<Button text="{i18n>mbClear}" press=".onPhoneClearDates" class="hrxMbBtn hrxMbBtnGhost"/>
+						<Button text="{i18n>mbApply}" enabled="{mlp>/calendarCanApply}" press=".onPhoneApplyDates" class="hrxMbBtn hrxMbBtnPrimary"/>
+					</HBox>
+				</VBox>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

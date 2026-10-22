@@ -1,0 +1,1681 @@
+/* phone - the mobile prototype (HRX Mobile Functionality Prototype), for phones only.
+   App.controller puts hrxPhone on the shell view when sap.ui.Device says phone, and
+   Component._usePhoneTargets swaps in views/Mobile*; every rule here sits under
+   .hrxPhone, so nothing reaches a tablet or a desktop. */
+
+/* ── SHELL: app bar, tab bar; no rail, top bar or health strip ────────────── */
+
+.hrxApp .hrxPhone .sapTntToolPageAside,
+.hrxApp .hrxPhone .hrxToolPage > .sapTntToolPageHeaderWrapper,
+.hrxApp .hrxPhone .hrxTopBar,
+.hrxApp .hrxPhone .hrxHealthStrip {
+	display: none !important;
+}
+
+.hrxApp .hrxPhone .sapTntToolPageMain,
+.hrxApp .hrxPhone .sapTntToolPageContentWrapper {
+	left: 0;
+	margin-left: 0;
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .hrxMainStack {
+	background: var(--frost);
+}
+
+/* The ToolPage marks its main area will-change: transform, which would make it the
+   containing block of the screens' fixed sheets and full-screen pages - they would
+   cover only the content, and the sheet waiting below it would overflow the area,
+   which the browser then scrolls (taking the app bar off the top) when a text box
+   takes the focus. Nothing in it may scroll; each screen scrolls its own list. */
+.hrxApp .hrxPhone .sapTntToolPageMain {
+	will-change: auto;
+	overflow: clip;
+}
+
+/* The screens' sheets and full-screen pages live in the NavContainer, which is its
+   own stacking context; lifted above the tab bar, they cover it as well. */
+.hrxApp .hrxPhone .hrxMainStack > .sapMFlexItem:has(> .sapMNav) {
+	position: relative;
+	z-index: 2;
+}
+
+/* The design's .appbar: HR SUITE over the page title, the wordmark on the right */
+.hrxApp .hrxPhone .hrxPhoneBar {
+	flex-shrink: 0;
+	padding: 12px 16px;
+	padding-top: max(12px, env(safe-area-inset-top));
+	background: var(--surface);
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxPhone .hrxPhoneEyebrow.sapMText {
+	display: block;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxPhoneTitle.sapMTitle {
+	font-family: var(--disp);
+	font-size: 22px;
+	font-weight: 800;
+	line-height: 1.1;
+	letter-spacing: -.2px;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxPhoneLogo {
+	width: 64px;
+	height: 26px;
+	background: url("../../img/hrx-logo.png") right center / auto 26px no-repeat;
+}
+
+/* The design's .tabbar: three tabs, the current one lit in ice */
+.hrxApp .hrxPhone .hrxPhoneTabs {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	flex-shrink: 0;
+	padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+	background: var(--surface);
+	border-top: 1px solid var(--line);
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnInner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	height: auto;
+	min-height: 52px;
+	padding: 8px 0;
+	border: none;
+	border-radius: 12px;
+	background: transparent;
+	box-shadow: none;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnInner::before {
+	content: "";
+	width: 23px;
+	height: 23px;
+	padding: 3px 16px;
+	border-radius: 999px;
+	background-color: currentColor;
+	-webkit-mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
+	mask: var(--hrx-tab-icon) center / 23px 23px no-repeat;
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab[data-tab="home"] { --hrx-tab-icon: url("../../img/nav/home.svg"); }
+.hrxApp .hrxPhone .hrxPhoneTab[data-tab="timesheet"] { --hrx-tab-icon: url("../../img/nav/timesheet.svg"); }
+.hrxApp .hrxPhone .hrxPhoneTab[data-tab="leave"] { --hrx-tab-icon: url("../../img/nav/leave.svg"); }
+
+.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	color: inherit;
+}
+
+.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
+	color: var(--ice-deep);
+}
+
+/* The lit tab's icon sits on a soft ice pill (the design's .tab.on .tab-i) */
+.hrxApp .hrxPhone .hrxPhoneTab[data-on="true"] .sapMBtnInner {
+	background: radial-gradient(ellipse 28px 15px at 50% 19px, var(--ice-glow) 99%, transparent 100%);
+}
+
+/* ── SCREEN: scrolling content over a pinned action bar ──────────────────── */
+
+/* The desktop pages' 26px / 28px gutter (style.css, PAGE / CONTENT) is the
+   desktop's; a phone screen runs edge to edge and pads its own content. */
+.hrxApp .hrxPhone .hrxMbPage.sapMPage,
+.hrxApp .hrxPhone .hrxMbPage.sapMPage > section {
+	padding: 0 !important;
+	background: var(--frost);
+}
+
+/* Buttons are upper case across the desktop design; the phone's tabs, chips and
+   quick picks are not (only its block buttons are). */
+.hrxApp .hrxPhone .hrxPhoneTab .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbDayChip .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbQuickBtn .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbStep .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbSeg .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbChip .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbCalDay .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbRingBtn .sapMBtnContent {
+	text-transform: none;
+	letter-spacing: normal;
+}
+
+.hrxApp .hrxPhone .hrxMbScreen {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.hrxApp .hrxPhone .hrxMbContent {
+	flex: 1 1 0;
+	min-height: 0;
+	height: auto !important;
+}
+
+.hrxApp .hrxPhone .hrxMbContent > .sapMScrollContScroll {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	box-sizing: border-box;
+	padding: 16px;
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .hrxMbContent > .sapMScrollContScroll > * {
+	flex-shrink: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbActionBar {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex-shrink: 0;
+	padding: 12px 16px;
+	background: var(--surface);
+	border-top: 1px solid var(--line);
+}
+
+/* ── CARDS, TEXT, PILLS ───────────────────────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbCard {
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxPhone .hrxMbCardBody {
+	gap: 14px;
+	padding: 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbWeekCard {
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbCardHead,
+.hrxApp .hrxPhone .hrxMbDayHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxPhone .hrxMbCardTitle.sapMText {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 1.2;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbWeekCard .hrxMbCardTitle.sapMText {
+	font-size: 15px;
+	text-align: center;
+}
+
+.hrxApp .hrxPhone .hrxMbCardHint.sapMText {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbRowB {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbMuted .sapMText,
+.hrxApp .hrxPhone .hrxMbMuted.sapMText {
+	font-size: 13px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbEyebrow.sapMText {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbPill.sapMText {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 3px 10px;
+	border-radius: 7px;
+	font-size: 11.5px;
+	font-weight: 700;
+	line-height: 16px;
+	white-space: nowrap;
+}
+
+.hrxApp .hrxPhone .hrxMbPill[data-pill="ok"] { background: var(--mint-soft); color: #0F7B4F; }
+.hrxApp .hrxPhone .hrxMbPill[data-pill="warn"] { background: var(--amber-soft); color: #92400E; }
+.hrxApp .hrxPhone .hrxMbPill[data-pill="crit"] { background: var(--signal-soft); color: #991B1B; }
+.hrxApp .hrxPhone .hrxMbPill[data-pill="info"] { background: #E6F4FB; color: var(--ice-deep); }
+.hrxApp .hrxPhone .hrxMbPill[data-pill="neu"] { background: var(--frost-2); color: var(--txt-2); }
+
+.hrxApp .hrxPhone .hrxMbBanner {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbBanner .sapMText {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbBannerIcon {
+	flex-shrink: 0;
+	font-size: 20px;
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbEmpty.sapMText {
+	display: block;
+	padding: 28px 16px;
+	font-size: 13px;
+	text-align: center;
+	color: var(--txt-3);
+}
+
+/* The design's .bar: an 8px track, ice (mint once the day or week is full) */
+.hrxApp .hrxPhone .hrxMbBar.sapMPI {
+	height: 8px;
+	min-height: 8px;
+	margin: 0;
+	border: none;
+	border-radius: 6px;
+	background: var(--line-soft);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbBar .sapMPIBar {
+	border-radius: 6px;
+	background: var(--ice);
+	transition: width .25s;
+}
+
+.hrxApp .hrxPhone .hrxMbBar[data-full="true"] .sapMPIBar {
+	background: var(--mint);
+}
+
+.hrxApp .hrxPhone .hrxMbBar .sapMPIBarRemaining {
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbBar .sapMPITextLeft,
+.hrxApp .hrxPhone .hrxMbBar .sapMPITextRight {
+	display: none;
+}
+
+/* ── BUTTONS: as the desktop design, sized for a thumb ───────────────────── */
+
+.hrxApp .hrxPhone .hrxMbBtn.sapMBtn {
+	width: 100%;
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbBtn .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	height: auto;
+	min-height: 48px;
+	padding: 0 20px;
+	border: 1px solid transparent;
+	border-radius: var(--radius-s);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbBtn .sapMBtnContent {
+	font-family: var(--disp);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	line-height: 1;
+	/* League Spartan sits high in its box, as on the desktop buttons */
+	padding-top: .12em;
+	color: inherit;
+}
+
+.hrxApp .hrxPhone .hrxMbBtn .sapMBtnIcon {
+	margin: 0;
+	font-size: 16px;
+	color: inherit;
+}
+
+.hrxApp .hrxPhone .hrxMbBtnPrimary .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbBtnPrimary:hover .sapMBtnInner {
+	background: var(--ice);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxPhone .hrxMbBtnPrimary:active .sapMBtnInner {
+	background: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbBtnGhost .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbBtnGhost:hover .sapMBtnInner {
+	background: var(--surface);
+	border-color: var(--line);
+	color: var(--txt);
+}
+
+.hrxApp .hrxPhone .hrxMbBtnGhost:active .sapMBtnInner {
+	border-color: var(--ice);
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbBtnDanger .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbBtnDanger:hover .sapMBtnInner {
+	background: var(--signal);
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxPhone .hrxMbBtnSmall .sapMBtnInner {
+	min-height: 36px;
+	padding: 0 14px;
+}
+
+.hrxApp .hrxPhone .hrxMbBtnSmall .sapMBtnContent {
+	font-size: 11px;
+}
+
+.hrxApp .hrxPhone .hrxMbBtnSmall.sapMBtn {
+	width: auto;
+	align-self: flex-start;
+}
+
+.hrxApp .hrxPhone .hrxMbBtn.sapMBtnDisabled {
+	opacity: .45;
+}
+
+/* 44px square icon buttons (the design's .icon-btn) */
+.hrxApp .hrxPhone .hrxMbIconBtn.sapMBtn {
+	flex-shrink: 0;
+	height: 44px;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbIconBtn .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	min-width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--surface);
+	box-shadow: none;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbIconBtn .sapMBtnIcon {
+	margin: 0;
+	font-size: 18px;
+	color: inherit;
+}
+
+.hrxApp .hrxPhone .hrxMbIconBtnBare .sapMBtnInner {
+	border-color: transparent;
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbIconBtn:active .sapMBtnInner {
+	background: var(--frost);
+}
+
+/* ── TIMESHEET ────────────────────────────────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbDayChips {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 6px;
+}
+
+/* A day chip: the day above, the date, a dot for how the day stands. The chip is
+   drawn on the button itself, which carries the data-* the pseudo-elements read. */
+.hrxApp .hrxPhone .hrxMbDayChip.sapMBtn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	width: 100%;
+	height: auto;
+	min-height: 70px;
+	padding: 8px 0 7px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--surface);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbDayChip:hover .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip.sapMBtn::before {
+	content: attr(data-dw);
+	font-family: var(--sans);
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 12px;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip.sapMBtn::after {
+	content: "";
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--line);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip .sapMBtnContent {
+	font-family: var(--disp);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip[data-today="true"] .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip[data-sel="true"] {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+	box-shadow: 0 0 0 2px var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip[data-off="true"] {
+	opacity: .5;
+}
+
+.hrxApp .hrxPhone .hrxMbDayChip[data-status="missing"]::after { background: var(--signal); }
+.hrxApp .hrxPhone .hrxMbDayChip[data-status="partial"]::after { background: var(--amber); }
+.hrxApp .hrxPhone .hrxMbDayChip[data-status="complete"]::after { background: var(--mint); }
+.hrxApp .hrxPhone .hrxMbDayChip[data-status="leave"]::after { background: #85B7EB; }
+
+/* A project on the chosen day (the design's .entry) */
+.hrxApp .hrxPhone .hrxMbEntry {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxPhone .hrxMbEntryText {
+	min-width: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbEntryName.sapMText {
+	display: block;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbEntryClient.sapMText {
+	display: block;
+	margin-top: 1px;
+	font-size: 12.5px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbStepper {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbStep.sapMBtn {
+	flex-shrink: 0;
+	height: 52px;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbStep .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	min-width: 52px;
+	height: 52px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 13px;
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbStep .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 26px;
+	font-weight: 500;
+	line-height: 1;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbStep:active .sapMBtnInner {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbStepValue.sapMText {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	height: 52px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 13px;
+	background: var(--frost);
+	font: 700 24px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbStepValue[data-has="true"] {
+	border-color: var(--ice);
+	background: var(--surface);
+}
+
+.hrxApp .hrxPhone .hrxMbQuick,
+.hrxApp .hrxPhone .hrxMbQuickSet {
+	display: flex;
+	gap: 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbQuickSet {
+	flex: 4;
+}
+
+.hrxApp .hrxPhone .hrxMbQuick > .hrxMbQuickBtn,
+.hrxApp .hrxPhone .hrxMbQuickSet > .hrxMbQuickBtn {
+	flex: 1;
+}
+
+.hrxApp .hrxPhone .hrxMbQuickBtn.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbQuickBtn .sapMBtnInner {
+	width: 100%;
+	height: auto;
+	min-height: 40px;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbQuickBtn .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 700;
+	line-height: 38px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbQuickBtn[data-on="true"] .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbQuickBtn:active .sapMBtnInner {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbQuickBtn[data-on="true"] .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbLabel.sapMLabel {
+	display: block;
+	margin-bottom: 8px;
+	font-family: var(--sans);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbTextArea .sapMInputBaseContentWrapper {
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbTextArea .sapMInputBaseContentWrapper::after,
+.hrxApp .hrxPhone .hrxMbTextArea .sapMInputBaseContentWrapper::before {
+	display: none;
+}
+
+.hrxApp .hrxPhone .hrxMbTextArea .sapMTextAreaInner {
+	padding: 12px 14px;
+	font: 500 15px var(--sans);
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbTextArea:focus-within .sapMInputBaseContentWrapper {
+	border-color: var(--ice);
+	box-shadow: 0 0 0 3px var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbEntry[data-error="true"] .hrxMbTextArea .sapMInputBaseContentWrapper {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+.hrxApp .hrxPhone .hrxMbErrMsg.sapMText {
+	display: block;
+	margin-top: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #991B1B;
+}
+
+.hrxApp .hrxPhone .hrxMbAddWrap {
+	padding: 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbSum {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hrxApp .hrxPhone .hrxMbSumText {
+	display: flex;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbSum .sapMText {
+	white-space: nowrap;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSum .hrxMbSumFigure.sapMText {
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── BOTTOM SHEET ─────────────────────────────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbSheetLayer {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	visibility: hidden;
+	pointer-events: none;
+	transition: visibility 0s .28s;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetLayer[data-open="true"] {
+	visibility: visible;
+	pointer-events: auto;
+	transition: visibility 0s;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetOverlay.sapMBtn {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	opacity: 0;
+	transition: opacity .2s;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetOverlay .sapMBtnInner {
+	width: 100%;
+	height: 100%;
+	border: none;
+	border-radius: 0;
+	background: rgba(10, 10, 11, .5);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetLayer[data-open="true"] .hrxMbSheetOverlay {
+	opacity: 1;
+}
+
+.hrxApp .hrxPhone .hrxMbSheet {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	max-height: 86%;
+	padding-bottom: env(safe-area-inset-bottom);
+	background: var(--surface);
+	border-radius: 22px 22px 0 0;
+	transform: translateY(105%);
+	transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetLayer[data-open="true"] .hrxMbSheet {
+	transform: none;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetGrab {
+	flex-shrink: 0;
+	width: 40px;
+	height: 4px;
+	margin: 10px auto 2px;
+	border-radius: 2px;
+	background: var(--line);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetTitle.sapMText {
+	flex-shrink: 0;
+	padding: 8px 20px 12px;
+	font-family: var(--disp);
+	font-size: 17px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetBody {
+	min-height: 0;
+	height: auto !important;
+	flex: 0 1 auto;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetBody > .sapMScrollContScroll {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	padding: 0 16px 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbSheetText.sapMText {
+	display: block;
+	padding: 0 4px 8px;
+	font-size: 14px;
+	line-height: 1.55;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetFoot {
+	display: flex;
+	gap: 10px;
+	flex-shrink: 0;
+	padding: 12px 16px 16px;
+	border-top: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxPhone .hrxMbSheetFoot > .sapMBtn {
+	flex: 1;
+}
+
+/* A choice in a sheet (the design's .pick): name, the client under it, a plus */
+.hrxApp .hrxPhone .hrxMbPickList .sapMListUl,
+.hrxApp .hrxPhone .hrxMbPickList.sapMList {
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbPickList .sapMLIB.hrxMbPick {
+	min-height: 60px;
+	padding: 8px 4px;
+	border-bottom: 1px solid var(--line-soft);
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbPickList .sapMLIB.hrxMbPick:last-child {
+	border-bottom: none;
+}
+
+.hrxApp .hrxPhone .hrxMbPickRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .hrxMbPickName.sapMText {
+	display: block;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbPickSub.sapMText {
+	display: block;
+	font-size: 12.5px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbPickIcon {
+	flex-shrink: 0;
+	font-size: 18px;
+	color: var(--ice-deep);
+}
+
+/* ── LEAVE ────────────────────────────────────────────────────────────────── */
+
+/* A leave type's colour, as on the desktop leave page (leave.css) */
+.hrxApp .hrxPhone [data-leave] { --hrx-mb-leave: #85B7EB; }
+.hrxApp .hrxPhone [data-leave="COMPL"] { --hrx-mb-leave: var(--amber); }
+.hrxApp .hrxPhone [data-leave="MATEL"] { --hrx-mb-leave: var(--mint); }
+.hrxApp .hrxPhone [data-leave="PATEL"] { --hrx-mb-leave: #D52FFF; }
+.hrxApp .hrxPhone [data-leave="SICKL"] { --hrx-mb-leave: var(--signal); }
+.hrxApp .hrxPhone [data-leave="UNPDL"] { --hrx-mb-leave: #991B1B; }
+.hrxApp .hrxPhone [data-leave="BANK"] { --hrx-mb-leave: #B4BAC3; }
+
+/* The balance: three tiles (the design's .kpi3) */
+.hrxApp .hrxPhone .hrxMbKpis {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbKpi {
+	display: flex;
+	flex-direction: column;
+	padding: 12px 12px 14px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top: 2px solid var(--ice);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.hrxApp .hrxPhone .hrxMbKpiOk {
+	border-top-color: var(--mint);
+}
+
+.hrxApp .hrxPhone .hrxMbKpiLabel.sapMText {
+	margin-bottom: 6px;
+	font-size: 9.5px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbKpiNum.sapMText {
+	font-family: var(--disp);
+	font-size: 28px;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -.5px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbSectionTitle.sapMText {
+	margin-top: 16px;
+	font-family: var(--disp);
+	font-size: 15px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+/* Status chips, each with its count */
+.hrxApp .hrxPhone .hrxMbChips {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	scrollbar-width: none;
+}
+
+.hrxApp .hrxPhone .hrxMbChip.sapMBtn {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: 8px;
+	height: 40px;
+	padding: 0 16px;
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+}
+
+.hrxApp .hrxPhone .hrxMbChip .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbChip:hover .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbChip .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbChip.sapMBtn::after {
+	content: attr(data-count);
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: var(--frost-2);
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 16px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbChip[data-on="true"] {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbChip[data-on="true"] .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+.hrxApp .hrxPhone .hrxMbChip[data-on="true"]::after {
+	background: var(--surface);
+	color: var(--ice-deep);
+}
+
+/* A request: a bar in its leave type's colour down the left */
+.hrxApp .hrxPhone .hrxMbReqs {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbReq {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px 14px 14px 19px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.hrxApp .hrxPhone .hrxMbReq::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 5px;
+	background: var(--hrx-mb-leave);
+}
+
+.hrxApp .hrxPhone .hrxMbReqTop {
+	align-items: flex-start;
+}
+
+.hrxApp .hrxPhone .hrxMbReqTitle.sapMText {
+	display: block;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbReqSub.sapMText {
+	display: block;
+	margin-top: 2px;
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+/* ── FULL-SCREEN PAGE (new leave request) ─────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbFull {
+	position: fixed;
+	inset: 0;
+	z-index: 30;
+	display: flex;
+	flex-direction: column;
+	background: var(--frost);
+	transform: translateY(100%);
+	visibility: hidden;
+	transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s .28s;
+}
+
+.hrxApp .hrxPhone .hrxMbFull[data-open="true"] {
+	transform: none;
+	visibility: visible;
+	transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s;
+}
+
+.hrxApp .hrxPhone .hrxMbFullBar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	min-height: 61px;
+	box-sizing: border-box;
+	padding: 8px;
+	padding-top: max(8px, env(safe-area-inset-top));
+	background: var(--surface);
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxApp .hrxPhone .hrxMbFullTitle.sapMText {
+	flex: 1;
+	padding-left: 6px;
+	font-family: var(--disp);
+	font-size: 18px;
+	font-weight: 800;
+	line-height: 1.1;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbHint.sapMText {
+	display: block;
+	margin-top: 8px;
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+/* Leave type: two columns of choices, each with its colour */
+.hrxApp .hrxPhone .hrxMbTypeGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn.sapMBtn {
+	width: 100%;
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 10px;
+	width: 100%;
+	height: auto;
+	min-height: 52px;
+	padding: 0 14px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnInner::before {
+	content: "";
+	flex-shrink: 0;
+	width: 11px;
+	height: 11px;
+	border-radius: 4px;
+	background: var(--hrx-mb-leave);
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.2;
+	text-align: left;
+	white-space: normal;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn[data-on="true"] .sapMBtnInner {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbTypeBtn[data-on="true"] .sapMBtnContent {
+	color: var(--ice-deep);
+}
+
+/* Dates: a field-sized button that opens the calendar */
+.hrxApp .hrxPhone .hrxMbDateField.sapMBtn {
+	width: 100%;
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbDateField .sapMBtnInner {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 12px;
+	width: 100%;
+	height: auto;
+	min-height: 56px;
+	padding: 0 14px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbDateField .sapMBtnIcon {
+	margin: 0;
+	font-size: 20px;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbDateField .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 15px;
+	font-weight: 600;
+	text-transform: none;
+	letter-spacing: normal;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbDateField[data-empty="true"] .sapMBtnContent {
+	font-weight: 500;
+	color: var(--txt-3);
+}
+
+/* Duration: a three-way segmented control */
+.hrxApp .hrxPhone .hrxMbSeg {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+	padding: 4px;
+	border-radius: var(--radius-s);
+	background: var(--frost-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn.sapMBtn {
+	width: 100%;
+	height: auto;
+	padding: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn .sapMBtnInner {
+	width: 100%;
+	height: auto;
+	min-height: 44px;
+	padding: 0;
+	border: none;
+	border-radius: 9px;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 12.5px;
+	font-weight: 700;
+	line-height: 44px;
+	text-transform: none;
+	letter-spacing: normal;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn[data-on="true"] .sapMBtnInner {
+	background: var(--surface);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn[data-on="true"] .sapMBtnContent {
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbSegBtn.sapMBtnDisabled {
+	opacity: .4;
+}
+
+/* Approver */
+.hrxApp .hrxPhone .hrxMbWho {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbAvatar.sapMText {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--ice), #756EE5);
+	font-size: 13px;
+	font-weight: 700;
+	color: #FFFFFF;
+}
+
+.hrxApp .hrxPhone .hrxMbWhoName.sapMText {
+	display: block;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbWhoSub.sapMText {
+	display: block;
+	font-size: 13px;
+	color: var(--txt-2);
+}
+
+/* What the request comes to (the design's .sumcard), red when it cannot go in */
+.hrxApp .hrxPhone .hrxMbSumCard {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px 16px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+}
+
+.hrxApp .hrxPhone .hrxMbSumCard[data-bad="true"] {
+	background: var(--signal-soft);
+	border-color: #F3C4C6;
+}
+
+.hrxApp .hrxPhone .hrxMbSumMsg.sapMText {
+	font-size: 13px;
+	font-weight: 600;
+	color: #991B1B;
+}
+
+.hrxApp .hrxPhone .hrxMbSumLine {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbSumLine .sapMText {
+	font-size: 13.5px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSumLine .hrxMbSumValue.sapMText {
+	font-weight: 700;
+	text-align: right;
+	color: var(--ink);
+}
+
+/* Sent */
+.hrxApp .hrxPhone .hrxMbSuccess {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	gap: 14px;
+	padding: 32px 24px;
+	text-align: center;
+}
+
+.hrxApp .hrxPhone .hrxMbSuccessTick {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 76px;
+	height: 76px;
+	border-radius: 50%;
+	background: var(--mint-soft);
+	color: var(--mint);
+	font-size: 38px;
+}
+
+.hrxApp .hrxPhone .hrxMbSuccessTick .sapUiIcon {
+	color: inherit;
+}
+
+.hrxApp .hrxPhone .hrxMbSuccessTitle.sapMText {
+	font-family: var(--disp);
+	font-size: 22px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbSuccessText.sapMText {
+	max-width: 260px;
+	font-size: 13px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbSuccessSum {
+	width: 100%;
+	box-sizing: border-box;
+	text-align: left;
+}
+
+/* ── CALENDAR (Select dates sheet) ────────────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbCalHead {
+	padding: 0 4px 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbCalTitle.sapMText {
+	font-family: var(--disp);
+	font-size: 15px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbCalWeek,
+.hrxApp .hrxPhone .hrxMbCalGrid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 4px;
+}
+
+.hrxApp .hrxPhone .hrxMbCalWeek .sapMText {
+	padding-bottom: 6px;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .06em;
+	text-align: center;
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay.sapMBtn {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 44px;
+	padding: 0;
+	box-sizing: border-box;
+	border: 1px solid transparent;
+	border-radius: 11px;
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay .sapMBtnInner,
+.hrxApp .hrxPhone .hrxMbCalDay:hover .sapMBtnInner {
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	box-shadow: none;
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay .sapMBtnContent {
+	font-family: var(--sans);
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-weekend="true"] .sapMBtnContent {
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="muted"] {
+	opacity: .5;
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="muted"] .sapMBtnContent {
+	color: var(--txt-3);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay.sapMBtnDisabled {
+	opacity: 1;
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay.sapMBtnDisabled .sapMBtnContent {
+	color: #C3C5CA;
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-today="true"] {
+	border-color: var(--ice);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="in-range"] {
+	border-radius: 0;
+	background: var(--ice-glow);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="range-start"],
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="range-end"] {
+	border-radius: 11px;
+	background: var(--ice);
+}
+
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="range-start"] .sapMBtnContent,
+.hrxApp .hrxPhone .hrxMbCalDay[data-state~="range-end"] .sapMBtnContent {
+	color: #FFFFFF;
+}
+
+/* A dot on a day that already has leave */
+.hrxApp .hrxPhone .hrxMbCalDay[data-booked]:not([data-booked=""])::after {
+	content: "";
+	position: absolute;
+	bottom: 4px;
+	left: 50%;
+	width: 5px;
+	height: 5px;
+	margin-left: -2.5px;
+	border-radius: 50%;
+	background: #85B7EB;
+}
+
+.hrxApp .hrxPhone .hrxMbCalHint.sapMText {
+	display: block;
+	padding: 12px 0 4px;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+	color: var(--txt-2);
+}
+
+/* ── HOME ─────────────────────────────────────────────────────────────────── */
+
+.hrxApp .hrxPhone .hrxMbBigLine {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbBig.sapMText {
+	font-family: var(--disp);
+	font-size: 34px;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -1px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbBigSmall.sapMText {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--txt-3);
+}
+
+/* The week's rings: five across */
+.hrxApp .hrxPhone .hrxMbRings.sapMList,
+.hrxApp .hrxPhone .hrxMbRings .sapMListUl {
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbRings .sapMListUl {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 4px;
+}
+
+.hrxApp .hrxPhone .hrxMbRings .sapMLIB.hrxMbRingItem {
+	display: flex;
+	justify-content: center;
+	height: auto;
+	min-height: 0;
+	padding: 4px 0;
+	border: none;
+	border-radius: 12px;
+	background: transparent;
+}
+
+.hrxApp .hrxPhone .hrxMbRings .sapMLIB.hrxMbRingItem:active {
+	background: var(--frost);
+}
+
+.hrxApp .hrxPhone .hrxMbRings .sapMLIBContent,
+.hrxApp .hrxPhone .hrxMbRings .sapMCustomLIContent {
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .hrxMbRingCell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbRing {
+	position: relative;
+	width: 48px;
+	height: 48px;
+}
+
+.hrxApp .hrxPhone .hrxMbRing svg {
+	display: block;
+	width: 48px;
+	height: 48px;
+}
+
+.hrxApp .hrxPhone .hrxMbRing span {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--sans);
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbRingDay.sapMText {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbLegend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+}
+
+.hrxApp .hrxPhone .hrxMbLegendItem.sapMText {
+	display: inline-flex;
+	align-items: center;
+	font-size: 11.5px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbLegendItem.sapMText::before {
+	content: "";
+	width: 9px;
+	height: 9px;
+	margin-right: 6px;
+	border-radius: 3px;
+	background: var(--hrx-mb-legend);
+}
+
+.hrxApp .hrxPhone .hrxMbLegendMissing { --hrx-mb-legend: var(--signal); }
+.hrxApp .hrxPhone .hrxMbLegendPartial { --hrx-mb-legend: var(--amber); }
+.hrxApp .hrxPhone .hrxMbLegendComplete { --hrx-mb-legend: var(--mint); }
+.hrxApp .hrxPhone .hrxMbLegendLeave { --hrx-mb-legend: #85B7EB; }
+.hrxApp .hrxPhone .hrxMbLegendNotDue { --hrx-mb-legend: var(--line); }
+
+/* The next leave: a dot in its type's colour, the dates, the type and status */
+.hrxApp .hrxPhone .hrxMbNext {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbNext::before {
+	content: "";
+	width: 9px;
+	height: 9px;
+	margin-right: 4px;
+	border-radius: 3px;
+	background: var(--hrx-mb-leave);
+}
+
+.hrxApp .hrxPhone .hrxMbNextText.sapMText {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .hrxMbNextDetail.sapMText {
+	font-size: 13px;
+	color: var(--txt-2);
+}

@@ -884,6 +884,20 @@ sap.ui.define([
 		 * Offers the assignments that are not on the timesheet yet.
 		 */
 		onOpenAddProjects: function () {
+			this._loadAvailable().then(function (bLoaded) {
+				if (bLoaded) {
+					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog");
+				}
+			}.bind(this));
+		},
+
+		/**
+		 * Reads the assignments that are not on the timesheet yet into ts>/available.
+		 * Shared with the phone's Add project sheet (MobileTimesheet).
+		 * @returns {Promise<boolean>} true once they are in the model, false if the read
+		 * failed (already reported)
+		 */
+		_loadAvailable: function () {
 			var oViewModel = this.getModel("tsView");
 			var aDates = this._weekDates(formatter.toDate(oViewModel.getProperty("/weekStart")));
 			// var smail = 'gaurav.kumar@bluestonex.com';
@@ -891,7 +905,7 @@ sap.ui.define([
 
 			oViewModel.setProperty("/saving", true);
 
-			this._getJson(TIMESHEET_SERVICE + "?cmd=fetchAssignments&" + new URLSearchParams({
+			return this._getJson(TIMESHEET_SERVICE + "?cmd=fetchAssignments&" + new URLSearchParams({
 				Email: oViewModel.getProperty("/currentEmail"),
 				// smail,
 				FromDate: this._isoDate(aDates[0]),
@@ -921,10 +935,11 @@ sap.ui.define([
 
 				this.getModel("ts").setProperty("/available", aAvailable);
 				oViewModel.setProperty("/saving", false);
-				return this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog");
+				return true;
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/saving", false);
 				this._showError("tsErrorAssignments", oError);
+				return false;
 			}.bind(this));
 		},
 
@@ -941,11 +956,23 @@ sap.ui.define([
 				return;
 			}
 
+			this._addAssignments(aSelected.map(function (oItem) {
+				return oItem.getBindingContext("ts").getObject();
+			}));
+			oTable.removeSelections(true);
+			this._closeDialog("_pAddProjectsDialog");
+		},
+
+		/**
+		 * Puts assignments on the timesheet as empty rows, in project order, with the
+		 * leave and bank holiday rows kept at the bottom.
+		 * @param {object[]} aAssignments entries of ts>/available
+		 */
+		_addAssignments: function (aAssignments) {
 			var aDates = this._weekDates(formatter.toDate(this.getModel("tsView").getProperty("/weekStart")));
 			var aRows = this.getModel("ts").getProperty("/rows") || [];
 
-			aSelected.forEach(function (oItem) {
-				var oAssignment = oItem.getBindingContext("ts").getObject();
+			aAssignments.forEach(function (oAssignment) {
 				aRows.push({
 					ProjectID: oAssignment.ProjectID,
 					project: oAssignment.ProjectDesc,
@@ -975,8 +1002,6 @@ sap.ui.define([
 			});
 
 			this.getModel("ts").setProperty("/rows", aBookable.concat(aNonWorking));
-			oTable.removeSelections(true);
-			this._closeDialog("_pAddProjectsDialog");
 			this._recalculate();
 		},
 
@@ -993,7 +1018,6 @@ sap.ui.define([
 				return;
 			}
 
-			var aRows = this.getModel("ts").getProperty("/rows") || [];
 			var aSelectedRows = aSelected.map(function (oItem) {
 				return oItem.getBindingContext("ts").getObject();
 			}).filter(function (oRow) {
@@ -1010,45 +1034,54 @@ sap.ui.define([
 				return oRow.project;
 			}).join(", ");
 
-			this._confirmDelete(aNames, function () {
-				var aRecIds = [];
-				aSelectedRows.forEach(function (oRow) {
-					oRow.days.forEach(function (oDay) {
-						if (oDay.recId) {
-							aRecIds.push({ RecID: oDay.recId });
-						}
-					});
+			this._confirmDelete(aNames, this._deleteRows.bind(this, aSelectedRows));
+		},
+
+		/**
+		 * Takes rows off the timesheet. Anything already stored is deleted on the
+		 * backend first; rows that were only added on screen simply disappear.
+		 * @param {object[]} aSelectedRows the rows to remove
+		 * @returns {Promise} settles once the rows are gone (or the delete failed)
+		 */
+		_deleteRows: function (aSelectedRows) {
+			var aRows = this.getModel("ts").getProperty("/rows") || [];
+			var aRecIds = [];
+			aSelectedRows.forEach(function (oRow) {
+				oRow.days.forEach(function (oDay) {
+					if (oDay.recId) {
+						aRecIds.push({ RecID: oDay.recId });
+					}
 				});
+			});
 
-				var aRemaining = aRows.filter(function (oRow) {
-					return aSelectedRows.indexOf(oRow) === -1;
-				});
+			var aRemaining = aRows.filter(function (oRow) {
+				return aSelectedRows.indexOf(oRow) === -1;
+			});
 
-				var fnFinish = function () {
-					this.getModel("ts").setProperty("/rows", aRemaining);
-					this._clearTableSelection();
-					this._recalculate();
-				}.bind(this);
+			var fnFinish = function () {
+				this.getModel("ts").setProperty("/rows", aRemaining);
+				this._clearTableSelection();
+				this._recalculate();
+			}.bind(this);
 
-				if (!aRecIds.length) {
-					fnFinish();
-					return;
-				}
+			if (!aRecIds.length) {
+				fnFinish();
+				return Promise.resolve();
+			}
 
-				// Rows carrying booked time go through the service and come back via
-				// _loadWeek. That rebuilds the rows but leaves the table's own
-				// selection behind, so the ticks - and the count that enables the
-				// Delete button - have to be cleared here as well, on the way out
-				// whether the delete succeeded or not.
-				this._save(TIMESHEET_SERVICE + "?cmd=delete", {
-					OrgID: this._sOrgId,
-					UserID: this.getModel("tsView").getProperty("/userId"),
-					TimesheetListSet: aRecIds
-				}, "tsDeleted", "tsErrorDelete").then(function () {
-					return this._loadWeek();
-				}.bind(this)).catch(function () { /* reported by _save */ })
-					.then(this._clearTableSelection.bind(this));
-			}.bind(this));
+			// Rows carrying booked time go through the service and come back via
+			// _loadWeek. That rebuilds the rows but leaves the table's own
+			// selection behind, so the ticks - and the count that enables the
+			// Delete button - have to be cleared here as well, on the way out
+			// whether the delete succeeded or not.
+			return this._save(TIMESHEET_SERVICE + "?cmd=delete", {
+				OrgID: this._sOrgId,
+				UserID: this.getModel("tsView").getProperty("/userId"),
+				TimesheetListSet: aRecIds
+			}, "tsDeleted", "tsErrorDelete").then(function () {
+				return this._loadWeek();
+			}.bind(this)).catch(function () { /* reported by _save */ })
+				.then(this._clearTableSelection.bind(this));
 		},
 
 		/**

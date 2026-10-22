@@ -5,8 +5,9 @@ sap.ui.define([
     "bsx/hrx/hrx2026/model/CurrentUser",
     "bsx/hrx/hrx2026/model/HrxServices",
     "bsx/hrx/hrx2026/model/Pictures",
-    "sap/ui/core/IconPool"
-], (UIComponent, JSONModel, models, CurrentUser, HrxServices, Pictures, IconPool) => {
+    "sap/ui/core/IconPool",
+    "sap/ui/Device"
+], (UIComponent, JSONModel, models, CurrentUser, HrxServices, Pictures, IconPool, Device) => {
     "use strict";
 
     return UIComponent.extend("bsx.hrx.hrx2026.Component", {
@@ -18,6 +19,14 @@ sap.ui.define([
         },
 
         init() {
+            // A phone gets its own Home, My Timesheet and My Leave (views/Mobile*,
+            // after the mobile prototype) and nothing else; tablets and desktops keep
+            // the pages as they are. The router is built from the manifest by the base
+            // init below, so the three routes are pointed at the phone targets first.
+            if (Device.system.phone) {
+                this._usePhoneTargets();
+            }
+
             // call the base component's init function
             UIComponent.prototype.init.apply(this, arguments);
 
@@ -92,6 +101,24 @@ sap.ui.define([
                 this.getModel("services").setData(HrxServices.flags());
                 this.getRouter().initialize();
             }.bind(this));
+        },
+
+        /**
+         * Points the home, timesheet and leave routes at the phone screens, and every
+         * other route at the phone's Home, so no desktop page is ever built on a phone.
+         * App.controller then puts Home's address in the URL as well.
+         */
+        _usePhoneTargets() {
+            const mPhoneTargets = { home: "phoneHome", timesheet: "phoneTimesheet", leave: "phoneLeave" };
+            const oRouting = this.getManifestObject().getJson()["sap.ui5"].routing;
+
+            oRouting.routes.forEach((oRoute) => {
+                oRoute.target = mPhoneTargets[oRoute.name] || "phoneHome";
+            });
+            // An unknown address (the bypassed/notFound target) lands on Home too.
+            if (oRouting.config && oRouting.config.bypassed) {
+                oRouting.config.bypassed.target = "phoneHome";
+            }
         },
 
         /**
