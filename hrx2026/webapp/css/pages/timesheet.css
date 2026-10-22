@@ -966,3 +966,24 @@
 		font-size: 15px;
 	}
 }
+
+/* Auto-save: a quiet line beside the buttons */
+.hrxApp .hrxTimesheet .sapMText.hrxTsAutoSave {
+	margin-right: 6px;
+	font-family: var(--sans);
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxTimesheet .sapMText.hrxTsAutoSave[data-state="saved"] {
+	color: var(--mint);
+}
+
+.hrxApp .hrxTimesheet .sapMText.hrxTsAutoSave[data-state="waiting"] {
+	color: #92400E;
+}
+
+.hrxApp .hrxTimesheet .sapMText.hrxTsAutoSave[data-state="error"] {
+	color: var(--signal);
+}
