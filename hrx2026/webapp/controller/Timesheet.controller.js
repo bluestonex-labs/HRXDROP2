@@ -41,6 +41,9 @@ sap.ui.define([
 	// A closed month can still be corrected during the first few working days of the next one.
 	var GRACE_WORKING_DAYS = 3;
 
+	// How long after the last change a booking is saved without pressing Save.
+	var AUTO_SAVE_DELAY_MS = 1500;
+
 	return Controller.extend("bsx.hrx.hrx2026.controller.Timesheet", {
 
 		formatter: formatter,
@@ -74,6 +77,9 @@ sap.ui.define([
 				weekTarget: "00:00",
 				weekPercent: 0,
 				weekOver: false,
+				// The auto-save line next to Save: "", saving, saved, waiting or error
+				autoSaveState: "",
+				autoSaveText: "",
 				kpis: this._emptyKpis()
 			}), "tsView");
 
@@ -93,6 +99,16 @@ sap.ui.define([
 
 			this.getOwnerComponent().getRouter().getRoute("timesheet")
 				.attachPatternMatched(this._onRouteMatched, this);
+
+			// Changes are saved on the way out too: to another page, or out of the app.
+			this.getOwnerComponent().getRouter().attachRouteMatched(this._onAnyRouteMatched, this);
+			this._fnBeforeUnload = this._onBeforeUnload.bind(this);
+			window.addEventListener("beforeunload", this._fnBeforeUnload);
+		},
+
+		onExit: function () {
+			window.removeEventListener("beforeunload", this._fnBeforeUnload);
+			clearTimeout(this._iAutoSaveTimer);
 		},
 
 		/**
@@ -164,6 +180,7 @@ sap.ui.define([
 
 			oViewModel.setProperty("/busy", true);
 			oViewModel.setProperty("/weekLabel", this._weekLabel(aDates[0], aDates[6]));
+			this._setAutoSaveStatus("");
 			oViewModel.setProperty("/selectedCount", 0);
 
 			return Promise.all([
@@ -597,12 +614,15 @@ sap.ui.define([
 		},
 
 		_stepWeek: function (iDays) {
-			var oViewModel = this.getModel("tsView");
-			var oMonday = formatter.toDate(oViewModel.getProperty("/weekStart")) || this._mondayOf(new Date());
-			var oNext = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + iDays);
+			// The week on screen is saved before another one replaces it.
+			this._flushAutoSave().then(function () {
+				var oViewModel = this.getModel("tsView");
+				var oMonday = formatter.toDate(oViewModel.getProperty("/weekStart")) || this._mondayOf(new Date());
+				var oNext = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + iDays);
 
-			oViewModel.setProperty("/weekStart", oNext);
-			this._loadWeek();
+				oViewModel.setProperty("/weekStart", oNext);
+				this._loadWeek();
+			}.bind(this));
 		},
 
 		onOpenWeekPicker: function (oEvent) {
@@ -627,13 +647,15 @@ sap.ui.define([
 				return;
 			}
 
-			this.getModel("tsView").setProperty("/weekStart", this._mondayOf(oDate));
 			this._closePopover("_pWeekPicker");
-			this._loadWeek();
+			this._flushAutoSave().then(function () {
+				this.getModel("tsView").setProperty("/weekStart", this._mondayOf(oDate));
+				this._loadWeek();
+			}.bind(this));
 		},
 
 		onRefresh: function () {
-			this._loadWeek();
+			this._flushAutoSave().then(this._loadWeek.bind(this));
 		},
 
 		/* =========================================================== */
@@ -667,6 +689,7 @@ sap.ui.define([
 				this.getModel("ts").setProperty(oContext.getPath() + "/commentError", false);
 			}
 			this._recalculate();
+			this._scheduleAutoSave();
 		},
 
 		/**
@@ -737,6 +760,7 @@ sap.ui.define([
 				if (sComment) {
 					this.getModel("ts").setProperty(this._sCommentPath + "/commentError", false);
 				}
+				this._scheduleAutoSave();
 			}
 			this._sCommentPath = null;
 			this._closeDialog("_pCommentDialog");
@@ -1018,6 +1042,7 @@ sap.ui.define([
 				return;
 			}
 
+			var aRows = this.getModel("ts").getProperty("/rows") || [];
 			var aSelectedRows = aSelected.map(function (oItem) {
 				return oItem.getBindingContext("ts").getObject();
 			}).filter(function (oRow) {
@@ -1034,17 +1059,19 @@ sap.ui.define([
 				return oRow.project;
 			}).join(", ");
 
-			this._confirmDelete(aNames, this._deleteRows.bind(this, aSelectedRows));
+			this._confirmDelete(aNames, function () {
+				this._flushAutoSave().then(this._deleteRows.bind(this, aRows, aSelectedRows));
+			}.bind(this));
 		},
 
 		/**
-		 * Takes rows off the timesheet. Anything already stored is deleted on the
-		 * backend first; rows that were only added on screen simply disappear.
-		 * @param {object[]} aSelectedRows the rows to remove
+		 * Removes the confirmed rows, through the service where they hold booked time.
+		 * Shared with the phone's Remove project (MobileTimesheet).
+		 * @param {Array<object>} aRows every row of the grid
+		 * @param {Array<object>} aSelectedRows the rows to remove
 		 * @returns {Promise} settles once the rows are gone (or the delete failed)
 		 */
-		_deleteRows: function (aSelectedRows) {
-			var aRows = this.getModel("ts").getProperty("/rows") || [];
+		_deleteRows: function (aRows, aSelectedRows) {
 			var aRecIds = [];
 			aSelectedRows.forEach(function (oRow) {
 				oRow.days.forEach(function (oDay) {
@@ -1127,6 +1154,17 @@ sap.ui.define([
 		 * work description is rejected - managers rely on those to see what was worked on.
 		 */
 		onSave: function () {
+			// An auto-save may be sending some of the same bookings; wait for it, so a
+			// new booking is not created twice.
+			clearTimeout(this._iAutoSaveTimer);
+			this._iAutoSaveTimer = null;
+			(this._pAutoSave || Promise.resolve()).then(this._saveAll.bind(this));
+		},
+
+		/**
+		 * The Save button's work: every booked or cleared cell of the week.
+		 */
+		_saveAll: function () {
 			var oViewModel = this.getModel("tsView");
 			var aRows = this.getModel("ts").getProperty("/rows") || [];
 			var aEntries = [];
@@ -1199,6 +1237,224 @@ sap.ui.define([
 		 */
 		_needsComment: function (oRow) {
 			return !oRow.readOnly && oRow.ClientKey !== NO_COMMENT_CLIENT;
+		},
+
+		/* =========================================================== */
+		/* auto-save                                                   */
+		/* =========================================================== */
+
+		/**
+		 * Saves the changed bookings shortly after the last change, so time is kept
+		 * even when Save is never pressed.
+		 */
+		_scheduleAutoSave: function () {
+			clearTimeout(this._iAutoSaveTimer);
+			this._iAutoSaveTimer = setTimeout(this._autoSave.bind(this), AUTO_SAVE_DELAY_MS);
+		},
+
+		/**
+		 * Saves now whatever is waiting to be saved.
+		 * @returns {Promise} resolved once the changes are saved (or could not be)
+		 */
+		_flushAutoSave: function () {
+			if (this._iAutoSaveTimer || this._changedCells().entries.length) {
+				return this._autoSave();
+			}
+			return this._pAutoSave || Promise.resolve();
+		},
+
+		/**
+		 * The cells changed since they were last read or saved. A booking that needs a
+		 * work description and has none waits until it has one.
+		 * @returns {{entries: Array<object>, waiting: Array<string>}} the cells to save,
+		 * and the days held back for want of a description
+		 */
+		_changedCells: function () {
+			var aEntries = [];
+			var aWaiting = [];
+
+			(this.getModel("ts").getProperty("/rows") || []).forEach(function (oRow) {
+				if (oRow.readOnly) {
+					return;
+				}
+				oRow.days.forEach(function (oDay, iIndex) {
+					var bChanged = (oDay.time || "") !== (oDay.serviceTime || "") ||
+						(oDay.comment || "") !== (oDay.serviceComment || "");
+					if (!bChanged || (!oDay.time && !oDay.serviceTime)) {
+						return;
+					}
+					if (oDay.time && this._needsComment(oRow) && !oDay.comment) {
+						if (aWaiting.indexOf(DAYS[iIndex].label) === -1) {
+							aWaiting.push(DAYS[iIndex].label);
+						}
+						return;
+					}
+					aEntries.push({ row: oRow, day: oDay });
+				}, this);
+			}, this);
+
+			return { entries: aEntries, waiting: aWaiting };
+		},
+
+		/**
+		 * Sends the changed cells, quietly - no busy state and no pop-ups while typing.
+		 * @returns {Promise} resolved once they are saved (or could not be)
+		 */
+		_autoSave: function () {
+			clearTimeout(this._iAutoSaveTimer);
+			this._iAutoSaveTimer = null;
+
+			// One at a time: a change made meanwhile goes in the next round.
+			if (this._pAutoSave) {
+				this._bAutoSaveAgain = true;
+				return this._pAutoSave;
+			}
+			var oViewModel = this.getModel("tsView");
+			if (oViewModel.getProperty("/saving") || oViewModel.getProperty("/busy")) {
+				this._scheduleAutoSave();
+				return Promise.resolve();
+			}
+
+			var oChanges = this._changedCells();
+			if (!oChanges.entries.length) {
+				this._setAutoSaveStatus(oChanges.waiting.length ? "waiting" : "", oChanges.waiting);
+				return Promise.resolve();
+			}
+
+			var oMonday = oViewModel.getProperty("/weekStart");
+			// What was sent, so a change typed while saving is not marked as saved
+			var aSent = oChanges.entries.map(function (oChange) {
+				return { day: oChange.day, time: oChange.day.time || "", comment: oChange.day.comment || "" };
+			});
+			var bNewBookings = oChanges.entries.some(function (oChange) {
+				return !oChange.day.recId;
+			});
+			var oNow = new Date();
+
+			this._setAutoSaveStatus("saving");
+			this._pAutoSave = this._request(TIMESHEET_SERVICE + "?cmd=save", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					OrgID: this._sOrgId,
+					UserID: oViewModel.getProperty("/userId"),
+					SavedOn: this._isoDate(oNow),
+					SavedAt: this._clockTime(oNow),
+					SavedBy: oViewModel.getProperty("/userId"),
+					TimesheetListSet: oChanges.entries.map(function (oChange) {
+						var oDay = oChange.day;
+						return {
+							RecID: oDay.recId || "",
+							ProjectKey: oChange.row.ProjectID,
+							Date: oDay.date,
+							Hours: oDay.time ? oDay.time + ":00" : "00:00:00",
+							Comment: oDay.time ? oDay.comment || "" : ""
+						};
+					})
+				})
+			}).then(function () {
+				aSent.forEach(function (oSent) {
+					oSent.day.serviceTime = oSent.time;
+					oSent.day.serviceComment = oSent.comment;
+				});
+				// A new booking needs its record ID before it is saved again, or the
+				// service would create it a second time.
+				return bNewBookings ? this._readRecordIds(oMonday) : null;
+			}.bind(this)).then(function () {
+				this._pAutoSave = null;
+				var oLeft = this._changedCells();
+				this._setAutoSaveStatus(oLeft.waiting.length ? "waiting" : "saved", oLeft.waiting);
+				if (this._bAutoSaveAgain) {
+					this._bAutoSaveAgain = false;
+					return this._autoSave();
+				}
+				return null;
+			}.bind(this)).catch(function () {
+				this._pAutoSave = null;
+				this._bAutoSaveAgain = false;
+				this._setAutoSaveStatus("error");
+			}.bind(this));
+
+			return this._pAutoSave;
+		},
+
+		/**
+		 * Reads the week again and copies the record IDs of new bookings onto their
+		 * cells - without touching what is on screen.
+		 * @param {Date} oMonday the week that was saved
+		 * @returns {Promise} resolved once the IDs are in
+		 */
+		_readRecordIds: function (oMonday) {
+			var oViewModel = this.getModel("tsView");
+			if (oViewModel.getProperty("/weekStart") !== oMonday) {
+				return Promise.resolve();
+			}
+			var aDates = this._weekDates(formatter.toDate(oMonday));
+
+			return this._getJson(TIMESHEET_SERVICE + "?cmd=fetch&" + new URLSearchParams({
+				Email: oViewModel.getProperty("/currentEmail"),
+				FromDate: this._isoDate(aDates[0]),
+				ToDate: this._isoDate(aDates[6]),
+				OrgID: this._sOrgId
+			}).toString()).then(function (oData) {
+				var mRows = {};
+				(this.getModel("ts").getProperty("/rows") || []).forEach(function (oRow) {
+					if (!oRow.readOnly) {
+						mRows[oRow.ProjectID] = oRow;
+					}
+				});
+				(oData.assignments || []).forEach(function (oAssignment) {
+					var oRow = mRows[oAssignment.ProjectID];
+					(oAssignment.TimeEntries || []).forEach(function (oEntry) {
+						var iIndex = this._dayIndexOf(oEntry.Date, aDates);
+						if (oRow && iIndex !== -1 && !oRow.days[iIndex].recId) {
+							oRow.days[iIndex].recId = oEntry.RecID || "";
+						}
+					}, this);
+				}, this);
+			}.bind(this));
+		},
+
+		/**
+		 * The line next to Save.
+		 * @param {string} sState "", saving, saved, waiting or error
+		 * @param {Array<string>} [aWaiting] the days waiting for a description
+		 */
+		_setAutoSaveStatus: function (sState, aWaiting) {
+			var oViewModel = this.getModel("tsView");
+			var mText = {
+				saving: this.getText("tsAutoSaving"),
+				saved: this.getText("tsAutoSaved"),
+				waiting: this.getText("tsAutoWaiting", [(aWaiting || []).join(", ")]),
+				error: this.getText("tsAutoError")
+			};
+			oViewModel.setProperty("/autoSaveState", sState);
+			oViewModel.setProperty("/autoSaveText", mText[sState] || "");
+		},
+
+		/**
+		 * Leaving My Timesheet for another page saves what is waiting.
+		 * @param {sap.ui.base.Event} oEvent the router's routeMatched event
+		 */
+		_onAnyRouteMatched: function (oEvent) {
+			if (oEvent.getParameter("name") !== "timesheet") {
+				this._flushAutoSave();
+			}
+		},
+
+		/**
+		 * Closing or reloading the tab: start saving, and let the browser ask before
+		 * leaving while something is still unsaved.
+		 * @param {Event} oEvent the window's beforeunload event
+		 */
+		_onBeforeUnload: function (oEvent) {
+			var oChanges = this._changedCells();
+			if (!this._iAutoSaveTimer && !this._pAutoSave && !oChanges.entries.length && !oChanges.waiting.length) {
+				return;
+			}
+			this._autoSave();
+			oEvent.preventDefault();
+			oEvent.returnValue = "";
 		},
 
 		/* =========================================================== */

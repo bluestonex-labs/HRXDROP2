@@ -66,6 +66,17 @@
 							class="hrxTsIconButton" />
 					</HBox>
 					<HBox alignItems="Center" class="hrxTsActions">
+						<!-- Bookings save themselves shortly after a change; this says how that went -->
+						<Text
+							id="timesheetAutoSave"
+							text="{tsView>/autoSaveText}"
+							visible="{= !!${tsView>/autoSaveText} }"
+							wrapping="false"
+							class="hrxTsAutoSave">
+							<customData>
+								<core:CustomData key="state" value="{tsView>/autoSaveState}" writeToDom="true" />
+							</customData>
+						</Text>
 						<Button
 							id="timesheetAddProjects"
 							text="{i18n>btnAddProjects}"

@@ -769,6 +769,17 @@
 	color: var(--txt-2);
 }
 
+/* The save state can run to "Add a description to save Mon, Tue": it wraps
+   rather than pushing the week total off the bar. */
+.hrxApp .hrxPhone .hrxMbSum {
+	gap: 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbSum .hrxMbSavePill.sapMText {
+	min-width: 0;
+	white-space: normal;
+}
+
 .hrxApp .hrxPhone .hrxMbSum .hrxMbSumFigure.sapMText {
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;

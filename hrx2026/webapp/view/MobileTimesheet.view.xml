@@ -129,9 +129,10 @@
 							<Text text="{i18n>mbWeekTotal}"/>
 							<Text text="{mts>/week/booked} / {mts>/week/target}" class="hrxMbSumFigure"/>
 						</HBox>
-						<Text text="{= ${mts>/dirty} ? ${i18n>mbUnsaved} : ${i18n>mbAllSaved} }" class="hrxMbPill">
+						<!-- Saving..., All changes saved, Add a description to save Mon, ... -->
+						<Text text="{mts>/status/text}" textAlign="End" class="hrxMbPill hrxMbSavePill">
 							<customData>
-								<core:CustomData key="pill" value="{= ${mts>/dirty} ? 'warn' : 'ok' }" writeToDom="true"/>
+								<core:CustomData key="pill" value="{mts>/status/pill}" writeToDom="true"/>
 							</customData>
 						</Text>
 					</HBox>

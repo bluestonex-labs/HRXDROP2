@@ -14,6 +14,9 @@ sap.ui.define([
 	// The quick-pick buttons under the stepper, in minutes (0 clears the day).
 	var QUICK_MINUTES = [60, 120, 240, 480];
 
+	// The save bar's pill for each auto-save state (Timesheet._setAutoSaveStatus).
+	var AUTO_SAVE_PILL = { saving: "info", saved: "ok", waiting: "warn", error: "crit" };
+
 	// A day's state, as the mobile design colours it: the dot under each day chip, the
 	// pill on the day card and the rings on the phone's Home.
 	var STATUS = {
@@ -28,9 +31,9 @@ sap.ui.define([
 	/**
 	 * My Timesheet on a phone, after the mobile prototype: one day at a time, a
 	 * stepper per project instead of the week grid. Everything behind it - loading the
-	 * week, the 8-hour day, leave and bank holidays, closed months, saving - is the
-	 * desktop page's own (Timesheet.controller); this only lays the same rows out
-	 * differently, in the "mts" model.
+	 * week, the 8-hour day, leave and bank holidays, closed months, saving and
+	 * auto-saving - is the desktop page's own (Timesheet.controller); this only lays
+	 * the same rows out differently, in the "mts" model.
 	 */
 	return Timesheet.extend("bsx.hrx.hrx2026.controller.MobileTimesheet", {
 
@@ -82,7 +85,8 @@ sap.ui.define([
 				day: { title: "", hint: "", pill: "neu", status: "", mode: "entries", banner: "" },
 				entries: [],
 				week: { label: "", booked: "00:00", target: "00:00", percent: 0, full: false },
-				dirty: false
+				dirty: false,
+				status: { text: "", pill: "ok" }
 			};
 		},
 
@@ -180,8 +184,41 @@ sap.ui.define([
 					percent: iWeekTarget ? Math.round(iWeekBooked * 100 / iWeekTarget) : 0,
 					full: iWeekTarget > 0 && iWeekBooked >= iWeekTarget
 				},
-				dirty: this._isDirty(aRows)
+				dirty: this._isDirty(aRows),
+				status: this._saveStatus(aRows)
 			});
+		},
+
+		/**
+		 * The save bar's pill: how the last auto-save went, or otherwise whether
+		 * anything is still to be saved.
+		 * @param {object[]} aRows the timesheet rows
+		 * @returns {{text: string, pill: string}} the pill
+		 */
+		_saveStatus: function (aRows) {
+			var oViewModel = this.getModel("tsView");
+			var sState = oViewModel.getProperty("/autoSaveState");
+
+			if (AUTO_SAVE_PILL[sState]) {
+				return { text: oViewModel.getProperty("/autoSaveText"), pill: AUTO_SAVE_PILL[sState] };
+			}
+			return this._isDirty(aRows) ?
+				{ text: this.getText("mbUnsaved"), pill: "warn" } :
+				{ text: this.getText("mbAllSaved"), pill: "ok" };
+		},
+
+		/**
+		 * The auto-save's progress shows in the save bar as well.
+		 */
+		_setAutoSaveStatus: function () {
+			Timesheet.prototype._setAutoSaveStatus.apply(this, arguments);
+
+			var oModel = this.getModel("mts");
+			var aRows = this.getModel("ts").getProperty("/rows") || [];
+			if (oModel) {
+				oModel.setProperty("/dirty", this._isDirty(aRows));
+				oModel.setProperty("/status", this._saveStatus(aRows));
+			}
 		},
 
 		/**
@@ -303,6 +340,7 @@ sap.ui.define([
 				oModel.setProperty(oEntry.path + "/commentError", false);
 			}
 			this._recalculate();
+			this._scheduleAutoSave();
 		},
 
 		/**
@@ -320,7 +358,10 @@ sap.ui.define([
 				this.getModel("ts").setProperty(oEntry.path + "/commentError", false);
 				this.getModel("mts").setProperty(oContext.getPath() + "/error", false);
 			}
-			this.getModel("mts").setProperty("/dirty", this._isDirty(this.getModel("ts").getProperty("/rows") || []));
+			var aRows = this.getModel("ts").getProperty("/rows") || [];
+			this.getModel("mts").setProperty("/dirty", this._isDirty(aRows));
+			this.getModel("mts").setProperty("/status", this._saveStatus(aRows));
+			this._scheduleAutoSave();
 		},
 
 		/* =========================================================== */
@@ -366,8 +407,11 @@ sap.ui.define([
 				return;
 			}
 			this._oRemoveRow = null;
-			// A stored row reports through the service's own toast.
-			this._deleteRows([oRow]).then(function () {
+			// As the desktop's Delete: anything waiting is saved first. A stored row
+			// reports through the service's own toast.
+			this._flushAutoSave().then(function () {
+				return this._deleteRows(this.getModel("ts").getProperty("/rows") || [], [oRow]);
+			}.bind(this)).then(function () {
 				if (!bStored) {
 					MessageToast.show(this.getText("mbProjectRemoved"));
 				}
@@ -379,7 +423,8 @@ sap.ui.define([
 		/* =========================================================== */
 
 		/**
-		 * As the desktop's Save, but a missing description takes the user to the day
+		 * As the desktop's Save (which also waits for an auto-save in progress), but a
+		 * missing description takes the user to the day
 		 * it is missing on and marks the box, as the prototype does, instead of an error
 		 * dialog.
 		 */
