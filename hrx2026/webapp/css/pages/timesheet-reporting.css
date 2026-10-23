@@ -1178,3 +1178,23 @@
 		flex-wrap: wrap;
 	}
 }
+
+/* Customer: ticked in a list (MultiComboBox), but reads as the other pickers -
+   "All", the customer, or "2 customers" (trView>/customerText, as its
+   placeholder) - with the tokens it would otherwise line up hidden, and the same
+   plain arrow. */
+.hrxTimesheetReport .hrxTsMulti .sapMTokenizer {
+	display: none;
+}
+
+.hrxTimesheetReport .hrxTsMulti .sapMInputBaseInner::placeholder {
+	color: var(--ink);
+}
+
+.hrxTimesheetReport .hrxTsMulti .sapMInputBaseIconContainer .sapUiIcon,
+.hrxTimesheetReport .hrxTsMulti .sapMInputBaseIconContainer .sapUiIcon:hover {
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	color: var(--txt-2);
+}

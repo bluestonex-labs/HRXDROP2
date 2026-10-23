@@ -117,12 +117,14 @@ sap.ui.define([], function () {
 
 		/**
 		 * @param {Array<object>} aBookings bookings
-		 * @param {object} oFilter ClientKey, ProjectKey and EmpID to keep ("" for all)
+		 * @param {object} oFilter ClientKeys (any of them; none for all) or a single
+		 * ClientKey, ProjectKey and EmpID to keep ("" for all)
 		 * @returns {Array<object>} the bookings that match
 		 */
 		filter: function (aBookings, oFilter) {
+			var aClients = oFilter.ClientKeys || (oFilter.ClientKey ? [oFilter.ClientKey] : []);
 			return aBookings.filter(function (oBooking) {
-				return (!oFilter.ClientKey || oBooking.ClientKey === oFilter.ClientKey) &&
+				return (!aClients.length || aClients.indexOf(oBooking.ClientKey) !== -1) &&
 					(!oFilter.ProjectKey || oBooking.ProjectKey === oFilter.ProjectKey) &&
 					(!oFilter.EmpID || oBooking.EmpID === oFilter.EmpID);
 			});

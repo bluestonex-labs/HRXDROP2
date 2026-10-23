@@ -55,7 +55,7 @@ sap.ui.define([
 				weekLoading: false,
 				progressText: "",
 				failedText: "",
-				filters: { ClientKey: ALL, ProjectKey: ALL, EmpID: ALL },
+				filters: { ClientKeys: [], ProjectKey: ALL, EmpID: ALL },
 				period: {},
 				month: {},
 				drill: "",
@@ -307,7 +307,7 @@ sap.ui.define([
 
 		/**
 		 * Fills the customer, project and resource pickers from what was booked, and
-		 * drops a project that is no longer under the chosen customer.
+		 * drops a project that is no longer under the chosen customers.
 		 */
 		_renderOptions: function () {
 			var oViewModel = this.getModel("trView");
@@ -330,7 +330,7 @@ sap.ui.define([
 			};
 
 			var aProjects = fnOptions(aBookings.filter(function (oBooking) {
-				return !oFilters.ClientKey || oBooking.ClientKey === oFilters.ClientKey;
+				return !oFilters.ClientKeys.length || oFilters.ClientKeys.indexOf(oBooking.ClientKey) !== -1;
 			}), "ProjectKey", "ProjectDesc");
 
 			if (oFilters.ProjectKey && !aProjects.some(function (oOption) {
@@ -340,13 +340,24 @@ sap.ui.define([
 			}
 
 			var oModel = this.getModel("tr");
-			oModel.setProperty("/customers", fnOptions(aBookings, "ClientKey", "ClientDesc"));
+			// The customers are ticked in a list, so they need no "All" of their own:
+			// none ticked is all of them.
+			var aCustomers = fnOptions(aBookings, "ClientKey", "ClientDesc").slice(1);
+			oModel.setProperty("/customers", aCustomers);
+
+			// The field reads as the other pickers do - All, the one customer, or how
+			// many - rather than as a row of tokens too long for it.
+			var aChosen = aCustomers.filter(function (oOption) {
+				return oFilters.ClientKeys.indexOf(oOption.key) !== -1;
+			});
+			oViewModel.setProperty("/customerText", !aChosen.length ? sAll :
+				aChosen.length === 1 ? aChosen[0].label : this.getText("trCustomersN", [aChosen.length]));
 			oModel.setProperty("/projects", aProjects);
 			oModel.setProperty("/people", fnOptions(aBookings, "EmpID", "Name"));
 		},
 
 		/**
-		 * @returns {object} the chosen ClientKey, ProjectKey and EmpID, "" for all
+		 * @returns {object} the chosen ClientKeys (none for all), ProjectKey and EmpID ("" for all)
 		 */
 		_filterValues: function () {
 			var oFilters = this.getModel("trView").getProperty("/filters");
@@ -354,7 +365,9 @@ sap.ui.define([
 				return !sKey || sKey === ALL ? "" : sKey;
 			};
 			return {
-				ClientKey: fnValue(oFilters.ClientKey),
+				ClientKeys: (oFilters.ClientKeys || []).filter(function (sKey) {
+					return !!fnValue(sKey);
+				}),
 				ProjectKey: fnValue(oFilters.ProjectKey),
 				EmpID: fnValue(oFilters.EmpID)
 			};
@@ -793,7 +806,7 @@ sap.ui.define([
 
 		onClear: function () {
 			var oViewModel = this.getModel("trView");
-			oViewModel.setProperty("/filters", { ClientKey: ALL, ProjectKey: ALL, EmpID: ALL });
+			oViewModel.setProperty("/filters", { ClientKeys: [], ProjectKey: ALL, EmpID: ALL });
 			oViewModel.setProperty("/drill", "");
 			oViewModel.setProperty("/assign", { q: "", work: "all" });
 			oViewModel.setProperty("/sub/q", "");

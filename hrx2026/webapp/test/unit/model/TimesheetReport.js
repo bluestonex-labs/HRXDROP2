@@ -99,5 +99,12 @@ sap.ui.define([
 	QUnit.test("filters by customer, project and person", function (assert) {
 		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKey: "C1", ProjectKey: "", EmpID: "" }).length, 3);
 		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKey: "", ProjectKey: "P1", EmpID: "E2" }).length, 1);
+		// Several customers at once, as the Customer list ticks them; none ticked is all
+		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: ["C1"], ProjectKey: "", EmpID: "" }).length, 3);
+		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: [], ProjectKey: "", EmpID: "" }).length, aBookings.length);
+		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: ["C1", "C2"], ProjectKey: "", EmpID: "" }).length,
+			aBookings.filter(function (oBooking) {
+				return oBooking.ClientKey === "C1" || oBooking.ClientKey === "C2";
+			}).length);
 	});
 });

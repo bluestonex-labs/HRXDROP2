@@ -23,16 +23,18 @@
 				<HBox renderType="Bare" class="hrxTsFbar">
 					<VBox renderType="Bare" visible="{= !${trView>/utilMode} }" class="hrxTsFg">
 						<Label text="{i18n>trCustomer}" labelFor="trCustomer" class="hrxTsFgLabel" />
-						<Select
+						<!-- One or more customers, ticked in a list; none ticked is all of them -->
+						<MultiComboBox
 							id="trCustomer"
 							width="100%"
-							forceSelection="false"
-							selectedKey="{trView>/filters/ClientKey}"
+							showSelectAll="true"
+							placeholder="{trView>/customerText}"
+							selectedKeys="{trView>/filters/ClientKeys}"
 							items="{path: 'tr>/customers', templateShareable: false}"
-							change=".onFilterChange"
-							class="hrxTsSelect">
+							selectionFinish=".onFilterChange"
+							class="hrxTsInput hrxTsMulti">
 							<core:Item key="{tr>key}" text="{tr>label}" />
-						</Select>
+						</MultiComboBox>
 					</VBox>
 					<VBox renderType="Bare" visible="{= !${trView>/utilMode} }" class="hrxTsFg">
 						<Label text="{i18n>trProject}" labelFor="trProject" class="hrxTsFgLabel" />
