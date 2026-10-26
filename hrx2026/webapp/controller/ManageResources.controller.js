@@ -23,6 +23,9 @@ sap.ui.define([
 	var SERVICE_ROOT = Backend.SERVICE_ROOT;
 
 	var USERS_SERVICE = SERVICE_ROOT + "/master/manageUsers.xsjs";
+
+	// The filter's "All locations" choice (an empty Location means the same)
+	var ALL_SITES = "__all";
 	var LEAVE_SERVICE = SERVICE_ROOT + "/hrx/leaveReqs.xsjs";
 	var LEAVE_APPROVALS_SERVICE = SERVICE_ROOT + "/hrx/leaveApprovals.xsjs";
 
@@ -144,6 +147,12 @@ sap.ui.define([
 				}, {});
 
 				oModel.setProperty("/sites", aSites);
+				// The filter's Location list starts with All, as its other fields do
+				oModel.setProperty("/siteFilterOptions", [{
+					SiteID: ALL_SITES,
+					SiteLabel: this.getText("mrFilterAllLocations"),
+					SiteLocation: ""
+				}].concat(aSites));
 			}.bind(this));
 
 			var pUserTypes = this._read("/UserTypes", {
@@ -229,7 +238,7 @@ sap.ui.define([
 				if (oFilter.active !== "A" && (oResource.IsActive || "N") !== oFilter.active) {
 					return false;
 				}
-				if (oFilter.site && oResource.BaseSiteKey !== oFilter.site) {
+				if (oFilter.site && oFilter.site !== ALL_SITES && oResource.BaseSiteKey !== oFilter.site) {
 					return false;
 				}
 				if (sQuery) {
@@ -1125,7 +1134,7 @@ sap.ui.define([
 		 * @returns {object} the default list filter
 		 */
 		_defaultFilter: function () {
-			return { userType: "A", active: "A", site: "" };
+			return { userType: "A", active: "A", site: ALL_SITES };
 		},
 
 		_emptyNewResource: function () {

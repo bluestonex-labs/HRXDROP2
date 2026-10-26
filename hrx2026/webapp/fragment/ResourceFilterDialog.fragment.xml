@@ -26,13 +26,13 @@
 						<core:Item key="N" text="{i18n>mrStatusInactive}" />
 					</Select>
 				</VBox>
-				<!-- Left empty for every location -->
+				<!-- All locations first; left empty means the same -->
 				<VBox renderType="Bare" class="hrxMrFld">
 					<Label class="hrxModalLabel" text="{i18n>mrFilterLocation}" labelFor="filterSite" />
 					<ComboBox
 						id="filterSite"
 						selectedKey="{mrView>/filterDraft/site}"
-						items="{path: 'mr>/sites', templateShareable: false}"
+						items="{path: 'mr>/siteFilterOptions', templateShareable: false}"
 						width="100%"
 						placeholder="{i18n>mrFilterAllLocations}"
 						class="hrxMrAllLocations">
