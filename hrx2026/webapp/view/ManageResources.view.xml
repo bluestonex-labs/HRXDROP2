@@ -422,7 +422,8 @@
 				</items>
 			</IconTabBar>
 
-			<!-- Foot: Active / Inactive takes effect straight away; Save is for the form -->
+			<!-- Foot: Active / Inactive takes effect straight away; Delete asks first (and
+			     offers Make inactive instead); Save is for the form -->
 			<HBox renderType="Bare" class="hrxMrFoot">
 				<HBox renderType="Bare" class="hrxMrSwitchRow">
 					<Switch
@@ -435,12 +436,20 @@
 						class="hrxMrSwitch" />
 					<Text text="{= ${mrDetail>/Active} ? ${i18n>mrActive} : ${i18n>mrInactive} }" class="hrxMrSwitchText" />
 				</HBox>
+				<HBox renderType="Bare" class="hrxMrFootActions">
+				<Button
+					id="resourceDeleteButton"
+					text="{i18n>mrDelete}"
+					icon="sap-icon://tabler/trash"
+					press=".onDeleteResource"
+					class="hrxMrBtnGhost hrxMrBtnDelete" />
 				<Button
 					id="resourceSaveButton"
 					text="{i18n>mrSave}"
 					type="Emphasized"
 					press=".onSave"
 					class="hrxMrBtn" />
+				</HBox>
 			</HBox>
 		</VBox>
 	</HBox>

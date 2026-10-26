@@ -1263,3 +1263,25 @@
 .hrxApp .hrxMrAllLocations .sapMInputBaseInner::placeholder {
 	color: var(--ink);
 }
+
+/* Delete sits beside Save, in the danger colour; it asks before anything goes */
+.hrxApp .hrxManageResources .hrxMrFootActions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxApp .hrxMrBtnDelete .sapMBtnInner,
+.hrxApp .hrxMrBtnDelete .sapMBtnInner.sapMBtnDefault,
+.hrxApp .hrxMrBtnDelete .sapMBtnInner:hover {
+	color: #991B1B;
+}
+
+.hrxApp .hrxMrBtnDelete .sapMBtnInner:hover {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+.hrxApp .hrxMrBtnDelete .sapMBtnIcon {
+	color: inherit;
+}

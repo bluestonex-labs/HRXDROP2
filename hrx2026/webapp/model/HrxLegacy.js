@@ -1274,6 +1274,81 @@ sap.ui.define([
 			});
 		},
 
+		/**
+		 * Deletes a person for good, and everything that is theirs: their bookings,
+		 * leave, project assignments, bonus, assets and work schedule. Anybody they
+		 * managed loses their manager, and leave they were to approve loses its approver
+		 * - those records stay, being somebody else's. One record at a time, so a
+		 * failure part-way leaves the person in place with whatever remains, and the
+		 * delete can simply be tried again. Manage Resources asks first, and offers
+		 * making the person inactive instead (setActive), which keeps everything.
+		 */
+		remove: function (oBody) {
+			var sEmpId = oBody.EmpID;
+			var sEmp = Hrx.literal(sEmpId);
+			var fnEach = function (aRows, fnStep) {
+				return aRows.reduce(function (pDone, oRow) {
+					return pDone.then(function () {
+						return fnStep(oRow);
+					});
+				}, Promise.resolve());
+			};
+			var fnDeleteAll = function (sEntity, sFilter, fnPath) {
+				if (!HrxServices.has(sEntity)) {
+					return Promise.resolve();
+				}
+				return Hrx.list(sEntity, { $filter: sFilter }).then(function (aRows) {
+					return fnEach(aRows, function (oRow) {
+						return Hrx.remove(fnPath(oRow));
+					});
+				});
+			};
+
+			return Hrx.list("Users", { $filter: "Manager_EmployeeID eq " + sEmp, $select: "EmployeeID" }).then(function (aReports) {
+				return fnEach(aReports, function (oReport) {
+					return Hrx.update("Users(" + Hrx.literal(oReport.EmployeeID) + ")", { Manager_EmployeeID: null });
+				});
+			}).then(function () {
+				return Hrx.list("Leaves", {
+					$filter: "ApproverID_EmployeeID eq " + sEmp + " and EmpID_EmployeeID ne " + sEmp,
+					$select: "ID"
+				}).then(function (aLeaves) {
+					return fnEach(aLeaves, function (oLeave) {
+						return Hrx.update("Leaves(" + oLeave.ID + ")", { ApproverID_EmployeeID: null });
+					});
+				});
+			}).then(function () {
+				return fnDeleteAll("TimeLog", "Employee_EmployeeID eq " + sEmp, function (oRow) {
+					return "TimeLog(" + oRow.ID + ")";
+				});
+			}).then(function () {
+				return fnDeleteAll("Leaves", "EmpID_EmployeeID eq " + sEmp, function (oRow) {
+					return "Leaves(" + oRow.ID + ")";
+				});
+			}).then(function () {
+				return fnDeleteAll("UserToProject", "Employee_EmployeeID eq " + sEmp, function (oRow) {
+					return assignmentPath(sEmpId, oRow.Project_ID, oRow.BillingID_ID);
+				});
+			}).then(function () {
+				return fnDeleteAll("Bonus", "EmpID_EmployeeID eq " + sEmp, function (oRow) {
+					return "Bonus(ID=" + oRow.ID + ",EmpID_EmployeeID=" + sEmp + ",Month=" + oRow.Month + ",Year=" + oRow.Year + ")";
+				});
+			}).then(function () {
+				return fnDeleteAll("AssetAssignment", "EmployeeID_EmployeeID eq " + sEmp, function (oRow) {
+					return "AssetAssignment(" + oRow.ID + ")";
+				});
+			}).then(function () {
+				// Not everybody has a schedule of their own
+				return Hrx.remove("WorkSchedule(" + sEmp + ")").catch(function () {
+					return null;
+				});
+			}).then(function () {
+				return Hrx.remove("Users(" + sEmp + ")");
+			}).then(function () {
+				return ok({});
+			});
+		},
+
 		/** Makes a person active or inactive, and changes nothing else on their record. */
 		setActive: function (oBody) {
 			return Hrx.update("Users(" + Hrx.literal(oBody.EmpID) + ")", { IsActive: isYes(oBody.IsActive) }).then(function () {

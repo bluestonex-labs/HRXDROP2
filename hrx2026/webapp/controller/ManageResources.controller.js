@@ -6,13 +6,16 @@ sap.ui.define([
 	"sap/ui/model/FilterOperator",
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
+	"sap/m/Dialog",
+	"sap/m/Button",
+	"sap/m/Text",
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter",
 	"../model/TeamLeave",
 	"./BookLeave"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
-	TeamLeave, BookLeave) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Dialog, Button, Text, Backend,
+	CurrentUser, formatter, TeamLeave, BookLeave) {
 	"use strict";
 
 	// Root path of the backend services. Both the local dev proxy (ui5.yaml) and the
@@ -693,16 +696,25 @@ sap.ui.define([
 		 * @param {sap.ui.base.Event} oEvent the switch's change event
 		 */
 		onActiveChange: function (oEvent) {
-			var bActive = oEvent.getParameter("state");
+			this._setActive(oEvent.getParameter("state"));
+		},
+
+		/**
+		 * Makes the selected resource active or inactive, and nothing else.
+		 * @param {boolean} bActive the new state
+		 * @returns {Promise} settles once saved, or the switch has gone back
+		 */
+		_setActive: function (bActive) {
 			var oDetailModel = this.getModel("mrDetail");
 			var oDetail = oDetailModel.getData();
 			if (!oDetail.EmpID) {
-				return;
+				return Promise.resolve();
 			}
 
 			this.getModel("mrView").setProperty("/saving", true);
+			oDetailModel.setProperty("/Active", bActive);
 
-			this._postJson(USERS_SERVICE + "?cmd=setActive", {
+			return this._postJson(USERS_SERVICE + "?cmd=setActive", {
 				EmpID: oDetail.UserID,
 				IsActive: bActive ? "Y" : "N"
 			}).then(function () {
@@ -714,6 +726,76 @@ sap.ui.define([
 				this.getModel("mrView").setProperty("/saving", false);
 				oDetailModel.setProperty("/Active", !bActive);
 				this._showError("mrErrorActive", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * Delete, from the foot of the details: asks first, and offers making the
+		 * resource inactive instead - which keeps their bookings and leave - for as
+		 * long as they are active.
+		 */
+		onDeleteResource: function () {
+			var oDetail = this.getModel("mrDetail").getData();
+			if (!oDetail.EmpID) {
+				return;
+			}
+			var bActive = !!oDetail.Active;
+
+			var oDialog = new Dialog({
+				title: this.getText("mrDeleteTitle", [oDetail.FullName]),
+				content: [
+					new Text({ text: this.getText(bActive ? "mrDeleteText" : "mrDeleteTextInactive", [oDetail.FullName]) })
+						.addStyleClass("hrxModalText")
+				],
+				buttons: [
+					new Button({
+						text: this.getText("mrDeleteConfirm"),
+						press: function () {
+							oDialog.close();
+							this._deleteResource(oDetail);
+						}.bind(this)
+					}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
+					new Button({
+						text: this.getText("mrMakeInactive"),
+						visible: bActive,
+						press: function () {
+							oDialog.close();
+							this._setActive(false);
+						}.bind(this)
+					}).addStyleClass("hrxModalBtn hrxModalBtnGhost"),
+					new Button({
+						text: this.getText("mrCancel"),
+						press: function () {
+							oDialog.close();
+						}
+					}).addStyleClass("hrxModalBtn hrxModalBtnGhost")
+				],
+				afterClose: function () {
+					oDialog.destroy();
+				}
+			}).addStyleClass("hrxModal");
+
+			this.getView().addDependent(oDialog);
+			oDialog.open();
+		},
+
+		/**
+		 * Deletes the resource and everything that is theirs (HrxLegacy, Users.remove).
+		 * @param {object} oDetail the resource on screen
+		 */
+		_deleteResource: function (oDetail) {
+			this.getModel("mrView").setProperty("/saving", true);
+
+			this._postJson(USERS_SERVICE + "?cmd=remove", { EmpID: oDetail.UserID }).then(function () {
+				this.getModel("mrView").setProperty("/saving", false);
+				MessageToast.show(this.getText("mrDeleted", [oDetail.FullName]));
+				this._closeDetail();
+				return this._loadResources();
+			}.bind(this)).catch(function (oError) {
+				this.getModel("mrView").setProperty("/saving", false);
+				this._showError("mrErrorDelete", oError);
+				// Part of it may be gone already; show what remains.
+				return this._loadResources();
 			}.bind(this));
 		},
 
@@ -792,6 +874,7 @@ sap.ui.define([
 		 */
 		onCreateResource: function () {
 			if (!this._validateNewResource()) {
+				this._reportNewResourceErrors();
 				return;
 			}
 
@@ -889,6 +972,44 @@ sap.ui.define([
 			}, this);
 
 			return bValid;
+		},
+
+		/**
+		 * Says why the new resource was not saved: the mandatory fields still empty,
+		 * and an email address that is not one. The fields themselves are already
+		 * marked (_validateNewResource).
+		 */
+		_reportNewResourceErrors: function () {
+			var aMissing = [];
+			var bBadEmail = false;
+			[
+				{ id: "newFirstName", label: "mrFieldFirstName" },
+				{ id: "newEmail", label: "mrFieldEmail" },
+				{ id: "newSite", label: "mrFieldLocation" },
+				{ id: "newUserType", label: "mrFieldUserType" }
+			].forEach(function (oField) {
+				var oControl = this.byId(oField.id);
+				if (oControl.getValueState() !== "Error") {
+					return;
+				}
+				// Location and resource type are pick lists; the rest are typed in
+				var bPick = oControl.isA("sap.m.Select") || oControl.isA("sap.m.ComboBoxBase");
+				var bEmpty = bPick ? !oControl.getSelectedKey() : !(oControl.getValue() || "").trim();
+				if (bEmpty) {
+					aMissing.push(this.getText(oField.label));
+				} else if (oField.id === "newEmail") {
+					bBadEmail = true;
+				}
+			}, this);
+
+			var aLines = [];
+			if (aMissing.length) {
+				aLines.push(this.getText("mrNotSavedMissing", [aMissing.join(", ")]));
+			}
+			if (bBadEmail) {
+				aLines.push(this.getText("mrNotSavedEmail"));
+			}
+			MessageBox.error(aLines.join("\n\n"), { title: this.getText("mrNotSavedTitle") });
 		},
 
 		_validateEmailControl: function (oControl) {
