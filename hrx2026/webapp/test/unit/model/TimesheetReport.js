@@ -74,6 +74,23 @@ sap.ui.define([
 		assert.deepEqual(oDrill.slices.map(function (s) { return s.key; }), ["P1"]);
 	});
 
+	QUnit.test("a project's entries: in the period, oldest first, with who and why", function (assert) {
+		var aWithComments = TimesheetReport.fromAssignments(oPerson, [
+			assignment("P9", "C1", true, "500", [
+				entry("21", "2026-10-06", "04:00", "Design review"),
+				entry("22", "2026-10-02", "08:00", "Build"),
+				entry("23", "2026-03-30", "08:00", "Before the period")
+			])
+		]);
+		var aEntries = TimesheetReport.entries(aWithComments, oYear, "P9");
+
+		assert.deepEqual(aEntries.map(function (e) { return e.Date; }), ["2026-10-02", "2026-10-06"]);
+		assert.strictEqual(aEntries[0].Comment, "Build");
+		assert.strictEqual(aEntries[1].days, 0.5);
+		assert.strictEqual(aEntries[1].Name, "Alex Test");
+		assert.strictEqual(TimesheetReport.entries(aWithComments, oYear, "P1").length, 0, "only the project asked for");
+	});
+
 	QUnit.test("breakdown totals by customer, project and person", function (assert) {
 		var oBreak = TimesheetReport.breakdown(aBookings, oYear);
 		assert.deepEqual(oBreak.people.map(function (p) { return p.EmpID; }), ["E1", "E2"]);
@@ -105,6 +122,12 @@ sap.ui.define([
 		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: ["C1", "C2"], ProjectKey: "", EmpID: "" }).length,
 			aBookings.filter(function (oBooking) {
 				return oBooking.ClientKey === "C1" || oBooking.ClientKey === "C2";
+			}).length);
+		// ...and several projects and people
+		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: [], ProjectKeys: ["P1"], EmpIDs: ["E2"] }).length, 1);
+		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKeys: [], ProjectKeys: [], EmpIDs: ["E1", "E2"] }).length,
+			aBookings.filter(function (oBooking) {
+				return oBooking.EmpID === "E1" || oBooking.EmpID === "E2";
 			}).length);
 	});
 });

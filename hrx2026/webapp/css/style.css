@@ -354,6 +354,18 @@ body.hrxApp {
 	display: none;
 }
 
+/* The theme widens a hovered row of the collapsed list into a floating label
+   (position: absolute, the text shown) - the narrow rail cut it off ("Doc") and
+   pulled the icon out of line. The row stays as it is; the page's name shows as
+   the row's tooltip instead (App.controller, _updateNavToggleIcon). */
+.hrxApp .hrxToolPage .sapTntNLCollapsed .sapTntNLI [tabindex]:hover {
+	position: static !important;
+}
+
+.hrxApp .hrxToolPage .sapTntNLCollapsed .sapTntNLI [tabindex]:hover .sapTntNLIText {
+	display: none !important;
+}
+
 /* The theme gives the collapsed list a fixed 64px, wider than the 44px the rail
    leaves inside its padding, which pushed every icon 10px right of the toggle,
    the bell and the avatar. It takes the rail's width instead, so they all share

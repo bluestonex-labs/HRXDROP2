@@ -45,13 +45,18 @@
 								change=".onRangeChange"
 								width="210px"
 								class="hrxTcInput" />
-							<SearchField
+							<!-- Type a name, pick it, and it joins the filter: the list shows only
+							     the people picked (all of them when none is) -->
+							<MultiComboBox
 								id="teamLeaveSearch"
-								value="{tlView>/q}"
+								selectedKeys="{tlView>/people}"
+								items="{path: 'tl>/people', templateShareable: false}"
 								placeholder="{i18n>lmSearch}"
-								liveChange=".onLeaveSearch"
+								selectionChange=".onLeaveSearch"
 								width="260px"
-								class="hrxTcSearch" />
+								class="hrxTcInput hrxTcPeoplePick">
+								<core:Item key="{tl>EmpID}" text="{tl>Name}" />
+							</MultiComboBox>
 						</HBox>
 					</HBox>
 

@@ -87,7 +87,8 @@ sap.ui.define([
 				period: "next",
 				rangeFrom: null,
 				rangeTo: null,
-				q: "",
+				// The people picked in the card's employee filter (none: everybody shown)
+				people: [],
 				status: "REQ",
 				// "Show all" under Pending: every waiting request, whatever its dates
 				showAllPending: false
@@ -453,13 +454,27 @@ sap.ui.define([
 			var oModel = this.getModel("tl");
 			var oPeriod = this._leavePeriod();
 			var mShown = {};
-			this._shown().forEach(function (oPerson) {
+			var aShown = this._shown();
+			aShown.forEach(function (oPerson) {
 				mShown[oPerson.EmpID] = true;
 			});
-			var sQuery = (oLeaveView.q || "").trim().toLowerCase();
+
+			// The employee filter offers the people shown; picking one or more narrows
+			// the card to them. Anyone picked who is no longer shown drops out.
+			oModel.setProperty("/people", aShown.map(function (oPerson) {
+				return { EmpID: oPerson.EmpID, Name: oPerson.Name };
+			}).sort(function (a, b) {
+				return a.Name.localeCompare(b.Name);
+			}));
+			var aPicked = (oLeaveView.people || []).filter(function (sEmpId) {
+				return mShown[sEmpId];
+			});
+			if (aPicked.length !== (oLeaveView.people || []).length) {
+				this.getModel("tlView").setProperty("/people", aPicked);
+			}
 
 			var fnInScope = function (oRequest) {
-				return mShown[oRequest.EmpID] && (!sQuery || oRequest.Name.toLowerCase().indexOf(sQuery) !== -1);
+				return mShown[oRequest.EmpID] && (!aPicked.length || aPicked.indexOf(oRequest.EmpID) !== -1);
 			};
 			var aPeriod = this._aPeriodRequests.filter(fnInScope);
 			var mInPeriod = {};

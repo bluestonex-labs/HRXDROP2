@@ -23,7 +23,8 @@
 				<HBox renderType="Bare" class="hrxTsFbar">
 					<VBox renderType="Bare" visible="{= !${trView>/utilMode} }" class="hrxTsFg">
 						<Label text="{i18n>trCustomer}" labelFor="trCustomer" class="hrxTsFgLabel" />
-						<!-- One or more customers, ticked in a list; none ticked is all of them -->
+						<!-- Customer, Project and Resource: one or more, ticked in a list; none
+						     ticked is all of them -->
 						<MultiComboBox
 							id="trCustomer"
 							width="100%"
@@ -38,29 +39,31 @@
 					</VBox>
 					<VBox renderType="Bare" visible="{= !${trView>/utilMode} }" class="hrxTsFg">
 						<Label text="{i18n>trProject}" labelFor="trProject" class="hrxTsFgLabel" />
-						<Select
+						<MultiComboBox
 							id="trProject"
 							width="100%"
-							forceSelection="false"
-							selectedKey="{trView>/filters/ProjectKey}"
+							showSelectAll="true"
+							placeholder="{trView>/projectText}"
+							selectedKeys="{trView>/filters/ProjectKeys}"
 							items="{path: 'tr>/projects', templateShareable: false}"
-							change=".onFilterChange"
-							class="hrxTsSelect">
+							selectionFinish=".onFilterChange"
+							class="hrxTsInput hrxTsMulti">
 							<core:Item key="{tr>key}" text="{tr>label}" />
-						</Select>
+						</MultiComboBox>
 					</VBox>
 					<VBox renderType="Bare" visible="{= !${trView>/utilMode} }" class="hrxTsFg">
 						<Label text="{i18n>trResource}" labelFor="trResource" class="hrxTsFgLabel" />
-						<Select
+						<MultiComboBox
 							id="trResource"
 							width="100%"
-							forceSelection="false"
-							selectedKey="{trView>/filters/EmpID}"
+							showSelectAll="true"
+							placeholder="{trView>/peopleText}"
+							selectedKeys="{trView>/filters/EmpIDs}"
 							items="{path: 'tr>/people', templateShareable: false}"
-							change=".onFilterChange"
-							class="hrxTsSelect">
+							selectionFinish=".onFilterChange"
+							class="hrxTsInput hrxTsMulti">
 							<core:Item key="{tr>key}" text="{tr>label}" />
-						</Select>
+						</MultiComboBox>
 					</VBox>
 					<VBox renderType="Bare" class="hrxTsFg">
 						<Label text="{i18n>trPeriod}" labelFor="trPeriod" class="hrxTsFgLabel" />
@@ -342,6 +345,15 @@
 								class="hrxTsLegend">
 								<CustomListItem type="{= ${trView>/drill} ? 'Inactive' : 'Active' }" press=".onSliceSelect">
 									<HBox renderType="Bare" class="hrxTsLgRow">
+										<customData>
+											<core:CustomData key="shown" value="{= ${tr>shown} ? 'true' : 'false' }" writeToDom="true" />
+										</customData>
+										<!-- Untick to take the slice out of the donut and its total -->
+										<CheckBox
+											selected="{tr>shown}"
+											select=".onSliceToggle"
+											tooltip="{i18n>trShowInChart}"
+											class="hrxTsLgCheck" />
 										<HBox renderType="Bare" class="hrxTsDot">
 											<customData>
 												<core:CustomData key="colour" value="{tr>colourKey}" writeToDom="true" />

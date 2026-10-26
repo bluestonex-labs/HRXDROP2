@@ -538,6 +538,26 @@ sap.ui.define([
 		_updateNavToggleIcon: function (bExpanded) {
 			this.byId("navToggleButton").setIcon(bExpanded ? "sap-icon://navigation-left-arrow" : "sap-icon://menu2");
 			this.byId("toolPage").toggleStyleClass("hrxSideCollapsed", !bExpanded);
+			this._setNavTooltips(!bExpanded);
+		},
+
+		/**
+		 * Collapsed, the rail is icons only, so each row names its page on hover.
+		 * Expanded, the name is on the row already and needs no tooltip.
+		 * @param {boolean} bCollapsed whether the rail is collapsed
+		 */
+		_setNavTooltips: function (bCollapsed) {
+			var oNavList = this.byId("sideNavigation").getItem();
+			var aItems = [];
+			oNavList.getItems().concat(this.byId("adminNavGroup").getItems()).forEach(function (oItem) {
+				aItems = aItems.concat(oItem.isA("sap.tnt.NavigationListGroup") ? oItem.getItems() : [oItem]);
+			});
+			aItems.forEach(function (oItem) {
+				// From the label's i18n key: on start-up the label is not resolved yet.
+				var oText = oItem.getBindingInfo("text");
+				var sText = oText && oText.parts ? this.getText(oText.parts[0].path) : oItem.getText();
+				oItem.setTooltip(bCollapsed ? sText : "");
+			}, this);
 		},
 
 		onItemSelect: function (oEvent) {

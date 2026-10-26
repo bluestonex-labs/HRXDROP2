@@ -5,6 +5,7 @@ sap.ui.define([
 	"sap/m/MessageToast",
 	"sap/m/Text",
 	"sap/m/HBox",
+	"sap/m/VBox",
 	"sap/m/Button",
 	"sap/ui/core/CustomData",
 	"../model/CurrentUser",
@@ -14,7 +15,7 @@ sap.ui.define([
 	"../model/formatter",
 	"../model/Mail",
 	"../model/Reminders"
-], function (Controller, JSONModel, MessageBox, MessageToast, Text, HBox, Button, CustomData, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Text, HBox, VBox, Button, CustomData, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
 	"use strict";
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -55,7 +56,7 @@ sap.ui.define([
 				weekLoading: false,
 				progressText: "",
 				failedText: "",
-				filters: { ClientKeys: [], ProjectKey: ALL, EmpID: ALL },
+				filters: { ClientKeys: [], ProjectKeys: [], EmpIDs: [] },
 				period: {},
 				month: {},
 				drill: "",
@@ -76,6 +77,11 @@ sap.ui.define([
 			// Open assignments and customers survive a reload or a filter change.
 			this._mOpenAssign = {};
 			this._mOpenCustomer = {};
+			// Projects opened in Timesheet breakdown, to show their bookings' comments
+			this._mOpenProject = {};
+			// Slices unticked in the donut's legend, keyed by the drill they belong to
+			// ("" for the customers, a customer's key for its projects) and the slice
+			this._mHiddenSlices = {};
 			this._oCache = null;
 			this._aWeek = null;
 			this._iLoad = 0;
@@ -307,7 +313,7 @@ sap.ui.define([
 
 		/**
 		 * Fills the customer, project and resource pickers from what was booked, and
-		 * drops a project that is no longer under the chosen customers.
+		 * drops any chosen project that is no longer under the chosen customers.
 		 */
 		_renderOptions: function () {
 			var oViewModel = this.getModel("trView");
@@ -324,52 +330,62 @@ sap.ui.define([
 						aOptions.push({ key: oBooking[sKey], label: oBooking[sLabel] });
 					}
 				});
-				return [{ key: ALL, label: sAll }].concat(aOptions.sort(function (a, b) {
+				// Each picker is a list of tick boxes, so there is no "All" in it: none
+				// ticked is all of them.
+				return aOptions.sort(function (a, b) {
 					return a.label.localeCompare(b.label);
-				}));
+				});
 			};
 
+			// The field reads as a single pick would - All, the one name, or how many -
+			// rather than as a row of tokens too long for it.
+			var fnText = function (aOptions, aKeys, sManyKey) {
+				var aChosen = aOptions.filter(function (oOption) {
+					return aKeys.indexOf(oOption.key) !== -1;
+				});
+				return !aChosen.length ? sAll :
+					aChosen.length === 1 ? aChosen[0].label : this.getText(sManyKey, [aChosen.length]);
+			}.bind(this);
+
+			var aCustomers = fnOptions(aBookings, "ClientKey", "ClientDesc");
 			var aProjects = fnOptions(aBookings.filter(function (oBooking) {
 				return !oFilters.ClientKeys.length || oFilters.ClientKeys.indexOf(oBooking.ClientKey) !== -1;
 			}), "ProjectKey", "ProjectDesc");
+			var aPeople = fnOptions(aBookings, "EmpID", "Name");
 
-			if (oFilters.ProjectKey && !aProjects.some(function (oOption) {
-				return oOption.key === oFilters.ProjectKey;
-			})) {
-				oViewModel.setProperty("/filters/ProjectKey", ALL);
+			// A project ticked under a customer that is no longer ticked goes.
+			var aKeptProjects = oFilters.ProjectKeys.filter(function (sKey) {
+				return aProjects.some(function (oOption) {
+					return oOption.key === sKey;
+				});
+			});
+			if (aKeptProjects.length !== oFilters.ProjectKeys.length) {
+				oViewModel.setProperty("/filters/ProjectKeys", aKeptProjects);
 			}
 
 			var oModel = this.getModel("tr");
-			// The customers are ticked in a list, so they need no "All" of their own:
-			// none ticked is all of them.
-			var aCustomers = fnOptions(aBookings, "ClientKey", "ClientDesc").slice(1);
 			oModel.setProperty("/customers", aCustomers);
-
-			// The field reads as the other pickers do - All, the one customer, or how
-			// many - rather than as a row of tokens too long for it.
-			var aChosen = aCustomers.filter(function (oOption) {
-				return oFilters.ClientKeys.indexOf(oOption.key) !== -1;
-			});
-			oViewModel.setProperty("/customerText", !aChosen.length ? sAll :
-				aChosen.length === 1 ? aChosen[0].label : this.getText("trCustomersN", [aChosen.length]));
 			oModel.setProperty("/projects", aProjects);
-			oModel.setProperty("/people", fnOptions(aBookings, "EmpID", "Name"));
+			oModel.setProperty("/people", aPeople);
+			oViewModel.setProperty("/customerText", fnText(aCustomers, oFilters.ClientKeys, "trCustomersN"));
+			oViewModel.setProperty("/projectText", fnText(aProjects, aKeptProjects, "trProjectsChosenN"));
+			oViewModel.setProperty("/peopleText", fnText(aPeople, oFilters.EmpIDs, "trPeopleN"));
 		},
 
 		/**
-		 * @returns {object} the chosen ClientKeys (none for all), ProjectKey and EmpID ("" for all)
+		 * @returns {object} the ticked ClientKeys, ProjectKeys and EmpIDs (none for all)
 		 */
 		_filterValues: function () {
 			var oFilters = this.getModel("trView").getProperty("/filters");
-			var fnValue = function (sKey) {
-				return !sKey || sKey === ALL ? "" : sKey;
+			var fnKeys = function (aKeys) {
+				return (aKeys || []).filter(function (sKey) {
+					return !!sKey && sKey !== ALL;
+				});
 			};
 			return {
-				ClientKeys: (oFilters.ClientKeys || []).filter(function (sKey) {
-					return !!fnValue(sKey);
-				}),
-				ProjectKey: fnValue(oFilters.ProjectKey),
-				EmpID: fnValue(oFilters.EmpID)
+				ClientKeys: fnKeys(oFilters.ClientKeys),
+				ProjectKeys: fnKeys(oFilters.ProjectKeys),
+				EmpIDs: fnKeys(oFilters.EmpIDs)
 			};
 		},
 
@@ -468,12 +484,23 @@ sap.ui.define([
 				}
 				var sColor = COLORS[iColour];
 				return Object.assign(oSlice, {
+					index: iIndex,
 					colourIndex: iColour,
 					colourKey: String(iColour),
 					color: sColor,
-					valueText: this._num(oSlice.value)
+					valueText: this._num(oSlice.value),
+					shown: !this._mHiddenSlices[sDrill + "|" + oSlice.key]
 				});
 			}, this);
+
+			// A slice unticked in the legend leaves the donut and its total, as in the
+			// SAC report - a quick sense check of the rest. Colours stay as they were.
+			var aShown = aSlices.filter(function (oSlice) {
+				return oSlice.shown;
+			});
+			fSliceTotal = aShown.reduce(function (fTotal, oSlice) {
+				return fTotal + oSlice.value;
+			}, 0);
 
 			var sDrillLabel = "";
 			if (sDrill) {
@@ -494,7 +521,7 @@ sap.ui.define([
 					this.getText(aSlices.length === 1 ? "trOneProject" : "trProjectsCount", [aSlices.length]) :
 					this.getText("trDaysHint"),
 				slices: aSlices,
-				pieHtml: this._pieHtml(aSlices, fSliceTotal, sTitle),
+				pieHtml: this._pieHtml(aShown, fSliceTotal, sTitle),
 				top: oOverview.top.map(function (oProject) {
 					return {
 						label: oProject.label,
@@ -508,7 +535,7 @@ sap.ui.define([
 		/**
 		 * The design's donut: a pale track with one arc per slice laid over it, from
 		 * twelve o'clock clockwise, and the total days in the middle. Each arc carries
-		 * its index so a click on it can drill into that customer.
+		 * its slice's index in the legend so a click on it can drill into that customer.
 		 * @param {Array<object>} aSlices slices with label, value, valueText and color
 		 * @param {number} fTotal the sum of the slices
 		 * @param {string} sTitle what the chart shows, for screen readers
@@ -537,7 +564,8 @@ sap.ui.define([
 			// drew a pointed corner there.
 			var sArcs = aSlices.map(function (oSlice, iIndex) {
 				var fShare = oSlice.value / fTotal;
-				var sAttributes = "data-i=\"" + iIndex + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
+				var iSlice = oSlice.index === undefined ? iIndex : oSlice.index;
+				var sAttributes = "data-i=\"" + iSlice + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
 					" fill=\"none\" stroke=\"" + oSlice.color + "\" stroke-width=\"13\"";
 				var sTitle = "<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title>";
 				var sShape;
@@ -565,10 +593,13 @@ sap.ui.define([
 		 * Builds the customer/project by resource table. Its columns depend on who
 		 * booked time under the current filters, so its rows are put together here
 		 * rather than bound in the view: a customer row (click or chevron to open it),
-		 * its projects when open, and the totals row.
+		 * its projects when open - each of which opens in turn on its bookings, with
+		 * who booked them and their comments - and the totals row.
 		 */
 		_renderBreakdown: function () {
-			var oBreak = TimesheetReport.breakdown(this._filtered(), this.getModel("trView").getProperty("/period"));
+			var oPeriod = this.getModel("trView").getProperty("/period");
+			var aFiltered = this._filtered();
+			var oBreak = TimesheetReport.breakdown(aFiltered, oPeriod);
 			var oTable = this.byId("trBreakTable");
 			var iProjects = 0;
 
@@ -629,10 +660,8 @@ sap.ui.define([
 
 				if (bOpen) {
 					oCustomer.projects.forEach(function (oProject) {
-						oTable.addItem(fnRow([new Text({ text: oProject.label }).addStyleClass("hrxTsIndent")]
-							.concat(oBreak.people.map(function (oPerson) {
-								return fnCell(fnDays(oProject.byEmp[oPerson.EmpID]));
-							}), [fnCell(this._num(oProject.total))]), "hrxTsBrkProject"));
+						this._addBreakdownProject(oTable, oBreak, oCustomer, oProject,
+							TimesheetReport.entries(aFiltered, oPeriod, oProject.key), fnRow, fnCell, fnDays);
 					}, this);
 				}
 			}, this);
@@ -655,6 +684,75 @@ sap.ui.define([
 				hint: this.getText("trBreakHint", [oBreak.customers.length, iProjects]),
 				expandText: this.getText(bAllOpen ? "trCollapseAll" : "trExpandAll")
 			});
+		},
+
+		/**
+		 * A project's row in Timesheet breakdown (chevron or click to open it) and, when
+		 * open, a row per booking: when and who, the comment under it, and its days in
+		 * that person's column.
+		 * @param {sap.m.VBox} oTable the breakdown table
+		 * @param {object} oBreak the breakdown (for its people)
+		 * @param {object} oCustomer the project's customer
+		 * @param {object} oProject the project
+		 * @param {Array<object>} aEntries the project's bookings (TimesheetReport.entries)
+		 * @param {function} fnRow builds a row
+		 * @param {function} fnCell builds a figure cell
+		 * @param {function} fnDays a figure, or a dash for none
+		 */
+		_addBreakdownProject: function (oTable, oBreak, oCustomer, oProject, aEntries, fnRow, fnCell, fnDays) {
+			var sKey = oCustomer.key + "|" + oProject.key;
+			var bOpen = !!this._mOpenProject[sKey];
+			var fnToggle = function () {
+				this._mOpenProject[sKey] = !this._mOpenProject[sKey];
+				this._renderBreakdown();
+			}.bind(this);
+
+			var oRow = fnRow([new HBox({
+				renderType: "Bare",
+				items: [
+					new Button({
+						type: "Transparent",
+						tooltip: this.getText("trShowComments"),
+						press: fnToggle
+					}).addStyleClass("hrxTsChev"),
+					new Text({ text: oProject.label }),
+					new Text({
+						text: this.getText(aEntries.length === 1 ? "trBooking" : "trBookings", [aEntries.length]),
+						wrapping: false
+					}).addStyleClass("hrxTsGrpCount")
+				]
+			}).addStyleClass("hrxTsProjName")].concat(oBreak.people.map(function (oPerson) {
+				return fnCell(fnDays(oProject.byEmp[oPerson.EmpID]));
+			}), [fnCell(this._num(oProject.total))]), "hrxTsBrkProject");
+
+			oRow.addCustomData(new CustomData({ key: "open", value: bOpen ? "yes" : "no", writeToDom: true }));
+			oRow.addEventDelegate({
+				onclick: function (oEvent) {
+					if (!oEvent.target.closest(".sapMBtn")) {
+						fnToggle();
+					}
+				}
+			}, this);
+			oTable.addItem(oRow);
+
+			if (!bOpen) {
+				return;
+			}
+			aEntries.forEach(function (oEntry) {
+				oTable.addItem(fnRow([new VBox({
+					renderType: "Bare",
+					items: [
+						new Text({
+							text: this.getText("trEntryWhen", [this._dayText(oEntry.Date), oEntry.Name, this._hours(oEntry.Minutes)]),
+							wrapping: false
+						}).addStyleClass("hrxTsEntryWhen"),
+						new Text({ text: oEntry.Comment || this.getText("trNoComment") })
+							.addStyleClass(oEntry.Comment ? "hrxTsEntryComment" : "hrxTsEntryComment hrxTsEntryNone")
+					]
+				}).addStyleClass("hrxTsEntry")].concat(oBreak.people.map(function (oPerson) {
+					return fnCell(oPerson.EmpID === oEntry.EmpID ? this._num(oEntry.days) : "");
+				}, this), [fnCell(this._num(oEntry.days))]), "hrxTsBrkEntry"));
+			}, this);
 		},
 
 		_renderSubmitted: function () {
@@ -806,8 +904,9 @@ sap.ui.define([
 
 		onClear: function () {
 			var oViewModel = this.getModel("trView");
-			oViewModel.setProperty("/filters", { ClientKeys: [], ProjectKey: ALL, EmpID: ALL });
+			oViewModel.setProperty("/filters", { ClientKeys: [], ProjectKeys: [], EmpIDs: [] });
 			oViewModel.setProperty("/drill", "");
+			this._mHiddenSlices = {};
 			oViewModel.setProperty("/assign", { q: "", work: "all" });
 			oViewModel.setProperty("/sub/q", "");
 			oViewModel.setProperty("/util/show", "all");
@@ -840,6 +939,21 @@ sap.ui.define([
 				this._mOpenAssign[oRow.key] = bOpen;
 			}, this);
 			this._renderAssign();
+		},
+
+		/**
+		 * A legend row's tick box: the slice in or out of the donut.
+		 * @param {sap.ui.base.Event} oEvent the check box's select event
+		 */
+		onSliceToggle: function (oEvent) {
+			var oSlice = oEvent.getSource().getBindingContext("tr").getObject();
+			var sKey = this.getModel("trView").getProperty("/drill") + "|" + oSlice.key;
+			if (oEvent.getParameter("selected")) {
+				delete this._mHiddenSlices[sKey];
+			} else {
+				this._mHiddenSlices[sKey] = true;
+			}
+			this._renderDays();
 		},
 
 		onSliceSelect: function (oEvent) {

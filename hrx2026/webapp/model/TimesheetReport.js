@@ -117,16 +117,21 @@ sap.ui.define([], function () {
 
 		/**
 		 * @param {Array<object>} aBookings bookings
-		 * @param {object} oFilter ClientKeys (any of them; none for all) or a single
-		 * ClientKey, ProjectKey and EmpID to keep ("" for all)
+		 * @param {object} oFilter what to keep: ClientKeys, ProjectKeys and EmpIDs (any
+		 * of each; none for all), or a single ClientKey, ProjectKey or EmpID ("" for all)
 		 * @returns {Array<object>} the bookings that match
 		 */
 		filter: function (aBookings, oFilter) {
-			var aClients = oFilter.ClientKeys || (oFilter.ClientKey ? [oFilter.ClientKey] : []);
+			var fnKeys = function (aKeys, sKey) {
+				return aKeys || (sKey ? [sKey] : []);
+			};
+			var aClients = fnKeys(oFilter.ClientKeys, oFilter.ClientKey);
+			var aProjects = fnKeys(oFilter.ProjectKeys, oFilter.ProjectKey);
+			var aPeople = fnKeys(oFilter.EmpIDs, oFilter.EmpID);
 			return aBookings.filter(function (oBooking) {
 				return (!aClients.length || aClients.indexOf(oBooking.ClientKey) !== -1) &&
-					(!oFilter.ProjectKey || oBooking.ProjectKey === oFilter.ProjectKey) &&
-					(!oFilter.EmpID || oBooking.EmpID === oFilter.EmpID);
+					(!aProjects.length || aProjects.indexOf(oBooking.ProjectKey) !== -1) &&
+					(!aPeople.length || aPeople.indexOf(oBooking.EmpID) !== -1);
 			});
 		},
 
@@ -270,6 +275,39 @@ sap.ui.define([], function () {
 				byEmp: oTotals.byEmp,
 				total: oTotals.total
 			};
+		},
+
+		/**
+		 * What a project's time was made up of: each booking in the period, oldest
+		 * first, with who booked it and its comment (Timesheet breakdown, when a
+		 * project is opened).
+		 * @param {Array<object>} aBookings bookings
+		 * @param {object} oPeriod from and to
+		 * @param {string} sProjectKey the project
+		 * @returns {Array<object>} entries - Date, EmpID, Name, Minutes, days, Comment
+		 */
+		entries: function (aBookings, oPeriod, sProjectKey) {
+			var aEntries = [];
+			aBookings.forEach(function (oBooking) {
+				if (oBooking.ProjectKey !== sProjectKey) {
+					return;
+				}
+				oBooking.entries.forEach(function (oEntry) {
+					if (oEntry.Minutes && oEntry.Date >= oPeriod.from && oEntry.Date <= oPeriod.to) {
+						aEntries.push({
+							Date: oEntry.Date,
+							EmpID: oBooking.EmpID,
+							Name: oBooking.Name,
+							Minutes: oEntry.Minutes,
+							days: oEntry.Minutes / MINUTES_PER_DAY,
+							Comment: oEntry.Comment || ""
+						});
+					}
+				});
+			});
+			return aEntries.sort(function (a, b) {
+				return a.Date.localeCompare(b.Date) || a.Name.localeCompare(b.Name);
+			});
 		},
 
 		/**
