@@ -457,6 +457,9 @@
 
 .hrxTimesheetReport .hrxTsBody .sapMText.hrxTsKlab {
 	display: block;
+	/* clear of the glyph pinned top right, so a long label wraps rather than
+	   running under it */
+	padding-right: 44px;
 	margin-bottom: 4px;
 	font-size: 10.5px;
 	font-weight: 600;
