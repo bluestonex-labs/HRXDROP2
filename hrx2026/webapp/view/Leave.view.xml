@@ -91,7 +91,8 @@
 							<core:Item key="F" text="{i18n>mlDurationFull}" />
 							<core:Item key="A" text="{i18n>mlDurationAm}" />
 							<core:Item key="P" text="{i18n>mlDurationPm}" />
-							<core:Item key="M" text="{i18n>mlDurationPerDay}" />
+							<!-- Once the days are chosen: "Mon: full, Tue: AM, Wed: PM" -->
+							<core:Item key="M" text="{= ${mlForm>/PerDayText} || ${i18n>mlDurationPerDay} }" />
 						</Select>
 
 						<Label text="{i18n>fieldComments}" labelFor="leaveComments" class="hrxLeaveFieldLabel" />

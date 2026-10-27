@@ -79,8 +79,33 @@ sap.ui.define([
 			this.setModel(new JSONModel({ title: "", hint: "", cells: [] }), "mlPicker");
 			this._renderCalendar();
 
+			// Picking "Choose per day" while it is already the choice fires no change,
+			// so the list's own press reopens the per-day dialog. (The phone's view has
+			// no Duration list.)
+			var oDuration = this.byId("leaveDuration");
+			if (oDuration && oDuration.getList) {
+				oDuration.getList().attachItemPress(this._onDurationItemPress, this);
+			}
+
 			this.getOwnerComponent().getRouter().getRoute("leave")
 				.attachPatternMatched(this._onRouteMatched, this);
+		},
+
+		/**
+		 * "Choose per day" picked again: reopens the dialog on the days as they were
+		 * chosen. A first pick is the change event's (onDurationChange), which opens it
+		 * already - hence the check after the event has run its course.
+		 * @param {sap.ui.base.Event} oEvent the list's itemPress event
+		 */
+		_onDurationItemPress: function (oEvent) {
+			if (oEvent.getParameter("item").getKey() !== PER_DAY) {
+				return;
+			}
+			setTimeout(function () {
+				if (this.getModel("mlForm").getProperty("/Duration") === PER_DAY && !this._bHalfDaysOpen) {
+					this._openHalfDays();
+				}
+			}.bind(this), 0);
 		},
 
 		/**
@@ -479,6 +504,9 @@ sap.ui.define([
 						PMEnabled: sSlot === "" || sSlot === "PM"
 					});
 				}));
+				// New dates: any per-day choices were for the old ones
+				this._bPerDayChosen = false;
+				this.getModel("mlForm").setProperty("/PerDayText", "");
 				this._applyDuration();
 			}.bind(this)).catch(function (oError) {
 				this.getModel("ml").setProperty("/dates", []);
@@ -508,21 +536,30 @@ sap.ui.define([
 		},
 
 		/**
-		 * "Choose per day": every day starts as a full day - not as whatever the range
-		 * was set to before - except a day already half taken, which can only offer its
-		 * free half. What was there before is kept, so Cancel can put it back.
+		 * "Choose per day": the first time, every day starts as a full day - not as
+		 * whatever the range was set to before - except a day already half taken, which
+		 * can only offer its free half. Opened again after its days were confirmed, it
+		 * shows them as they were chosen. What was there before is kept either way, so
+		 * Cancel can put it back.
 		 */
 		_openHalfDays: function () {
 			var oModel = this.getModel("ml");
 			var aDates = oModel.getProperty("/dates") || [];
+			var bChosen = !!this._bPerDayChosen;
 
+			// A copy of each day: the dialog's buttons change the days themselves
 			this._oHalfDaysBefore = {
-				dates: aDates,
-				duration: this._sAppliedDuration || "F"
+				dates: aDates.map(function (oDay) {
+					return Object.assign({}, oDay);
+				}),
+				duration: bChosen ? PER_DAY : (this._sAppliedDuration || "F")
 			};
-			oModel.setProperty("/dates", aDates.map(function (oDay) {
-				return Object.assign({}, oDay, { SelectedKey: oDay.FullDayEnabled ? "F" : oDay.AvailableKey });
-			}));
+			if (!bChosen) {
+				oModel.setProperty("/dates", aDates.map(function (oDay) {
+					return Object.assign({}, oDay, { SelectedKey: oDay.FullDayEnabled ? "F" : oDay.AvailableKey });
+				}));
+			}
+			this._bHalfDaysOpen = true;
 			this._openFragment("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.LeaveHalfDayDialog");
 		},
 
@@ -537,6 +574,9 @@ sap.ui.define([
 			if (sSlot) {
 				// What Cancel in the per-day dialog goes back to
 				this._sAppliedDuration = this.getModel("mlForm").getProperty("/Duration");
+				// The whole range on one duration again: per-day choices are gone
+				this._bPerDayChosen = false;
+				this.getModel("mlForm").setProperty("/PerDayText", "");
 				oModel.setProperty("/dates", (oModel.getProperty("/dates") || []).map(function (oDay) {
 					var bAllowed = (sSlot === "F" && oDay.FullDayEnabled) ||
 						(sSlot === "A" && oDay.AMEnabled) ||
@@ -560,8 +600,25 @@ sap.ui.define([
 		},
 
 		onConfirmHalfDays: function () {
+			// Opened again, the dialog shows these days as chosen
+			this._bPerDayChosen = true;
+			this._bHalfDaysOpen = false;
 			this._updateDayCount();
+			this._showPerDayText();
 			this._closeFragment("_pHalfDayDialog");
+		},
+
+		/**
+		 * Duration says what each day is once the days are chosen one by one - "Mon:
+		 * full, Tue: AM, Wed: PM" - and "Choose per day…" otherwise.
+		 */
+		_showPerDayText: function () {
+			var mSlot = { F: this.getText("mlFullDay").toLowerCase(), A: this.getText("mlAm"), P: this.getText("mlPm") };
+			var sText = !this._bPerDayChosen ? "" : (this.getModel("ml").getProperty("/dates") || []).map(function (oDay) {
+				var sDay = this._parseIsoDate(oDay.date).toLocaleDateString("en-GB", { weekday: "short" });
+				return this.getText("mlPerDayEntry", [sDay, mSlot[oDay.SelectedKey] || ""]);
+			}, this).join(", ");
+			this.getModel("mlForm").setProperty("/PerDayText", sText);
 		},
 
 		/**
@@ -571,6 +628,7 @@ sap.ui.define([
 		 */
 		onCancelHalfDays: function (oEscape) {
 			var oBefore = this._oHalfDaysBefore;
+			this._bHalfDaysOpen = false;
 			if (oBefore) {
 				this.getModel("ml").setProperty("/dates", oBefore.dates);
 				this.getModel("mlForm").setProperty("/Duration", oBefore.duration);
@@ -653,6 +711,7 @@ sap.ui.define([
 		},
 
 		_resetRequestForm: function () {
+			this._bPerDayChosen = false;
 			this.getModel("mlForm").setData(this._emptyRequest());
 			this.getModel("ml").setProperty("/dates", []);
 			this._oPickStart = null;

@@ -663,6 +663,35 @@
 	display: none;
 }
 
+/* The theme rings a clicked Full / AM / PM in dark blue (html.sap-desktop
+   .sapMSegBBtnFocusable:focus .sapMSegBBtnInner::after) and dots round it,
+   cutting across the choice; the white chip shows what is chosen. UI5 moves the
+   focus itself after a click, so the browser cannot tell a click from the
+   keyboard here (:focus-visible matches either) - the rings go altogether. */
+/* !important: the theme's own rules for the first and last button in compact
+   size are more specific than any class selector here */
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:focus .sapMSegBBtnInner::after,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:focus .sapMSegBBtnInner::after {
+	display: none !important;
+}
+
+/* Nor does the theme's hover paint a light blue patch behind the text: the
+   button itself shows the hover (and the white chip the choice). */
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn .sapMSegBBtnInner,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn .sapMSegBBtnInner,
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:hover .sapMSegBBtnInner,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:hover .sapMSegBBtnInner {
+	background: transparent !important;
+	border-color: transparent !important;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:focus,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:focus,
+.hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtn:focus .sapMSegBBtnInner,
+.hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtn:focus .sapMSegBBtnInner {
+	outline: none !important;
+}
+
 .hrxApp .hrxMyLeave .hrxLeaveSeg .sapMSegBBtnInnerWrapper,
 .hrxApp .hrxMyLeaveDialog .hrxLeaveSeg .sapMSegBBtnInnerWrapper {
 	height: auto;
