@@ -12,14 +12,94 @@
   "notif": { "items": [], "countText": "", "loading": false },
   "explorerApps": [
     {
+      "title": "My Timesheet",
+      "subtitle": "Book your time, week by week",
+      "route": "timesheet",
+      "admin": false
+    },
+    {
+      "title": "My Leave",
+      "subtitle": "Request leave and see your balance",
+      "route": "leave",
+      "admin": false
+    },
+    {
+      "title": "Team Calendar",
+      "subtitle": "Who is in and who is off",
+      "route": "teamcal",
+      "admin": false
+    },
+    {
+      "title": "Policies to read",
+      "subtitle": "Read and acknowledge policies",
+      "route": "policies",
+      "admin": false
+    },
+    {
       "title": "My Bonus",
-      "subtitle": "View your bonus information and history",
-      "route": ""
+      "subtitle": "Your bonus and its history",
+      "route": "",
+      "admin": false
+    },
+    {
+      "title": "Sickness",
+      "subtitle": "Absences, policy triggers and return to work",
+      "route": "sickness",
+      "admin": true
+    },
+    {
+      "title": "Documents",
+      "subtitle": "Publish policies and track acknowledgement",
+      "route": "documents",
+      "admin": true
+    },
+    {
+      "title": "Timesheet Reporting",
+      "subtitle": "Billing, days booked, submissions and utilisation",
+      "route": "timesheetreport",
+      "query": {
+        "tab": "assign"
+      },
+      "admin": true
+    },
+    {
+      "title": "Utilisation",
+      "subtitle": "Billable utilisation by person",
+      "route": "timesheetreport",
+      "query": {
+        "tab": "util"
+      },
+      "admin": true
+    },
+    {
+      "title": "Missing Timesheets",
+      "subtitle": "Who has not booked their time",
+      "route": "missingtimesheets",
+      "admin": true
+    },
+    {
+      "title": "Manage Resources",
+      "subtitle": "Staff, contractors and targets",
+      "route": "resources",
+      "admin": true
+    },
+    {
+      "title": "Manage Clients",
+      "subtitle": "Client details, SLAs and licensed apps",
+      "route": "clients",
+      "admin": true
+    },
+    {
+      "title": "Manage Projects",
+      "subtitle": "Projects, resourcing and attachments",
+      "route": "projects",
+      "admin": true
     },
     {
       "title": "Manage Bonus",
       "subtitle": "Manage employee bonuses",
-      "route": ""
+      "route": "",
+      "admin": true
     }
   ],
   "adminSections": [

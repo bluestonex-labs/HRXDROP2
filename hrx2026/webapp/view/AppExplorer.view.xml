@@ -6,8 +6,14 @@
 	class="hrxPageExplorer">
 	<Page id="explorerPage" showHeader="false" showNavButton="false" class="hrxPageContent">
 		<!-- The design's .grid-3 of .app-card tiles: a title and a line saying what the app does.
-		     The catalogue is model/apps.json (explorerApps). -->
-		<HBox items="{app>/explorerApps}" renderType="Bare" class="hrxAeGrid">
+		     The catalogue is model/apps.json (explorerApps), in two groups as the side rail
+		     has them: Overview for everyone, then the admin apps (admin: true) - shown, as
+		     in the rail, only to managers and admins. -->
+		<Title text="{i18n>navGroupOverview}" level="H2" class="hrxAeGroupTitle" />
+		<HBox
+			items="{path: 'app>/explorerApps', templateShareable: false, filters: [{path: 'admin', operator: 'NE', value1: true}]}"
+			renderType="Bare"
+			class="hrxAeGrid">
 			<GenericTile
 				header="{app>title}"
 				subheader="{app>subtitle}"
@@ -15,5 +21,20 @@
 				press=".onTilePress"
 				class="hrxAeCard" />
 		</HBox>
+
+		<VBox renderType="Bare" visible="{= !!${app>/user/isManager} }">
+			<Title text="{i18n>navGroupAdmin}" level="H2" class="hrxAeGroupTitle" />
+			<HBox
+				items="{path: 'app>/explorerApps', templateShareable: false, filters: [{path: 'admin', operator: 'EQ', value1: true}]}"
+				renderType="Bare"
+				class="hrxAeGrid">
+				<GenericTile
+					header="{app>title}"
+					subheader="{app>subtitle}"
+					mode="HeaderMode"
+					press=".onTilePress"
+					class="hrxAeCard" />
+			</HBox>
+		</VBox>
 	</Page>
 </mvc:View>
