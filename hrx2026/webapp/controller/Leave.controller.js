@@ -501,10 +501,29 @@ sap.ui.define([
 					this.getModel("mlForm").setProperty("/Duration", "F");
 					return;
 				}
-				this._openFragment("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.LeaveHalfDayDialog");
+				this._openHalfDays();
 				return;
 			}
 			this._applyDuration();
+		},
+
+		/**
+		 * "Choose per day": every day starts as a full day - not as whatever the range
+		 * was set to before - except a day already half taken, which can only offer its
+		 * free half. What was there before is kept, so Cancel can put it back.
+		 */
+		_openHalfDays: function () {
+			var oModel = this.getModel("ml");
+			var aDates = oModel.getProperty("/dates") || [];
+
+			this._oHalfDaysBefore = {
+				dates: aDates,
+				duration: this._sAppliedDuration || "F"
+			};
+			oModel.setProperty("/dates", aDates.map(function (oDay) {
+				return Object.assign({}, oDay, { SelectedKey: oDay.FullDayEnabled ? "F" : oDay.AvailableKey });
+			}));
+			this._openFragment("_pHalfDayDialog", "bsx.hrx.hrx2026.fragment.LeaveHalfDayDialog");
 		},
 
 		/**
@@ -516,6 +535,8 @@ sap.ui.define([
 			var oModel = this.getModel("ml");
 
 			if (sSlot) {
+				// What Cancel in the per-day dialog goes back to
+				this._sAppliedDuration = this.getModel("mlForm").getProperty("/Duration");
 				oModel.setProperty("/dates", (oModel.getProperty("/dates") || []).map(function (oDay) {
 					var bAllowed = (sSlot === "F" && oDay.FullDayEnabled) ||
 						(sSlot === "A" && oDay.AMEnabled) ||
@@ -544,12 +565,22 @@ sap.ui.define([
 		},
 
 		/**
-		 * Back to full days for the whole range.
+		 * Closes the per-day dialog and leaves the request as it was before it opened:
+		 * the same duration, every day as it was. Escape does the same.
+		 * @param {object} [oEscape] the dialog's escape handler promise, when Escape closed it
 		 */
-		onResetHalfDays: function () {
-			this.getModel("mlForm").setProperty("/Duration", "F");
-			this._applyDuration();
-			this._closeFragment("_pHalfDayDialog");
+		onCancelHalfDays: function (oEscape) {
+			var oBefore = this._oHalfDaysBefore;
+			if (oBefore) {
+				this.getModel("ml").setProperty("/dates", oBefore.dates);
+				this.getModel("mlForm").setProperty("/Duration", oBefore.duration);
+				this._updateDayCount();
+			}
+			if (oEscape && oEscape.resolve) {
+				oEscape.resolve();
+			} else {
+				this._closeFragment("_pHalfDayDialog");
+			}
 		},
 
 		/**

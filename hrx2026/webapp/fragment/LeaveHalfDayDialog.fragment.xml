@@ -10,6 +10,7 @@
 		title="{i18n>mlHalfDaysTitle}"
 		initialFocus="leaveHalfDayConfirm"
 		contentWidth="460px"
+		escapeHandler=".onCancelHalfDays"
 		class="hrxModal hrxMyLeaveDialog">
 		<content>
 			<VBox renderType="Bare" class="hrxLeaveDialogBody">
@@ -34,11 +35,12 @@
 				</List>
 			</VBox>
 		</content>
+		<!-- Confirm the days, or Cancel (or Escape) to leave the request as it was -->
 		<beginButton>
 			<Button id="leaveHalfDayConfirm" text="{i18n>mlConfirm}" type="Emphasized" press=".onConfirmHalfDays" class="hrxModalBtn hrxModalBtnPrimary" />
 		</beginButton>
 		<endButton>
-			<Button id="leaveHalfDayReset" text="{i18n>mlReset}" press=".onResetHalfDays" class="hrxModalBtn hrxModalBtnGhost" />
+			<Button id="leaveHalfDayCancel" text="{i18n>mlCancel}" press=".onCancelHalfDays" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>
