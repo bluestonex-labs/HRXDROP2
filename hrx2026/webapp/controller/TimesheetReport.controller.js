@@ -61,8 +61,9 @@ sap.ui.define([
 				month: {},
 				drill: "",
 				assign: { q: "", work: "all" },
-				sub: { q: "" },
-				util: { show: "all" }
+				// Who's submitted has a period of its own: a week, this one to start with
+				sub: { q: "", from: "", to: "", thisWeek: true, atLatest: true },
+				util: { show: "all", EmpIDs: [], peopleText: "" }
 			}), "trView");
 
 			this.setModel(new JSONModel({
@@ -255,32 +256,81 @@ sap.ui.define([
 		},
 
 		/**
-		 * This week's hours for Who's submitted - one call for the whole organisation.
+		 * Everybody's hours in Who's submitted's own period - one call for the whole
+		 * organisation.
 		 * @param {boolean} bForce true to read again
 		 * @returns {Promise} resolved once the tab is drawn
 		 */
 		_loadWeek: function (bForce) {
 			var oViewModel = this.getModel("trView");
+			var oSub = oViewModel.getProperty("/sub");
 
-			if (this._aWeek && !bForce) {
+			if (!oSub.from) {
+				this._setSubPeriod(this._monday(new Date()));
+				oSub = oViewModel.getProperty("/sub");
+			}
+			if (this._aWeek && !bForce && this._oWeek && this._oWeek.from === oSub.from && this._oWeek.to === oSub.to) {
 				this._renderSubmitted();
 				return Promise.resolve();
 			}
 
-			var oMonday = this._monday(new Date());
-			var oSunday = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 6);
-			this._oWeek = { from: iso(oMonday), to: iso(oSunday) };
+			var oWeek = { from: oSub.from, to: oSub.to };
+			this._oWeek = oWeek;
 
 			oViewModel.setProperty("/weekLoading", true);
-			return TimesheetReportService.loadWeek(this._oWeek.from, this._oWeek.to).then(function (aRows) {
+			return TimesheetReportService.loadWeek(oWeek.from, oWeek.to).then(function (aRows) {
+				if (this._oWeek !== oWeek) {
+					return;
+				}
 				this._aWeek = aRows;
 				this._renderSubmitted();
 			}.bind(this)).catch(function (oError) {
-				this._aWeek = null;
-				this._showError("trErrorWeek", oError);
+				if (this._oWeek === oWeek) {
+					this._aWeek = null;
+					this._showError("trErrorWeek", oError);
+				}
 			}.bind(this)).then(function () {
-				oViewModel.setProperty("/weekLoading", false);
-			});
+				if (this._oWeek === oWeek) {
+					oViewModel.setProperty("/weekLoading", false);
+				}
+			}.bind(this));
+		},
+
+		/**
+		 * Sets Who's submitted's period: the Monday-to-Sunday week from oFrom, or the
+		 * range picked in the calendar.
+		 * @param {Date} oFrom the first day
+		 * @param {Date} [oTo] the last day; a week from oFrom when left out
+		 */
+		_setSubPeriod: function (oFrom, oTo) {
+			var oViewModel = this.getModel("trView");
+			var oEnd = oTo || new Date(oFrom.getFullYear(), oFrom.getMonth(), oFrom.getDate() + 6);
+			var sThisMonday = iso(this._monday(new Date()));
+			var sFrom = iso(oFrom);
+			var sTo = iso(oEnd);
+
+			oViewModel.setProperty("/sub/from", sFrom);
+			oViewModel.setProperty("/sub/to", sTo);
+			oViewModel.setProperty("/sub/thisWeek", sFrom === sThisMonday && !oTo);
+			// The next-week arrow stops at this week: nothing is due further on.
+			oViewModel.setProperty("/sub/atLatest", sTo >= sThisMonday);
+			this._showPeriod();
+		},
+
+		/**
+		 * Shows the open tab's period in the Period field: Who's submitted has its own,
+		 * every other tab shares the report's.
+		 */
+		_showPeriod: function () {
+			var oViewModel = this.getModel("trView");
+			var oDates = this.byId("trPeriod");
+			var bSub = oViewModel.getProperty("/tab") === "sub";
+			var oPeriod = oViewModel.getProperty(bSub ? "/sub" : "/period");
+
+			if (oPeriod.from) {
+				oDates.setDateValue(parseDay(oPeriod.from));
+				oDates.setSecondDateValue(parseDay(oPeriod.to));
+			}
 		},
 
 		/* =========================================================== */
@@ -301,6 +351,7 @@ sap.ui.define([
 					this._renderBreakdown();
 					break;
 				case "sub":
+					this._showPeriod();
 					this._loadWeek(false);
 					break;
 				case "util":
@@ -806,14 +857,22 @@ sap.ui.define([
 		_renderUtil: function () {
 			var oViewModel = this.getModel("trView");
 			var sShow = oViewModel.getProperty("/util/show");
+			var aEmpIDs = oViewModel.getProperty("/util/EmpIDs") || [];
 
 			// Utilisation is a share of everything a person booked, so the customer,
 			// project and resource filters of Timesheet reporting do not apply here (the
-			// Utilisation page has only Period and Show, as on the design).
+			// Utilisation page has its own Employee, Period and Show).
 			var aPeople = TimesheetReport.utilisation(this._oCache.bookings, oViewModel.getProperty("/period")).filter(function (oPerson) {
-				return sShow === "all" || (sShow === "bill" && oPerson.billable > 0) ||
-					(sShow === "u50" && oPerson.pct < 50) || (sShow === "u80" && oPerson.pct < 80);
+				return (!aEmpIDs.length || aEmpIDs.indexOf(oPerson.EmpID) !== -1) &&
+					(sShow === "all" || (sShow === "bill" && oPerson.billable > 0) ||
+					(sShow === "u50" && oPerson.pct < 50) || (sShow === "u80" && oPerson.pct < 80));
 			});
+
+			var aChosen = this.getModel("tr").getProperty("/people").filter(function (oOption) {
+				return aEmpIDs.indexOf(oOption.key) !== -1;
+			});
+			oViewModel.setProperty("/util/peopleText", !aChosen.length ? this.getText("trAll") :
+				aChosen.length === 1 ? aChosen[0].label : this.getText("trPeopleN", [aChosen.length]));
 
 			var fBillable = aPeople.reduce(function (fTotal, oPerson) {
 				return fTotal + oPerson.billable;
@@ -873,6 +932,7 @@ sap.ui.define([
 		 */
 		onTabPress: function (oEvent) {
 			this.getModel("trView").setProperty("/tab", oEvent.getSource().data("tab"));
+			this._showPeriod();
 			this._render();
 		},
 
@@ -884,6 +944,15 @@ sap.ui.define([
 		onPeriodChange: function () {
 			var oDates = this.byId("trPeriod");
 			var oFrom = oDates.getDateValue();
+			if (this.getModel("trView").getProperty("/tab") === "sub") {
+				if (oFrom) {
+					this._setSubPeriod(oFrom, oDates.getSecondDateValue() || oFrom);
+				} else {
+					this._setSubPeriod(this._monday(new Date()));
+				}
+				this._loadWeek(false);
+				return;
+			}
 			if (!oFrom) {
 				this._setYear(0);
 			} else {
@@ -911,7 +980,20 @@ sap.ui.define([
 			oViewModel.setProperty("/sub/q", "");
 			oViewModel.setProperty("/util/show", "all");
 			this._setYear(0);
+			this._setSubPeriod(this._monday(new Date()));
 			this._load(false);
+		},
+
+		/**
+		 * Who's submitted's arrows: the week before or after the one shown (from the
+		 * start of a longer range picked in the calendar).
+		 * @param {sap.ui.base.Event} oEvent the button press event; "step" is -1 or 1
+		 */
+		onSubWeek: function (oEvent) {
+			var iStep = parseInt(oEvent.getSource().data("step"), 10);
+			var oMonday = this._monday(parseDay(this.getModel("trView").getProperty("/sub/from")));
+			this._setSubPeriod(new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 7 * iStep));
+			this._loadWeek(false);
 		},
 
 		onAssignSearch: function () {

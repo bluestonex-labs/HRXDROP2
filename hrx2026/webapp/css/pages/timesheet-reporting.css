@@ -1286,3 +1286,76 @@
 	font-style: italic;
 	color: var(--txt-3);
 }
+
+/* ── Period on Who's submitted: a week arrow either side of the field ─────────── */
+
+.hrxTimesheetReport .hrxTsPeriodRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hrxTimesheetReport .hrxTsPeriodRow > .hrxTsPeriod {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.hrxTimesheetReport .hrxTsWeekBtn .sapMBtnInner {
+	width: 35px;
+	height: 35px;
+	padding: 0;
+	justify-content: center;
+}
+
+.hrxTimesheetReport .hrxTsWeekBtn .sapMBtnIcon {
+	margin: 0;
+	font-size: 14px;
+	color: inherit;
+}
+
+.hrxTimesheetReport .hrxTsWeekBtn.sapMBtnDisabled {
+	opacity: .4;
+}
+
+/* Wide enough for a week's dates beside the two arrows. */
+.hrxTimesheetReport .hrxTsFgPeriod {
+	flex: 1.3 1 250px;
+}
+
+/* Customer, Project and Resource do not apply to Who's submitted: greyed out there
+   (the theme's own disabled look fades "All" almost to nothing). */
+.hrxTimesheetReport .hrxTsMulti.sapMInputBaseDisabled {
+	opacity: 1;
+	cursor: not-allowed;
+}
+
+.hrxTimesheetReport .hrxTsMulti.sapMInputBaseDisabled .sapMInputBaseContentWrapper {
+	background: var(--frost);
+	border-color: var(--line-soft);
+}
+
+/* The theme hides a disabled field's placeholder; "All" stays, greyed. */
+.hrxTimesheetReport .hrxTsMulti.sapMInputBaseDisabled .sapMInputBaseInner::placeholder {
+	opacity: 1;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsMulti.sapMInputBaseDisabled .sapMInputBaseInner::-webkit-input-placeholder {
+	opacity: 1;
+	color: var(--txt-3);
+}
+
+.hrxTimesheetReport .hrxTsMulti.sapMInputBaseDisabled .sapMInputBaseIconContainer {
+	opacity: .4;
+}
+
+/* No theme focus ring on a clicked arrow. */
+html.sap-desktop .hrxTimesheetReport .hrxTsWeekBtn:focus > .sapMFocusable::before,
+html.sap-desktop .hrxTimesheetReport .hrxTsWeekBtn:focus .sapMBtnInner::before {
+	display: none;
+}
+
+.hrxTimesheetReport .hrxTsWeekBtn:focus,
+.hrxTimesheetReport .hrxTsWeekBtn:focus .sapMBtnInner {
+	outline: none;
+}

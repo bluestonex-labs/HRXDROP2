@@ -28,6 +28,7 @@
 						<MultiComboBox
 							id="trCustomer"
 							width="100%"
+							enabled="{= ${trView>/tab} !== 'sub' }"
 							showSelectAll="true"
 							placeholder="{trView>/customerText}"
 							selectedKeys="{trView>/filters/ClientKeys}"
@@ -42,6 +43,7 @@
 						<MultiComboBox
 							id="trProject"
 							width="100%"
+							enabled="{= ${trView>/tab} !== 'sub' }"
 							showSelectAll="true"
 							placeholder="{trView>/projectText}"
 							selectedKeys="{trView>/filters/ProjectKeys}"
@@ -56,6 +58,7 @@
 						<MultiComboBox
 							id="trResource"
 							width="100%"
+							enabled="{= ${trView>/tab} !== 'sub' }"
 							showSelectAll="true"
 							placeholder="{trView>/peopleText}"
 							selectedKeys="{trView>/filters/EmpIDs}"
@@ -65,16 +68,36 @@
 							<core:Item key="{tr>key}" text="{tr>label}" />
 						</MultiComboBox>
 					</VBox>
-					<VBox renderType="Bare" class="hrxTsFg">
+					<VBox renderType="Bare" class="hrxTsFg hrxTsFgPeriod">
 						<Label text="{i18n>trPeriod}" labelFor="trPeriod" class="hrxTsFgLabel" />
 						<!-- Read-only, as the design's field: a click anywhere on it opens the
-						     calendar (see .hrxTsPeriod in the page's CSS). -->
-						<DateRangeSelection
-							id="trPeriod"
-							width="100%"
-							displayFormat="d MMM yyyy"
-							change=".onPeriodChange"
-							class="hrxTsInput hrxTsPeriod" />
+						     calendar (see .hrxTsPeriod in the page's CSS). Who's submitted has a
+						     period of its own, a week to start with, and arrows either side. -->
+						<HBox renderType="Bare" class="hrxTsPeriodRow">
+							<Button
+								icon="sap-icon://tabler/chevron-left"
+								tooltip="{i18n>tsPreviousWeek}"
+								visible="{= !${trView>/utilMode} &amp;&amp; ${trView>/tab} === 'sub' }"
+								press=".onSubWeek"
+								class="hrxTsBtn hrxTsWeekBtn">
+								<customData><core:CustomData key="step" value="-1" /></customData>
+							</Button>
+							<DateRangeSelection
+								id="trPeriod"
+								width="100%"
+								displayFormat="d MMM yyyy"
+								change=".onPeriodChange"
+								class="hrxTsInput hrxTsPeriod" />
+							<Button
+								icon="sap-icon://tabler/chevron-right"
+								tooltip="{i18n>tsNextWeek}"
+								visible="{= !${trView>/utilMode} &amp;&amp; ${trView>/tab} === 'sub' }"
+								enabled="{= !${trView>/sub/atLatest} }"
+								press=".onSubWeek"
+								class="hrxTsBtn hrxTsWeekBtn">
+								<customData><core:CustomData key="step" value="1" /></customData>
+							</Button>
+						</HBox>
 					</VBox>
 					<HBox renderType="Bare" class="hrxTsQlinks">
 						<Button
@@ -93,6 +116,21 @@
 							press=".onLastYear"
 							class="hrxTsBtn" />
 					</HBox>
+					<!-- Utilisation: one or more people, found by typing their name; none is everyone -->
+					<VBox renderType="Bare" visible="{trView>/utilMode}" class="hrxTsFg hrxTsFgEmployee">
+						<Label text="{i18n>trUtilEmployee}" labelFor="trUtilEmployee" class="hrxTsFgLabel" />
+						<MultiComboBox
+							id="trUtilEmployee"
+							width="100%"
+							showSelectAll="true"
+							placeholder="{trView>/util/peopleText}"
+							selectedKeys="{trView>/util/EmpIDs}"
+							items="{path: 'tr>/people', templateShareable: false}"
+							selectionFinish=".onUtilShow"
+							class="hrxTsInput hrxTsMulti">
+							<core:Item key="{tr>key}" text="{tr>label}" />
+						</MultiComboBox>
+					</VBox>
 					<VBox renderType="Bare" visible="{trView>/utilMode}" class="hrxTsFg hrxTsFgShow">
 						<Label text="{i18n>trShow}" labelFor="trUtilShow" class="hrxTsFgLabel" />
 						<Select
@@ -418,7 +456,7 @@
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="{tr>/sub/complianceState}" writeToDom="true" /></customData>
 							<core:Icon src="sap-icon://tabler/clipboard-check" class="hrxTsGlyph" />
-							<Text text="{i18n>trKpiCompliance}" class="hrxTsKlab" />
+							<Text text="{= ${trView>/sub/thisWeek} ? ${i18n>trKpiCompliance} : ${i18n>trKpiCompliancePeriod} }" class="hrxTsKlab" />
 							<HBox renderType="Bare" class="hrxTsKnum">
 								<Text text="{tr>/sub/compliance}" />
 								<Text text="%" class="hrxTsKunit" />
@@ -430,7 +468,7 @@
 							<core:Icon src="sap-icon://tabler/alert-triangle" class="hrxTsGlyph" />
 							<Text text="{i18n>trKpiUnder}" class="hrxTsKlab" />
 							<Text text="{tr>/sub/under}" class="hrxTsKnum" />
-							<Text text="{i18n>trKpiUnderSub}" class="hrxTsKsub" />
+							<Text text="{= ${trView>/sub/thisWeek} ? ${i18n>trKpiUnderSub} : ${i18n>trKpiUnderSubPeriod} }" class="hrxTsKsub" />
 						</VBox>
 						<VBox renderType="Bare" class="hrxTsKpi">
 							<customData><core:CustomData key="state" value="ok" writeToDom="true" /></customData>
@@ -472,7 +510,7 @@
 							<VBox renderType="Bare" class="hrxTsTable hrxTsSubTable">
 								<HBox renderType="Bare" class="hrxTsTr hrxTsTh hrxTsSubCols">
 									<Text text="{i18n>trColEmployee}" />
-									<Text text="{i18n>trColThisWeek}" />
+									<Text text="{= ${trView>/sub/thisWeek} ? ${i18n>trColThisWeek} : ${i18n>trColPeriod} }" />
 									<Text text="{i18n>trColReminder}" />
 									<Text text="{i18n>trColBooked}" textAlign="End" class="hrxTsNum" />
 								</HBox>
