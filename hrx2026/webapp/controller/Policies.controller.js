@@ -7,8 +7,9 @@ sap.ui.define([
 	"../model/CurrentUser",
 	"../model/Documents",
 	"../model/DocumentService",
-	"../model/formatter"
-], function (Controller, DateFormat, JSONModel, MessageBox, MessageToast, CurrentUser, Documents, DocumentService, formatter) {
+	"../model/formatter",
+	"../model/Toast"
+], function (Controller, DateFormat, JSONModel, MessageBox, MessageToast, CurrentUser, Documents, DocumentService, formatter, Toast) {
 	"use strict";
 
 	// The design's dates on a document: "8 Jul 2026"
@@ -130,7 +131,7 @@ sap.ui.define([
 			var sUrl = DocumentService.fileUrl(oDocument.DocumentID);
 			if (!sUrl) {
 				if (DocumentService.isBound()) {
-					MessageToast.show(this.getText("pdNoFile"));
+					Toast.error(this.getText("pdNoFile"));
 				} else {
 					MessageBox.information(this.getText("docNotBound"));
 				}

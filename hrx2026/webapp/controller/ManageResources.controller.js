@@ -13,9 +13,10 @@ sap.ui.define([
 	"../model/CurrentUser",
 	"../model/formatter",
 	"../model/TeamLeave",
-	"./BookLeave"
+	"./BookLeave",
+	"../model/Toast"
 ], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Dialog, Button, Text, Backend,
-	CurrentUser, formatter, TeamLeave, BookLeave) {
+	CurrentUser, formatter, TeamLeave, BookLeave, Toast) {
 	"use strict";
 
 	// Root path of the backend services. Both the local dev proxy (ui5.yaml) and the
@@ -352,7 +353,7 @@ sap.ui.define([
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/leaveBusy", false);
 				this.getModel("mrLeave").setData(this._emptyLeaveData());
-				MessageToast.show(this.getText("mrErrorLeaves") + " " + this._errorText(oError));
+				Toast.error(this.getText("mrErrorLeaves") + " " + this._errorText(oError));
 			}.bind(this));
 		},
 
@@ -592,7 +593,7 @@ sap.ui.define([
 		},
 
 		onPictureTypeMismatch: function (oEvent) {
-			MessageToast.show(this.getText("mrErrorFileType", [oEvent.getParameter("fileType")]));
+			Toast.error(this.getText("mrErrorFileType", [oEvent.getParameter("fileType")]));
 		},
 
 		onRemovePicture: function () {

@@ -13,8 +13,10 @@ sap.ui.define([
 	"../model/DocumentService",
 	"../model/Mail",
 	"../model/Reminders",
-	"../model/formatter"
-], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, Documents, DocumentService, Mail, Reminders, formatter) {
+	"../model/formatter",
+	"../model/RequiredFields",
+	"../model/Toast"
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageBox, MessageToast, Backend, CurrentUser, Documents, DocumentService, Mail, Reminders, formatter, RequiredFields, Toast) {
 	"use strict";
 
 	var FILTERS = ["all", "attention", "complete", "none"];
@@ -383,6 +385,7 @@ sap.ui.define([
 			}
 			this._pUploadDialog.then(function (oDialog) {
 				this.byId("documentUploadFile").clear();
+				this.byId("documentUploadFile").setValueState("None");
 				this.byId("documentUploadName").setValueState("None");
 				oDialog.open();
 			}.bind(this));
@@ -390,7 +393,6 @@ sap.ui.define([
 
 		onUploadInput: function () {
 			var oUpload = this.getModel("dmUpload");
-			this.byId("documentUploadName").setValueState("None");
 			oUpload.setProperty("/canSave", !!String(oUpload.getProperty("/Name") || "").trim() && !!oUpload.getProperty("/file"));
 		},
 
@@ -430,15 +432,14 @@ sap.ui.define([
 		onConfirmUpload: function () {
 			var oUpload = this.getModel("dmUpload");
 			var oForm = oUpload.getData();
-			var oNameInput = this.byId("documentUploadName");
+			var bName = !!String(oForm.Name || "").trim();
+			var bFile = !!oForm.file;
 
-			if (!String(oForm.Name || "").trim()) {
-				oNameInput.setValueState("Error");
-				MessageToast.show(this.getText("dmNeedName"));
-				return;
-			}
-			if (!oForm.file) {
-				MessageToast.show(this.getText("dmNeedFile"));
+			// Every missing field is marked at once; the toast names the first.
+			RequiredFields.mark(this.byId("documentUploadName"), bName);
+			RequiredFields.mark(this.byId("documentUploadFile"), bFile);
+			if (!bName || !bFile) {
+				Toast.error(this.getText(bName ? "dmNeedFile" : "dmNeedName"));
 				return;
 			}
 

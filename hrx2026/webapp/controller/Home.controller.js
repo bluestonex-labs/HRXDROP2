@@ -23,11 +23,12 @@ sap.ui.define([
 	"../model/DocumentService",
 	"../model/TimesheetReport",
 	"../model/TimesheetReportService",
-	"sap/base/security/encodeXML"
+	"sap/base/security/encodeXML",
+	"../model/Toast"
 ], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, MessageBox,
 	Backend, formatter, CurrentUser, Dialog, Button, Label, Text, TextArea, VBox,
 	Hrx, HrxTime, HrxLegacy, SicknessPolicy, SicknessService, Documents, DocumentService,
-	TimesheetReport, TimesheetReportService, encodeXML) {
+	TimesheetReport, TimesheetReportService, encodeXML, Toast) {
 	"use strict";
 
 	// abbrev matches the day fields exposed by the /Resources OData entity.
@@ -1246,25 +1247,25 @@ sap.ui.define([
 			var sHours = this._normaliseTime((oQuick.hours || "").trim());
 
 			if (!oQuick.day) {
-				MessageToast.show(this.getText("homeNeedDay"));
+				Toast.error(this.getText("homeNeedDay"));
 				return;
 			}
 			if (!oQuick.dayEditable) {
-				MessageToast.show(oQuick.dayEditableReason || this.getText("qtNonWorkingDay"));
+				Toast.error(oQuick.dayEditableReason || this.getText("qtNonWorkingDay"));
 				return;
 			}
 			if (!oQuick.ProjectID) {
-				MessageToast.show(this.getText("homeNeedProject"));
+				Toast.error(this.getText("homeNeedProject"));
 				return;
 			}
 			if (!sHours || sHours === "00:00") {
 				this.byId("qtHours").setValueState("Error");
 				this.byId("qtHours").setValueStateText(this.getText("tsInvalidTime"));
-				MessageToast.show(this.getText("homeNeedHours"));
+				Toast.error(this.getText("homeNeedHours"));
 				return;
 			}
 			if (!(oQuick.comment || "").trim()) {
-				MessageToast.show(this.getText("homeNeedComment"));
+				Toast.error(this.getText("homeNeedComment"));
 				return;
 			}
 
@@ -1577,11 +1578,11 @@ sap.ui.define([
 			if (!oForm.rangeText) {
 				this.byId("qlDates").setValueState("Error");
 				this.byId("qlDates").setValueStateText(this.getText("homeNeedDates"));
-				MessageToast.show(this.getText("homeNeedDates"));
+				Toast.error(this.getText("homeNeedDates"));
 				return;
 			}
 			if (!aDates.length) {
-				MessageToast.show(this.getText("mlNoBookableDays"));
+				Toast.error(this.getText("mlNoBookableDays"));
 				return;
 			}
 			if (parseFloat(oForm.NoOfDays) > parseFloat(oUser.balanceLeaves || 0) && oForm.LeaveCategoryId === "HOLIL") {

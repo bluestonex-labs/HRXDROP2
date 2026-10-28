@@ -13,8 +13,9 @@ sap.ui.define([
 	"sap/m/Text",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, GroupHeaderListItem, Dialog, Button, Text, Backend, CurrentUser, formatter) {
+	"../model/formatter",
+	"../model/Toast"
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, GroupHeaderListItem, Dialog, Button, Text, Backend, CurrentUser, formatter, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -976,7 +977,7 @@ sap.ui.define([
 			var aSelected = oTable ? oTable.getSelectedItems() : [];
 
 			if (!aSelected.length) {
-				MessageToast.show(this.getText("tsSelectProject"));
+				Toast.error(this.getText("tsSelectProject"));
 				return;
 			}
 
@@ -1038,7 +1039,7 @@ sap.ui.define([
 			var aSelected = oTable ? oTable.getSelectedItems() : [];
 
 			if (!aSelected.length) {
-				MessageToast.show(this.getText("tsSelectRow"));
+				Toast.error(this.getText("tsSelectRow"));
 				return;
 			}
 
@@ -1052,7 +1053,7 @@ sap.ui.define([
 			});
 
 			if (!aSelectedRows.length) {
-				MessageToast.show(this.getText("tsRowNotDeletable"));
+				Toast.error(this.getText("tsRowNotDeletable"));
 				return;
 			}
 			var aNames = aSelectedRows.map(function (oRow) {

@@ -9,8 +9,10 @@ sap.ui.define([
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/HrxServices",
-	"../model/formatter"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, HrxServices, formatter) {
+	"../model/formatter",
+	"../model/RequiredFields",
+	"../model/Toast"
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, HrxServices, formatter, RequiredFields, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -410,7 +412,7 @@ sap.ui.define([
 		},
 
 		onLogoTypeMismatch: function (oEvent) {
-			MessageToast.show(this.getText("mcErrorFileType", [oEvent.getParameter("fileType")]));
+			Toast.error(this.getText("mcErrorFileType", [oEvent.getParameter("fileType")]));
 		},
 
 		onRemoveLogo: function () {
@@ -437,9 +439,8 @@ sap.ui.define([
 				return;
 			}
 			if (!oDetail.ClientDesc) {
-				this.byId("clientName").setValueState("Error");
-				this.byId("clientName").setValueStateText(this.getText("mcMandatory"));
-				MessageToast.show(this.getText("mcErrorNameRequired"));
+				RequiredFields.mark(this.byId("clientName"), false, this.getText("mcMandatory"));
+				Toast.error(this.getText("mcErrorNameRequired"));
 				return;
 			}
 			this.byId("clientName").setValueState("None");
@@ -486,9 +487,8 @@ sap.ui.define([
 			var oNameInput = this.byId("newClientName");
 
 			if (!(oForm.ClientDesc || "").trim()) {
-				oNameInput.setValueState("Error");
-				oNameInput.setValueStateText(this.getText("mcMandatory"));
-				MessageToast.show(this.getText("mcErrorNameRequired"));
+				RequiredFields.mark(oNameInput, false, this.getText("mcMandatory"));
+				Toast.error(this.getText("mcErrorNameRequired"));
 				return;
 			}
 			oNameInput.setValueState("None");
@@ -549,7 +549,7 @@ sap.ui.define([
 		},
 
 		_resetUserStates: function () {
-			["userFirstName", "userEmail"].forEach(function (sId) {
+			["userFirstName", "userLastName", "userEmail"].forEach(function (sId) {
 				this.byId(sId).setValueState("None");
 			}, this);
 		},
@@ -564,15 +564,25 @@ sap.ui.define([
 
 			if (!this._validateRequired([
 				{ id: "userFirstName", value: oForm.FName },
+				{ id: "userLastName", value: oForm.LName },
 				{ id: "userEmail", value: oForm.Email }
 			])) {
-				MessageToast.show(this.getText("mcMandatory"));
+				Toast.error(this.getText("mcMandatory"));
 				return;
 			}
 			if (!EMAIL_PATTERN.test(oForm.Email.trim())) {
-				this.byId("userEmail").setValueState("Error");
-				this.byId("userEmail").setValueStateText(this.getText("mcInvalidEmail"));
-				MessageToast.show(this.getText("mcInvalidEmail"));
+				RequiredFields.mark(this.byId("userEmail"), false, this.getText("mcInvalidEmail"));
+				Toast.error(this.getText("mcInvalidEmail"));
+				return;
+			}
+			// One support user per email address on a client
+			var sEmail = oForm.Email.trim().toLowerCase();
+			var bTaken = (this.getModel("mcTabs").getProperty("/users") || []).some(function (oUser) {
+				return oUser.UserID !== oForm.UserID && formatter.clean(oUser.Email).trim().toLowerCase() === sEmail;
+			});
+			if (bTaken) {
+				RequiredFields.mark(this.byId("userEmail"), false, this.getText("mcEmailTaken"));
+				Toast.error(this.getText("mcEmailTaken"));
 				return;
 			}
 			this.byId("userEmail").setValueState("None");
@@ -653,15 +663,14 @@ sap.ui.define([
 			var oSeverity = this.byId("slaSeverity");
 
 			var bSeverity = !!oForm.PriorityID;
-			oSeverity.setValueState(bSeverity ? "None" : "Error");
-			oSeverity.setValueStateText(this.getText("mcMandatory"));
+			RequiredFields.mark(oSeverity, bSeverity, this.getText("mcMandatory"));
 
 			var bHours = this._validateRequired([
 				{ id: "slaResponse", value: oForm.ResponseSLA },
 				{ id: "slaResolution", value: oForm.ResolutionSLA }
 			]);
 			if (!bSeverity || !bHours) {
-				MessageToast.show(this.getText("mcMandatory"));
+				Toast.error(this.getText("mcMandatory"));
 				return;
 			}
 
@@ -806,12 +815,10 @@ sap.ui.define([
 			// Software and component are both required, as in the design.
 			var bSoftware = !!oForm.Software;
 			var bComponent = !!oForm.Component && oForm.Component !== "NA";
-			this.byId("componentSoftware").setValueState(bSoftware ? "None" : "Error");
-			this.byId("componentSoftware").setValueStateText(this.getText("mcMandatory"));
-			this.byId("componentComponent").setValueState(bComponent ? "None" : "Error");
-			this.byId("componentComponent").setValueStateText(this.getText("mcMandatory"));
+			RequiredFields.mark(this.byId("componentSoftware"), bSoftware, this.getText("mcMandatory"));
+			RequiredFields.mark(this.byId("componentComponent"), bComponent, this.getText("mcMandatory"));
 			if (!bSoftware || !bComponent) {
-				MessageToast.show(this.getText("mcMandatory"));
+				Toast.error(this.getText("mcMandatory"));
 				return;
 			}
 
@@ -935,12 +942,10 @@ sap.ui.define([
 				oForm.ServiceID = this._pickedOrTyped("serviceService", oForm.ServiceID);
 			}
 
-			oApp.setValueState(oForm.AppID ? "None" : "Error");
-			oApp.setValueStateText(this.getText("mcMandatory"));
-			oService.setValueState(oForm.ServiceID ? "None" : "Error");
-			oService.setValueStateText(this.getText("mcMandatory"));
+			RequiredFields.mark(oApp, !!oForm.AppID, this.getText("mcMandatory"));
+			RequiredFields.mark(oService, !!oForm.ServiceID, this.getText("mcMandatory"));
 			if (!oForm.AppID || !oForm.ServiceID) {
-				MessageToast.show(this.getText("mcMandatory"));
+				Toast.error(this.getText("mcMandatory"));
 				return;
 			}
 
@@ -1040,8 +1045,7 @@ sap.ui.define([
 			aFields.forEach(function (oField) {
 				var oControl = this.byId(oField.id);
 				var bFilled = !!String(oField.value === undefined || oField.value === null ? "" : oField.value).trim();
-				oControl.setValueState(bFilled ? "None" : "Error");
-				oControl.setValueStateText(this.getText("mcMandatory"));
+				RequiredFields.mark(oControl, bFilled, this.getText("mcMandatory"));
 				bValid = bValid && bFilled;
 			}, this);
 
@@ -1103,6 +1107,7 @@ sap.ui.define([
 			}
 
 			return this[sCacheKey].then(function (oDialog) {
+				RequiredFields.reset(oDialog);
 				oDialog.open();
 				return oDialog;
 			});

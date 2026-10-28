@@ -16,7 +16,7 @@
 					<Input id="userFirstName" value="{mcForm>/FName}" placeholder="{i18n>mcFieldFirstNamePlaceholder}" />
 				</VBox>
 				<VBox renderType="Bare" class="hrxMcFld">
-					<Label text="{i18n>mcFieldLastName}" labelFor="userLastName" class="hrxModalLabel hrxMcLbl" />
+					<Label text="{i18n>mcFieldLastName}" required="true" labelFor="userLastName" class="hrxModalLabel hrxMcLbl" />
 					<Input id="userLastName" value="{mcForm>/LName}" placeholder="{i18n>mcFieldLastNamePlaceholder}" />
 				</VBox>
 				<VBox renderType="Bare" class="hrxMcFld hrxMcSpan2">

@@ -1076,3 +1076,20 @@
 	line-height: 14px;
 	color: var(--txt-3);
 }
+
+/* A required field left empty (model/RequiredFields.js) */
+.hrxDocUploadDialog .hrxDuInput .sapMInputBaseContentWrapper.sapMInputBaseContentWrapperError,
+.hrxDocUploadDialog .hrxDuFile .sapMInputBaseContentWrapper.sapMInputBaseContentWrapperError {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+/* A ticked box stays blue under the pointer: the theme's lighter hover background
+   would leave the white tick invisible. */
+.hrxPagePolicies .hrxPdCheck.sapMCb .sapMCbBg.sapMCbMarkChecked.sapMCbHoverable:hover,
+.hrxPagePolicies .hrxPdCheck.sapMCb:hover .sapMCbBg.sapMCbMarkChecked,
+.hrxDocUploadDialog .hrxDuCheck.sapMCb .sapMCbBg.sapMCbMarkChecked.sapMCbHoverable:hover,
+.hrxDocUploadDialog .hrxDuCheck.sapMCb:hover .sapMCbBg.sapMCbMarkChecked {
+	background: var(--ice);
+	border-color: var(--ice);
+}

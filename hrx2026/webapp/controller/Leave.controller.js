@@ -9,9 +9,10 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
-	"../model/formatter"
+	"../model/formatter",
+	"../model/Toast"
 ], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator,
-	MessageToast, MessageBox, Backend, CurrentUser, formatter) {
+	MessageToast, MessageBox, Backend, CurrentUser, formatter, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -525,7 +526,7 @@ sap.ui.define([
 
 			if (sKey === PER_DAY) {
 				if (!(this.getModel("ml").getProperty("/dates") || []).length) {
-					MessageToast.show(this.getText("mlSelectDatesFirst"));
+					Toast.error(this.getText("mlSelectDatesFirst"));
 					this.getModel("mlForm").setProperty("/Duration", "F");
 					return;
 				}
@@ -652,15 +653,15 @@ sap.ui.define([
 			var aDates = this.getModel("ml").getProperty("/dates") || [];
 
 			if (!oForm.FromDate || !oForm.ToDate) {
-				MessageToast.show(this.getText("mlSelectDatesFirst"));
+				Toast.error(this.getText("mlSelectDatesFirst"));
 				return;
 			}
 			if (!aDates.length) {
-				MessageToast.show(this.getText("mlNoBookableDays"));
+				Toast.error(this.getText("mlNoBookableDays"));
 				return;
 			}
 			if (!oForm.LeaveCategoryId) {
-				MessageToast.show(this.getText("mlLeaveTypePlaceholder"));
+				Toast.error(this.getText("mlLeaveTypePlaceholder"));
 				return;
 			}
 			if (parseFloat(oForm.NoOfDays) > parseFloat(oUser.balanceLeaves || 0) && oForm.LeaveCategoryId === "HOLIL") {

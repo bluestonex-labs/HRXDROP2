@@ -2137,3 +2137,18 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .hrxNotifPop .hrxNotifFoot {
 	background: var(--frost);
 }
+
+/* ── Toasts that report a problem (model/Toast.js) ─────────────────────────── */
+
+.sapMMessageToast.hrxToastError {
+	background: var(--signal);
+	color: #FFFFFF;
+}
+
+/* ── Checkboxes: no focus box after a click ─────────────────────────────────── */
+
+/* The theme draws its focus box over the checkbox and its label, and a click leaves
+   it there, cutting through the label's text. Only keyboard focus keeps it. */
+.sapMCb:focus:not(:focus-visible)::before {
+	content: none;
+}

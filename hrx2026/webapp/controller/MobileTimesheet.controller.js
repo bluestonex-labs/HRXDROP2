@@ -2,8 +2,9 @@ sap.ui.define([
 	"./Timesheet.controller",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageToast",
-	"../model/formatter"
-], function (Timesheet, JSONModel, MessageToast, formatter) {
+	"../model/formatter",
+	"../model/Toast"
+], function (Timesheet, JSONModel, MessageToast, formatter, Toast) {
 	"use strict";
 
 	// The stepper moves a day's time by half an hour, between nothing and a full day
@@ -449,7 +450,7 @@ sap.ui.define([
 				this._iDay = iFirstMissing;
 				this.getModel("ts").refresh(true);
 				this._renderPhone();
-				MessageToast.show(this.getText("mbCommentMissing"));
+				Toast.error(this.getText("mbCommentMissing"));
 				this._scrollToFirstError();
 				return;
 			}

@@ -10,9 +10,11 @@ sap.ui.define([
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter",
-	"../model/BillingSchemes"
+	"../model/BillingSchemes",
+	"../model/RequiredFields",
+	"../model/Toast"
 ], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
-	BillingSchemes) {
+	BillingSchemes, RequiredFields, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -497,13 +499,14 @@ sap.ui.define([
 		onCreateProject: function () {
 			var oForm = this.getModel("mpForm").getData();
 
-			if (!this._validateRequired([{ id: "newProjectDesc", value: oForm.ProjectDesc }])) {
-				return;
-			}
-			if (!this._validateSelection([
+			// Every missing field is marked at once, not one per press of Create.
+			var bDesc = this._validateRequired([{ id: "newProjectDesc", value: oForm.ProjectDesc }], true);
+			var bPicked = this._validateSelection([
 				{ id: "newProjectClient", value: oForm.ClientKey },
 				{ id: "newProjectType", value: oForm.ProjectTypeKey }
-			])) {
+			], true);
+			if (!bDesc || !bPicked) {
+				Toast.error(this.getText("mpMandatory"));
 				return;
 			}
 
@@ -629,10 +632,16 @@ sap.ui.define([
 			var oDetail = this.getModel("mpDetail").getData();
 			var bEdit = oForm.mode === "edit";
 
-			if (!this._validateSelection([
+			var bPicked = this._validateSelection([
 				{ id: "assignmentResource", value: oForm.EmpID },
 				{ id: "assignmentBilling", value: oForm.schemeKey }
-			])) {
+			], true);
+			var bFilled = this._validateRequired([
+				{ id: "assignmentDayRate", value: oForm.DayRate },
+				{ id: "assignmentDays", value: oForm.BillableDays }
+			], true);
+			if (!bPicked || !bFilled) {
+				Toast.error(this.getText("mpMandatory"));
 				return;
 			}
 
@@ -648,12 +657,6 @@ sap.ui.define([
 				return;
 			}
 			oForm.BillingID = sBillingId;
-			if (!this._validateRequired([
-				{ id: "assignmentDayRate", value: oForm.DayRate },
-				{ id: "assignmentDays", value: oForm.BillableDays }
-			])) {
-				return;
-			}
 
 			var fDayRate = parseFloat(oForm.DayRate) || 0;
 			var fDays = parseFloat(oForm.BillableDays) || 0;
@@ -779,7 +782,7 @@ sap.ui.define([
 				return oState;
 			}, {}) : {});
 			if (sProblem) {
-				MessageToast.show(this.getText(sProblem.textKey));
+				Toast.error(this.getText(sProblem.textKey));
 				return;
 			}
 
@@ -867,7 +870,7 @@ sap.ui.define([
 		},
 
 		onAttachmentTypeMismatch: function (oEvent) {
-			MessageToast.show(this.getText("mpErrorFileType", [oEvent.getParameter("fileType")]));
+			Toast.error(this.getText("mpErrorFileType", [oEvent.getParameter("fileType")]));
 		},
 
 		/**
@@ -884,7 +887,7 @@ sap.ui.define([
 			var sContent = oAttachment.Attachment || "";
 
 			if (!sContent) {
-				MessageToast.show(this.getText("mpErrorAttachmentEmpty"));
+				Toast.error(this.getText("mpErrorAttachmentEmpty"));
 				return;
 			}
 
@@ -1095,36 +1098,46 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		_validateRequired: function (aFields) {
+		/**
+		 * Marks each empty field red.
+		 * @param {Array<{id: string, value: any}>} aFields the fields and their values
+		 * @param {boolean} [bQuiet] true to leave the toast to the caller
+		 * @returns {boolean} true when all are filled in
+		 */
+		_validateRequired: function (aFields, bQuiet) {
 			var bValid = true;
 
 			aFields.forEach(function (oField) {
 				var oControl = this.byId(oField.id);
 				var bFilled = !!String(oField.value === undefined || oField.value === null ? "" : oField.value).trim();
-				oControl.setValueState(bFilled ? "None" : "Error");
-				oControl.setValueStateText(this.getText("mpMandatory"));
+				RequiredFields.mark(oControl, bFilled, this.getText("mpMandatory"));
 				bValid = bValid && bFilled;
 			}, this);
 
-			if (!bValid) {
-				MessageToast.show(this.getText("mpMandatory"));
+			if (!bValid && !bQuiet) {
+				Toast.error(this.getText("mpMandatory"));
 			}
 			return bValid;
 		},
 
-		_validateSelection: function (aFields) {
+		/**
+		 * Marks each list with nothing picked red.
+		 * @param {Array<{id: string, value: any}>} aFields the lists and their keys
+		 * @param {boolean} [bQuiet] true to leave the toast to the caller
+		 * @returns {boolean} true when all have a pick
+		 */
+		_validateSelection: function (aFields, bQuiet) {
 			var bValid = true;
 
 			aFields.forEach(function (oField) {
 				var oControl = this.byId(oField.id);
 				var bFilled = !!oField.value;
-				oControl.setValueState(bFilled ? "None" : "Error");
-				oControl.setValueStateText(this.getText("mpMandatory"));
+				RequiredFields.mark(oControl, bFilled, this.getText("mpMandatory"));
 				bValid = bValid && bFilled;
 			}, this);
 
-			if (!bValid) {
-				MessageToast.show(this.getText("mpMandatory"));
+			if (!bValid && !bQuiet) {
+				Toast.error(this.getText("mpMandatory"));
 			}
 			return bValid;
 		},
@@ -1169,6 +1182,7 @@ sap.ui.define([
 			}
 
 			return this[sCacheKey].then(function (oDialog) {
+				RequiredFields.reset(oDialog);
 				oDialog.open();
 				return oDialog;
 			});
