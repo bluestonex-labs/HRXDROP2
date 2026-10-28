@@ -384,13 +384,6 @@
 
 				<!-- tab: the client's contacts for the project -->
 				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'contacts' }">
-					<MessageStrip
-						text="{i18n>serviceNeededProjectContacts}"
-						visible="{= !${services>/projectContacts} }"
-						type="Warning"
-						showIcon="true"
-						enableFormattedText="true"
-						class="hrxMpStrip" />
 					<HBox renderType="Bare" class="hrxMpSectHead">
 						<Title text="{i18n>mpContactsTitle}" level="H3" class="hrxMpSectTitle" />
 						<Button
