@@ -898,6 +898,11 @@ sap.ui.define([
 						billableText: this._num(oPerson.billable),
 						totalText: this._num(oPerson.total),
 						pctText: oPerson.pct + "%",
+						costText: oPerson.cost === null ? "—" : this._money(oPerson.cost, oPerson.Currency),
+						marginText: oPerson.margin === null ? "—" :
+							(oPerson.margin < 0 ? "−" : "") + this._money(Math.abs(oPerson.margin), oPerson.Currency),
+						marginPctText: oPerson.marginPct === null ? "" : (oPerson.marginPct < 0 ? "−" : "") + Math.abs(oPerson.marginPct) + "%",
+						marginState: oPerson.margin === null ? "" : oPerson.margin < 0 ? "neg" : "pos",
 						state: STATE_KEYS[TimesheetReport.utilState(oPerson.pct)],
 						width: this._width(oPerson.pct),
 						projectsCount: iCount === 0 ? this.getText("trNoBillableProject") :

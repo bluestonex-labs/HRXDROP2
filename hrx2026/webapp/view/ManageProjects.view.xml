@@ -83,7 +83,6 @@
 								<VBox renderType="Bare" class="hrxMpRowMain">
 									<Text text="{mp>ProjectDesc}" wrapping="false" class="hrxMpRowTitle" />
 									<Text text="{mp>ClientDesc}" wrapping="false" class="hrxMpRowSub" />
-									<Text text="{mp>ProjectKey}" wrapping="false" class="hrxMpRowSub" />
 								</VBox>
 								<VBox renderType="Bare" class="hrxMpRowSide">
 									<HBox renderType="Bare" class="hrxMpRowPill">

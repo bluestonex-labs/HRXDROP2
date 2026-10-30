@@ -71,6 +71,18 @@
 	margin: 0;
 }
 
+/* The title is a single line, so nothing needs clipping: the theme's clip of the
+   title box (rounded, 13px tall) cut the corner off each title's first letter */
+.hrxPageExplorer .hrxAeCard .sapMGTHdrContent,
+.hrxPageExplorer .hrxAeCard .sapMGTHdrTxt,
+.hrxPageExplorer .hrxAeCard .sapMGTHdrTxt .sapMText {
+	overflow: visible;
+	border-radius: 0;
+	clip-path: none;
+	-webkit-mask: none;
+	mask: none;
+}
+
 .hrxPageExplorer .hrxAeCard .sapMGTSubHdrTxt,
 .hrxPageExplorer .hrxAeCard .sapMGTSubHdrTxt .sapMText {
 	display: block;

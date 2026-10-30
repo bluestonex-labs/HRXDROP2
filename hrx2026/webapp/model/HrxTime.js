@@ -116,7 +116,9 @@ sap.ui.define([
 		/**
 		 * The rate each person is on for each project. A person can be on a project
 		 * under more than one billing scheme; the highest day rate stands for the pair.
-		 * @returns {Promise<object>} by "EmpID|ProjectID": DayRate, Currency, BillingDesc
+		 * DayCost is what a day of the person's time costs on the assignment, null
+		 * where none is held.
+		 * @returns {Promise<object>} by "EmpID|ProjectID": DayRate, DayCost, Currency, BillingDesc
 		 */
 		assignments: function () {
 			return Hrx.list("UserToProject", {
@@ -126,12 +128,17 @@ sap.ui.define([
 				aRows.forEach(function (oRow) {
 					var sKey = oRow.Employee_EmployeeID + "|" + oRow.Project_ID;
 					var fRate = parseFloat(oRow.DayRate) || parseFloat(oRow.BillingID && oRow.BillingID.DayRate) || 0;
+					var fCost = parseFloat(oRow.DayCost);
+					fCost = isNaN(fCost) ? null : fCost;
 					if (!mRates[sKey] || fRate > mRates[sKey].DayRate) {
 						mRates[sKey] = {
 							DayRate: fRate,
+							DayCost: fCost !== null ? fCost : (mRates[sKey] ? mRates[sKey].DayCost : null),
 							Currency: oRow.Currency || (oRow.BillingID && oRow.BillingID.Currency) || "GBP",
 							BillingDesc: (oRow.BillingID && oRow.BillingID.BillingDesc) || ""
 						};
+					} else if (mRates[sKey].DayCost === null) {
+						mRates[sKey].DayCost = fCost;
 					}
 				});
 				return mRates;

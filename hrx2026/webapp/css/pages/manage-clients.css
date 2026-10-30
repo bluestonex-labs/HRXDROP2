@@ -829,8 +829,9 @@
 .hrxApp .hrxManageClientsDialog .hrxMcSwitch .sapMSwtHandle {
 	position: absolute;
 	top: 3px;
-	left: 3px;
-	width: 18px;
+	/* the theme sizes and places the knob itself, which pushed it past the track */
+	left: 3px !important;
+	width: 18px !important;
 	height: 18px;
 	margin: 0;
 	border: none;
@@ -842,7 +843,7 @@
 }
 
 .hrxApp .hrxManageClientsDialog .hrxMcSwitch .sapMSwtOn .sapMSwtHandle {
-	left: 21px;
+	left: 21px !important;
 }
 
 .hrxApp .hrxManageClientsDialog .hrxMcSwitch .sapMSwtHandle::before,

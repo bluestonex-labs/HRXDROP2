@@ -113,6 +113,30 @@ sap.ui.define([
 		assert.strictEqual(TimesheetReport.utilState(49), "Error");
 	});
 
+	QUnit.test("utilisation prices the time: value, cost and margin", function (assert) {
+		function booking(sProject, bBillable, fRate, vCost, aEntries) {
+			return {
+				EmpID: "E9", Name: "Casey Cost", Email: "casey@example.test", ProjectKey: sProject, ProjectDesc: sProject,
+				Billable: bBillable, DayRate: fRate, DayCost: vCost, Currency: "GBP", entries: aEntries
+			};
+		}
+		var aDay = function (sDate) {
+			return [{ RecID: sDate, Date: sDate, Minutes: 480 }];
+		};
+		var aPriced = TimesheetReport.utilisation([
+			booking("Billed", true, 600, 250, aDay("2026-10-05").concat(aDay("2026-10-06"))),
+			booking("Internal", false, 0, 250, aDay("2026-10-07"))
+		], oYear);
+		assert.strictEqual(aPriced[0].value, 1200, "two billable days at 600");
+		assert.strictEqual(aPriced[0].cost, 750, "every day booked is costed, internal too");
+		assert.strictEqual(aPriced[0].margin, 450);
+		assert.strictEqual(aPriced[0].marginPct, 38);
+
+		var aUncosted = TimesheetReport.utilisation([booking("Billed", true, 600, null, aDay("2026-10-05"))], oYear);
+		assert.strictEqual(aUncosted[0].cost, null, "no day cost held: no cost");
+		assert.strictEqual(aUncosted[0].margin, null);
+	});
+
 	QUnit.test("filters by customer, project and person", function (assert) {
 		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKey: "C1", ProjectKey: "", EmpID: "" }).length, 3);
 		assert.strictEqual(TimesheetReport.filter(aBookings, { ClientKey: "", ProjectKey: "P1", EmpID: "E2" }).length, 1);

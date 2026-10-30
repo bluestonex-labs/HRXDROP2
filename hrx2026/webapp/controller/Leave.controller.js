@@ -225,7 +225,9 @@ sap.ui.define([
 						Absence: oDay.Absence,
 						Status: oDay.Status,
 						StatusID: oDay.StatusID,
-						RequesterComments: oDay.RequesterComments,
+						RequesterComments: oDay.RequesterComments || "",
+						ApproverComments: oDay.ApproverComments || "",
+						expanded: false,
 						Dates: []
 					};
 					mByKey[sKey] = oRequest;
@@ -246,6 +248,9 @@ sap.ui.define([
 				// service rewrites a single date, so only a one-day request can be edited.
 				oRequest.cancellable = oRequest.StatusID === "REQ";
 				oRequest.editable = oRequest.StatusID === "REQ" && oRequest.Dates.length === 1;
+				oRequest.yourCommentText = oRequest.RequesterComments.trim() ? this.getText("mlYourComment", [oRequest.RequesterComments.trim()]) : "";
+				oRequest.approverNoteText = oRequest.ApproverComments.trim() ? this.getText("tlApproverNote", [oRequest.ApproverComments.trim()]) : "";
+				oRequest.hasComments = !!(oRequest.yourCommentText || oRequest.approverNoteText);
 			}, this);
 
 			return aRequests;
@@ -735,6 +740,16 @@ sap.ui.define([
 
 			this.getModel("mlEdit").setData(Object.assign({}, oContext.getObject()));
 			this._openFragment("_pEditLeaveDialog", "bsx.hrx.hrx2026.fragment.EditLeaveDialog");
+		},
+
+		/**
+		 * The row's arrow: opens or closes the request's comments - the employee's own
+		 * and the approver's note.
+		 * @param {sap.ui.base.Event} oEvent the button's press event
+		 */
+		onToggleComments: function (oEvent) {
+			var oContext = oEvent.getSource().getBindingContext("ml");
+			oContext.getModel().setProperty("expanded", !oContext.getProperty("expanded"), oContext);
 		},
 
 		onCloseEditLeave: function () {

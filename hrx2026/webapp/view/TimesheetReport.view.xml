@@ -605,6 +605,8 @@
 									<Text text="{i18n>trColBillable}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColTotal}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColUtil}" />
+									<Text text="{i18n>trColCost}" textAlign="End" class="hrxTsNum" />
+									<Text text="{i18n>trColMargin}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColBillableProjects}" />
 								</HBox>
 								<Text text="{i18n>trNoUtil}" visible="{= ${tr>/util/rows}.length === 0 }" class="hrxTsTblEmpty" />
@@ -628,6 +630,13 @@
 													<customData><core:CustomData key="state" value="{tr>state}" writeToDom="true" /></customData>
 												</HBox>
 											</HBox>
+										</VBox>
+										<Text text="{tr>costText}" textAlign="End" class="hrxTsNum" />
+										<VBox renderType="Bare" alignItems="End" class="hrxTsMargin">
+											<Text text="{tr>marginText}" textAlign="End" class="hrxTsNum">
+												<customData><core:CustomData key="margin" value="{tr>marginState}" writeToDom="true" /></customData>
+											</Text>
+											<Text text="{tr>marginPctText}" visible="{= !!${tr>marginPctText} }" textAlign="End" class="hrxTsSub" />
 										</VBox>
 										<Text text="{tr>projectsText}" class="hrxTsProjs" />
 									</HBox>

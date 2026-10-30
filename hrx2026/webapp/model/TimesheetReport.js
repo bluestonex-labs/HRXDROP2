@@ -311,11 +311,15 @@ sap.ui.define([], function () {
 		},
 
 		/**
-		 * Team utilisation: billable days as a share of all days booked, per person.
+		 * Team utilisation: billable days as a share of all days booked, per person,
+		 * with what that time earned and cost. Value is the billable days at their day
+		 * rate; cost is every day booked at the assignment's day cost, so it is null when
+		 * none of the person's time has a day cost held; margin is value less cost.
 		 * @param {Array<object>} aBookings bookings
 		 * @param {object} oPeriod from and to
 		 * @returns {Array<object>} people who booked time - EmpID, Name, Email, billable,
-		 * total, pct (whole percent) and projects (billable project names)
+		 * total, pct (whole percent), value, cost, margin, marginPct (null when nothing
+		 * was billed), Currency and projects (billable project names)
 		 */
 		utilisation: function (aBookings, oPeriod) {
 			var mPeople = {};
@@ -326,11 +330,17 @@ sap.ui.define([], function () {
 					return;
 				}
 				var oPerson = mPeople[oBooking.EmpID] = mPeople[oBooking.EmpID] ||
-					{ EmpID: oBooking.EmpID, Name: oBooking.Name, Email: oBooking.Email, billable: 0, total: 0, projects: [] };
+					{ EmpID: oBooking.EmpID, Name: oBooking.Name, Email: oBooking.Email, billable: 0, total: 0,
+						value: 0, cost: null, Currency: oBooking.Currency || "GBP", projects: [] };
 
 				oPerson.total += fDays;
+				if (oBooking.DayCost !== null && oBooking.DayCost !== undefined) {
+					oPerson.cost = (oPerson.cost || 0) + fDays * oBooking.DayCost;
+				}
 				if (oBooking.Billable) {
 					oPerson.billable += fDays;
+					oPerson.value += fDays * (oBooking.DayRate || 0);
+					oPerson.Currency = oBooking.Currency || oPerson.Currency;
 					if (oPerson.projects.indexOf(oBooking.ProjectDesc) === -1) {
 						oPerson.projects.push(oBooking.ProjectDesc);
 					}
@@ -340,6 +350,8 @@ sap.ui.define([], function () {
 			return Object.keys(mPeople).map(function (sKey) {
 				var oPerson = mPeople[sKey];
 				oPerson.pct = oPerson.total ? Math.round(oPerson.billable / oPerson.total * 100) : 0;
+				oPerson.margin = oPerson.cost === null ? null : oPerson.value - oPerson.cost;
+				oPerson.marginPct = oPerson.margin === null || !oPerson.value ? null : Math.round(oPerson.margin / oPerson.value * 100);
 				oPerson.projects.sort();
 				return oPerson;
 			}).sort(function (a, b) {

@@ -20,14 +20,12 @@ sap.ui.define([
 	 * send shows in desktop Outlook as well.
 	 *
 	 * If the browser blocks the new tab, the draft is shown instead, to copy, with a
-	 * button to try Outlook again and one for the machine's own email app.
+	 * button to try Outlook again.
 	 *
 	 * Outlook on the web's compose link takes To, Cc, the subject and the body, but
-	 * not Bcc - a Bcc list sent to it is dropped and the draft opens with nobody on
-	 * it. So a draft with Bcc recipients (a reminder to several people, who should
-	 * not see each other's addresses) opens a short step first: the addresses are
-	 * copied to paste into Bcc in Outlook, or the machine's own email app (desktop
-	 * Outlook) is used, whose mailto: link does fill in Bcc.
+	 * not Bcc - a Bcc list sent to it is dropped. So a draft to several people (bcc)
+	 * opens a short step first, where the recipients can be checked and changed, and
+	 * then goes to Outlook with them in To.
 	 */
 	var OUTLOOK_COMPOSE = "https://outlook.office.com/mail/deeplink/compose";
 
@@ -56,17 +54,6 @@ sap.ui.define([
 			// cross-origin already - nothing to detach
 		}
 		return true;
-	}
-
-	function openMailApp(oDraft) {
-		var oLink = document.createElement("a");
-		oLink.href = mailtoUrl(oDraft);
-		oLink.target = "_top";
-		oLink.rel = "noopener";
-		oLink.style.display = "none";
-		document.body.appendChild(oLink);
-		oLink.click();
-		document.body.removeChild(oLink);
 	}
 
 	function mailtoUrl(oDraft) {
@@ -168,13 +155,6 @@ sap.ui.define([
 					}
 				}),
 				new Button({
-					text: "Use my email app",
-					press: function () {
-						openMailApp(oDraft);
-						oDialog.close();
-					}
-				}),
-				new Button({
 					text: "Close",
 					press: function () {
 						oDialog.close();
@@ -189,54 +169,98 @@ sap.ui.define([
 	}
 
 	/**
-	 * A draft to several people in Bcc: copy the addresses and open Outlook on the
-	 * web (they are pasted into Bcc there), or open the email app with Bcc filled in.
-	 * @param {object} oDraft the draft, with bcc
+	 * The addresses typed or pasted into the recipients field: commas, semicolons,
+	 * spaces or new lines between them, each kept once.
+	 * @param {string} sText the field's text
+	 * @returns {string[]} the addresses
 	 */
-	function showBccDraft(oDraft) {
-		var iCount = oDraft.bcc.split(",").filter(function (sAddress) {
-			return sAddress.trim();
-		}).length;
+	function addresses(sText) {
+		var aSeen = [];
+		String(sText || "").split(/[\s,;]+/).forEach(function (sAddress) {
+			if (sAddress && !aSeen.some(function (sKnown) {
+				return sKnown.toLowerCase() === sAddress.toLowerCase();
+			})) {
+				aSeen.push(sAddress);
+			}
+		});
+		return aSeen;
+	}
+
+	/**
+	 * A draft to several people: the recipients are shown, to check and change, then
+	 * Outlook on the web opens with them filled in. Outlook's link can only fill in
+	 * To, so everyone on the list sees who else it went to.
+	 * @param {object} oDraft the draft, with bcc - the people it is for
+	 */
+	function showGroupDraft(oDraft) {
+		var fnTitle = function (iCount) {
+			return "Email " + iCount + (iCount === 1 ? " person" : " people");
+		};
+		var oRecipients = new TextArea({
+			value: addresses(oDraft.bcc).join(", "),
+			width: "100%",
+			rows: 3,
+			growing: true,
+			growingMaxLines: 8,
+			liveChange: function (oEvent) {
+				oRecipients.setValueState("None");
+				oDialog.setTitle(fnTitle(addresses(oEvent.getParameter("value")).length));
+			}
+		});
 		var oDialog = new Dialog({
-			title: "Email " + iCount + (iCount === 1 ? " person" : " people"),
+			title: fnTitle(addresses(oDraft.bcc).length),
 			contentWidth: "34rem",
 			content: new VBox({
 				items: [
 					new MessageStrip({
-						text: "Outlook on the web can't fill in Bcc by itself, which keeps everyone's address private. " +
-							"Choose \"Copy addresses and open Outlook\", then paste into the Bcc line. " +
-							"Or use your email app, which fills Bcc in for you.",
+						text: "Check the recipients - you can add or remove addresses - then open the email in Outlook. " +
+							"Everyone on it will see who else it was sent to.",
 						type: "Information",
 						showIcon: true
 					}).addStyleClass("sapUiSmallMarginBottom"),
-					field("Bcc", oDraft.bcc),
+					new VBox({
+						items: [
+							new HBox({
+								justifyContent: "SpaceBetween",
+								alignItems: "Center",
+								items: [
+									new Label({ text: "Recipients", required: true, labelFor: oRecipients }),
+									new Button({
+										text: "Copy",
+										type: "Transparent",
+										icon: "sap-icon://copy",
+										press: function () {
+											copy(addresses(oRecipients.getValue()).join(", "), oRecipients);
+										}
+									})
+								]
+							}),
+							oRecipients
+						]
+					}).addStyleClass("sapUiSmallMarginBottom"),
 					oDraft.subject ? field("Subject", oDraft.subject) : null,
 					oDraft.body ? field("Message", oDraft.body, true) : null
 				].filter(Boolean)
 			}),
 			buttons: [
 				new Button({
-					text: "Copy addresses and open Outlook",
+					text: "Open in Outlook",
 					type: "Emphasized",
 					icon: "sap-icon://email",
 					press: function () {
-						// In the click itself, where the browser allows both
-						if (navigator.clipboard && navigator.clipboard.writeText) {
-							navigator.clipboard.writeText(oDraft.bcc).then(function () {
-								MessageToast.show("Addresses copied - paste them into Bcc");
-							}, function () { /* the Copy button above still works */ });
+						var aTo = addresses(oRecipients.getValue());
+						if (!aTo.length) {
+							oRecipients.setValueState("Error");
+							oRecipients.setValueStateText("Add at least one recipient");
+							return;
 						}
-						var oWithoutBcc = Object.assign({}, oDraft, { bcc: "" });
-						if (openOutlook(oWithoutBcc)) {
+						var oToAll = Object.assign({}, oDraft, { to: aTo.join(","), bcc: "" });
+						if (openOutlook(oToAll)) {
 							oDialog.close();
+						} else {
+							oDialog.close();
+							showDraft(oToAll);
 						}
-					}
-				}),
-				new Button({
-					text: "Use my email app",
-					press: function () {
-						openMailApp(oDraft);
-						oDialog.close();
 					}
 				}),
 				new Button({
@@ -259,9 +283,9 @@ sap.ui.define([
 		 * @param {object} oDraft to (comma-separated), cc, bcc, subject and body
 		 */
 		open: function (oDraft) {
-			// Bcc cannot go through Outlook on the web's link: the next step for it
+			// A draft to several people shows them first, to check before Outlook opens
 			if (oDraft.bcc) {
-				showBccDraft(oDraft);
+				showGroupDraft(oDraft);
 				return;
 			}
 			if (!openOutlook(oDraft)) {

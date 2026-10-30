@@ -318,7 +318,8 @@
 }
 
 .hrxApp .hrxTimesheet .hrxTsHoursBooked {
-	font-family: monospace;
+	font-family: var(--sans);
+	font-variant-numeric: tabular-nums;
 	font-size: 13px;
 	font-weight: 700;
 	line-height: 15px;
@@ -408,7 +409,7 @@
 }
 
 .hrxApp .hrxTimesheet .hrxTsTable .sapMListTblHeader .hrxTsDayHead .hrxTsDayTotal {
-	font-family: monospace;
+	font-family: var(--sans);
 	font-variant-numeric: tabular-nums;
 	letter-spacing: .3px;
 }
@@ -599,7 +600,8 @@
 	height: 28px;
 	padding: 0 4px;
 	text-align: center;
-	font-family: monospace;
+	font-family: var(--sans);
+	font-variant-numeric: tabular-nums;
 	font-size: 14px;
 	font-style: normal;
 	color: var(--ink);
@@ -717,7 +719,7 @@
 	border-radius: 10px;
 	position: relative;
 	background: #ECEFF2;
-	font-family: monospace;
+	font-family: var(--sans);
 	font-variant-numeric: tabular-nums;
 	font-size: 14px;
 	line-height: 30px;
@@ -896,7 +898,8 @@
 }
 
 .hrxApp .hrxTsAddProjects .hrxTsPickerTable .sapMObjectIdentifierText .sapMText {
-	font-family: monospace;
+	font-family: var(--sans);
+	font-variant-numeric: tabular-nums;
 	font-size: 11px;
 	color: var(--txt-3);
 }

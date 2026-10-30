@@ -273,6 +273,7 @@ sap.ui.define([
 				this.getModel("mrDetail").setData(this._toDetail(oResource));
 				oViewModel.setProperty("/detailBusy", false);
 				this._resetPictureUploader();
+				this.byId("resourceEmail").setValueState("None");
 				this._loadLeaves(oResource.Email);
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/detailBusy", false);
@@ -625,6 +626,24 @@ sap.ui.define([
 				MessageBox.error(this.getText("mrErrorDetailIncomplete"));
 				return;
 			}
+			// The email can be corrected, but it is how the person is found when they
+			// sign in, so it must be a real address and nobody else's
+			var oEmail = this.byId("resourceEmail");
+			if (!this._validateEmailControl(oEmail)) {
+				Toast.error(oEmail.getValueStateText());
+				return;
+			}
+			var sEmail = oDetail.Email.trim().toLowerCase();
+			var bTaken = (this.getModel("mr").getProperty("/allResources") || []).some(function (oResource) {
+				return oResource.EmpID !== oDetail.EmpID && String(oResource.Email || "").trim().toLowerCase() === sEmail;
+			});
+			if (bTaken) {
+				oEmail.setValueState("Error");
+				oEmail.setValueStateText(this.getText("mrEmailTaken"));
+				Toast.error(this.getText("mrEmailTaken"));
+				return;
+			}
+			oDetail.Email = oDetail.Email.trim();
 
 			var oPayload = this._toUpdatePayload(oDetail);
 
@@ -849,6 +868,18 @@ sap.ui.define([
 
 		onCancelAddResource: function () {
 			this._closeDialog("_pAddDialog");
+		},
+
+		/**
+		 * The resource's email, once marked wrong on saving, is checked again as it is
+		 * typed, so the mark goes as soon as the address is right.
+		 * @param {sap.ui.base.Event} oEvent the liveChange event
+		 */
+		onEmailLiveChange: function (oEvent) {
+			var oControl = oEvent.getSource();
+			if (oControl.getValueState() === "Error") {
+				this._validateEmailControl(oControl);
+			}
 		},
 
 		/**

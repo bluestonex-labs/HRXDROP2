@@ -1134,7 +1134,16 @@
 /* ── Utilisation ───────────────────────────────────────────────────────────── */
 
 .hrxTimesheetReport .hrxTsUtilCols {
-	grid-template-columns: minmax(0, 154fr) 100.7px 86.4px 249.1px minmax(0, 543.6fr);
+	grid-template-columns: minmax(0, 154fr) 100.7px 86.4px 249.1px 104px 104px minmax(0, 439.6fr);
+}
+
+/* Margin: the amount over its percentage of what was billed; a loss reads red */
+.hrxTimesheetReport .hrxTsUtilCols > .hrxTsMargin {
+	display: flex;
+}
+
+.hrxTimesheetReport .hrxTsNum[data-margin="neg"] {
+	color: var(--signal);
 }
 
 .hrxTimesheetReport .hrxTsUtilCols > .sapMFlexBox {

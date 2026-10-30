@@ -2152,3 +2152,12 @@ body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 .sapMCb:focus:not(:focus-visible)::before {
 	content: none;
 }
+
+/* A click leaves the theme's dark blue focus box on whatever was clicked - a tile,
+   a list row, a switch, a tab - until the next click somewhere else. The theme draws
+   every such box in one colour, so clearing it on mouse focus clears them all, while
+   keyboard focus (:focus-visible) keeps its box. Text fields count as keyboard focus
+   whichever way they are reached, so they keep theirs while being typed in. */
+:focus:not(:focus-visible) {
+	--sapContent_FocusColor: transparent;
+}

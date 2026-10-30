@@ -847,8 +847,52 @@
 /* Leave type: colour square, name, then the grey duration chip (.ltype / .dur) */
 .hrxApp .hrxMyLeave .hrxLeaveTypeCell {
 	display: inline-flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 14px;
+}
+
+/* A request's comments, opened from the row's arrow: a line of their own under the type */
+.hrxApp .hrxMyLeave .hrxLeaveComments {
+	display: flex;
+	flex-direction: column;
+	flex-basis: 100%;
+	gap: 4px;
+	margin-top: -4px;
+	padding: 8px 10px;
+	border-radius: var(--radius-s);
+	background: var(--frost);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveComment {
+	font-size: 12px;
+	line-height: 16px;
+	color: var(--txt-2);
+	white-space: normal;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveRowActions {
+	display: inline-flex;
+	gap: 6px;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveExpand.sapMBtn {
+	height: 23px;
+	padding: 0;
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveExpand .sapMBtnInner {
+	height: 23px;
+	min-width: 23px;
+	width: 23px;
+	padding: 0;
+	border-radius: var(--radius-s);
+}
+
+.hrxApp .hrxMyLeave .hrxLeaveExpand .sapMBtnIcon {
+	font-size: 12px;
+	line-height: 23px;
+	color: var(--txt-2);
 }
 
 .hrxApp .hrxMyLeave .hrxLeaveTypeName {

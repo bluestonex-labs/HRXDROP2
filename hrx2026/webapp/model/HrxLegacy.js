@@ -837,7 +837,8 @@ sap.ui.define([
 								Absence: oDay.absence,
 								Status: STATUS_TEXT[sStatus],
 								StatusID: sStatus,
-								RequesterComments: oLeave.RequesterComments || ""
+								RequesterComments: oLeave.RequesterComments || "",
+								ApproverComments: oLeave.ApproverComments || ""
 							});
 							if (sStatus !== "REJ" && oDay.date >= oYear.from && oDay.date <= oYear.to) {
 								mAnalytics[oType.desc] = (mAnalytics[oType.desc] || 0) + fDays;

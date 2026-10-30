@@ -75,7 +75,7 @@ sap.ui.define([
 					if (!oBooking) {
 						var oPerson = mPeople[sEmpId] || { EmpID: sEmpId, Name: sEmpId, Email: "" };
 						var oProject = mProjects[sProject] || { ProjectDesc: sProject, ClientKey: "", ClientDesc: "", PONumber: "" };
-						var oRate = mRates[sKey] || { DayRate: 0, Currency: "GBP", Billable: false };
+						var oRate = mRates[sKey] || { DayRate: 0, DayCost: null, Currency: "GBP", Billable: false };
 
 						oBooking = mBookings[sKey] = {
 							EmpID: sEmpId,
@@ -88,6 +88,7 @@ sap.ui.define([
 							PONo: oProject.PONumber,
 							Billable: HrxTime.isBillable(oProject, oRate),
 							DayRate: oRate.DayRate,
+							DayCost: oRate.DayCost,
 							Currency: oRate.Currency,
 							Assigned: !!mRates[sKey],
 							entries: []
@@ -123,6 +124,7 @@ sap.ui.define([
 						PONo: oProject.PONumber,
 						Billable: HrxTime.isBillable(oProject, mRates[sKey]),
 						DayRate: mRates[sKey].DayRate,
+						DayCost: mRates[sKey].DayCost,
 						Currency: mRates[sKey].Currency,
 						Assigned: true,
 						entries: []

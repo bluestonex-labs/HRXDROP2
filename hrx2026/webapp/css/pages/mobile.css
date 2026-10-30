@@ -642,7 +642,8 @@
 	border: 1px solid var(--line);
 	border-radius: 13px;
 	background: var(--frost);
-	font: 700 24px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font: 700 24px var(--sans);
+	font-variant-numeric: tabular-nums;
 	color: var(--ink);
 }
 

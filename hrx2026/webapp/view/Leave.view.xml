@@ -238,20 +238,40 @@
 							press=".onEditLeave">
 							<cells>
 								<Text text="{ml>DisplayRange}" />
-								<HBox renderType="Bare" class="hrxLeaveTypeCell">
+								<HBox renderType="Bare" wrap="Wrap" class="hrxLeaveTypeCell">
 									<Text text="{ml>LeaveType}" class="hrxLeaveTypeName">
 										<customData><core:CustomData key="leave" value="{ml>LeaveTypeID}" writeToDom="true" /></customData>
 									</Text>
 									<Text text="{ml>DurationText}" class="hrxLeaveDuration" />
+									<!-- The request's comments, opened with the arrow at the end of the row -->
+									<VBox visible="{ml>expanded}" renderType="Bare" class="hrxLeaveComments">
+										<Text
+											text="{ml>yourCommentText}"
+											visible="{= !!${ml>yourCommentText} }"
+											class="hrxLeaveComment" />
+										<Text
+											text="{ml>approverNoteText}"
+											visible="{= !!${ml>approverNoteText} }"
+											class="hrxLeaveComment" />
+									</VBox>
 								</HBox>
 								<ObjectStatus
 									text="{ml>Status}"
 									state="{path: 'ml>StatusID', formatter: '.formatter.leaveStatusState'}" />
-								<Button
-									text="{i18n>mlCancel}"
-									visible="{ml>cancellable}"
-									press=".onCancelLeave"
-									class="hrxLeaveCancelButton" />
+								<HBox renderType="Bare" justifyContent="End" alignItems="Center" class="hrxLeaveRowActions">
+									<Button
+										text="{i18n>mlCancel}"
+										visible="{ml>cancellable}"
+										press=".onCancelLeave"
+										class="hrxLeaveCancelButton" />
+									<Button
+										icon="{= ${ml>expanded} ? 'sap-icon://navigation-up-arrow' : 'sap-icon://navigation-down-arrow' }"
+										tooltip="{= ${ml>expanded} ? ${i18n>mlHideComments} : ${i18n>mlShowComments} }"
+										visible="{ml>hasComments}"
+										type="Transparent"
+										press=".onToggleComments"
+										class="hrxLeaveExpand" />
+								</HBox>
 							</cells>
 						</ColumnListItem>
 					</items>

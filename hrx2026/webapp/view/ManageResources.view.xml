@@ -187,8 +187,13 @@
 								<Input id="resourceLastName" value="{mrDetail>/LName}" placeholder="{i18n>mrFieldLastNamePlaceholder}" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
-								<Label text="{i18n>mrFieldEmail}" />
-								<Text id="resourceEmail" text="{mrDetail>/Email}" class="hrxMrRo" />
+								<Label text="{i18n>mrFieldEmail}" required="true" labelFor="resourceEmail" />
+								<Input
+									id="resourceEmail"
+									value="{mrDetail>/Email}"
+									type="Email"
+									placeholder="{i18n>mrFieldEmailPlaceholder}"
+									liveChange=".onEmailLiveChange" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldMobile}" labelFor="resourceMobile" />
