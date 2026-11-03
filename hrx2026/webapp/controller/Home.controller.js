@@ -1063,7 +1063,9 @@ sap.ui.define([
 			var oPeriod = { from: this._oDashYear.from, to: Backend.isoDate(new Date()) };
 
 			oModel.setProperty("/dash/loadingUtil", true);
-			return this._pDashPeople.then(function (aPeople) {
+			// Everybody, leavers included: someone who left this year still booked time in
+			// it, and without them here the card shows their employee ID instead of a name
+			return TimesheetReportService.loadPeople().then(function (aPeople) {
 				return TimesheetReportService.loadBookings(aPeople, this._sOrgId, oPeriod.from, oPeriod.to);
 			}.bind(this)).then(function (oResult) {
 				var aPeople = TimesheetReport.utilisation(oResult.bookings, oPeriod);
