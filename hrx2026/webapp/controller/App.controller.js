@@ -162,8 +162,8 @@ sap.ui.define([
 					empID: oProfile.empID,
 					pic: oProfile.pic || "",
 					isManager: oProfile.isManager,
-					// "Consultant · BSX000052", as under the name in the design
-					subtitle: [oProfile.jobTitle, oProfile.empID].filter(Boolean).join(" · ")
+					// The job title under the name; the employee ID is not shown there
+					subtitle: oProfile.jobTitle || ""
 				});
 
 				this._showAdminNavigation(!!oProfile.isManager);
