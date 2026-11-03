@@ -51,12 +51,13 @@ sap.ui.define([
 	// the team service does not flag them as managers - but they need everything a
 	// manager has, Admin and every app under it included. They count as managers
 	// whatever the service says.
-	// TEMPORARY: David needs Admin on TDD to test SupportX against HRX. Remove him
-	// before go-live.
+	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
+	// test resources). Remove them before go-live.
 	var MANAGER_EXCEPTIONS = [
 		"tia.menhennet@bluestonex.com",
 		"vicky.williams@bluestonex.com",
-		"david.akilapa@bluestonex.com"
+		"david.akilapa@bluestonex.com",
+		"omkar.gaikar@bluestonex.com"
 	];
 
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
