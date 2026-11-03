@@ -366,7 +366,9 @@
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 16px;
-	align-items: stretch;
+	/* each column keeps its own height: a long list on one side no longer stretches
+	   the card on the other with empty space */
+	align-items: start;
 	margin-bottom: 32px;
 }
 
@@ -384,9 +386,9 @@
 
 /* ── TEAM TODAY ───────────────────────────────────────────────────────────── */
 
-/* .tt-scroll: the table scrolls past 560px, its column headers staying put */
+/* .tt-scroll: the table scrolls past 480px, its column headers staying put */
 .hrxHomePage .hrxHomeTeamScroll.sapMScrollCont {
-	max-height: 560px;
+	max-height: 480px;
 	height: auto !important;
 }
 
@@ -679,6 +681,12 @@
 }
 
 /* .ub-row: the person, then their bar on the right */
+/* The people under the team figure scroll inside the card past 360px */
+.hrxHomePage .hrxHomeUtilList {
+	max-height: 360px;
+	overflow-y: auto;
+}
+
 .hrxHomePage .hrxHomeUtilRow {
 	display: flex;
 	align-items: center;

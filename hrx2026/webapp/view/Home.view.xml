@@ -159,7 +159,7 @@
 								<Text text="{home>/dash/util/cap}" class="hrxHomeUtilCap" />
 							</HBox>
 							<Text text="{i18n>mgrNoUtil}" visible="{= ${home>/dash/util/rows}.length === 0 }" class="hrxHomeEmpty" />
-							<VBox renderType="Bare" items="{path: 'home>/dash/util/rows', templateShareable: false}">
+							<VBox renderType="Bare" items="{path: 'home>/dash/util/rows', templateShareable: false}" class="hrxHomeUtilList">
 								<HBox renderType="Bare" class="hrxHomeUtilRow">
 									<VBox renderType="Bare" class="hrxHomeUtilWho">
 										<Text text="{home>Name}" class="hrxHomeUtilName" />

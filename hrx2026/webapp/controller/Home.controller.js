@@ -1055,7 +1055,7 @@ sap.ui.define([
 
 		/**
 		 * Billable utilisation for the financial year to date: the team figure, and a
-		 * bar per person, lowest first so the ones to look at come to the top.
+		 * bar per person, highest first.
 		 * @returns {Promise} resolved once the card is filled
 		 */
 		_loadUtilisation: function () {
@@ -1090,7 +1090,7 @@ sap.ui.define([
 						state: sState
 					};
 				}, this).sort(function (a, b) {
-					return (a.pct - b.pct) || a.Name.localeCompare(b.Name);
+					return (b.pct - a.pct) || a.Name.localeCompare(b.Name);
 				});
 
 				oModel.setProperty("/dash/util", {
