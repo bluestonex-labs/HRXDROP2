@@ -1309,6 +1309,20 @@ body.hrxApp {
 	padding-bottom: 62px;
 }
 
+/* The foot is pinned into that space, and the frame is solid white: where the
+   theme leaves the foot in the flow, the kept space otherwise shows the darkened
+   page through it as a grey band under the buttons, with square corners above. */
+.hrxApp .sapMDialog.hrxModal {
+	background: var(--surface);
+}
+
+.hrxApp .sapMDialog.hrxModal .sapMDialogFooter {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
 /* .modal-ov: the darkened page behind an open modal */
 body.hrxApp #sap-ui-blocklayer-popup.sapUiBLy {
 	background: rgba(10, 10, 11, .55);
