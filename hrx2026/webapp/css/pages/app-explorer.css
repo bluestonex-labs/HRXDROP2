@@ -72,7 +72,10 @@
 }
 
 /* The title is a single line, so nothing needs clipping: the theme's clip of the
-   title box (rounded, 13px tall) cut the corner off each title's first letter */
+   title box (rounded, 13px tall) cut the corner off each title's first letter.
+   The content wrapper around it is clipped and rounded (16px) too, and its corner
+   sits right on the first letter, so it is opened up as well. */
+.hrxPageExplorer .hrxAeCard .sapMGTContentWrapper,
 .hrxPageExplorer .hrxAeCard .sapMGTHdrContent,
 .hrxPageExplorer .hrxAeCard .sapMGTHdrTxt,
 .hrxPageExplorer .hrxAeCard .sapMGTHdrTxt .sapMText {
