@@ -225,6 +225,8 @@ sap.ui.define([
 						email: sEmail,
 						orgId: sOrgId,
 						empID: oUser.EmpID || "",
+						// The number people see, e.g. BSXOSW0001 (empID can be an old system key)
+						employeeNumber: oUser.EmployeeNumber || "",
 						name: sName,
 						initials: sName.split(/\s+/).map(function (sPart) {
 							return sPart.charAt(0).toUpperCase();

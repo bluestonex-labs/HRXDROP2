@@ -1154,6 +1154,7 @@ sap.ui.define([
 				var oResult = {
 					loggedinUser: oMe ? [{
 						EmpID: oMe.EmployeeID,
+						EmployeeNumber: oMe.EmployeeNumber || "",
 						Name: fullName(oMe),
 						Email: lower(oMe.WorkEmail),
 						SiteID: oMe.BaseSite_ID || "",

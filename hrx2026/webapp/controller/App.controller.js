@@ -163,7 +163,8 @@ sap.ui.define([
 					pic: oProfile.pic || "",
 					isManager: oProfile.isManager,
 					// The job title under the name; the employee ID is not shown there
-					subtitle: oProfile.jobTitle || ""
+					// The employee number (e.g. BSXOSW0001) under the name; the job title until it has one
+					subtitle: oProfile.employeeNumber || oProfile.jobTitle || ""
 				});
 
 				this._showAdminNavigation(!!oProfile.isManager);
