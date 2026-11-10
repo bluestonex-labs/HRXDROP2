@@ -1498,6 +1498,26 @@ sap.ui.define([
 			",BillingID_ID=" + sBillingId + ")";
 	}
 
+	/**
+	 * Saves a resource's support line on a project (FIRST, SECOND or "" for none);
+	 * making someone first line moves it from whoever had it. Skipped when the page
+	 * did not send one, or the service cannot keep it yet.
+	 * @param {string} sProjectId the project
+	 * @param {string} sEmpId the resource
+	 * @param {string} [sSupportLine] FIRST, SECOND or ""
+	 * @returns {Promise} settles once saved
+	 */
+	function saveSupportLine(sProjectId, sEmpId, sSupportLine) {
+		if (sSupportLine === undefined || !HrxServices.has("setSupportLine")) {
+			return Promise.resolve();
+		}
+		return Hrx.callAction("setSupportLine", {
+			ProjectID: sProjectId,
+			EmployeeID: sEmpId,
+			SupportLine: sSupportLine || null
+		});
+	}
+
 	function toTimestamp(sDate) {
 		return sDate ? String(sDate).slice(0, 10) + "T00:00:00Z" : null;
 	}
@@ -1557,6 +1577,7 @@ sap.ui.define([
 							StartDate: oRow.StartDate ? String(oRow.StartDate).slice(0, 10) : null,
 							AssignmentStartDate: oRow.StartDate ? String(oRow.StartDate).slice(0, 10) : null,
 							IsActive: yn(oRow.IsActive !== false),
+							SupportLine: oRow.SupportLine || "",
 							TaskAssigned: mAreasByEmployee[oRow.Employee_EmployeeID] || []
 						};
 					})
@@ -1581,6 +1602,8 @@ sap.ui.define([
 			}
 			return Hrx.create("UserToProject", oAssignment).then(function () {
 				return HrxLegacyProjects.Areas.saveResourceAreas(oBody.ProjectID, oBody.EmpID, oBody.TaskAssigned);
+			}).then(function () {
+				return saveSupportLine(oBody.ProjectID, oBody.EmpID, oBody.SupportLine);
 			}).then(function () {
 				return ok({});
 			});
@@ -1611,14 +1634,22 @@ sap.ui.define([
 					return HrxLegacyProjects.Areas.saveResourceAreas(sProjectId, sEmpId, oBody.TaskAssigned);
 				})
 				.then(function () {
+					return saveSupportLine(sProjectId, sEmpId, oBody.SupportLine);
+				})
+				.then(function () {
 					return ok({});
 				});
 		},
 
+		/** A released resource is no longer anyone's first or second line. */
 		release: function (oBody) {
 			return setAssignmentActive(oBody.empID, oBody.projectID, {
 				IsActive: false,
 				EndDate: new Date().toISOString()
+			}).then(function (oAnswer) {
+				return saveSupportLine(oBody.projectID, oBody.empID, "").then(function () {
+					return oAnswer;
+				});
 			});
 		},
 

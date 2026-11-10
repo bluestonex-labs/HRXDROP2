@@ -566,6 +566,8 @@ sap.ui.define([
 				BillableDays: "",
 				StartDate: null,
 				IsActive: "Y",
+				SupportLine: "",
+				firstLine: this._firstLine(),
 				taskKeys: []
 			});
 			this._openDialog("_pAssignmentDialog", "bsx.hrx.hrx2026.fragment.AssignmentDialog");
@@ -589,6 +591,8 @@ sap.ui.define([
 				BillableDays: formatter.clean(oAssignment.BillableDays),
 				StartDate: formatter.toDate(oAssignment.AssignmentStartDate || oAssignment.StartDate),
 				IsActive: oAssignment.IsActive || "Y",
+				SupportLine: oAssignment.SupportLine || "",
+				firstLine: this._firstLine(),
 				taskKeys: (oAssignment.TaskAssigned || []).map(function (oTask) {
 					return oTask.ProjectTaskKey || oTask.TaskKey;
 				})
@@ -598,6 +602,43 @@ sap.ui.define([
 
 		onCancelAssignment: function () {
 			this._closeDialog("_pAssignmentDialog");
+		},
+
+		/**
+		 * Who is the project's first line now (one per project, for SupportX).
+		 * @returns {object|null} { EmpID, FullName }, or null when nobody is
+		 */
+		_firstLine: function () {
+			var oFirst = (this.getModel("mpTabs").getProperty("/assignments") || []).filter(function (oAssignment) {
+				return oAssignment.SupportLine === "FIRST";
+			})[0];
+			return oFirst ? { EmpID: oFirst.EmpID, FullName: oFirst.FullName } : null;
+		},
+
+		/**
+		 * The Assign resource dialog's note when First line is picked for someone while
+		 * another person has it: saving moves it to them.
+		 * @param {string} sSupportLine the line picked
+		 * @param {string} sEmpId the resource in the dialog
+		 * @param {object|null} oFirstLine the project's first line now
+		 * @returns {string} the note, or "" when nobody else is first line
+		 */
+		formatFirstLineMove: function (sSupportLine, sEmpId, oFirstLine) {
+			if (sSupportLine !== "FIRST" || !oFirstLine || oFirstLine.EmpID === sEmpId) {
+				return "";
+			}
+			var oResource = (this.getModel("mpForm").getProperty("/resources") || []).filter(function (oPerson) {
+				return oPerson.EmpID === sEmpId;
+			})[0];
+			return this.getText("mpFirstLineMoves", [oFirstLine.FullName, oResource ? oResource.FullName : this.getText("mpThisResource")]);
+		},
+
+		/**
+		 * @param {string} sSupportLine FIRST or SECOND
+		 * @returns {string} how the resources table's pill shows it
+		 */
+		formatSupportLine: function (sSupportLine) {
+			return this.getText(sSupportLine === "FIRST" ? "mpSupportFirst" : "mpSupportSecond");
 		},
 
 		/**
@@ -675,6 +716,7 @@ sap.ui.define([
 				ProjectID: oDetail.ProjectKey,
 				EmpID: oForm.EmpID,
 				IsActive: oForm.IsActive || "Y",
+				SupportLine: oForm.SupportLine || "",
 				TaskAssigned: aTasks
 			} : {
 				OrgID: this._sOrgId,
@@ -689,6 +731,7 @@ sap.ui.define([
 				StartDate: this._isoDate(oForm.StartDate),
 				EndDate: "",
 				IsActive: "Y",
+				SupportLine: oForm.SupportLine || "",
 				TaskAssigned: aTasks
 			};
 

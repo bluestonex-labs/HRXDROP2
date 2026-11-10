@@ -5,7 +5,8 @@
 
 	<!-- Assign a resource to the project, or edit an assignment: the design's fields
 	     (resource, billing scheme, day rate, day cost, areas) plus the billable days
-	     and start date the timesheet reads from the assignment. -->
+	     and start date the timesheet reads from the assignment, and the resource's
+	     support line for SupportX. -->
 	<Dialog
 		id="assignmentDialog"
 		title="{= ${mpForm>/mode} === 'edit' ? ${i18n>mpEditAssignmentTitle} : ${i18n>mpAddAssignmentTitle} }"
@@ -72,6 +73,28 @@
 						displayFormat="dd/MM/yyyy"
 						valueFormat="yyyy-MM-dd"
 						class="hrxMpInput hrxMpDate" />
+				</VBox>
+				<!-- Support line, for SupportX: one first line per project, any number of
+				     second line. Picking First line while someone else has it says it
+				     moves to this person on save. -->
+				<VBox renderType="Bare" visible="{services>/supportLine}" class="hrxMpField">
+					<layoutData>
+						<grid:GridItemLayoutData gridColumn="1 / -1" />
+					</layoutData>
+					<Label text="{i18n>mpFieldSupportLine}" labelFor="assignmentSupportLine" class="hrxModalLabel" />
+					<Select
+						id="assignmentSupportLine"
+						selectedKey="{mpForm>/SupportLine}"
+						width="100%"
+						class="hrxMpInput hrxMpSelect">
+						<core:Item key="" text="{i18n>mpSupportNone}" />
+						<core:Item key="FIRST" text="{i18n>mpSupportFirst}" />
+						<core:Item key="SECOND" text="{i18n>mpSupportSecond}" />
+					</Select>
+					<Text
+						text="{parts: ['mpForm>/SupportLine', 'mpForm>/EmpID', 'mpForm>/firstLine'], formatter: '.formatFirstLineMove'}"
+						visible="{= ${mpForm>/SupportLine} === 'FIRST' &amp;&amp; !!${mpForm>/firstLine} &amp;&amp; ${mpForm>/firstLine/EmpID} !== ${mpForm>/EmpID} }"
+						class="hrxMpHint hrxMpHintWarn" />
 				</VBox>
 				<!-- Areas: the project's own areas, one chip each -->
 				<VBox renderType="Bare" visible="{mp>/tasksAvailable}" class="hrxMpField">

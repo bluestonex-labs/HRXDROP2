@@ -31,7 +31,8 @@ sap.ui.define([
 		notificationReads: { operation: "fetchReadNotifications" },
 		jobTitle: { entityType: "Users", property: "JobTitle" },
 		contactName: { entityType: "Contacts", property: "FirstName" },
-		dayCost: { entityType: "UserToProject", property: "DayCost" }
+		dayCost: { entityType: "UserToProject", property: "DayCost" },
+		supportLine: { operation: "setSupportLine" }
 	};
 
 	var oDeployed = { entitySets: {}, operations: {}, properties: {} };

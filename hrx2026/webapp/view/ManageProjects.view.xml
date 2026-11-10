@@ -331,6 +331,7 @@
 						<columns>
 							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColResource}" /></Column>
 							<Column><Text text="{i18n>mpColAreas}" /></Column>
+							<Column visible="{services>/supportLine}"><Text text="{i18n>mpColSupport}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>mpColRate}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>mpColCost}" /></Column>
 							<Column><Text text="{i18n>mpColStatus}" /></Column>
@@ -341,6 +342,21 @@
 								<cells>
 									<Text text="{mpTabs>FullName}" class="hrxMpStrong" />
 									<Text text="{path: 'mpTabs>TaskAssigned', formatter: '.formatAreaList'}" />
+									<HBox renderType="Bare">
+										<Text text="—" visible="{= !${mpTabs>SupportLine} }" />
+										<Text
+											text="{path: 'mpTabs>SupportLine', formatter: '.formatSupportLine'}"
+											visible="{= !!${mpTabs>SupportLine} }"
+											wrapping="false"
+											class="hrxMpPill">
+											<customData>
+												<core:CustomData
+													key="tone"
+													value="{= ${mpTabs>SupportLine} === 'FIRST' ? 'info' : 'neu' }"
+													writeToDom="true" />
+											</customData>
+										</Text>
+									</HBox>
 									<Text text="{path: 'mpTabs>DayRate', formatter: '.formatPerDay'}" wrapping="false" />
 									<Text text="{path: 'mpTabs>DayCost', formatter: '.formatPerDay'}" wrapping="false" />
 									<HBox renderType="Bare">
