@@ -294,7 +294,7 @@ sap.ui.define([
 				pillText: this.getText(oTrigger.emailed ? "skEmailSent" : "skTriggerOpen"),
 				pillKind: oTrigger.emailed ? "info" : "crit",
 				historyCount: this.getText(oTrigger.instances === 1 ? "skAbsence" : "skAbsences", [oTrigger.instances]),
-				dismissText: this.getText("skDismissButton", [sName.split(/\s+/)[0]]),
+				dismissText: this.getText("skDismissButton"),
 				noteText: bDismissed ? this.getText("skDismissedNote", [oTrigger.note]) : "",
 				emailedText: sEmailedOn ?
 					this.getText("skEmailedOn", [this._rangeText(sEmailedOn, sEmailedOn)]) : this.getText("skEmailed"),
