@@ -24,6 +24,9 @@ sap.ui.define([
 	var ASSIGNMENTS_SERVICE = SERVICE_ROOT + "/hrx/manageAssignments.xsjs";
 	var ATTACHMENTS_SERVICE = SERVICE_ROOT + "/hrx/manageAttachments.xsjs";
 
+	// The project manager filter's choice for projects that have none
+	var NO_MANAGER = "-";
+
 	var EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 	// Dates as the design writes them, e.g. "1 Apr 2020".
@@ -193,6 +196,9 @@ sap.ui.define([
 					return false;
 				}
 				if (oFilter.timeBooking !== "A" && (oProject.IsTimeBookingAllowed || "N") !== oFilter.timeBooking) {
+					return false;
+				}
+				if (oFilter.manager && (oProject.ProjectManagerID || NO_MANAGER) !== oFilter.manager) {
 					return false;
 				}
 				if (sQuery) {
@@ -414,7 +420,33 @@ sap.ui.define([
 		onOpenFilter: function () {
 			var oViewModel = this.getModel("mpView");
 			oViewModel.setProperty("/filterDraft", Object.assign({}, oViewModel.getProperty("/filter")));
+			this.getModel("mp").setProperty("/filterManagers", this._filterManagers());
 			this._openDialog("_pFilterDialog", "bsx.hrx.hrx2026.fragment.ProjectFilterDialog");
+		},
+
+		/**
+		 * The filter's project manager choices: "All project managers", everyone who
+		 * manages a project now (A to Z), then "No project manager". Worked out each
+		 * time the filter opens, so a manager changed on a project is offered at once.
+		 * @returns {Array<object>} { key, text }
+		 */
+		_filterManagers: function () {
+			var mNames = this._mResourceNames || {};
+			var aManagers = [];
+			(this.getModel("mp").getProperty("/allProjects") || []).forEach(function (oProject) {
+				var sManager = oProject.ProjectManagerID;
+				if (sManager && !aManagers.some(function (oManager) {
+					return oManager.key === sManager;
+				})) {
+					aManagers.push({ key: sManager, text: mNames[sManager] || sManager });
+				}
+			});
+			aManagers.sort(function (a, b) {
+				return a.text.localeCompare(b.text);
+			});
+			return [{ key: "", text: this.getText("mpFilterAllManagers") }]
+				.concat(aManagers)
+				.concat([{ key: NO_MANAGER, text: this.getText("mpFilterNoManager") }]);
 		},
 
 		onConfirmFilter: function () {
@@ -1263,7 +1295,7 @@ sap.ui.define([
 
 		_defaultFilter: function () {
 			// As the design opens: every project, booking open or closed.
-			return { client: "", timeBooking: "A" };
+			return { client: "", timeBooking: "A", manager: "" };
 		},
 
 		_emptyTabs: function () {
