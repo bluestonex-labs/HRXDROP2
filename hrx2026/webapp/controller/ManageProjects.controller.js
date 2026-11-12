@@ -8,12 +8,14 @@ sap.ui.define([
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
 	"../model/Backend",
+	"../model/Hrx",
+	"../model/HrxServices",
 	"../model/CurrentUser",
 	"../model/formatter",
 	"../model/BillingSchemes",
 	"../model/RequiredFields",
 	"../model/Toast"
-], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, CurrentUser, formatter,
+], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Backend, Hrx, HrxServices, CurrentUser, formatter,
 	BillingSchemes, RequiredFields, Toast) {
 	"use strict";
 
@@ -242,6 +244,7 @@ sap.ui.define([
 			]).then(function (aResults) {
 				this.getModel("mpDetail").setData(this._toDetail(aResults[0], this._strip(aResults[1])));
 				oViewModel.setProperty("/detailBusy", false);
+				this._loadClientComponents(oKeys.ClientKey);
 			}.bind(this)).catch(function (oError) {
 				oViewModel.setProperty("/detailBusy", false);
 				this._closeDetail();
@@ -260,6 +263,9 @@ sap.ui.define([
 				ProjectTypeKey: oProject.ProjectTypeKey || "",
 				PriorityKey: oProject.PriorityKey || "",
 				ProjectManagerID: oProject.ProjectManagerID || "",
+				// One of the client's components (set up in Manage Clients), for SupportX
+				ClientComponentID: oProject.ClientComponentID || "",
+				components: [],
 				PONumber: oProject.PONumber || "",
 				POValue: oProject.POValue || "",
 				TotBillableDays: oProject.TotBillableDays || "",
@@ -285,6 +291,32 @@ sap.ui.define([
 				hasContacts: !!(oProject.PrimaryContactName || oProject.PrimaryContactEmail ||
 					oProject.SecondaryContactName || oProject.SecondaryContactEmail)
 			};
+		},
+
+		/**
+		 * Fills the Component dropdown with the components set up for the project's
+		 * client in Manage Clients. Only when the HRX service has the project component.
+		 * @param {string} sClientKey the client's ID
+		 */
+		_loadClientComponents: function (sClientKey) {
+			if (!sClientKey || !HrxServices.hasProperty("Projects", "ClientComponent_ID")) {
+				return;
+			}
+			Hrx.list("ClientComponents", {
+				$filter: "Client_ID eq " + sClientKey,
+				$select: "ID,Software,Component,SubComponent"
+			}).then(function (aComponents) {
+				var aChoices = aComponents.map(function (oComponent) {
+					return {
+						ID: oComponent.ID,
+						// e.g. "Maextro · Cloud · Sales orders"
+						Text: [oComponent.Software, oComponent.Component, oComponent.SubComponent].filter(Boolean).join(" · ")
+					};
+				});
+				this.getModel("mpDetail").setProperty("/components", aChoices);
+			}.bind(this)).catch(function (oError) {
+				this._showError("mpErrorComponents", oError);
+			}.bind(this));
 		},
 
 		_clientName: function (sClientKey) {
@@ -488,6 +520,7 @@ sap.ui.define([
 				POValue: String(oDetail.POValue || "0"),
 				IsTimeBookingAllowed: oDetail.TimeBooking ? "Y" : "N",
 				ProjectManagerID: oDetail.ProjectManagerID || "",
+				ClientComponentID: oDetail.ClientComponentID || "",
 				TotBillableDays: String(oDetail.TotBillableDays || "0"),
 				ProjectTask: (oDetail.taskKeys || []).map(function (sTaskKey) {
 					return { TaskKey: sTaskKey };

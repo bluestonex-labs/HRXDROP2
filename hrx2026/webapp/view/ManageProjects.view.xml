@@ -242,6 +242,19 @@
 								<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" />
 							</ComboBox>
 						</VBox>
+						<!-- Which of the client's components the project supports (from Manage Clients) -->
+						<VBox renderType="Bare" visible="{services>/projectComponent}" class="hrxMpField">
+							<Label text="{i18n>mpFieldComponent}" labelFor="projectComponent" class="hrxMpLabel" />
+							<ComboBox
+								id="projectComponent"
+								selectedKey="{mpDetail>/ClientComponentID}"
+								items="{path: 'mpDetail>/components', templateShareable: false}"
+								width="100%"
+								placeholder="{= ${mpDetail>/components}.length ? ${i18n>mpFieldComponentPlaceholder} : ${i18n>mpFieldComponentNone} }"
+								class="hrxMpInput hrxMpSelect">
+								<core:ListItem key="{mpDetail>ID}" text="{mpDetail>Text}" />
+							</ComboBox>
+						</VBox>
 						<!-- Project areas: one chip per area, on when the project covers it -->
 						<VBox renderType="Bare" visible="{mp>/tasksAvailable}" class="hrxMpField">
 							<layoutData>
