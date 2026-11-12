@@ -263,16 +263,20 @@ sap.ui.define([
 		},
 
 		/**
-		 * Deletes a recorded absence, every day of it. Nothing is emailed; trigger reviews
-		 * and any return to work it started are kept.
+		 * Deletes a recorded absence, every day of it, and the return to work it started
+		 * when the page says no other absence carries that on. Nothing is emailed;
+		 * trigger reviews are kept.
 		 * @param {string} sAbsenceId the absence (AbsenceID from getAbsences)
-		 * @returns {Promise} resolved once its rows are gone
+		 * @param {string} [sRtwId] the return to work to delete with it, steps and all
+		 * @returns {Promise} resolved once they are gone
 		 */
-		deleteAbsence: function (sAbsenceId) {
+		deleteAbsence: function (sAbsenceId, sRtwId) {
 			return absenceRows(sAbsenceId).then(function (aRows) {
 				return Promise.all(aRows.map(function (oRow) {
 					return Hrx.remove("Leaves(" + oRow.ID + ")");
 				}));
+			}).then(function () {
+				return sRtwId ? Hrx.remove("ReturnsToWork(" + sRtwId + ")") : null;
 			});
 		},
 

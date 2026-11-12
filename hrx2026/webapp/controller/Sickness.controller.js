@@ -235,14 +235,43 @@ sap.ui.define([
 
 			aAbsences.forEach(function (oAbsence) {
 				var bHasRtw = Object.prototype.hasOwnProperty.call(mOpenedOn, oAbsence.EmpID);
-				// The process is opened just after the absence is saved, so allow a
-				// minute either way; an absence recorded later carries the same process on.
-				var bOpen = bHasRtw && (!oAbsence.RecordedOn || !mOpenedOn[oAbsence.EmpID] ||
-					new Date(oAbsence.RecordedOn).getTime() >= new Date(mOpenedOn[oAbsence.EmpID]).getTime() - 60000);
+				var bOpen = bHasRtw && this._isCoveredBy(oAbsence, mOpenedOn[oAbsence.EmpID]);
 
 				oAbsence.statusText = this.getText(bOpen ? "skStatusOpen" : "skStatusActioned");
 				oAbsence.statusKind = bOpen ? "warn" : "ok";
 			}, this);
+		},
+
+		/**
+		 * Whether an absence is part of a return to work opened at a time: the process is
+		 * opened just after the absence is saved, so allow a minute either way; an
+		 * absence recorded later carries the same process on.
+		 * @param {object} oAbsence the absence, as _toAbsence shapes it
+		 * @param {string} sOpenedOn when the return to work was opened
+		 * @returns {boolean} true when it is
+		 */
+		_isCoveredBy: function (oAbsence, sOpenedOn) {
+			return !oAbsence.RecordedOn || !sOpenedOn ||
+				new Date(oAbsence.RecordedOn).getTime() >= new Date(sOpenedOn).getTime() - 60000;
+		},
+
+		/**
+		 * The return to work in progress that only this absence is part of - deleted
+		 * with it. One that a later absence carried on is still needed, so is kept.
+		 * @param {object} oAbsence the absence, as _toAbsence shapes it
+		 * @returns {object|null} the return to work, as _toRtw shapes it
+		 */
+		_rtwOnlyFor: function (oAbsence) {
+			var oRtw = (this.getModel("sk").getProperty("/rtw") || []).filter(function (o) {
+				return o.EmpID === oAbsence.EmpID;
+			})[0];
+			if (!oRtw || !this._isCoveredBy(oAbsence, oRtw.OpenedOn)) {
+				return null;
+			}
+			var bShared = (this.getModel("sk").getProperty("/absences") || []).some(function (o) {
+				return o.AbsenceID !== oAbsence.AbsenceID && o.EmpID === oAbsence.EmpID && this._isCoveredBy(o, oRtw.OpenedOn);
+			}, this);
+			return bShared ? null : oRtw;
 		},
 
 		_toAbsence: function (oRaw) {
@@ -446,13 +475,15 @@ sap.ui.define([
 		},
 
 		/**
-		 * Deletes a recorded absence, every day of it, once the admin confirms.
+		 * Deletes a recorded absence, every day of it, once the admin confirms - and the
+		 * return-to-work checklist it started, unless another absence carried that on.
 		 * @param {sap.ui.base.Event} oEvent the Delete button's press event
 		 */
 		onDeleteAbsence: function (oEvent) {
 			var oAbsence = oEvent.getSource().getBindingContext("sk").getObject();
+			var oRtw = this._rtwOnlyFor(oAbsence);
 
-			MessageBox.confirm(this.getText("skDeleteConfirm", [oAbsence.Name, oAbsence.dateText]), {
+			MessageBox.confirm(this.getText(oRtw ? "skDeleteConfirmRtw" : "skDeleteConfirm", [oAbsence.Name, oAbsence.dateText]), {
 				title: this.getText("skDeleteTitle"),
 				actions: [MessageBox.Action.DELETE, MessageBox.Action.CANCEL],
 				emphasizedAction: MessageBox.Action.DELETE,
@@ -461,7 +492,7 @@ sap.ui.define([
 						return;
 					}
 					this.getModel("skView").setProperty("/busy", true);
-					SicknessService.deleteAbsence(oAbsence.AbsenceID).then(function () {
+					SicknessService.deleteAbsence(oAbsence.AbsenceID, oRtw && oRtw.RtwID).then(function () {
 						MessageToast.show(this.getText("skDeleted"));
 						this._load();
 					}.bind(this)).catch(function (oError) {
