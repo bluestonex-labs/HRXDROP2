@@ -453,7 +453,8 @@ sap.ui.define([
 						PrimaryContactName: oProject.PrimaryContactName || "",
 						PrimaryContactEmail: oProject.PrimaryContactEmail || "",
 						SecondaryContactName: oProject.SecondaryContactName || "",
-						SecondaryContactEmail: oProject.SecondaryContactEmail || ""
+						SecondaryContactEmail: oProject.SecondaryContactEmail || "",
+						ClientComponentID: oProject.ClientComponent_ID || ""
 					};
 				});
 			});
@@ -1453,6 +1454,10 @@ sap.ui.define([
 			ProjectManagerID: oBody.ProjectManagerID || "",
 			TotBillableDays: String(oBody.TotBillableDays || "")
 		};
+		// Which of the client's components the project supports, once the service has it
+		if ("ClientComponentID" in oBody && HrxServices.hasProperty("Projects", "ClientComponent_ID")) {
+			oProject.ClientComponent_ID = oBody.ClientComponentID || null;
+		}
 		return oProject;
 	}
 

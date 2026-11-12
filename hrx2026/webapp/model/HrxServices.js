@@ -26,6 +26,7 @@ sap.ui.define([
 		clientApplications: { entitySet: "ClientApplications" },
 		projectAreas: { entitySet: "ProjectAreas" },
 		projectContacts: { entityType: "Projects", property: "PrimaryContactName" },
+		projectComponent: { entityType: "Projects", property: "ClientComponent_ID" },
 		projectDocuments: { operation: "fetchProjectDocuments" },
 		reminders: { operation: "sendReminder" },
 		notificationReads: { operation: "fetchReadNotifications" },
