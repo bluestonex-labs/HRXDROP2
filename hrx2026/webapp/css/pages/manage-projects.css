@@ -358,6 +358,13 @@
 	color: var(--ice-deep);
 }
 
+/* the Support column's pills (support line, support admin): side by side, wrapping
+   rather than widening the table */
+.hrxApp .hrxManageProjects .hrxMpPills {
+	flex-wrap: wrap;
+	gap: 4px 6px;
+}
+
 /* ── DETAIL HEAD (.md-head) ───────────────────────────────────────────────── */
 
 .hrxApp .hrxManageProjects .hrxMpHead {
@@ -792,7 +799,8 @@
 }
 
 /* the time booking switch (.sw): 42 x 24, mint when on */
-.hrxApp .hrxManageProjects .hrxMpSwitch.sapMSwtCont {
+.hrxApp .hrxManageProjects .hrxMpSwitch.sapMSwtCont,
+.hrxApp .hrxMpDialog .hrxMpSwitch.sapMSwtCont {
 	width: 42px;
 	height: 24px;
 	padding: 0;
@@ -800,7 +808,8 @@
 	line-height: normal;
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwt {
 	position: relative;
 	width: 42px;
 	height: 24px;
@@ -814,11 +823,13 @@
 	overflow: hidden;
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt.sapMSwtOn {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwt.sapMSwtOn,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwt.sapMSwtOn {
 	background: var(--mint);
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtInner {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtInner,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwtInner {
 	position: absolute;
 	inset: 0;
 	width: auto;
@@ -827,11 +838,13 @@
 	background: transparent;
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtText {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtText,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwtText {
 	display: none;
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwtHandle {
 	position: absolute;
 	top: 3px;
 	/* the theme sizes and places the knob itself (20px wide, 29px in when on), which
@@ -848,12 +861,14 @@
 	transition: left .18s;
 }
 
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtOn .sapMSwtHandle {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtOn .sapMSwtHandle,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwtOn .sapMSwtHandle {
 	left: 21px !important;
 }
 
 .hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle::before,
-.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle::after {
+.hrxApp .hrxManageProjects .hrxMpSwitch .sapMSwtHandle::after,
+.hrxApp .hrxMpDialog .hrxMpSwitch .sapMSwtHandle::after {
 	content: none;
 }
 

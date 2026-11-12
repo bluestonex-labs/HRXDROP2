@@ -632,6 +632,7 @@ sap.ui.define([
 				StartDate: null,
 				IsActive: "Y",
 				SupportLine: "",
+				IsSupportAdmin: false,
 				firstLine: this._firstLine(),
 				taskKeys: []
 			});
@@ -657,6 +658,7 @@ sap.ui.define([
 				StartDate: formatter.toDate(oAssignment.AssignmentStartDate || oAssignment.StartDate),
 				IsActive: oAssignment.IsActive || "Y",
 				SupportLine: oAssignment.SupportLine || "",
+				IsSupportAdmin: !!oAssignment.IsSupportAdmin,
 				firstLine: this._firstLine(),
 				taskKeys: (oAssignment.TaskAssigned || []).map(function (oTask) {
 					return oTask.ProjectTaskKey || oTask.TaskKey;
@@ -782,6 +784,7 @@ sap.ui.define([
 				EmpID: oForm.EmpID,
 				IsActive: oForm.IsActive || "Y",
 				SupportLine: oForm.SupportLine || "",
+				IsSupportAdmin: !!oForm.IsSupportAdmin,
 				TaskAssigned: aTasks
 			} : {
 				OrgID: this._sOrgId,
@@ -797,6 +800,7 @@ sap.ui.define([
 				EndDate: "",
 				IsActive: "Y",
 				SupportLine: oForm.SupportLine || "",
+				IsSupportAdmin: !!oForm.IsSupportAdmin,
 				TaskAssigned: aTasks
 			};
 

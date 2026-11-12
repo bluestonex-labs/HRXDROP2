@@ -34,7 +34,8 @@ sap.ui.define([
 		jobTitle: { entityType: "Users", property: "JobTitle" },
 		contactName: { entityType: "Contacts", property: "FirstName" },
 		dayCost: { entityType: "UserToProject", property: "DayCost" },
-		supportLine: { operation: "setSupportLine" }
+		supportLine: { operation: "setSupportLine" },
+		supportAdmin: { entityType: "UserToProject", property: "IsSupportAdmin" }
 	};
 
 	var oDeployed = { entitySets: {}, operations: {}, properties: {} };

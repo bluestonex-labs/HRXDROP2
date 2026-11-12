@@ -1583,6 +1583,7 @@ sap.ui.define([
 							AssignmentStartDate: oRow.StartDate ? String(oRow.StartDate).slice(0, 10) : null,
 							IsActive: yn(oRow.IsActive !== false),
 							SupportLine: oRow.SupportLine || "",
+							IsSupportAdmin: oRow.IsSupportAdmin === true,
 							TaskAssigned: mAreasByEmployee[oRow.Employee_EmployeeID] || []
 						};
 					})
@@ -1604,6 +1605,9 @@ sap.ui.define([
 			};
 			if (HrxServices.hasProperty("UserToProject", "DayCost")) {
 				oAssignment.DayCost = String(oBody.DayCost || "");
+			}
+			if (HrxServices.hasProperty("UserToProject", "IsSupportAdmin")) {
+				oAssignment.IsSupportAdmin = oBody.IsSupportAdmin === true;
 			}
 			return Hrx.create("UserToProject", oAssignment).then(function () {
 				return HrxLegacyProjects.Areas.saveResourceAreas(oBody.ProjectID, oBody.EmpID, oBody.TaskAssigned);
@@ -1627,6 +1631,9 @@ sap.ui.define([
 			if (HrxServices.hasProperty("UserToProject", "DayCost")) {
 				oChange.DayCost = String(oBody.DayCost || "");
 			}
+			if (HrxServices.hasProperty("UserToProject", "IsSupportAdmin")) {
+				oChange.IsSupportAdmin = oBody.IsSupportAdmin === true;
+			}
 			if (aKey.length === 3 && aKey[2] !== oBody.BillingID) {
 				return Hrx.remove(assignmentPath(aKey[0], aKey[1], aKey[2])).then(function () {
 					return Assignments["new"](Object.assign({}, oBody, { EmpID: aKey[0], ProjectID: aKey[1] }));
@@ -1646,12 +1653,13 @@ sap.ui.define([
 				});
 		},
 
-		/** A released resource is no longer anyone's first or second line. */
+		/** A released resource is no longer anyone's first or second line, or a support admin. */
 		release: function (oBody) {
-			return setAssignmentActive(oBody.empID, oBody.projectID, {
-				IsActive: false,
-				EndDate: new Date().toISOString()
-			}).then(function (oAnswer) {
+			var oChange = { IsActive: false, EndDate: new Date().toISOString() };
+			if (HrxServices.hasProperty("UserToProject", "IsSupportAdmin")) {
+				oChange.IsSupportAdmin = false;
+			}
+			return setAssignmentActive(oBody.empID, oBody.projectID, oChange).then(function (oAnswer) {
 				return saveSupportLine(oBody.projectID, oBody.empID, "").then(function () {
 					return oAnswer;
 				});

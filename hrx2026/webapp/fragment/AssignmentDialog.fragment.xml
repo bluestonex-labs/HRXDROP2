@@ -65,6 +65,16 @@
 					<Label text="{i18n>mpFieldBillableDays}" labelFor="assignmentDays" required="true" class="hrxModalLabel" />
 					<Input id="assignmentDays" value="{mpForm>/BillableDays}" type="Number" class="hrxMpInput" />
 				</VBox>
+				<!-- Support admin on this project, for other apps (SupportX) -->
+				<VBox renderType="Bare" visible="{services>/supportAdmin}" class="hrxMpField">
+					<Label text="{i18n>mpFieldSupportAdmin}" labelFor="assignmentSupportAdmin" class="hrxModalLabel" />
+					<Switch
+						id="assignmentSupportAdmin"
+						state="{mpForm>/IsSupportAdmin}"
+						customTextOn=" "
+						customTextOff=" "
+						class="hrxMpSwitch" />
+				</VBox>
 				<VBox renderType="Bare" class="hrxMpField">
 					<Label text="{i18n>mpFieldStartDate}" labelFor="assignmentStartDate" class="hrxModalLabel" />
 					<DatePicker

@@ -344,7 +344,7 @@
 						<columns>
 							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColResource}" /></Column>
 							<Column><Text text="{i18n>mpColAreas}" /></Column>
-							<Column visible="{services>/supportLine}"><Text text="{i18n>mpColSupport}" /></Column>
+							<Column visible="{= ${services>/supportLine} || ${services>/supportAdmin} }"><Text text="{i18n>mpColSupport}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>mpColRate}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>mpColCost}" /></Column>
 							<Column><Text text="{i18n>mpColStatus}" /></Column>
@@ -355,8 +355,8 @@
 								<cells>
 									<Text text="{mpTabs>FullName}" class="hrxMpStrong" />
 									<Text text="{path: 'mpTabs>TaskAssigned', formatter: '.formatAreaList'}" />
-									<HBox renderType="Bare">
-										<Text text="—" visible="{= !${mpTabs>SupportLine} }" />
+									<HBox renderType="Bare" class="hrxMpPills">
+										<Text text="—" visible="{= !${mpTabs>SupportLine} &amp;&amp; !${mpTabs>IsSupportAdmin} }" />
 										<Text
 											text="{path: 'mpTabs>SupportLine', formatter: '.formatSupportLine'}"
 											visible="{= !!${mpTabs>SupportLine} }"
@@ -367,6 +367,15 @@
 													key="tone"
 													value="{= ${mpTabs>SupportLine} === 'FIRST' ? 'info' : 'neu' }"
 													writeToDom="true" />
+											</customData>
+										</Text>
+										<Text
+											text="{i18n>mpSupportAdmin}"
+											visible="{= !!${mpTabs>IsSupportAdmin} }"
+											wrapping="false"
+											class="hrxMpPill">
+											<customData>
+												<core:CustomData key="tone" value="info" writeToDom="true" />
 											</customData>
 										</Text>
 									</HBox>
