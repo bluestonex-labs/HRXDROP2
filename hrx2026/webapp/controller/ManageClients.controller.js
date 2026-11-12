@@ -805,8 +805,9 @@ sap.ui.define([
 			var oForm = this.getModel("mcForm").getData();
 			var sClientKey = this.getModel("mcView").getProperty("/selectedId");
 
-			// The HRX service keeps names, so one typed in (not in the list yet) is kept too.
-			if (HrxServices.has("ClientComponents")) {
+			// From the software catalogue only what is picked from the lists is saved (by its
+			// code). Without it the HRX service keeps names, so one typed in is kept too.
+			if (!HrxServices.has("Softwares") && HrxServices.has("ClientComponents")) {
 				oForm.Software = this._pickedOrTyped("componentSoftware", oForm.Software);
 				oForm.Component = this._pickedOrTyped("componentComponent", oForm.Component);
 				oForm.SubComponent = this._pickedOrTyped("componentSubComponent", oForm.SubComponent);

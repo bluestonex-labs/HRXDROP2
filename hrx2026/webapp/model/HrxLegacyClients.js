@@ -10,9 +10,10 @@ sap.ui.define([
 	 * here for each call; a call is only answered when the HRX service has what it needs
 	 * deployed (HrxServices), otherwise it goes to the original services as before.
 	 *
-	 * HRX keeps software, components, apps and services as names typed on the page, not
-	 * codes from a catalogue: the "catalogue" reads below list the names already in use,
-	 * as suggestions.
+	 * Software, components and sub-components come from the service's software catalogue
+	 * and are saved by their codes. Until the service has the catalogue, and for apps and
+	 * services, HRX keeps names typed on the page: the "catalogue" reads below then list
+	 * the names already in use, as suggestions.
 	 */
 
 	var SEVERITIES = ["Very High", "High", "Medium", "Low"];
@@ -179,11 +180,25 @@ sap.ui.define([
 		return !sValue || sValue === "NA" ? "" : sValue;
 	}
 
-	function componentBody(oBody) {
+	// With the software catalogue the page holds its codes, and the service fills in the
+	// names; without it, the names typed or picked on the page.
+	function componentNames(oBody) {
+		if (HrxServices.has("Softwares")) {
+			return {
+				SoftwareID: oBody.Software,
+				ComponentID: nameOrEmpty(oBody.Component) || null,
+				SubComponentID: nameOrEmpty(oBody.SubComponent) || null
+			};
+		}
 		return {
 			Software: oBody.Software,
 			Component: nameOrEmpty(oBody.Component),
-			SubComponent: nameOrEmpty(oBody.SubComponent),
+			SubComponent: nameOrEmpty(oBody.SubComponent)
+		};
+	}
+
+	function componentBody(oBody) {
+		return Object.assign(componentNames(oBody), {
 			ValidFrom: day(oBody.ValidFrom),
 			ValidTill: day(oBody.ValidTill),
 			IsSupported: isYes(oBody.IsSupported),
@@ -196,16 +211,17 @@ sap.ui.define([
 			WarningMessage: oBody.WarningMessage || "",
 			HardMessage: oBody.HardMessage || "",
 			IsCloudCustomer: isYes(oBody.IsCloudCustomer)
-		};
+		});
 	}
 
 	function toLicensedApp(oComponent) {
 		return {
 			SoftwareRecID: oComponent.ID,
 			ClientKey: oComponent.Client_ID,
-			Software: oComponent.Software || "",
-			Component: oComponent.Component || "",
-			SubComponent: oComponent.SubComponent || "",
+			// The catalogue codes when the component has them, for the dialog's lists
+			Software: oComponent.SoftwareID || oComponent.Software || "",
+			Component: oComponent.ComponentID || oComponent.Component || "",
+			SubComponent: oComponent.SubComponentID || oComponent.SubComponent || "",
 			AppName: oComponent.Software || "",
 			ComponentName: oComponent.Component || "",
 			SubComponentName: oComponent.SubComponent || "",
@@ -303,9 +319,18 @@ sap.ui.define([
 				}));
 			}
 		},
+		// The software catalogue when the service has it; otherwise the names already
+		// used on clients' components, as suggestions.
 		Softwares: {
 			needs: "ClientComponents",
 			read: function () {
+				if (HrxServices.has("Softwares")) {
+					return Hrx.list("Softwares", { $orderby: "Name" }).then(function (aRows) {
+						return aRows.map(function (oRow) {
+							return { AppID: oRow.ID, AppName: oRow.Name, AppType: oRow.Type || "" };
+						});
+					});
+				}
 				return Hrx.list("ClientComponents", { $select: "Software" }).then(function (aRows) {
 					return distinct(aRows.map(function (oRow) { return oRow.Software; })).map(function (sName) {
 						return { AppID: sName, AppName: sName, AppType: "" };
@@ -316,6 +341,13 @@ sap.ui.define([
 		Components: {
 			needs: "ClientComponents",
 			read: function () {
+				if (HrxServices.has("Softwares")) {
+					return Hrx.list("SoftwareComponents", { $orderby: "Name" }).then(function (aRows) {
+						return aRows.map(function (oRow) {
+							return { AppID: oRow.SoftwareID, ComponentID: oRow.ID, ComponentName: oRow.Name };
+						});
+					});
+				}
 				return Hrx.list("ClientComponents", { $select: "Software,Component" }).then(function (aRows) {
 					var aKeys = distinct(aRows.filter(function (oRow) { return oRow.Component; }).map(function (oRow) { return oRow.Software + "\u0000" + oRow.Component; }));
 					return aKeys.map(function (sKey) {
@@ -328,6 +360,13 @@ sap.ui.define([
 		SubComponents: {
 			needs: "ClientComponents",
 			read: function () {
+				if (HrxServices.has("Softwares")) {
+					return Hrx.list("SoftwareSubComponents", { $orderby: "Name" }).then(function (aRows) {
+						return aRows.map(function (oRow) {
+							return { AppID: oRow.SoftwareID, ComponentID: oRow.ComponentID, SubComponentID: oRow.ID, SubComponentName: oRow.Name };
+						});
+					});
+				}
 				return Hrx.list("ClientComponents", { $select: "Software,Component,SubComponent" }).then(function (aRows) {
 					var aKeys = distinct(aRows.filter(function (oRow) { return oRow.SubComponent; }).map(function (oRow) {
 						return oRow.Software + "\u0000" + oRow.Component + "\u0000" + oRow.SubComponent;

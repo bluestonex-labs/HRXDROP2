@@ -3,8 +3,9 @@
 	xmlns:core="sap.ui.core">
 
 	<!-- New / Edit Component: the design's wide two-column modal. Software, component
-	     and sub-component are suggestions from the names already in use; a name typed
-	     in that is not in the list yet is kept too (see onSaveComponent). -->
+	     and sub-component are picked from the software catalogue; until the service has
+	     it, they are suggestions from the names already in use and a name typed in is
+	     kept too (see onSaveComponent). -->
 	<Dialog
 		id="clientComponentDialog"
 		title="{= ${mcForm>/mode} === 'edit' ? ${i18n>mcEditComponentTitle} : ${i18n>mcAddComponentTitle} }"
@@ -21,7 +22,7 @@
 						items="{mc>/softwares}"
 						selectionChange=".onSoftwareChange"
 						width="100%"
-						placeholder="{i18n>mcFieldSoftwarePlaceholder}">
+						placeholder="{= ${services>/softwareCatalogue} ? ${i18n>mcFieldSoftwarePick} : ${i18n>mcFieldSoftwarePlaceholder} }">
 						<core:ListItem key="{mc>AppID}" text="{mc>AppName}" />
 					</ComboBox>
 				</VBox>
@@ -33,7 +34,7 @@
 						items="{mc>/componentChoices}"
 						selectionChange=".onComponentChange"
 						width="100%"
-						placeholder="{i18n>mcFieldComponentPlaceholder}">
+						placeholder="{= ${services>/softwareCatalogue} ? ${i18n>mcFieldComponentPick} : ${i18n>mcFieldComponentPlaceholder} }">
 						<core:ListItem key="{mc>ComponentID}" text="{mc>ComponentName}" />
 					</ComboBox>
 				</VBox>
@@ -44,7 +45,7 @@
 						selectedKey="{mcForm>/SubComponent}"
 						items="{mc>/subComponentChoices}"
 						width="100%"
-						placeholder="{i18n>mcFieldSubComponentPlaceholder}">
+						placeholder="{= ${services>/softwareCatalogue} ? ${i18n>mcFieldSubComponentPick} : ${i18n>mcFieldSubComponentPlaceholder} }">
 						<core:ListItem key="{mc>SubComponentID}" text="{mc>SubComponentName}" />
 					</ComboBox>
 				</VBox>

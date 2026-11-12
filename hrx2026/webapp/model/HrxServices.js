@@ -23,6 +23,7 @@ sap.ui.define([
 		clientUsers: { entitySet: "ClientUsers" },
 		clientSlas: { entitySet: "ClientSLAs" },
 		clientComponents: { entitySet: "ClientComponents" },
+		softwareCatalogue: { entitySet: "Softwares" },
 		clientApplications: { entitySet: "ClientApplications" },
 		projectAreas: { entitySet: "ProjectAreas" },
 		projectContacts: { entityType: "Projects", property: "PrimaryContactName" },
