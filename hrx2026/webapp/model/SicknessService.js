@@ -52,6 +52,37 @@ sap.ui.define([
 		return Promise.reject(oError);
 	}
 
+	// The weekdays from the first day to the last, "yyyy-MM-dd": one leave row each.
+	function weekdays(sStart, sEnd) {
+		var aDays = [];
+		var oDay = SicknessPolicy.parseDay(sStart);
+		var oEnd = SicknessPolicy.parseDay(sEnd);
+		while (oDay <= oEnd) {
+			if (oDay.getDay() !== 0 && oDay.getDay() !== 6) {
+				aDays.push(SicknessPolicy.isoDate(oDay));
+			}
+			oDay.setDate(oDay.getDate() + 1);
+		}
+		return aDays;
+	}
+
+	function commentOf(oAbsence) {
+		return (oAbsence.Reason + (oAbsence.Notes ? NOTES_SEPARATOR + oAbsence.Notes : "")).slice(0, COMMENT_LENGTH);
+	}
+
+	// An absence's leave rows, the first saved first. AbsenceID is the rows' LeaveGrpID,
+	// or the ID of a single row saved without one.
+	function absenceRows(sAbsenceId) {
+		return Hrx.list("Leaves", {
+			$filter: "LeaveGrpID eq " + sAbsenceId + " or ID eq " + sAbsenceId,
+			$orderby: "createdAt,StartDate"
+		});
+	}
+
+	function newGroupId() {
+		return window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : undefined;
+	}
+
 	function fullName(oEmployee) {
 		return oEmployee ? ((oEmployee.FirstName || "") + " " + (oEmployee.LastName || "")).trim() : "";
 	}
@@ -140,19 +171,11 @@ sap.ui.define([
 		 * @returns {Promise<object>} the service's answer
 		 */
 		recordAbsence: function (oAbsence) {
-			var aDays = [];
-			var oDay = SicknessPolicy.parseDay(oAbsence.StartDate);
-			var oEnd = SicknessPolicy.parseDay(oAbsence.EndDate);
-			while (oDay <= oEnd) {
-				if (oDay.getDay() !== 0 && oDay.getDay() !== 6) {
-					aDays.push(SicknessPolicy.isoDate(oDay));
-				}
-				oDay.setDate(oDay.getDate() + 1);
-			}
-			var sComment = (oAbsence.Reason + (oAbsence.Notes ? NOTES_SEPARATOR + oAbsence.Notes : "")).slice(0, COMMENT_LENGTH);
+			var aDays = weekdays(oAbsence.StartDate, oAbsence.EndDate);
+			var sComment = commentOf(oAbsence);
 			// One absence, however many days: its rows share a group, which is what the
 			// policy counts as one instance.
-			var sGroup = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : undefined;
+			var sGroup = newGroupId();
 
 			return sickTypeId().then(function (sSickId) {
 				return Hrx.callAction("createLeaveRequestForTeamCalendar", {
@@ -186,6 +209,70 @@ sap.ui.define([
 				}).then(function () {
 					return vResult;
 				});
+			});
+		},
+
+		/**
+		 * Corrects a recorded absence: who, the dates, the reason and notes. Its rows are
+		 * changed in place - added or removed as the days change - so it stays the same
+		 * instance, recorded when it first was. Nothing is emailed, and its return to work
+		 * is left as it is.
+		 * @param {string} sAbsenceId the absence (AbsenceID from getAbsences)
+		 * @param {object} oAbsence EmpID, StartDate, EndDate, Days, Reason and Notes
+		 * @returns {Promise} resolved once every row is saved
+		 */
+		updateAbsence: function (sAbsenceId, oAbsence) {
+			var aDays = weekdays(oAbsence.StartDate, oAbsence.EndDate);
+			var sComment = commentOf(oAbsence);
+
+			return absenceRows(sAbsenceId).then(function (aRows) {
+				if (!aRows.length) {
+					throw new Error("That absence no longer exists.");
+				}
+				var oFirst = aRows[0];
+				var sGroup = oFirst.LeaveGrpID || newGroupId();
+				var aSaves = aDays.map(function (sDate, iIndex) {
+					var oChange = {
+						EmpID_EmployeeID: oAbsence.EmpID,
+						NoOfDays: String(oAbsence.Days),
+						StartDate: sDate,
+						EndDate: sDate,
+						RequesterComments: sComment,
+						LeaveGrpID: sGroup
+					};
+					if (aRows[iIndex]) {
+						return Hrx.update("Leaves(" + aRows[iIndex].ID + ")", oChange);
+					}
+					// A day the absence did not cover before: a row like its others.
+					return Hrx.create("Leaves", Object.assign({
+						IsPaid: oFirst.IsPaid,
+						LeaveCategoryId_ID: oFirst.LeaveCategoryId_ID,
+						DayTime: "Full Day",
+						ApprovalRequired: false,
+						ApproverID_EmployeeID: oFirst.ApproverID_EmployeeID,
+						Status_ID: oFirst.Status_ID,
+						WFFlag: null
+					}, oChange));
+				});
+				// Days it no longer covers
+				aRows.slice(aDays.length).forEach(function (oRow) {
+					aSaves.push(Hrx.remove("Leaves(" + oRow.ID + ")"));
+				});
+				return Promise.all(aSaves);
+			});
+		},
+
+		/**
+		 * Deletes a recorded absence, every day of it. Nothing is emailed; trigger reviews
+		 * and any return to work it started are kept.
+		 * @param {string} sAbsenceId the absence (AbsenceID from getAbsences)
+		 * @returns {Promise} resolved once its rows are gone
+		 */
+		deleteAbsence: function (sAbsenceId) {
+			return absenceRows(sAbsenceId).then(function (aRows) {
+				return Promise.all(aRows.map(function (oRow) {
+					return Hrx.remove("Leaves(" + oRow.ID + ")");
+				}));
 			});
 		},
 

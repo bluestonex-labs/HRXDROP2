@@ -2,10 +2,12 @@
 	xmlns="sap.m"
 	xmlns:core="sap.ui.core">
 	<!-- The design's "Record a sickness absence" modal (.modal.wide): employee, dates,
-	     reason, notes, fit note, and a strip counting the working days. -->
+	     reason, notes, fit note, and a strip counting the working days. Also corrects a
+	     recorded absence (skForm>/mode "edit"), without the fit note: that only sets up
+	     the return-to-work checklist when the absence is first recorded. -->
 	<Dialog
 		id="recordSicknessDialog"
-		title="{i18n>skRecordTitle}"
+		title="{= ${skForm>/mode} === 'edit' ? ${i18n>skEditTitle} : ${i18n>skRecordTitle} }"
 		resizable="false"
 		draggable="true"
 		class="hrxModal hrxModalWide hrxSicknessDialog"
@@ -66,6 +68,7 @@
 					id="skFitNote"
 					text="{i18n>skFieldFitNote}"
 					selected="{skForm>/FitNote}"
+					visible="{= ${skForm>/mode} !== 'edit' }"
 					class="hrxSickCheck" />
 
 				<!-- the working days the dates cover, or why there are none -->
@@ -83,7 +86,7 @@
 		</content>
 		<beginButton>
 			<Button
-				text="{i18n>skRecord}"
+				text="{= ${skForm>/mode} === 'edit' ? ${i18n>skSaveChanges} : ${i18n>skRecord} }"
 				type="Emphasized"
 				class="hrxModalBtn hrxModalBtnPrimary"
 				enabled="{= ${skForm>/canSave} &amp;&amp; !${skForm>/saving} }"

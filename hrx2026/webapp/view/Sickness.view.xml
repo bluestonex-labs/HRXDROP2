@@ -242,12 +242,14 @@
 						growingThreshold="50"
 						class="hrxSickTable hrxSickAllTable">
 						<columns>
-							<!-- the widths the design's table settles on at full width -->
-							<Column width="24%"><Text text="{i18n>skColEmployee}" /></Column>
-							<Column width="29%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
-							<Column width="13%" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
-							<Column width="18%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
+							<!-- the design's widths, narrowed to make room for edit and delete -->
+							<Column width="22%"><Text text="{i18n>skColEmployee}" /></Column>
+							<Column width="24%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
+							<Column width="11%" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
+							<Column width="16%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>skColStatus}" /></Column>
+							<!-- edit or delete an absence recorded by mistake -->
+							<Column width="88px" hAlign="End"><Text text="" /></Column>
 						</columns>
 						<items>
 							<ColumnListItem>
@@ -273,6 +275,18 @@
 											<core:CustomData key="kind" value="{sk>statusKind}" writeToDom="true" />
 										</customData>
 									</Text>
+									<HBox justifyContent="End" renderType="Bare" class="hrxSickRowActs">
+										<Button
+											icon="sap-icon://edit"
+											type="Transparent"
+											tooltip="{i18n>skEdit}"
+											press=".onEditAbsence" />
+										<Button
+											icon="sap-icon://delete"
+											type="Transparent"
+											tooltip="{i18n>skDelete}"
+											press=".onDeleteAbsence" />
+									</HBox>
 								</cells>
 							</ColumnListItem>
 						</items>

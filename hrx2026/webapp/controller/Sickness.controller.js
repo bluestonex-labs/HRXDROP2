@@ -390,6 +390,9 @@ sap.ui.define([
 
 		onOpenRecord: function () {
 			this.setModel(new JSONModel({
+				// "new", or "edit" when correcting a recorded absence (AbsenceID)
+				mode: "new",
+				AbsenceID: "",
 				EmpID: "",
 				Reason: "",
 				Notes: "",
@@ -407,6 +410,66 @@ sap.ui.define([
 				this.byId("skEmployee").setValueState("None");
 				oDialog.open();
 			}.bind(this));
+		},
+
+		/**
+		 * Opens the record dialog on a recorded absence, to correct it.
+		 * @param {sap.ui.base.Event} oEvent the Edit button's press event
+		 */
+		onEditAbsence: function (oEvent) {
+			var oAbsence = oEvent.getSource().getBindingContext("sk").getObject();
+
+			this.setModel(new JSONModel({
+				mode: "edit",
+				AbsenceID: oAbsence.AbsenceID,
+				EmpID: oAbsence.EmpID,
+				Reason: oAbsence.Reason,
+				Notes: oAbsence.Notes,
+				FitNote: false,
+				Days: oAbsence.Days,
+				datesPicked: true,
+				daysText: "",
+				canSave: false,
+				saving: false
+			}), "skForm");
+
+			Promise.all([
+				this._loadEmployees(),
+				this._dialog("_pRecordDialog", "RecordSicknessDialog")
+			]).then(function (aResults) {
+				var oDates = this.byId("skDates");
+				oDates.setDateValue(SicknessPolicy.parseDay(oAbsence.StartDate));
+				oDates.setSecondDateValue(SicknessPolicy.parseDay(oAbsence.EndDate));
+				this.onRecordInput();
+				aResults[1].open();
+			}.bind(this));
+		},
+
+		/**
+		 * Deletes a recorded absence, every day of it, once the admin confirms.
+		 * @param {sap.ui.base.Event} oEvent the Delete button's press event
+		 */
+		onDeleteAbsence: function (oEvent) {
+			var oAbsence = oEvent.getSource().getBindingContext("sk").getObject();
+
+			MessageBox.confirm(this.getText("skDeleteConfirm", [oAbsence.Name, oAbsence.dateText]), {
+				title: this.getText("skDeleteTitle"),
+				actions: [MessageBox.Action.DELETE, MessageBox.Action.CANCEL],
+				emphasizedAction: MessageBox.Action.DELETE,
+				onClose: function (sAction) {
+					if (sAction !== MessageBox.Action.DELETE) {
+						return;
+					}
+					this.getModel("skView").setProperty("/busy", true);
+					SicknessService.deleteAbsence(oAbsence.AbsenceID).then(function () {
+						MessageToast.show(this.getText("skDeleted"));
+						this._load();
+					}.bind(this)).catch(function (oError) {
+						this.getModel("skView").setProperty("/busy", false);
+						this._showError("skErrorDelete", oError);
+					}.bind(this));
+				}.bind(this)
+			});
 		},
 
 		/**
@@ -445,6 +508,25 @@ sap.ui.define([
 			var iDays = oForm.getProperty("/Days");
 
 			oForm.setProperty("/saving", true);
+
+			if (oForm.getProperty("/mode") === "edit") {
+				SicknessService.updateAbsence(oForm.getProperty("/AbsenceID"), {
+					EmpID: oForm.getProperty("/EmpID"),
+					StartDate: SicknessPolicy.isoDate(oFrom),
+					EndDate: SicknessPolicy.isoDate(oTo),
+					Days: iDays,
+					Reason: oForm.getProperty("/Reason").trim(),
+					Notes: oForm.getProperty("/Notes").trim()
+				}).then(function () {
+					this.byId("recordSicknessDialog").close();
+					MessageToast.show(this.getText("skUpdated"));
+					this._load();
+				}.bind(this)).catch(function (oError) {
+					oForm.setProperty("/saving", false);
+					this._showError("skErrorUpdate", oError);
+				}.bind(this));
+				return;
+			}
 
 			SicknessService.recordAbsence({
 				OrgID: this._sOrgId,
