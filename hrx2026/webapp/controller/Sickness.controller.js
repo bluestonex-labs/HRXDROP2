@@ -170,7 +170,7 @@ sap.ui.define([
 			}, this);
 
 			// Sickness is private: only your own direct reports', unless you see everyone's
-			var bSeesAll = !!this._oProfile.seesAllSickness;
+			var bSeesAll = !!this._oProfile.seesWholeTeam;
 			var aAbsences = (aRawAbsences || []).map(this._toAbsence, this).filter(function (oAbsence) {
 				return SicknessPolicy.inFiscalYear(oAbsence.StartDate, oYear) && (bSeesAll || oAbsence.canAct);
 			}).sort(function (a, b) {

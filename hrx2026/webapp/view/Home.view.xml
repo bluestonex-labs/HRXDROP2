@@ -36,8 +36,8 @@
 					</Button>
 				</VBox>
 
-				<!-- Timesheet compliance - HR admins only, as it covers everyone's hours -->
-				<VBox renderType="Bare" visible="{app>/user/isAdmin}" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
+				<!-- Timesheet compliance: your own direct reports (everyone's for Dan, Feroz and Joe) -->
+				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
 						<core:Icon src="sap-icon://tabler/clipboard-check" />
@@ -48,7 +48,7 @@
 						<Text text="%" class="hrxHomeKpiUnit" visible="{= ${home>/dash/compliance/pct} !== '—' }" />
 					</HBox>
 					<Text text="{home>/dash/compliance/sub}" class="hrxHomeKpiSub" />
-					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false"
+					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false" visible="{app>/user/isAdmin}"
 						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="timesheetreport:sub" /></customData>
 					</Button>

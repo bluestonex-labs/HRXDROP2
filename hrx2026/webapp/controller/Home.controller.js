@@ -816,7 +816,7 @@ sap.ui.define([
 
 			return Promise.all([
 				this._loadTeamToday(),
-				this._oProfile.isAdmin ? this._loadCompliance() : Promise.resolve(),
+				this._loadCompliance(),
 				this._loadTriggers(),
 				this._loadDocsAwaiting(),
 				this._oProfile.isAdmin ? this._loadUtilisation() : Promise.resolve()
@@ -954,15 +954,34 @@ sap.ui.define([
 			var oSunday = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 6);
 
 			oModel.setProperty("/dash/loadingCompliance", true);
-			return TimesheetReportService.loadWeek(Backend.isoDate(oMonday), Backend.isoDate(oSunday)).then(function (aRows) {
-				var aDue = aRows.filter(function (oRow) {
-					return oRow.expectedMinutes > 0;
+			return Promise.all([
+				TimesheetReportService.loadWeek(Backend.isoDate(oMonday), Backend.isoDate(oSunday)),
+				this._pDashPeople
+			]).then(function (aResults) {
+				// Only your own direct reports count, unless you see the whole team's
+				var oProfile = this._oProfile;
+				var mMyReports = {};
+				aResults[1].forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
+				var aDue = aResults[0].filter(function (oRow) {
+					return oRow.expectedMinutes > 0 && (oProfile.seesWholeTeam || mMyReports[oRow.UserID]);
 				});
 				var iFull = aDue.filter(function (oRow) {
 					return oRow.bookedMinutes >= oRow.expectedMinutes;
 				}).length;
-				var iPct = aDue.length ? Math.round(iFull / aDue.length * 100) : 100;
 
+				if (!aDue.length) {
+					oModel.setProperty("/dash/compliance", {
+						pct: "—",
+						state: "Neutral",
+						sub: this.getText("mgrComplianceNoReports")
+					});
+					return;
+				}
+				var iPct = Math.round(iFull / aDue.length * 100);
 				oModel.setProperty("/dash/compliance", {
 					pct: String(iPct),
 					state: iPct >= 90 ? "Good" : "Warning",
@@ -1003,7 +1022,7 @@ sap.ui.define([
 					}
 				});
 				var aAbsences = aResults[0].filter(function (oAbsence) {
-					return oProfile.seesAllSickness || mMyReports[oAbsence.EmpID];
+					return oProfile.seesWholeTeam || mMyReports[oAbsence.EmpID];
 				});
 				var iOpen = SicknessPolicy.triggers(aAbsences, oYear, aResults[1]).filter(function (oTrigger) {
 					return oTrigger.status === "OPEN";

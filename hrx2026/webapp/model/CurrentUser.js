@@ -59,9 +59,10 @@ sap.ui.define([
 		"joe.barton@bluestonex.com"
 	];
 
-	// Sickness is private: managers see only their own direct reports' sickness. These
-	// people see everyone's (acting on it is still for the person's own manager).
-	var SICKNESS_SEE_ALL = [
+	// Managers see only their own direct reports' sickness and timesheet compliance.
+	// These people see the whole team's (acting on sickness is still for the person's
+	// own manager).
+	var SEES_WHOLE_TEAM = [
 		"dan.barton@bluestonex.com",
 		"feroz.khan@bluestonex.com",
 		"joe.barton@bluestonex.com"
@@ -224,7 +225,7 @@ sap.ui.define([
 						siteID: "",
 						isManager: false,
 						isAdmin: false,
-						seesAllSickness: false,
+						seesWholeTeam: false,
 						hasPendingLeave: false
 					};
 					return oProfile;
@@ -259,7 +260,7 @@ sap.ui.define([
 						pic: oUser.Pic || "",
 						isManager: oUser.IsManager === "Y" || isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
-						seesAllSickness: SICKNESS_SEE_ALL.indexOf((sEmail || "").toLowerCase()) !== -1,
+						seesWholeTeam: SEES_WHOLE_TEAM.indexOf((sEmail || "").toLowerCase()) !== -1,
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -279,7 +280,7 @@ sap.ui.define([
 						siteID: "",
 						isManager: isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
-						seesAllSickness: SICKNESS_SEE_ALL.indexOf((sEmail || "").toLowerCase()) !== -1,
+						seesWholeTeam: SEES_WHOLE_TEAM.indexOf((sEmail || "").toLowerCase()) !== -1,
 						hasPendingLeave: false
 					};
 					return oProfile;
