@@ -1,0 +1,335 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.ExpenseApprovals"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	class="hrxExpenses hrxExApprovals">
+
+	<!-- Expense approvals: the approver's side of expenses, in the HRX style (the
+	     design has no screens for it; the features are those of the old Expense
+	     Approval app). Tabs, switched by eaView>/tab:
+	       awaiting   claims waiting for the user's decision; Review opens a claim
+	       dashboard  spend and claim figures for a period and country
+	       history    every submitted claim, its journey, and a PDF of the list
+	       settings   policy per country and who approves (Admin role only) -->
+	<Page id="expenseApprovalsPage" showHeader="false" title="{i18n>eaTitle}" class="hrxPageContent">
+		<content>
+			<VBox busy="{eaView>/busy}" busyIndicatorDelay="0" renderType="Bare" class="hrxExBody">
+
+				<MessageStrip text="{eaView>/error}" type="Error" showIcon="true" visible="{= !!${eaView>/error} }" class="hrxExStrip" />
+				<MessageStrip text="{i18n>eaNotApprover}" type="Information" showIcon="true"
+					visible="{= ${eaView>/checked} &amp;&amp; !${eaView>/canApprove} &amp;&amp; !${eaView>/canAdminister} }" class="hrxExStrip" />
+
+				<HBox renderType="Bare" class="hrxExTabRow" visible="{= ${eaView>/canApprove} || ${eaView>/canAdminister} }">
+					<HBox renderType="Bare" class="hrxExTabs">
+						<Button text="{= ${i18n>eaTabAwaiting} + (${ea>/awaiting}.length ? ' (' + ${ea>/awaiting}.length + ')' : '') }" press=".onTabPress" visible="{eaView>/canApprove}" class="hrxExTab">
+							<customData>
+								<core:CustomData key="tab" value="awaiting" />
+								<core:CustomData key="on" value="{= ${eaView>/tab} === 'awaiting' ? 'yes' : 'no' }" writeToDom="true" />
+							</customData>
+						</Button>
+						<Button text="{i18n>eaTabDashboard}" press=".onTabPress" class="hrxExTab">
+							<customData>
+								<core:CustomData key="tab" value="dashboard" />
+								<core:CustomData key="on" value="{= ${eaView>/tab} === 'dashboard' ? 'yes' : 'no' }" writeToDom="true" />
+							</customData>
+						</Button>
+						<Button text="{i18n>eaTabHistory}" press=".onTabPress" class="hrxExTab">
+							<customData>
+								<core:CustomData key="tab" value="history" />
+								<core:CustomData key="on" value="{= ${eaView>/tab} === 'history' ? 'yes' : 'no' }" writeToDom="true" />
+							</customData>
+						</Button>
+						<Button text="{i18n>eaTabSettings}" press=".onTabPress" visible="{eaView>/canAdminister}" class="hrxExTab">
+							<customData>
+								<core:CustomData key="tab" value="settings" />
+								<core:CustomData key="on" value="{= ${eaView>/tab} === 'settings' ? 'yes' : 'no' }" writeToDom="true" />
+							</customData>
+						</Button>
+					</HBox>
+					<Button text="{i18n>eaDownloadPdf}" icon="sap-icon://pdf-attachment" press=".onDownloadPdf"
+						visible="{= ${eaView>/tab} === 'awaiting' || ${eaView>/tab} === 'history' }" class="hrxExGhost" />
+				</HBox>
+
+				<!-- ═════════ Awaiting decision ═════════ -->
+				<VBox renderType="Bare" class="hrxExCard" visible="{= ${eaView>/tab} === 'awaiting' }">
+					<VBox renderType="Bare" class="hrxExCardHead">
+						<Title text="{i18n>eaAwaitingTitle}" level="H3" class="hrxExCardTitle" />
+						<Text text="{i18n>eaAwaitingHint}" class="hrxExCardHint" />
+					</VBox>
+					<VBox renderType="Bare" visible="{= ${ea>/awaiting}.length === 0 }" class="hrxExEmpty">
+						<Text text="{i18n>eaNothingAwaiting}" class="hrxExEmptyTitle" />
+						<Text text="{i18n>eaNothingAwaitingText}" class="hrxExEmptyText" />
+					</VBox>
+					<Table items="{path: 'ea>/awaiting', templateShareable: false}" visible="{= ${ea>/awaiting}.length > 0 }" class="hrxExTable">
+						<columns>
+							<Column><Text text="{i18n>exColNumber}" /></Column>
+							<Column><Text text="{i18n>eaColEmployee}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColCountry}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
+							<Column><Text text="{i18n>eaColStage}" /></Column>
+							<Column hAlign="End"><Text text="{i18n>exColTotal}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColFlags}" /></Column>
+							<Column hAlign="End" />
+						</columns>
+						<items>
+							<ColumnListItem>
+								<cells>
+									<Text text="{ea>claimNumber}" class="hrxExStrong" />
+									<VBox renderType="Bare">
+										<Text text="{ea>employeeName}" />
+										<Text text="{ea>employeeNumber}" class="hrxExLineSub" />
+									</VBox>
+									<Text text="{ea>countryName}" />
+									<Text text="{ea>submittedText}" />
+									<ObjectStatus text="{ea>statusText}" state="Information" inverted="true" class="hrxExPill" />
+									<Text text="{ea>totalText}" class="hrxExStrong" />
+									<ObjectStatus text="{ea>flagsText}" state="Warning" inverted="true" visible="{= !!${ea>flagsText} }" class="hrxExPill" />
+									<Button text="{i18n>eaReview}" type="Emphasized" press=".onReview" class="hrxExPrimary" />
+								</cells>
+							</ColumnListItem>
+						</items>
+					</Table>
+				</VBox>
+
+				<!-- ═════════ Dashboard ═════════ -->
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'dashboard' }">
+					<HBox renderType="Bare" class="hrxExFilters">
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>exFilterFrom}" />
+							<DatePicker value="{eaView>/dash/from}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onDashboardChange" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>exFilterTo}" />
+							<DatePicker value="{eaView>/dash/to}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onDashboardChange" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>eaColCountry}" />
+							<Select selectedKey="{eaView>/dash/country}" change=".onDashboardChange">
+								<core:Item key="UK" text="{i18n>eaUk}" />
+								<core:Item key="IN" text="{i18n>eaIndia}" />
+							</Select>
+						</VBox>
+					</HBox>
+
+					<HBox renderType="Bare" class="hrxExKpis">
+						<VBox renderType="Bare" class="hrxExKpi">
+							<Text text="{i18n>eaKpiAwaiting}" class="hrxExKpiLabel" />
+							<Text text="{ea>/dash/awaiting}" class="hrxExKpiValue" />
+							<Text text="{i18n>eaKpiClaims}" class="hrxExKpiSub" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExKpi">
+							<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>
+							<Text text="{i18n>eaKpiApproved}" class="hrxExKpiLabel" />
+							<Text text="{ea>/dash/approved}" class="hrxExKpiValue" />
+							<Text text="{ea>/dash/reimbursedText}" class="hrxExKpiSub" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExKpi">
+							<customData><core:CustomData key="state" value="Warning" writeToDom="true" /></customData>
+							<Text text="{i18n>eaKpiReturned}" class="hrxExKpiLabel" />
+							<Text text="{ea>/dash/returned}" class="hrxExKpiValue" />
+							<Text text="{i18n>eaKpiClaims}" class="hrxExKpiSub" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExKpi">
+							<customData><core:CustomData key="state" value="{= ${ea>/dash/violationRate} > 0 ? 'Warning' : 'Good' }" writeToDom="true" /></customData>
+							<Text text="{i18n>eaKpiViolations}" class="hrxExKpiLabel" />
+							<Text text="{ea>/dash/violationText}" class="hrxExKpiValue" />
+							<Text text="{ea>/dash/violationSub}" class="hrxExKpiSub" />
+						</VBox>
+					</HBox>
+
+					<HBox renderType="Bare" class="hrxExGrid2">
+						<VBox renderType="Bare" class="hrxExCard">
+							<HBox renderType="Bare" class="hrxExCardHead hrxExCardHeadRow">
+								<Title text="{i18n>eaSpendByCategory}" level="H3" class="hrxExCardTitle" />
+								<Text text="{i18n>eaApprovedOnly}" class="hrxExCardHint" />
+							</HBox>
+							<VBox renderType="Bare" class="hrxExPadded">
+								<Text text="{i18n>eaNoSpend}" visible="{= ${ea>/dash/categories}.length === 0 }" class="hrxExEmptyText" />
+								<VBox items="{path: 'ea>/dash/categories', templateShareable: false}" renderType="Bare">
+									<VBox renderType="Bare" class="hrxExBarRow">
+										<HBox renderType="Bare" class="hrxExBarLabel">
+											<Text text="{ea>name}" />
+											<Text text="{ea>amountText}" class="hrxExStrong" />
+										</HBox>
+										<core:HTML content="{= '&lt;div class=&quot;hrxExBarTrack&quot;&gt;&lt;div class=&quot;hrxExBarFill&quot; style=&quot;width:' + ${ea>percent} + '%&quot;&gt;&lt;/div&gt;&lt;/div&gt;' }" />
+									</VBox>
+								</VBox>
+							</VBox>
+						</VBox>
+						<VBox renderType="Bare" class="hrxExCard">
+							<HBox renderType="Bare" class="hrxExCardHead hrxExCardHeadRow">
+								<Title text="{i18n>eaTopClaimants}" level="H3" class="hrxExCardTitle" />
+								<Text text="{i18n>eaApprovedOnly}" class="hrxExCardHint" />
+							</HBox>
+							<VBox renderType="Bare" class="hrxExPadded">
+								<Text text="{i18n>eaNoSpend}" visible="{= ${ea>/dash/claimants}.length === 0 }" class="hrxExEmptyText" />
+								<VBox items="{path: 'ea>/dash/claimants', templateShareable: false}" renderType="Bare">
+									<VBox renderType="Bare" class="hrxExBarRow">
+										<HBox renderType="Bare" class="hrxExBarLabel">
+											<Text text="{ea>name}" />
+											<Text text="{ea>amountText}" class="hrxExStrong" />
+										</HBox>
+										<core:HTML content="{= '&lt;div class=&quot;hrxExBarTrack&quot;&gt;&lt;div class=&quot;hrxExBarFill&quot; style=&quot;width:' + ${ea>percent} + '%&quot;&gt;&lt;/div&gt;&lt;/div&gt;' }" />
+									</VBox>
+								</VBox>
+							</VBox>
+						</VBox>
+					</HBox>
+
+					<VBox renderType="Bare" class="hrxExCard">
+						<VBox renderType="Bare" class="hrxExCardHead">
+							<Title text="{i18n>eaTrend}" level="H3" class="hrxExCardTitle" />
+							<Text text="{i18n>eaTrendHint}" class="hrxExCardHint" />
+						</VBox>
+						<Text text="{i18n>eaNoClaimsInPeriod}" visible="{= ${ea>/dash/trend}.length === 0 }" class="hrxExNoRows" />
+						<Table items="{path: 'ea>/dash/trend', templateShareable: false}" visible="{= ${ea>/dash/trend}.length > 0 }" class="hrxExTable">
+							<columns>
+								<Column><Text text="{i18n>eaMonth}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>eaSubmittedCount}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>eaApprovedCount}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>eaReturnedCount}" /></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{ea>monthText}" />
+										<Text text="{ea>submitted}" />
+										<Text text="{ea>approved}" />
+										<Text text="{ea>rejected}" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</VBox>
+				</VBox>
+
+				<!-- ═════════ History ═════════ -->
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'history' }">
+					<HBox renderType="Bare" class="hrxExFilters">
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>exFilterFrom}" />
+							<DatePicker value="{eaView>/hist/from}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onHistoryFilter" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>exFilterTo}" />
+							<DatePicker value="{eaView>/hist/to}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onHistoryFilter" />
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>exFilterStatus}" />
+							<Select selectedKey="{eaView>/hist/status}" change=".onHistoryFilter" items="{eaView>/historyStatuses}">
+								<core:Item key="{eaView>key}" text="{eaView>text}" />
+							</Select>
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField">
+							<Label text="{i18n>eaColCountry}" />
+							<Select selectedKey="{eaView>/hist/country}" change=".onHistoryFilter">
+								<core:Item key="ALL" text="{i18n>eaBoth}" />
+								<core:Item key="UK" text="{i18n>eaUk}" />
+								<core:Item key="IN" text="{i18n>eaIndia}" />
+							</Select>
+						</VBox>
+						<VBox renderType="Bare" class="hrxExField hrxExFieldGrow">
+							<Label text="{i18n>exFilterSearch}" />
+							<SearchField value="{eaView>/hist/query}" liveChange=".onHistoryFilter" placeholder="{i18n>eaSearchPlaceholder}" />
+						</VBox>
+					</HBox>
+					<VBox renderType="Bare" class="hrxExCard">
+						<VBox renderType="Bare" class="hrxExCardHead">
+							<Title text="{i18n>eaHistoryTitle}" level="H3" class="hrxExCardTitle" />
+							<Text text="{ea>/historyHint}" class="hrxExCardHint" />
+						</VBox>
+						<Text text="{i18n>eaNoHistory}" visible="{= ${ea>/historyRows}.length === 0 }" class="hrxExNoRows" />
+						<Table items="{path: 'ea>/historyRows', templateShareable: false}" visible="{= ${ea>/historyRows}.length > 0 }"
+							itemPress=".onOpenJourney" class="hrxExTable">
+							<columns>
+								<Column><Text text="{i18n>exColNumber}" /></Column>
+								<Column><Text text="{i18n>eaColEmployee}" /></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColCountry}" /></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
+								<Column><Text text="{i18n>exColStatus}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>exColTotal}" /></Column>
+							</columns>
+							<items>
+								<ColumnListItem type="Navigation">
+									<cells>
+										<Text text="{ea>claimNumber}" class="hrxExStrong" />
+										<Text text="{ea>employeeName}" />
+										<Text text="{ea>countryName}" />
+										<Text text="{ea>submittedText}" />
+										<ObjectStatus text="{ea>statusText}" state="{ea>statusState}" inverted="true" class="hrxExPill" />
+										<Text text="{ea>totalText}" class="hrxExStrong" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</VBox>
+				</VBox>
+
+				<!-- ═════════ Settings (Admin) ═════════ -->
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'settings' }">
+					<VBox renderType="Bare" class="hrxExCard">
+						<VBox renderType="Bare" class="hrxExCardHead">
+							<Title text="{i18n>eaPolicyTitle}" level="H3" class="hrxExCardTitle" />
+							<Text text="{i18n>eaPolicyHint}" class="hrxExCardHint" />
+						</VBox>
+						<Table items="{path: 'ea>/policies', templateShareable: false}" class="hrxExTable">
+							<columns>
+								<Column width="16%"><Text text="{i18n>eaColCountry}" /></Column>
+								<Column><Text text="{i18n>eaMileageRate}" /></Column>
+								<Column><Text text="{i18n>eaHotelLimit}" /></Column>
+								<Column><Text text="{i18n>eaMealLimit}" /></Column>
+								<Column><Text text="{i18n>eaNumberStart}" /></Column>
+								<Column hAlign="End" width="12%" />
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{ea>countryName}" class="hrxExStrong" />
+										<Input value="{ea>mileageRate}" type="Number" description="{= ${ea>currency} + ' / mile' }" />
+										<Input value="{ea>hotelDailyLimit}" type="Number" description="{ea>currency}" />
+										<Input value="{ea>mealDailyLimit}" type="Number" description="{ea>currency}" />
+										<Input value="{ea>claimNumberStart}" />
+										<Button text="{i18n>eaSave}" type="Emphasized" press=".onSavePolicy" class="hrxExPrimary" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</VBox>
+					<VBox renderType="Bare" class="hrxExCard">
+						<VBox renderType="Bare" class="hrxExCardHead">
+							<Title text="{i18n>eaApproversTitle}" level="H3" class="hrxExCardTitle" />
+							<Text text="{i18n>eaApproversHint}" class="hrxExCardHint" />
+						</VBox>
+						<Table items="{path: 'ea>/approvers', templateShareable: false}" class="hrxExTable">
+							<columns>
+								<Column width="16%"><Text text="{i18n>eaColCountry}" /></Column>
+								<Column><Text text="{i18n>eaFirstApprover}" /></Column>
+								<Column><Text text="{i18n>eaSecondApprover}" /></Column>
+								<Column hAlign="End" width="12%" />
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{ea>countryName}" class="hrxExStrong" />
+										<ComboBox selectedKey="{ea>firstApprover}" items="{path: 'ea>/employees', templateShareable: false}" width="100%">
+											<core:Item key="{ea>email}" text="{ea>label}" />
+										</ComboBox>
+										<VBox renderType="Bare">
+											<ComboBox selectedKey="{ea>secondApprover}" items="{path: 'ea>/employees', templateShareable: false}" width="100%" visible="{= ${ea>country} === 'UK' }">
+												<core:Item key="{ea>email}" text="{ea>label}" />
+											</ComboBox>
+											<Text text="{i18n>eaOneLevel}" visible="{= ${ea>country} !== 'UK' }" class="hrxExLineSub" />
+										</VBox>
+										<Button text="{i18n>eaSave}" type="Emphasized" press=".onSaveApprovers" class="hrxExPrimary" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</VBox>
+				</VBox>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

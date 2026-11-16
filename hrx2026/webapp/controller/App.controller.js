@@ -25,9 +25,11 @@ sap.ui.define([
 		leave: "leave",
 		teamcal: "teamcal",
 		policies: "policies",
+		expenses: "expenses",
 		explorer: "explorer",
 		sickness: "sickness",
 		documents: "documents",
+		expenseapprovals: "expenseapprovals",
 		timesheetreport: "timesheetreport",
 		utilisation: "timesheetreport",
 		resources: "resources",
@@ -50,6 +52,8 @@ sap.ui.define([
 		timesheetreport: "navTimesheetReport",
 		policies: "navPolicies",
 		documents: "navDocuments",
+		expenses: "navExpenses",
+		expenseapprovals: "navExpenseApprovals",
 		explorer: "navAppExplorer",
 		admin: "navAdmin"
 	};
