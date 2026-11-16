@@ -51,14 +51,19 @@ sap.ui.define([
 	// the team service does not flag them as managers - but they need everything a
 	// manager has, Admin and every app under it included. They count as managers
 	// whatever the service says.
-	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
-	// test resources). Remove them before go-live.
 	var MANAGER_EXCEPTIONS = [
 		"tia.menhennet@bluestonex.com",
-		"vicky.williams@bluestonex.com",
+		"vicky.williams@bluestonex.com"
+	];
+
+	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
+	// test resources). Only on TDD: the live system (demo) never reads this list.
+	var TDD_ONLY_MANAGER_EXCEPTIONS = [
 		"david.akilapa@bluestonex.com",
 		"omkar.gaikar@bluestonex.com"
 	];
+	// TDD's launchpad host starts with the subaccount name, e.g. bsx-tdd-qq8akzjn.launchpad...
+	var TDD_HOST_PREFIX = "bsx-tdd-";
 
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
 	// left behind in a browser is cleared on start so it can never be read again.
@@ -77,7 +82,12 @@ sap.ui.define([
 	 * @returns {boolean} true when that person is treated as a manager regardless of the service's flag
 	 */
 	function isManagerException(sEmail) {
-		return MANAGER_EXCEPTIONS.indexOf((sEmail || "").toLowerCase()) !== -1;
+		var sLowerEmail = (sEmail || "").toLowerCase();
+		if (MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1) {
+			return true;
+		}
+		var bOnTdd = window.location.hostname.indexOf(TDD_HOST_PREFIX) === 0;
+		return bOnTdd && TDD_ONLY_MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1;
 	}
 
 	// A Business Application Studio workspace previews the app on a host of its own.
