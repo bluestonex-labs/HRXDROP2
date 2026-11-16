@@ -60,26 +60,12 @@ sap.ui.define([
 		"joe.barton@bluestonex.com"
 	];
 
-	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
-	// test resources). Only on TDD: the live system (demo) never reads this list.
-	var TDD_ONLY_ADMINS = [
-		"david.akilapa@bluestonex.com",
-		"omkar.gaikar@bluestonex.com"
-	];
-	// TDD's launchpad host starts with the subaccount name, e.g. bsx-tdd-qq8akzjn.launchpad...
-	var TDD_HOST_PREFIX = "bsx-tdd-";
-
 	/**
 	 * @param {string} sEmail an email, in any case
 	 * @returns {boolean} true when that person is an HR admin (and so also counts as a manager)
 	 */
 	function isAdmin(sEmail) {
-		var sLowerEmail = (sEmail || "").toLowerCase();
-		if (ADMINS.indexOf(sLowerEmail) !== -1) {
-			return true;
-		}
-		var bOnTdd = window.location.hostname.indexOf(TDD_HOST_PREFIX) === 0;
-		return bOnTdd && TDD_ONLY_ADMINS.indexOf(sLowerEmail) !== -1;
+		return ADMINS.indexOf((sEmail || "").toLowerCase()) !== -1;
 	}
 
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
