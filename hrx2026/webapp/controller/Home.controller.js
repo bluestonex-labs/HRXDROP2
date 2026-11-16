@@ -862,7 +862,7 @@ sap.ui.define([
 					mTypes[oType.ID] = oType.LeaveCategoryDesc || "";
 				});
 				aResults[3].forEach(function (oSite) {
-					mSites[oSite.ID] = oSite.SiteDesc || oSite.SiteLocation || oSite.ID;
+					mSites[oSite.ID] = formatter.siteName(oSite.SiteDesc || oSite.SiteLocation || oSite.ID);
 				});
 				aResults[4].forEach(function (oSchedule) {
 					mSchedules[oSchedule.EmployeeID_EmployeeID] = oSchedule;

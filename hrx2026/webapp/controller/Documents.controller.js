@@ -111,7 +111,7 @@ sap.ui.define([
 			]).then(function (aResults) {
 				var mSites = {};
 				((aResults[3] && aResults[3].results) || []).forEach(function (oSite) {
-					mSites[oSite.SiteID] = oSite.SiteDesc || oSite.SiteID;
+					mSites[oSite.SiteID] = formatter.siteName(oSite.SiteDesc) || oSite.SiteID;
 				});
 				this._mSites = mSites;
 				this._aDocuments = aResults[0] || [];

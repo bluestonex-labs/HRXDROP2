@@ -177,11 +177,16 @@ sap.ui.define([
 				mTypeNames[oType.code] = oType.desc;
 			}, this);
 
+			// One entry per site name (Apphaus is listed as Oswestry, see formatter.siteName)
+			var aSiteNames = [];
+			Object.keys(mSites).forEach(function (sId) {
+				if (mSites[sId] && aSiteNames.indexOf(mSites[sId]) === -1) {
+					aSiteNames.push(mSites[sId]);
+				}
+			});
 			oModel.setProperty("/sites", [{ key: "all", text: this.getText("tcSiteAll") }].concat(
-				Object.keys(mSites).map(function (sId) {
-					return { key: sId, text: mSites[sId] };
-				}).sort(function (a, b) {
-					return a.text.localeCompare(b.text);
+				aSiteNames.sort().map(function (sName) {
+					return { key: sName, text: sName };
 				})));
 
 			oModel.setProperty("/projects", [{ key: "all", text: this.getText("tcProjectAll") }].concat(
@@ -321,10 +326,10 @@ sap.ui.define([
 			})[0];
 
 			return this._pool().filter(function (oPerson) {
-				return (sSite === "all" || oPerson.SiteID === sSite) &&
+				return (sSite === "all" || this._oReferences.sites[oPerson.SiteID] === sSite) &&
 					(!aPicked.length || aPicked.indexOf(oPerson.EmpID) !== -1) &&
 					(sProject === "all" || (oProject && oProject.empIds.indexOf(oPerson.EmpID) !== -1));
-			}).sort(function (a, b) {
+			}, this).sort(function (a, b) {
 				var bAWaiting = bManager && this._pendingOf(a.EmpID).length > 0;
 				var bBWaiting = bManager && this._pendingOf(b.EmpID).length > 0;
 				if (bAWaiting !== bBWaiting) {

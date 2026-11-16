@@ -142,7 +142,7 @@ sap.ui.define([
 						});
 					});
 					aResults[3].forEach(function (oSite) {
-						oReferences.sites[oSite.ID] = oSite.SiteDesc || "";
+						oReferences.sites[oSite.ID] = formatter.siteName(oSite.SiteDesc);
 					});
 					return oReferences;
 				});

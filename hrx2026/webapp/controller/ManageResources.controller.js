@@ -127,25 +127,39 @@ sap.ui.define([
 			var pSites = this._read("/sites", {
 				filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
 			}).then(function (oData) {
-				var aSites = (oData.results || [])
+				var aAllSites = (oData.results || [])
 					.filter(function (oSite) {
 						return !!oSite.SiteID;
 					})
 					.map(function (oSite) {
+						var sName = oSite.SiteDesc || oSite.SiteLocation || oSite.SiteID;
 						return {
 							SiteID: oSite.SiteID,
-							SiteLabel: oSite.SiteDesc || oSite.SiteLocation || oSite.SiteID,
+							SiteLabel: formatter.siteName(sName),
+							// Apphaus is part of Oswestry: not offered as a site of its own
+							mergedInto: formatter.siteName(sName) !== sName ? formatter.siteName(sName) : "",
 							SiteLocation: oSite.SiteLocation || ""
 						};
-					})
-					.sort(function (a, b) {
-						return a.SiteLabel.localeCompare(b.SiteLabel);
 					});
 
-				this._mSiteNames = aSites.reduce(function (mNames, oSite) {
+				this._mSiteNames = aAllSites.reduce(function (mNames, oSite) {
 					mNames[oSite.SiteID] = oSite.SiteLabel;
 					return mNames;
 				}, {});
+
+				// Someone still held on Apphaus is shown, filtered and saved as Oswestry
+				var aSites = aAllSites.filter(function (oSite) {
+					return !oSite.mergedInto;
+				}).sort(function (a, b) {
+					return a.SiteLabel.localeCompare(b.SiteLabel);
+				});
+				this._mSiteKeyFor = {};
+				aAllSites.forEach(function (oSite) {
+					var oInto = oSite.mergedInto && aSites.filter(function (oCandidate) {
+						return oCandidate.SiteLabel === oSite.mergedInto;
+					})[0];
+					this._mSiteKeyFor[oSite.SiteID] = oInto ? oInto.SiteID : oSite.SiteID;
+				}, this);
 
 				oModel.setProperty("/sites", aSites);
 				// The filter's Location list starts with All, as its other fields do
@@ -239,7 +253,7 @@ sap.ui.define([
 				if (oFilter.active !== "A" && (oResource.IsActive || "N") !== oFilter.active) {
 					return false;
 				}
-				if (oFilter.site && oFilter.site !== ALL_SITES && oResource.BaseSiteKey !== oFilter.site) {
+				if (oFilter.site && oFilter.site !== ALL_SITES && this._siteName(oResource.BaseSiteKey) !== this._siteName(oFilter.site)) {
 					return false;
 				}
 				if (sQuery) {
@@ -251,7 +265,7 @@ sap.ui.define([
 					}
 				}
 				return true;
-			}).sort(this._byName);
+			}, this).sort(this._byName);
 
 			this.getModel("mr").setProperty("/resources", aFiltered);
 			oViewModel.setProperty("/title", this.getText("mrListTitleCount", [aFiltered.length]));
@@ -299,7 +313,7 @@ sap.ui.define([
 				Email: oResource.Email || "",
 				Mobile: oResource.Mobile || "",
 				UserTypeKey: oResource.UserTypeKey || "",
-				BaseSiteKey: oResource.BaseSiteKey || "",
+				BaseSiteKey: (this._mSiteKeyFor && this._mSiteKeyFor[oResource.BaseSiteKey]) || oResource.BaseSiteKey || "",
 				ManagerID: oResource.ManagerID || "",
 				Pic: oResource.Pic || "",
 				PicB: oResource.PicB || "",
