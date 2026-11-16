@@ -171,6 +171,7 @@ sap.ui.define([
 				case "REJ":
 					return ValueState.Error;
 				case "REQ":
+				case "CRQ":
 					return ValueState.Warning;
 				default:
 					return ValueState.None;

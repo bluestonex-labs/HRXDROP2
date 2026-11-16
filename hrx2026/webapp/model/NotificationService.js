@@ -135,14 +135,22 @@ sap.ui.define([
 					}), mMine);
 				})) : Promise.resolve(null),
 
-				// Requests waiting for this manager to decide
-				oProfile.isManager ? settle(Hrx.list("Leaves", {
-					$filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested +
-						" and ApproverID_EmployeeID eq " + sMe
-				}).then(function (aLeaves) {
-					return Notifications.approvals(aLeaves.filter(function (oLeave) {
+				// Requests waiting for this manager to decide, and approved leave an
+				// employee has asked to cancel (counted from when they asked)
+				oProfile.isManager ? settle(Promise.all([
+					Hrx.list("Leaves", {
+						$filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested +
+							" and ApproverID_EmployeeID eq " + sMe
+					}),
+					HrxServices.hasProperty("Leaves", "CancelStatus") ? Hrx.list("Leaves", {
+						$filter: "CancelStatus eq 'REQUESTED' and ApproverID_EmployeeID eq " + sMe
+					}) : Promise.resolve([])
+				]).then(function (aLists) {
+					return Notifications.approvals(aLists[0].filter(function (oLeave) {
 						return HrxLegacy.leaveStatus(oLeave) === "REQ";
-					}));
+					}).concat(aLists[1].map(function (oLeave) {
+						return Object.assign({}, oLeave, { createdAt: oLeave.modifiedAt || oLeave.createdAt });
+					})));
 				})) : Promise.resolve(null)
 			]).then(function (aResults) {
 				return pReadIdsSynced.then(function () {

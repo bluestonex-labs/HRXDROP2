@@ -3,32 +3,43 @@
 	xmlns:core="sap.ui.core">
 
 	<!-- "Cancel this leave request?" - the design's confirm (hrx.confirm): the
-	     destructive action in red first, then a quiet way back out. -->
+	     destructive action in red first, then a quiet way back out. On approved leave
+	     (mlEdit>/askToCancel) it asks the manager to cancel it instead, with a reason. -->
 	<Dialog
 		id="cancelLeaveDialog"
-		title="{i18n>mlCancelTitle}"
+		title="{= ${mlEdit>/askToCancel} ? ${i18n>mlAskCancelTitle} : ${i18n>mlCancelTitle} }"
 		contentWidth="460px"
 		busy="{mlView>/saving}"
 		busyIndicatorDelay="0"
 		class="hrxModal hrxMyLeaveDialog">
 		<content>
 			<VBox renderType="Bare" class="hrxLeaveDialogBody">
-				<Text text="{i18n>mlCancelQuestion}" class="hrxModalText" />
+				<Text text="{= ${mlEdit>/askToCancel} ? ${i18n>mlAskCancelQuestion} : ${i18n>mlCancelQuestion} }" class="hrxModalText" />
 				<Text
 					text="{mlEdit>/DisplayRange} · {mlEdit>/LeaveType} ({mlEdit>/DurationText})"
 					class="hrxModalText hrxLeaveDialogDetail" />
+				<VBox visible="{= !!${mlEdit>/askToCancel} }" renderType="Bare" class="sapUiSmallMarginTop">
+					<Label text="{i18n>mlAskCancelReason}" labelFor="cancelLeaveReason" />
+					<TextArea
+						id="cancelLeaveReason"
+						value="{mlEdit>/CancelReason}"
+						rows="3"
+						width="100%"
+						maxLength="255"
+						placeholder="{i18n>mlAskCancelReasonPlaceholder}" />
+				</VBox>
 			</VBox>
 		</content>
 		<beginButton>
 			<Button
 				id="cancelLeaveConfirm"
-				text="{i18n>mlCancelConfirm}"
+				text="{= ${mlEdit>/askToCancel} ? ${i18n>mlAskCancelConfirm} : ${i18n>mlCancelConfirm} }"
 				type="Reject"
 				press=".onConfirmCancelLeave"
 				class="hrxModalBtn hrxModalBtnDanger" />
 		</beginButton>
 		<endButton>
-			<Button id="cancelLeaveKeep" text="{i18n>mlCancelKeep}" press=".onCloseCancelLeave" class="hrxModalBtn hrxModalBtnGhost" />
+			<Button id="cancelLeaveKeep" text="{= ${mlEdit>/askToCancel} ? ${i18n>mlAskCancelKeep} : ${i18n>mlCancelKeep} }" press=".onCloseCancelLeave" class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

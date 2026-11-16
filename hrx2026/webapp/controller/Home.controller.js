@@ -750,13 +750,16 @@ sap.ui.define([
 				var mByRequester = {};
 
 				(oData.leaveToApprove || []).forEach(function (oLeave) {
-					var oGroup = mByRequester[oLeave.RequesterID];
+					// A cancellation of approved leave is its own row, apart from new requests
+					var sKey = oLeave.RequesterID + (oLeave.IsCancellation ? "|cancel" : "");
+					var oGroup = mByRequester[sKey];
 					if (!oGroup) {
-						oGroup = mByRequester[oLeave.RequesterID] = {
+						oGroup = mByRequester[sKey] = {
 							RequesterID: oLeave.RequesterID,
 							RequesterName: oLeave.RequesterName,
 							RequesterEmail: oLeave.RequesterEmail,
 							LeaveType: oLeave.LeaveType,
+							isCancellation: !!oLeave.IsCancellation,
 							initials: formatter.nameInitials(oLeave.RequesterName),
 							LeaveList: []
 						};
@@ -779,7 +782,8 @@ sap.ui.define([
 					var fDays = this._leaveDays(oGroup.LeaveList);
 					oGroup.rangeLabel = this._shortRange(aDates[0], aDates[aDates.length - 1]);
 					oGroup.durationLabel = this._durationLabel(oGroup.LeaveList);
-					oGroup.typeLabel = oGroup.LeaveType + " · " + oGroup.durationLabel;
+					oGroup.typeLabel = oGroup.isCancellation ?
+						this.getText("homeCancellationLabel", [oGroup.LeaveType]) : oGroup.LeaveType + " · " + oGroup.durationLabel;
 					oGroup.daysLabel = this.getText(fDays === 1 ? "homeDay" : "homeDays", [fDays]);
 					return oGroup;
 				}, this));
@@ -1707,7 +1711,7 @@ sap.ui.define([
 			// The design's decline modal (hrxModal, shared in style.css): who, when
 			// and what, an optional note, Reject (danger) then Cancel.
 			var oDialog = new Dialog({
-				title: this.getText("mgrDeclineTitle"),
+				title: this.getText(oGroup.isCancellation ? "homeRejectCancellationTitle" : "mgrDeclineTitle"),
 				content: new VBox({
 					items: [
 						// The design: "Sam Evans · 14 – 15 Jul 2026 · Holiday (Full day)"
@@ -1759,6 +1763,27 @@ sap.ui.define([
 			}
 			var sToday = Backend.isoDate(new Date());
 			var oModel = this.getModel();
+
+			// Approved leave the employee asked to cancel: approving cancels it, rejecting keeps it
+			if (oGroup.isCancellation) {
+				oModel.setProperty("/loadingApprovals", true);
+				Hrx.callAction("actionOnLeaveCancellation", {
+					LeaveIDs: oGroup.LeaveList.map(function (oLeave) {
+						return oLeave.LeaveID;
+					}),
+					Approve: sStatus === "APR",
+					Comments: sNote || ""
+				}).then(function () {
+					MessageToast.show(this.getText(sStatus === "APR" ? "homeCancellationApproved" : "homeCancellationRejected",
+						[oGroup.RequesterName]));
+					this._loadTeamToday();
+					return this._loadApprovals();
+				}.bind(this)).catch(function (oError) {
+					oModel.setProperty("/loadingApprovals", false);
+					this._showError("tcErrorApprovalAction", oError);
+				}.bind(this));
+				return;
+			}
 
 			var aLeaveRequests = oGroup.LeaveList.map(function (oLeave) {
 				return {

@@ -52,7 +52,7 @@ sap.ui.define([
 	LEAVE_STATUS_IDS[HrxTime.LEAVE_STATUS.requested] = "REQ";
 	LEAVE_STATUS_IDS[HrxTime.LEAVE_STATUS.rejected] = "REJ";
 
-	var STATUS_TEXT = { APR: "Approved", REQ: "Requested", REJ: "Rejected" };
+	var STATUS_TEXT = { APR: "Approved", REQ: "Requested", REJ: "Rejected", CAN: "Cancelled" };
 	var WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 	var SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -827,6 +827,9 @@ sap.ui.define([
 
 						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, oSchedule, mHolidays).forEach(function (oDay) {
 							var fDays = oDay.absence === "Full Day" ? 1 : 0.5;
+							// Cancelled leave carries the rejected status (so it is not counted)
+							// but shows as Cancelled
+							var sShownStatus = oLeave.CancelStatus === "CANCELLED" ? "CAN" : sStatus;
 							aAvailed.push({
 								LeaveID: oLeave.ID,
 								// the days asked for together share one group (the service sets it)
@@ -836,10 +839,13 @@ sap.ui.define([
 								LeaveTypeID: oType.code,
 								LeaveType: oType.desc,
 								Absence: oDay.absence,
-								Status: STATUS_TEXT[sStatus],
-								StatusID: sStatus,
+								Status: STATUS_TEXT[sShownStatus],
+								StatusID: sShownStatus,
 								RequesterComments: oLeave.RequesterComments || "",
-								ApproverComments: oLeave.ApproverComments || ""
+								ApproverComments: oLeave.ApproverComments || "",
+								CancelStatus: oLeave.CancelStatus || "",
+								CancelComments: oLeave.CancelComments || "",
+								CancelApproverComments: oLeave.CancelApproverComments || ""
 							});
 							if (sStatus !== "REJ" && oDay.date >= oYear.from && oDay.date <= oYear.to) {
 								mAnalytics[oType.desc] = (mAnalytics[oType.desc] || 0) + fDays;
@@ -1018,8 +1024,38 @@ sap.ui.define([
 				// A manager decides leave only for the people reporting directly to them -
 				// current staff only, as on Team Calendar, so the two always list the same
 				// requests.
-				return Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }).then(function (aLeaves) {
+				// Approved leave the employee has asked to cancel waits on the same manager
+				var bCancellations = HrxServices.hasProperty("Leaves", "CancelStatus");
+				return Promise.all([
+					Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }),
+					bCancellations ? Hrx.list("Leaves", { $filter: "CancelStatus eq 'REQUESTED'" }) : Promise.resolve([])
+				]).then(function (aLists) {
 					var aPending = [];
+					aLists[1].forEach(function (oLeave) {
+						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
+						if (!oRequester || oRequester.Manager_EmployeeID !== oMe.EmployeeID || oRequester.IsActive === false) {
+							return;
+						}
+						var oType = mTypes[oLeave.LeaveCategoryId_ID] || { code: "", desc: "" };
+						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, scheduleOf(oRequester), {}).forEach(function (oDay) {
+							aPending.push({
+								LeaveID: oLeave.ID,
+								RequesterID: oLeave.EmpID_EmployeeID,
+								RequesterName: fullName(oRequester),
+								RequesterEmail: lower(oRequester.WorkEmail),
+								LeaveType: oType.desc,
+								LeaveTypeID: oType.code,
+								Date: oDay.date,
+								DisplayDate: displayDate(oDay.day),
+								AbsenceType: oDay.absence,
+								RequesterComments: oLeave.CancelComments || "",
+								Status: "Cancellation requested",
+								StatusID: "CRQ",
+								IsCancellation: true
+							});
+						});
+					});
+					var aLeaves = aLists[0];
 					aLeaves.filter(function (oLeave) {
 						var oRequester = mUsers[oLeave.EmpID_EmployeeID];
 						var bMine = !!oRequester && oRequester.Manager_EmployeeID === oMe.EmployeeID;

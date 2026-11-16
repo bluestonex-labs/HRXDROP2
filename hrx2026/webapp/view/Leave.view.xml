@@ -264,15 +264,25 @@
 											text="{ml>approverNoteText}"
 											visible="{= !!${ml>approverNoteText} }"
 											class="hrxLeaveComment" />
+										<Text
+											text="{ml>cancelReasonText}"
+											visible="{= !!${ml>cancelReasonText} }"
+											class="hrxLeaveComment" />
+										<Text
+											text="{ml>cancelNoteText}"
+											visible="{= !!${ml>cancelNoteText} }"
+											class="hrxLeaveComment" />
 									</VBox>
 								</HBox>
 								<ObjectStatus
-									text="{ml>Status}"
-									state="{path: 'ml>StatusID', formatter: '.formatter.leaveStatusState'}" />
+									text="{ml>pillText}"
+									state="{path: 'ml>pillStatusID', formatter: '.formatter.leaveStatusState'}" />
 								<HBox renderType="Bare" justifyContent="End" alignItems="Center" class="hrxLeaveRowActions">
+									<!-- Cancel a request still waiting; on approved leave not started yet,
+									     ask the manager to cancel it -->
 									<Button
-										text="{i18n>mlCancel}"
-										visible="{ml>cancellable}"
+										text="{= ${ml>cancelRequestable} ? ${i18n>mlRequestCancellation} : ${i18n>mlCancel} }"
+										visible="{= ${ml>cancellable} || ${ml>cancelRequestable} }"
 										press=".onCancelLeave"
 										class="hrxLeaveCancelButton" />
 									<Button

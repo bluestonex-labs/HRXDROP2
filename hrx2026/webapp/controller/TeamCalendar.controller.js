@@ -933,7 +933,7 @@ sap.ui.define([
 			this._decide(aRequests, "APR", "").then(function () {
 				MessageToast.show(aRequests.length > 1
 					? this.getText("tlApprovedMany", [aRequests.length, sName])
-					: this.getText("mgrApprovedToast", [sName]));
+					: this.getText(aRequests[0].isCancellation ? "homeCancellationApproved" : "mgrApprovedToast", [sName]));
 			}.bind(this));
 		},
 
@@ -960,7 +960,8 @@ sap.ui.define([
 
 			this._closePopover();
 			var oDialog = new Dialog({
-				title: this.getText(bMany ? "tlDeclineManyTitle" : "mgrDeclineTitle"),
+				title: this.getText(bMany ? "tlDeclineManyTitle" :
+					aRequests[0].isCancellation ? "homeRejectCancellationTitle" : "mgrDeclineTitle"),
 				content: new VBox({
 					items: aLines.concat([
 						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("hrxModalLabel"),
@@ -975,7 +976,7 @@ sap.ui.define([
 						this._decide(aRequests, "REJ", sNote).then(function () {
 							MessageToast.show(bMany
 								? this.getText("tlDeclinedMany", [aRequests.length, sName])
-								: this.getText("mgrDeclinedToast", [sName]));
+								: this.getText(aRequests[0].isCancellation ? "homeCancellationRejected" : "mgrDeclinedToast", [sName]));
 						}.bind(this));
 					}.bind(this)
 				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
