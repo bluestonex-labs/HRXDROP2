@@ -1,0 +1,29 @@
+# Deploy to the live system (org bsx-demo, space dev):
+#   mbt build, then cf deploy mta_archives/<archive>.mtar -e demo.mtaext
+# Points the hrxservice destination at demo's HRX service instead of TDD's.
+_schema-version: "3.2"
+ID: HRX2026.demo
+extends: HRX2026
+modules:
+- name: HRX2026-destination-content
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: hrx2026_HRX2026_html_repo_host
+          ServiceInstanceName: HRX2026-html5-app-host-service
+          ServiceKeyName: HRX2026_html_repo_host-key
+          sap.cloud.service: hrx2026
+        - Authentication: OAuth2UserTokenExchange
+          Name: hrx2026_uaa_HRX2026
+          ServiceInstanceName: HRX2026-xsuaa-service
+          ServiceKeyName: uaa_HRX2026-key
+          sap.cloud.service: hrx2026
+        - Name: hrxservice
+          Authentication: OAuth2UserTokenExchange
+          URL: https://bsx-demo-dev-bsx-hrx-srv.cfapps.eu10.hana.ondemand.com
+          TokenServiceInstanceName: bsx-hrx-xsuaa
+          TokenServiceKeyName: bsx-hrx-xsuaa-key
+          sap.cloud.service: hrx2026
+        # update, not ignore: an earlier demo deploy left hrxservice pointing at TDD
+        existing_destinations_policy: update
