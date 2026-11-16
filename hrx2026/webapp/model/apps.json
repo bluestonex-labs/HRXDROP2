@@ -60,7 +60,8 @@
       "query": {
         "tab": "assign"
       },
-      "admin": true
+      "admin": true,
+      "adminOnly": true
     },
     {
       "title": "Utilisation",
@@ -137,7 +138,8 @@
       "title": "Timesheet Reporting",
       "subtitle": "Billing, days booked, submissions and utilisation",
       "icon": "sap-icon://business-objects-experience",
-      "route": "timesheetreport"
+      "route": "timesheetreport",
+      "adminOnly": true
     },
     {
       "title": "Documents",

@@ -9,10 +9,12 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"../model/Backend",
 	"../model/CurrentUser",
+	"../model/Hrx",
+	"../model/HrxServices",
 	"../model/formatter",
 	"../model/Toast"
 ], function (Controller, Fragment, DateFormat, JSONModel, Filter, FilterOperator,
-	MessageToast, MessageBox, Backend, CurrentUser, formatter, Toast) {
+	MessageToast, MessageBox, Backend, CurrentUser, Hrx, HrxServices, formatter, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -58,6 +60,9 @@ sap.ui.define([
 				saving: false,
 				currentEmail: "",
 				statusFilter: "All",
+				// The requests list shows one leave year (April to March), this one to start with
+				leaveYear: this._leaveYearStart(),
+				leaveYears: [],
 				kpis: this._emptyKpis(),
 				user: {}
 			}), "mlView");
@@ -120,6 +125,7 @@ sap.ui.define([
 		 */
 		_onRouteMatched: function () {
 			this.getModel("mlView").setProperty("/statusFilter", "All");
+			this.getModel("mlView").setProperty("/leaveYear", this._leaveYearStart());
 			this._resetRequestForm();
 
 			return CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
@@ -187,6 +193,18 @@ sap.ui.define([
 				oModel.setProperty("/bankHolidays", oData.bankHolidays || []);
 				oModel.setProperty("/requests", this._groupRequests(oData.availedLeaves || []));
 
+				// The leave years there are requests in, newest first, and always this one
+				var aYears = [this._leaveYearStart()];
+				oModel.getProperty("/requests").forEach(function (oRequest) {
+					var iYear = this._leaveYearOf(oRequest.Date);
+					if (aYears.indexOf(iYear) === -1) {
+						aYears.push(iYear);
+					}
+				}, this);
+				oViewModel.setProperty("/leaveYears", aYears.sort().reverse().map(function (iYear) {
+					return { key: iYear, text: this.getText("mlLeaveYear", [String(iYear), String(iYear + 1)]) };
+				}, this));
+
 				this._applyStatusFilter();
 				this._renderCalendar();
 				oViewModel.setProperty("/busy", false);
@@ -227,6 +245,9 @@ sap.ui.define([
 						StatusID: oDay.StatusID,
 						RequesterComments: oDay.RequesterComments || "",
 						ApproverComments: oDay.ApproverComments || "",
+						CancelStatus: oDay.CancelStatus || "",
+						CancelComments: oDay.CancelComments || "",
+						CancelApproverComments: oDay.CancelApproverComments || "",
 						expanded: false,
 						Dates: []
 					};
@@ -239,6 +260,9 @@ sap.ui.define([
 				}
 			});
 
+			var sToday = this._isoDate(this._today());
+			var bCanAskToCancel = HrxServices.has("requestLeaveCancellation");
+
 			aRequests.forEach(function (oRequest) {
 				oRequest.Dates.sort();
 				oRequest.Date = oRequest.Dates[0];
@@ -250,22 +274,41 @@ sap.ui.define([
 				oRequest.editable = oRequest.StatusID === "REQ" && oRequest.Dates.length === 1;
 				oRequest.yourCommentText = oRequest.RequesterComments.trim() ? this.getText("mlYourComment", [oRequest.RequesterComments.trim()]) : "";
 				oRequest.approverNoteText = oRequest.ApproverComments.trim() ? this.getText("tlApproverNote", [oRequest.ApproverComments.trim()]) : "";
-				oRequest.hasComments = !!(oRequest.yourCommentText || oRequest.approverNoteText);
+
+				// Approved leave that has not started can be asked to be cancelled; the
+				// manager decides, as with the leave itself
+				oRequest.cancelRequested = oRequest.CancelStatus === "REQUESTED";
+				oRequest.cancelRequestable = bCanAskToCancel && oRequest.StatusID === "APR" &&
+					oRequest.Dates[0] > sToday && !oRequest.cancelRequested;
+				oRequest.pillText = oRequest.cancelRequested ? this.getText("mlCancelRequestedStatus") : oRequest.Status;
+				oRequest.pillStatusID = oRequest.cancelRequested ? "CRQ" : oRequest.StatusID;
+				oRequest.cancelReasonText = oRequest.CancelComments.trim() ? this.getText("mlCancelReasonText", [oRequest.CancelComments.trim()]) : "";
+				oRequest.cancelNoteText = oRequest.CancelApproverComments.trim() ? this.getText(
+					oRequest.CancelStatus === "REJECTED" ? "mlCancelRejectedNote" : "mlCancelApprovedNote", [oRequest.CancelApproverComments.trim()]) :
+					(oRequest.CancelStatus === "REJECTED" ? this.getText("mlCancelRejected") : "");
+				oRequest.hasComments = !!(oRequest.yourCommentText || oRequest.approverNoteText ||
+					oRequest.cancelReasonText || oRequest.cancelNoteText);
 			}, this);
 
 			return aRequests;
 		},
 
 		/**
-		 * Narrows the requests table to the status chosen in the filter.
+		 * Narrows the requests table to the chosen leave year and status.
 		 */
 		_applyStatusFilter: function () {
 			var sStatus = this.getModel("mlView").getProperty("/statusFilter");
+			var iYear = Number(this.getModel("mlView").getProperty("/leaveYear"));
 			var aAll = this.getModel("ml").getProperty("/requests") || [];
 
 			this.getModel("ml").setProperty("/leaves", aAll.filter(function (oRequest) {
-				return sStatus === "All" || oRequest.Status === sStatus;
-			}));
+				return this._leaveYearOf(oRequest.Date) === iYear &&
+					(sStatus === "All" || oRequest.Status === sStatus);
+			}, this));
+		},
+
+		onLeaveYearChange: function () {
+			this._applyStatusFilter();
 		},
 
 		onStatusFilter: function (oEvent) {
@@ -775,13 +818,21 @@ sap.ui.define([
 		 * The row's Cancel button: asks first (fragment/CancelLeaveDialog).
 		 * @param {sap.ui.base.Event} oEvent the button's press event
 		 */
+		/**
+		 * Cancel on a request still waiting removes it; on approved leave that has not
+		 * started it asks the manager to cancel it (askToCancel), with an optional reason.
+		 * @param {sap.ui.base.Event} oEvent the Cancel button's press event
+		 */
 		onCancelLeave: function (oEvent) {
 			var oContext = oEvent.getSource().getBindingContext("ml");
-			if (!oContext || oContext.getProperty("StatusID") !== "REQ") {
+			if (!oContext || !(oContext.getProperty("cancellable") || oContext.getProperty("cancelRequestable"))) {
 				return;
 			}
 
-			this.getModel("mlEdit").setData(Object.assign({}, oContext.getObject()));
+			this.getModel("mlEdit").setData(Object.assign({}, oContext.getObject(), {
+				askToCancel: oContext.getProperty("StatusID") === "APR",
+				CancelReason: ""
+			}));
 			this._openFragment("_pCancelLeaveDialog", "bsx.hrx.hrx2026.fragment.CancelLeaveDialog");
 		},
 
@@ -795,6 +846,25 @@ sap.ui.define([
 		 */
 		onConfirmCancelLeave: function () {
 			var oLeave = this.getModel("mlEdit").getData();
+			var oViewModel = this.getModel("mlView");
+
+			if (oLeave.askToCancel) {
+				oViewModel.setProperty("/saving", true);
+				Hrx.callAction("requestLeaveCancellation", {
+					LeaveIDs: oLeave.LeaveIDs,
+					Comments: (oLeave.CancelReason || "").trim()
+				}).then(function () {
+					oViewModel.setProperty("/saving", false);
+					this._closeFragment("_pCancelLeaveDialog");
+					MessageToast.show(this.getText("mlCancelAsked"));
+					return this._loadUser();
+				}.bind(this)).catch(function (oError) {
+					oViewModel.setProperty("/saving", false);
+					Toast.error(this.getText("mlErrorCancelAsk", [oError.message]));
+				}.bind(this));
+				return;
+			}
+
 			var aPayloads = oLeave.LeaveIDs.map(function (sLeaveID) {
 				return {
 					OrgID: this._sOrgId,
@@ -1003,6 +1073,16 @@ sap.ui.define([
 		_leaveYearStart: function () {
 			var oToday = this._today();
 			return oToday.getMonth() < 3 ? oToday.getFullYear() - 1 : oToday.getFullYear();
+		},
+
+		/**
+		 * @param {string} sIsoDate e.g. "2025-02-13"
+		 * @returns {number} the first calendar year of the leave year it falls in (Feb 2025 is in 2024's)
+		 */
+		_leaveYearOf: function (sIsoDate) {
+			var iYear = Number(String(sIsoDate).slice(0, 4));
+			var iMonth = Number(String(sIsoDate).slice(5, 7));
+			return iMonth < 4 ? iYear - 1 : iYear;
 		},
 
 		/**

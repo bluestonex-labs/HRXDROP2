@@ -138,7 +138,7 @@
 								text="{sk>emailedText}"
 								visible="{= ${sk>emailed} &amp;&amp; ${sk>status} === 'OPEN' }"
 								class="hrxSickTrigNote" />
-							<HBox wrap="Wrap" visible="{= ${sk>status} === 'OPEN' }" renderType="Bare" class="hrxSickTrigActs">
+							<HBox wrap="Wrap" visible="{= ${sk>status} === 'OPEN' &amp;&amp; ${sk>canAct} }" renderType="Bare" class="hrxSickTrigActs">
 								<Button
 									text="{= ${sk>emailed} ? ${i18n>skSendAnother} : ${i18n>skSendFollowUp} }"
 									icon="sap-icon://email"
@@ -196,13 +196,13 @@
 									<Text text="{sk>Text}" class="hrxSickStepText" />
 									<Button
 										text="{i18n>skMarkDone}"
-										visible="{= !${sk>done} }"
+										visible="{= !${sk>done} &amp;&amp; ${sk>canAct} }"
 										press=".onMarkStepDone"
 										class="hrxSickBtnSm" />
 								</HBox>
 							</VBox>
 
-							<HBox justifyContent="End" renderType="Bare" class="hrxSickRtwFoot">
+							<HBox justifyContent="End" visible="{sk>canAct}" renderType="Bare" class="hrxSickRtwFoot">
 								<Button
 									text="{i18n>skEmail}"
 									icon="sap-icon://email"
@@ -275,7 +275,7 @@
 											<core:CustomData key="kind" value="{sk>statusKind}" writeToDom="true" />
 										</customData>
 									</Text>
-									<HBox justifyContent="End" renderType="Bare" class="hrxSickRowActs">
+									<HBox justifyContent="End" visible="{sk>canAct}" renderType="Bare" class="hrxSickRowActs">
 										<Button
 											icon="sap-icon://edit"
 											type="Transparent"

@@ -18,7 +18,7 @@ sap.ui.define([
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-	var RESOURCE_FIELDS = ["EmpID", "FName", "LName", "Email", "IsActive", "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+	var RESOURCE_FIELDS = ["EmpID", "FName", "LName", "Email", "IsActive", "ManagerID", "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.Sickness", {
 
@@ -140,9 +140,10 @@ sap.ui.define([
 					this._mPeople[oPerson.EmpID] = oPerson;
 				}, this);
 
+				// Sickness is recorded only by the person's own manager
 				this.getModel("sk").setProperty("/employees", aPeople.filter(function (oPerson) {
-					return oPerson.IsActive === "Y";
-				}));
+					return oPerson.IsActive === "Y" && this._isMyReport(oPerson.EmpID);
+				}, this));
 			}.bind(this)).catch(function (oError) {
 				// Let the next visit try again.
 				this._pEmployees = null;
@@ -168,14 +169,18 @@ sap.ui.define([
 				this._mExpanded[oTrigger.EmpID] = !!oTrigger.expanded;
 			}, this);
 
+			// Sickness is private: only your own direct reports', unless you see everyone's
+			var bSeesAll = !!this._oProfile.seesWholeTeam;
 			var aAbsences = (aRawAbsences || []).map(this._toAbsence, this).filter(function (oAbsence) {
-				return SicknessPolicy.inFiscalYear(oAbsence.StartDate, oYear);
+				return SicknessPolicy.inFiscalYear(oAbsence.StartDate, oYear) && (bSeesAll || oAbsence.canAct);
 			}).sort(function (a, b) {
 				return b.StartDate.localeCompare(a.StartDate);
 			});
 
 			var aAllTriggers = SicknessPolicy.triggers(aAbsences, oYear, aReviews).map(this._toTrigger, this);
-			var aRtw = (aRawRtw || []).map(this._toRtw, this);
+			var aRtw = (aRawRtw || []).map(this._toRtw, this).filter(function (oRtw) {
+				return bSeesAll || oRtw.canAct;
+			});
 
 			this._setAbsenceStatus(aAbsences, aRtw);
 
@@ -300,7 +305,8 @@ sap.ui.define([
 				durationText: this._daysText(fDays),
 				dismissed: false,
 				dismissedTooltip: "",
-				dismissedNote: ""
+				dismissedNote: "",
+				canAct: this._isMyReport(oRaw.EmpID)
 			};
 		},
 
@@ -327,13 +333,15 @@ sap.ui.define([
 				noteText: bDismissed ? this.getText("skDismissedNote", [oTrigger.note]) : "",
 				emailedText: sEmailedOn ?
 					this.getText("skEmailedOn", [this._rangeText(sEmailedOn, sEmailedOn)]) : this.getText("skEmailed"),
-				expanded: !!this._mExpanded[oTrigger.EmpID]
+				expanded: !!this._mExpanded[oTrigger.EmpID],
+				canAct: this._isMyReport(oTrigger.EmpID)
 			});
 		},
 
 		_toRtw: function (oRaw) {
 			var oPerson = this._person(oRaw.EmpID);
 			var sName = oRaw.Name || (oPerson && oPerson.FullName) || oRaw.EmpID || "";
+			var bCanAct = this._isMyReport(oRaw.EmpID);
 
 			return {
 				RtwID: oRaw.RtwID,
@@ -343,6 +351,7 @@ sap.ui.define([
 				Email: oRaw.Email || (oPerson && oPerson.Email) || "",
 				OpenedOn: oRaw.OpenedOn || "",
 				initials: formatter.nameInitials(sName),
+				canAct: bCanAct,
 				steps: (oRaw.Steps || []).slice().sort(function (a, b) {
 					return (a.StepNo || 0) - (b.StepNo || 0);
 				}).map(function (oStep) {
@@ -350,7 +359,8 @@ sap.ui.define([
 						RtwID: oRaw.RtwID,
 						StepNo: oStep.StepNo,
 						Text: oStep.Text || "",
-						done: oStep.Done === "Y" || oStep.Done === true
+						done: oStep.Done === "Y" || oStep.Done === true,
+						canAct: bCanAct
 					};
 				})
 			};
@@ -781,6 +791,17 @@ sap.ui.define([
 
 		_person: function (sEmpId) {
 			return (sEmpId && this._mPeople && this._mPeople[sEmpId]) || null;
+		},
+
+		/**
+		 * Only a person's own manager records, edits or acts on their sickness.
+		 * @param {string} sEmpId an employee
+		 * @returns {boolean} true when they report directly to the signed-in user
+		 */
+		_isMyReport: function (sEmpId) {
+			var oPerson = this._person(sEmpId);
+			var sMe = this._oProfile && this._oProfile.empID;
+			return !!sMe && !!oPerson && oPerson.ManagerID === sMe;
 		},
 
 		/**

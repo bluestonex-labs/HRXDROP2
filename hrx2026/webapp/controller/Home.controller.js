@@ -750,13 +750,16 @@ sap.ui.define([
 				var mByRequester = {};
 
 				(oData.leaveToApprove || []).forEach(function (oLeave) {
-					var oGroup = mByRequester[oLeave.RequesterID];
+					// A cancellation of approved leave is its own row, apart from new requests
+					var sKey = oLeave.RequesterID + (oLeave.IsCancellation ? "|cancel" : "");
+					var oGroup = mByRequester[sKey];
 					if (!oGroup) {
-						oGroup = mByRequester[oLeave.RequesterID] = {
+						oGroup = mByRequester[sKey] = {
 							RequesterID: oLeave.RequesterID,
 							RequesterName: oLeave.RequesterName,
 							RequesterEmail: oLeave.RequesterEmail,
 							LeaveType: oLeave.LeaveType,
+							isCancellation: !!oLeave.IsCancellation,
 							initials: formatter.nameInitials(oLeave.RequesterName),
 							LeaveList: []
 						};
@@ -779,7 +782,8 @@ sap.ui.define([
 					var fDays = this._leaveDays(oGroup.LeaveList);
 					oGroup.rangeLabel = this._shortRange(aDates[0], aDates[aDates.length - 1]);
 					oGroup.durationLabel = this._durationLabel(oGroup.LeaveList);
-					oGroup.typeLabel = oGroup.LeaveType + " · " + oGroup.durationLabel;
+					oGroup.typeLabel = oGroup.isCancellation ?
+						this.getText("homeCancellationLabel", [oGroup.LeaveType]) : oGroup.LeaveType + " · " + oGroup.durationLabel;
 					oGroup.daysLabel = this.getText(fDays === 1 ? "homeDay" : "homeDays", [fDays]);
 					return oGroup;
 				}, this));
@@ -862,7 +866,7 @@ sap.ui.define([
 					mTypes[oType.ID] = oType.LeaveCategoryDesc || "";
 				});
 				aResults[3].forEach(function (oSite) {
-					mSites[oSite.ID] = oSite.SiteDesc || oSite.SiteLocation || oSite.ID;
+					mSites[oSite.ID] = formatter.siteName(oSite.SiteDesc || oSite.SiteLocation || oSite.ID);
 				});
 				aResults[4].forEach(function (oSchedule) {
 					mSchedules[oSchedule.EmployeeID_EmployeeID] = oSchedule;
@@ -954,15 +958,34 @@ sap.ui.define([
 			var oSunday = new Date(oMonday.getFullYear(), oMonday.getMonth(), oMonday.getDate() + 6);
 
 			oModel.setProperty("/dash/loadingCompliance", true);
-			return TimesheetReportService.loadWeek(Backend.isoDate(oMonday), Backend.isoDate(oSunday)).then(function (aRows) {
-				var aDue = aRows.filter(function (oRow) {
-					return oRow.expectedMinutes > 0;
+			return Promise.all([
+				TimesheetReportService.loadWeek(Backend.isoDate(oMonday), Backend.isoDate(oSunday)),
+				this._pDashPeople
+			]).then(function (aResults) {
+				// Only your own direct reports count, unless you see the whole team's
+				var oProfile = this._oProfile;
+				var mMyReports = {};
+				aResults[1].forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
+				var aDue = aResults[0].filter(function (oRow) {
+					return oRow.expectedMinutes > 0 && (oProfile.seesWholeTeam || mMyReports[oRow.UserID]);
 				});
 				var iFull = aDue.filter(function (oRow) {
 					return oRow.bookedMinutes >= oRow.expectedMinutes;
 				}).length;
-				var iPct = aDue.length ? Math.round(iFull / aDue.length * 100) : 100;
 
+				if (!aDue.length) {
+					oModel.setProperty("/dash/compliance", {
+						pct: "—",
+						state: "Neutral",
+						sub: this.getText("mgrComplianceNoReports")
+					});
+					return;
+				}
+				var iPct = Math.round(iFull / aDue.length * 100);
 				oModel.setProperty("/dash/compliance", {
 					pct: String(iPct),
 					state: iPct >= 90 ? "Good" : "Warning",
@@ -991,9 +1014,21 @@ sap.ui.define([
 				SicknessService.getAbsences(this._sOrgId, oYear.from, oYear.to),
 				SicknessService.getTriggerReviews(this._sOrgId, oYear.startYear).catch(function () {
 					return [];
-				})
+				}),
+				this._pDashPeople
 			]).then(function (aResults) {
-				var iOpen = SicknessPolicy.triggers(aResults[0], oYear, aResults[1]).filter(function (oTrigger) {
+				// Only your own direct reports' sickness counts, unless you see everyone's
+				var oProfile = this._oProfile;
+				var mMyReports = {};
+				aResults[2].forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
+				var aAbsences = aResults[0].filter(function (oAbsence) {
+					return oProfile.seesWholeTeam || mMyReports[oAbsence.EmpID];
+				});
+				var iOpen = SicknessPolicy.triggers(aAbsences, oYear, aResults[1]).filter(function (oTrigger) {
 					return oTrigger.status === "OPEN";
 				}).length;
 
@@ -1065,10 +1100,21 @@ sap.ui.define([
 			oModel.setProperty("/dash/loadingUtil", true);
 			// Everybody, leavers included: someone who left this year still booked time in
 			// it, and without them here the card shows their employee ID instead of a name
+			var oProfile = this._oProfile;
+			var mMyReports = {};
 			return TimesheetReportService.loadPeople().then(function (aPeople) {
+				aPeople.forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
 				return TimesheetReportService.loadBookings(aPeople, this._sOrgId, oPeriod.from, oPeriod.to);
 			}.bind(this)).then(function (oResult) {
-				var aPeople = TimesheetReport.utilisation(oResult.bookings, oPeriod);
+				// Your own direct reports, unless you are an HR admin
+				var aBookings = oResult.bookings.filter(function (oBooking) {
+					return oProfile.isAdmin || mMyReports[oBooking.EmpID];
+				});
+				var aPeople = TimesheetReport.utilisation(aBookings, oPeriod);
 				var fBillable = 0;
 				var fTotal = 0;
 				var iBillers = 0;
@@ -1665,7 +1711,7 @@ sap.ui.define([
 			// The design's decline modal (hrxModal, shared in style.css): who, when
 			// and what, an optional note, Reject (danger) then Cancel.
 			var oDialog = new Dialog({
-				title: this.getText("mgrDeclineTitle"),
+				title: this.getText(oGroup.isCancellation ? "homeRejectCancellationTitle" : "mgrDeclineTitle"),
 				content: new VBox({
 					items: [
 						// The design: "Sam Evans · 14 – 15 Jul 2026 · Holiday (Full day)"
@@ -1717,6 +1763,27 @@ sap.ui.define([
 			}
 			var sToday = Backend.isoDate(new Date());
 			var oModel = this.getModel();
+
+			// Approved leave the employee asked to cancel: approving cancels it, rejecting keeps it
+			if (oGroup.isCancellation) {
+				oModel.setProperty("/loadingApprovals", true);
+				Hrx.callAction("actionOnLeaveCancellation", {
+					LeaveIDs: oGroup.LeaveList.map(function (oLeave) {
+						return oLeave.LeaveID;
+					}),
+					Approve: sStatus === "APR",
+					Comments: sNote || ""
+				}).then(function () {
+					MessageToast.show(this.getText(sStatus === "APR" ? "homeCancellationApproved" : "homeCancellationRejected",
+						[oGroup.RequesterName]));
+					this._loadTeamToday();
+					return this._loadApprovals();
+				}.bind(this)).catch(function (oError) {
+					oModel.setProperty("/loadingApprovals", false);
+					this._showError("tcErrorApprovalAction", oError);
+				}.bind(this));
+				return;
+			}
 
 			var aLeaveRequests = oGroup.LeaveList.map(function (oLeave) {
 				return {

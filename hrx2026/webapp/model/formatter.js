@@ -31,6 +31,16 @@ sap.ui.define([
 
 	return {
 
+		/**
+		 * Apphaus is part of the Oswestry office, not a location of its own, so it is
+		 * shown and counted as Oswestry wherever a site appears.
+		 * @param {string} sSiteName a site's name from the service
+		 * @returns {string} the name to show
+		 */
+		siteName: function (sSiteName) {
+			return /^\s*app\s*haus\s*$/i.test(sSiteName || "") ? "Oswestry" : (sSiteName || "");
+		},
+
 		toDate: toDate,
 
 		/**
@@ -161,6 +171,7 @@ sap.ui.define([
 				case "REJ":
 					return ValueState.Error;
 				case "REQ":
+				case "CRQ":
 					return ValueState.Warning;
 				default:
 					return ValueState.None;

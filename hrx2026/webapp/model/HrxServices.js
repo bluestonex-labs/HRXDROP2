@@ -35,7 +35,8 @@ sap.ui.define([
 		contactName: { entityType: "Contacts", property: "FirstName" },
 		dayCost: { entityType: "UserToProject", property: "DayCost" },
 		supportLine: { operation: "setSupportLine" },
-		supportAdmin: { entityType: "UserToProject", property: "IsSupportAdmin" }
+		supportAdmin: { entityType: "UserToProject", property: "IsSupportAdmin" },
+		leaveCancellation: { operation: "requestLeaveCancellation" }
 	};
 
 	var oDeployed = { entitySets: {}, operations: {}, properties: {} };

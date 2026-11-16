@@ -153,7 +153,7 @@ sap.ui.define([
 			return Promise.all([
 				TeamLeave.references(),
 				TeamLeave.assignedProjects().catch(function () {
-					// The project filter is not in the MVP; the page works without it.
+					// Without the projects the filter only offers "All projects"; the rest of the page still works.
 					return [];
 				})
 			]).then(function (aResults) {
@@ -177,11 +177,16 @@ sap.ui.define([
 				mTypeNames[oType.code] = oType.desc;
 			}, this);
 
+			// One entry per site name (Apphaus is listed as Oswestry, see formatter.siteName)
+			var aSiteNames = [];
+			Object.keys(mSites).forEach(function (sId) {
+				if (mSites[sId] && aSiteNames.indexOf(mSites[sId]) === -1) {
+					aSiteNames.push(mSites[sId]);
+				}
+			});
 			oModel.setProperty("/sites", [{ key: "all", text: this.getText("tcSiteAll") }].concat(
-				Object.keys(mSites).map(function (sId) {
-					return { key: sId, text: mSites[sId] };
-				}).sort(function (a, b) {
-					return a.text.localeCompare(b.text);
+				aSiteNames.sort().map(function (sName) {
+					return { key: sName, text: sName };
 				})));
 
 			oModel.setProperty("/projects", [{ key: "all", text: this.getText("tcProjectAll") }].concat(
@@ -321,10 +326,10 @@ sap.ui.define([
 			})[0];
 
 			return this._pool().filter(function (oPerson) {
-				return (sSite === "all" || oPerson.SiteID === sSite) &&
+				return (sSite === "all" || this._oReferences.sites[oPerson.SiteID] === sSite) &&
 					(!aPicked.length || aPicked.indexOf(oPerson.EmpID) !== -1) &&
 					(sProject === "all" || (oProject && oProject.empIds.indexOf(oPerson.EmpID) !== -1));
-			}).sort(function (a, b) {
+			}, this).sort(function (a, b) {
 				var bAWaiting = bManager && this._pendingOf(a.EmpID).length > 0;
 				var bBWaiting = bManager && this._pendingOf(b.EmpID).length > 0;
 				if (bAWaiting !== bBWaiting) {
@@ -339,10 +344,26 @@ sap.ui.define([
 		 * @returns {Array<object>} their requests still waiting, earliest first
 		 */
 		_pendingOf: function (sEmpId) {
+			// Only a person's own manager decides their leave, so nobody else sees it as waiting
+			if (!this._isMyReport(sEmpId)) {
+				return [];
+			}
 			return this._aPending.filter(function (oRequest) {
 				return oRequest.EmpID === sEmpId;
 			}).sort(function (a, b) {
 				return a.from.localeCompare(b.from);
+			});
+		},
+
+		/**
+		 * Leave is approved, rejected or cancelled only by the person's own manager.
+		 * @param {string} sEmpId an employee
+		 * @returns {boolean} true when they report directly to the signed-in user
+		 */
+		_isMyReport: function (sEmpId) {
+			var sMe = this.getModel("tcView").getProperty("/myEmpId");
+			return !!sMe && this._aCalendarPeople.some(function (oPerson) {
+				return oPerson.EmpID === sEmpId && oPerson.ManagerID === sMe;
 			});
 		},
 
@@ -482,8 +503,8 @@ sap.ui.define([
 				mInPeriod[oRequest.key] = true;
 			});
 			var aPendingElsewhere = this._aPending.filter(function (oRequest) {
-				return fnInScope(oRequest) && !mInPeriod[oRequest.key];
-			});
+				return fnInScope(oRequest) && !mInPeriod[oRequest.key] && this._isMyReport(oRequest.EmpID);
+			}, this);
 			var bAllPending = oLeaveView.status === "REQ" && !!oLeaveView.showAllPending;
 
 			var aInScope = bAllPending ? aPeriod.concat(aPendingElsewhere) : aPeriod;
@@ -508,6 +529,9 @@ sap.ui.define([
 				// What is waiting, soonest first; what is decided, latest first.
 				return oLeaveView.status === "REQ" ? a.from.localeCompare(b.from) : b.from.localeCompare(a.from);
 			});
+			aRows.forEach(function (oRequest) {
+				oRequest.canAct = this._isMyReport(oRequest.EmpID);
+			}, this);
 			oModel.setProperty("/rows", aRows);
 
 			var bMyTeam = this.getModel("tcView").getProperty("/team") === "mine";
@@ -826,7 +850,7 @@ sap.ui.define([
 		 * @param {sap.ui.core.Control} oAnchor what the pop-over opens beside
 		 */
 		_openRequest: function (oRequest, oAnchor) {
-			var bManager = this.getModel("tcView").getProperty("/isManager");
+			var bManager = this.getModel("tcView").getProperty("/isManager") && this._isMyReport(oRequest.EmpID);
 			var aPending = this._pendingOf(oRequest.EmpID);
 			var bUpcoming = oRequest.from > this._isoDate(new Date());
 
@@ -909,7 +933,7 @@ sap.ui.define([
 			this._decide(aRequests, "APR", "").then(function () {
 				MessageToast.show(aRequests.length > 1
 					? this.getText("tlApprovedMany", [aRequests.length, sName])
-					: this.getText("mgrApprovedToast", [sName]));
+					: this.getText(aRequests[0].isCancellation ? "homeCancellationApproved" : "mgrApprovedToast", [sName]));
 			}.bind(this));
 		},
 
@@ -936,7 +960,8 @@ sap.ui.define([
 
 			this._closePopover();
 			var oDialog = new Dialog({
-				title: this.getText(bMany ? "tlDeclineManyTitle" : "mgrDeclineTitle"),
+				title: this.getText(bMany ? "tlDeclineManyTitle" :
+					aRequests[0].isCancellation ? "homeRejectCancellationTitle" : "mgrDeclineTitle"),
 				content: new VBox({
 					items: aLines.concat([
 						new Label({ text: this.getText("mgrDeclineNote"), labelFor: oNote }).addStyleClass("hrxModalLabel"),
@@ -951,7 +976,7 @@ sap.ui.define([
 						this._decide(aRequests, "REJ", sNote).then(function () {
 							MessageToast.show(bMany
 								? this.getText("tlDeclinedMany", [aRequests.length, sName])
-								: this.getText("mgrDeclinedToast", [sName]));
+								: this.getText(aRequests[0].isCancellation ? "homeCancellationRejected" : "mgrDeclinedToast", [sName]));
 						}.bind(this));
 					}.bind(this)
 				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),

@@ -166,12 +166,14 @@ sap.ui.define([
 					empID: oProfile.empID,
 					pic: oProfile.pic || "",
 					isManager: oProfile.isManager,
+					isAdmin: oProfile.isAdmin,
 					// The job title under the name; the employee ID is not shown there
 					// The employee number (e.g. BSXOSW0001) under the name; the job title until it has one
 					subtitle: oProfile.employeeNumber || oProfile.jobTitle || ""
 				});
 
 				this._showAdminNavigation(!!oProfile.isManager);
+				this._refreshStripVisibility();
 
 				// No bell on a phone, so nothing to work out for it.
 				if (Device.system.phone) {
@@ -403,6 +405,7 @@ sap.ui.define([
 			// Utilisation page: its own title, and no "Last refreshed" stamp.
 			var oQuery = (oEvent.getParameter("arguments") || {})["?query"] || {};
 			var bUtilisation = sRoute === "timesheetreport" && oQuery.tab === "util";
+			this._bUtilisation = bUtilisation;
 
 			// The app catalogue arrives asynchronously and replaces the whole model, so
 			// the title is written once that has landed. Setting it earlier leaves a
@@ -462,6 +465,12 @@ sap.ui.define([
 			var aStrip = oModel.getProperty("/healthStrip") || [];
 
 			var oAction = mRouteToPageAction[this._sRoute];
+			// Refresh is no use to someone who cannot see the page: Timesheet reporting is
+			// for HR admins, Utilisation for every manager
+			if (this._sRoute === "timesheetreport" && !oModel.getProperty("/user/isAdmin") &&
+				!(this._bUtilisation && oModel.getProperty("/user/isManager"))) {
+				oAction = null;
+			}
 
 			oModel.setProperty("/page/showStrip", this._sRoute === "home" && aStrip.length > 0);
 			oModel.setProperty("/page/action", oAction ? { text: this.getText(oAction.textKey), icon: oAction.icon } : null);

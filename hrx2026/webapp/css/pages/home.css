@@ -234,9 +234,11 @@
 
 /* ── KPI TILES ────────────────────────────────────────────────────────────── */
 
+/* Four tiles for HR admins, three for other managers (no Timesheet compliance):
+   the tiles share the row whichever it is. */
 .hrxHomePage .hrxHomeKpis {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 	gap: 16px;
 	margin-bottom: 16px;
 }

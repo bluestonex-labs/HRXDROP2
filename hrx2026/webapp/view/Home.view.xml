@@ -36,7 +36,7 @@
 					</Button>
 				</VBox>
 
-				<!-- Timesheet compliance -->
+				<!-- Timesheet compliance: your own direct reports (the whole team's for HR admins) -->
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">
@@ -48,7 +48,7 @@
 						<Text text="%" class="hrxHomeKpiUnit" visible="{= ${home>/dash/compliance/pct} !== '—' }" />
 					</HBox>
 					<Text text="{home>/dash/compliance/sub}" class="hrxHomeKpiSub" />
-					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false"
+					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false" visible="{app>/user/isAdmin}"
 						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
 						<customData><core:CustomData key="go" value="timesheetreport:sub" /></customData>
 					</Button>
@@ -142,7 +142,7 @@
 					<!-- Pending approvals: the manager's own team only (HrxLegacy pendingApproval) -->
 					<core:Fragment fragmentName="bsx.hrx.hrx2026.fragment.HomePendingApprovals" type="XML" />
 
-					<!-- Billable utilisation, financial year to date -->
+					<!-- Billable utilisation, financial year to date: your own direct reports (everyone's for HR admins) -->
 					<VBox renderType="Bare" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
 						<HBox renderType="Bare" class="hrxHomeCardHead">
 							<Title text="{i18n>mgrUtilTitle}" level="H3" class="hrxHomeCardTitle" />

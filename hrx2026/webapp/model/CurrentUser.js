@@ -47,25 +47,26 @@ sap.ui.define([
 		return (oParameters[sName] && oParameters[sName].length && oParameters[sName][0]) || "";
 	}
 
-	// Dan, Tina, Tia and Vicky need everything a manager has, Admin and every app under
-	// it included, whether or not the team service flags them as managers (Tia and Vicky
-	// run resourcing and payroll without line reports of their own). They count as
-	// managers whatever the service says.
-	var MANAGER_EXCEPTIONS = [
+	// HR admins: full access. They see every Admin page, including Timesheet reporting,
+	// Utilisation and Missing Timesheets, and the whole team's sickness and timesheet
+	// compliance. Managers with direct reports get Sickness, Documents and the Manage
+	// pages, for their own direct reports only.
+	var ADMINS = [
 		"dan.barton@bluestonex.com",
 		"tina.porter@bluestonex.com",
 		"tia.menhennet@bluestonex.com",
-		"vicky.williams@bluestonex.com"
+		"vicky.williams@bluestonex.com",
+		"feroz.khan@bluestonex.com",
+		"joe.barton@bluestonex.com"
 	];
 
-	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
-	// test resources). Only on TDD: the live system (demo) never reads this list.
-	var TDD_ONLY_MANAGER_EXCEPTIONS = [
-		"david.akilapa@bluestonex.com",
-		"omkar.gaikar@bluestonex.com"
-	];
-	// TDD's launchpad host starts with the subaccount name, e.g. bsx-tdd-qq8akzjn.launchpad...
-	var TDD_HOST_PREFIX = "bsx-tdd-";
+	/**
+	 * @param {string} sEmail an email, in any case
+	 * @returns {boolean} true when that person is an HR admin (and so also counts as a manager)
+	 */
+	function isAdmin(sEmail) {
+		return ADMINS.indexOf((sEmail || "").toLowerCase()) !== -1;
+	}
 
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
 	// left behind in a browser is cleared on start so it can never be read again.
@@ -77,19 +78,6 @@ sap.ui.define([
 		} catch (oError) {
 			// storage blocked - nothing stored either
 		}
-	}
-
-	/**
-	 * @param {string} sEmail an email, in any case
-	 * @returns {boolean} true when that person is treated as a manager regardless of the service's flag
-	 */
-	function isManagerException(sEmail) {
-		var sLowerEmail = (sEmail || "").toLowerCase();
-		if (MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1) {
-			return true;
-		}
-		var bOnTdd = window.location.hostname.indexOf(TDD_HOST_PREFIX) === 0;
-		return bOnTdd && TDD_ONLY_MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1;
 	}
 
 	// A Business Application Studio workspace previews the app on a host of its own.
@@ -116,7 +104,7 @@ sap.ui.define([
 
 	return {
 
-		isManagerException: isManagerException,
+		isAdmin: isAdmin,
 
 		/**
 		 * Only meaningful once {@link load} has resolved - before that, there is no
@@ -214,6 +202,8 @@ sap.ui.define([
 						initials: "",
 						siteID: "",
 						isManager: false,
+						isAdmin: false,
+						seesWholeTeam: false,
 						hasPendingLeave: false
 					};
 					return oProfile;
@@ -246,7 +236,9 @@ sap.ui.define([
 						siteID: oUser.SiteID || "",
 						jobTitle: oUser.JobTitle || "",
 						pic: oUser.Pic || "",
-						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
+						isManager: oUser.IsManager === "Y" || isAdmin(sEmail),
+						isAdmin: isAdmin(sEmail),
+						seesWholeTeam: isAdmin(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -264,7 +256,9 @@ sap.ui.define([
 						name: sEmail,
 						initials: sEmail.charAt(0).toUpperCase(),
 						siteID: "",
-						isManager: isManagerException(sEmail),
+						isManager: isAdmin(sEmail),
+						isAdmin: isAdmin(sEmail),
+						seesWholeTeam: isAdmin(sEmail),
 						hasPendingLeave: false
 					};
 					return oProfile;

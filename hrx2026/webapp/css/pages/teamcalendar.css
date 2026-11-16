@@ -407,7 +407,6 @@
 }
 
 .hrxApp .hrxTeamCalendar .sapMText.hrxTcPill[data-state="REQ"],
-.hrxApp .hrxTeamCalendar .sapMText.hrxTcPill.hrxTcNotMvp,
 .hrxTlPop .sapMText.hrxTcPill[data-state="REQ"] {
 	background: var(--amber-soft);
 	color: #92400E;
@@ -559,10 +558,6 @@
 	gap: 4px;
 }
 
-.hrxApp .hrxTeamCalendar .hrxTcFilterLabelRow {
-	gap: 6px;
-}
-
 .hrxApp .hrxTeamCalendar .hrxTcFilterLabel.sapMLabel {
 	margin: 0;
 	padding: 0;
@@ -573,11 +568,6 @@
 	text-transform: uppercase;
 	white-space: nowrap;
 	color: var(--txt-2);
-}
-
-.hrxApp .hrxTeamCalendar .sapMText.hrxTcNotMvp {
-	text-transform: none;
-	letter-spacing: 0;
 }
 
 /* ── The legend (.tc-legend) ── */

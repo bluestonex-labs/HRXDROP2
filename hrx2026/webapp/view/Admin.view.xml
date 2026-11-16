@@ -23,6 +23,7 @@
 			</f:layout>
 			<GenericTile
 				class="hrxAppTile"
+				visible="{= !${app>adminOnly} || !!${app>/user/isAdmin} }"
 				header="{app>title}"
 				subheader="{app>subtitle}"
 				mode="HeaderMode"

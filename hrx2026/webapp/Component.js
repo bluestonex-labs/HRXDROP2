@@ -85,6 +85,8 @@ sap.ui.define([
                     initials: "",
                     siteID: "",
                     isManager: false,
+                    isAdmin: false,
+                    seesWholeTeam: false,
                     hasPendingLeave: false
                 };
             }.bind(this));

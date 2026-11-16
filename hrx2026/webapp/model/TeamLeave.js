@@ -4,8 +4,9 @@ sap.ui.define([
 	"./HrxTime",
 	"./HrxLegacy",
 	"./SicknessPolicy",
+	"./HrxServices",
 	"./formatter"
-], function (Backend, Hrx, HrxTime, HrxLegacy, SicknessPolicy, formatter) {
+], function (Backend, Hrx, HrxTime, HrxLegacy, SicknessPolicy, HrxServices, formatter) {
 	"use strict";
 
 	/*
@@ -142,7 +143,7 @@ sap.ui.define([
 						});
 					});
 					aResults[3].forEach(function (oSite) {
-						oReferences.sites[oSite.ID] = oSite.SiteDesc || "";
+						oReferences.sites[oSite.ID] = formatter.siteName(oSite.SiteDesc);
 					});
 					return oReferences;
 				});
@@ -169,10 +170,15 @@ sap.ui.define([
 		 */
 		pendingLeaves: function () {
 			// Older rows carry no Status_ID; leaveStatus() reads those from their flags.
-			return Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }).then(function (aLeaves) {
-				return aLeaves.filter(function (oLeave) {
+			// Approved leave the employee has asked to cancel is waiting on a decision too.
+			return Promise.all([
+				Hrx.list("Leaves", { $filter: "Status_ID eq " + HrxTime.LEAVE_STATUS.requested + " or Status_ID eq null" }),
+				HrxServices.hasProperty("Leaves", "CancelStatus") ?
+					Hrx.list("Leaves", { $filter: "CancelStatus eq 'REQUESTED'" }) : Promise.resolve([])
+			]).then(function (aLists) {
+				return aLists[0].filter(function (oLeave) {
 					return HrxLegacy.leaveStatus(oLeave) === "REQ";
-				});
+				}).concat(aLists[1]);
 			});
 		},
 
@@ -187,9 +193,11 @@ sap.ui.define([
 			var mGroups = {};
 
 			aLeaves.forEach(function (oLeave) {
-				var sStatus = HrxLegacy.leaveStatus(oLeave);
-				var sKey = (oLeave.LeaveGrpID || oLeave.ID) + "|" + sStatus;
-				mGroups[sKey] = mGroups[sKey] || { key: sKey, status: sStatus, rows: [] };
+				// A cancellation the employee asked for waits like a request (Pending)
+				var bCancellation = oLeave.CancelStatus === "REQUESTED";
+				var sStatus = bCancellation ? "REQ" : HrxLegacy.leaveStatus(oLeave);
+				var sKey = (oLeave.LeaveGrpID || oLeave.ID) + "|" + sStatus + (bCancellation ? "|cancel" : "");
+				mGroups[sKey] = mGroups[sKey] || { key: sKey, status: sStatus, isCancellation: bCancellation, rows: [] };
 				mGroups[sKey].rows.push(oLeave);
 			});
 
@@ -236,11 +244,12 @@ sap.ui.define([
 					type: oType.desc,
 					colour: colourOf(oType.code),
 					duration: sDuration,
-					typeText: oType.desc + " · " + sDuration,
-					comments: oFirst.RequesterComments || "",
+					typeText: oGroup.isCancellation ? fnText("tcCancellationType", [oType.desc]) : oType.desc + " · " + sDuration,
+					isCancellation: oGroup.isCancellation,
+					comments: (oGroup.isCancellation ? oFirst.CancelComments : oFirst.RequesterComments) || "",
 					approverComments: oFirst.ApproverComments || "",
 					status: oGroup.status,
-					statusText: fnText(oStatus.textKey),
+					statusText: oGroup.isCancellation ? fnText("mlCancelRequestedStatus") : fnText(oStatus.textKey),
 					statusState: oStatus.state
 				};
 			});
@@ -258,7 +267,20 @@ sap.ui.define([
 			var sToday = Backend.isoDate(new Date());
 			var aDays = [];
 
-			aRequests.forEach(function (oRequest) {
+			// Cancellations of approved leave: approving cancels the leave, rejecting keeps it
+			var aCancellations = aRequests.filter(function (oRequest) {
+				return oRequest.isCancellation;
+			}).map(function (oRequest) {
+				return Hrx.callAction("actionOnLeaveCancellation", {
+					LeaveIDs: oRequest.ids,
+					Approve: sStatus === "APR",
+					Comments: sNote || ""
+				});
+			});
+
+			aRequests.filter(function (oRequest) {
+				return !oRequest.isCancellation;
+			}).forEach(function (oRequest) {
 				oRequest.ids.forEach(function (sLeaveId) {
 					aDays.push({
 						LeaveID: sLeaveId,
@@ -276,7 +298,8 @@ sap.ui.define([
 				});
 			});
 
-			return Backend.postJson(Backend.LEAVE_APPROVALS + "?cmd=action", { LeaveReqSet: aDays });
+			return Promise.all(aCancellations.concat(aDays.length ?
+				[Backend.postJson(Backend.LEAVE_APPROVALS + "?cmd=action", { LeaveReqSet: aDays })] : []));
 		},
 
 		/**

@@ -56,8 +56,8 @@
 		</subHeader>
 
 		<content>
-			<!-- Manager rights come from the signed-in profile, so a direct link to this
-			     page lands on the notice, as on the other manager pages. -->
+			<!-- Managers only (their own direct reports; HR admins see everyone), so a
+			     direct link to this page lands on the notice for anyone else. -->
 			<IllustratedMessage
 				visible="{= !${app>/user/isManager} }"
 				illustrationType="sapIllus-UnableToLoad"

@@ -12,12 +12,12 @@
 	<Page id="timesheetReportPage" showHeader="false" title="{i18n>trTitle}" showNavButton="false" class="hrxPageContent">
 		<content>
 			<IllustratedMessage
-				visible="{= !${app>/user/isManager} }"
+				visible="{= !${trView>/canSee} }"
 				illustrationType="sapIllus-UnableToLoad"
 				title="{i18n>trTitle}"
-				description="{i18n>adminRestricted}" />
+				description="{= ${trView>/utilMode} ? ${i18n>adminRestricted} : ${i18n>hrAdminRestricted} }" />
 
-			<VBox visible="{app>/user/isManager}" renderType="Bare" class="hrxTsBody">
+			<VBox visible="{trView>/canSee}" renderType="Bare" class="hrxTsBody">
 
 				<!-- ── Filter bar: each label above its control, on one card ── -->
 				<HBox renderType="Bare" class="hrxTsFbar">
@@ -599,14 +599,16 @@
 							</VBox>
 						</HBox>
 						<ScrollContainer horizontal="true" vertical="false" width="100%">
+							<!-- Cost and Margin are for HR admins only; data-money narrows the columns for everyone else -->
 							<VBox renderType="Bare" class="hrxTsTable hrxTsUtilTable">
+								<customData><core:CustomData key="money" value="{= ${app>/user/isAdmin} ? 'yes' : 'no' }" writeToDom="true" /></customData>
 								<HBox renderType="Bare" class="hrxTsTr hrxTsTh hrxTsUtilCols">
 									<Text text="{i18n>trColEmployee}" />
 									<Text text="{i18n>trColBillable}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColTotal}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColUtil}" />
-									<Text text="{i18n>trColCost}" textAlign="End" class="hrxTsNum" />
-									<Text text="{i18n>trColMargin}" textAlign="End" class="hrxTsNum" />
+									<Text text="{i18n>trColCost}" visible="{app>/user/isAdmin}" textAlign="End" class="hrxTsNum" />
+									<Text text="{i18n>trColMargin}" visible="{app>/user/isAdmin}" textAlign="End" class="hrxTsNum" />
 									<Text text="{i18n>trColBillableProjects}" />
 								</HBox>
 								<Text text="{i18n>trNoUtil}" visible="{= ${tr>/util/rows}.length === 0 }" class="hrxTsTblEmpty" />
@@ -631,8 +633,8 @@
 												</HBox>
 											</HBox>
 										</VBox>
-										<Text text="{tr>costText}" textAlign="End" class="hrxTsNum" />
-										<VBox renderType="Bare" alignItems="End" class="hrxTsMargin">
+										<Text text="{tr>costText}" visible="{app>/user/isAdmin}" textAlign="End" class="hrxTsNum" />
+										<VBox renderType="Bare" alignItems="End" visible="{app>/user/isAdmin}" class="hrxTsMargin">
 											<Text text="{tr>marginText}" textAlign="End" class="hrxTsNum">
 												<customData><core:CustomData key="margin" value="{tr>marginState}" writeToDom="true" /></customData>
 											</Text>
