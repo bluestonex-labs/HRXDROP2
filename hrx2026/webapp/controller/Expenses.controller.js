@@ -539,7 +539,9 @@ sap.ui.define([
 			oClaim.flaggedText = oReady.flagged ? this._text("exReadyFlagged", [oReady.flagged]) : "";
 			this._oReadiness = oReady;
 
-			oModel.refresh();
+			// Forced: items and mileage are changed in place, which a plain refresh
+			// does not notice (it compares the arrays, not what is in them)
+			oModel.refresh(true);
 		},
 
 		/* ═════════════ Saving changes as they are made ═════════════ */
@@ -604,7 +606,8 @@ sap.ui.define([
 
 		onClaimPeriodChange: function (oEvent) {
 			var oClaim = this._model().getProperty("/claim");
-			this._changed("claim", oClaim.ID, { claimPeriod: oEvent.getSource().getValue() || null });
+			oClaim.claimPeriod = this._fieldValue(oEvent.getSource());
+			this._changed("claim", oClaim.ID, { claimPeriod: oClaim.claimPeriod });
 			this._decorate();
 		},
 
@@ -631,27 +634,28 @@ sap.ui.define([
 			}.bind(this)).catch(this._showError.bind(this));
 		},
 
+		/**
+		 * What a field holds now. Read from the control itself: an Input only copies
+		 * its text into the model when it loses focus, and changes are saved as they
+		 * are typed.
+		 * @param {sap.ui.core.Control} oControl the field
+		 * @returns {string|null} its value, null when empty
+		 */
+		_fieldValue: function (oControl) {
+			var sValue = oControl.getSelectedKey ? oControl.getSelectedKey() : oControl.getValue();
+			return sValue === "" ? null : sValue;
+		},
+
 		onItemFieldChange: function (oEvent) {
 			var oControl = oEvent.getSource();
 			var oItem = this._itemOf(oControl);
 			var sField = oControl.data("field");
-			var vValue = oItem[sField];
-
+			var vValue = this._fieldValue(oControl);
 			if (sField === "grossAmount") {
 				vValue = this._numberOrNull(vValue);
 			}
-			if (sField === "expenseType_code") {
-				vValue = oControl.getSelectedKey() || null;
-				oItem.expenseType_code = vValue;
-			}
-			if (sField === "vatType") {
-				vValue = oControl.getSelectedKey();
-				oItem.vatType = vValue;
-			}
-			if (sField === "expenseDate") {
-				vValue = oControl.getValue() || null;
-				oItem.expenseDate = vValue;
-			}
+			oItem[sField] = vValue;
+
 			var oChanges = {};
 			oChanges[sField] = vValue;
 			this._changed("item", oItem.ID, oChanges);
@@ -680,7 +684,7 @@ sap.ui.define([
 
 		onForeignAmountChange: function (oEvent) {
 			var oItem = this._itemOf(oEvent.getSource());
-			oItem.originalAmount = this._numberOrNull(oItem.originalAmount);
+			oItem.originalAmount = this._numberOrNull(this._fieldValue(oEvent.getSource()));
 			this._changed("item", oItem.ID, { originalAmount: oItem.originalAmount });
 			if (oItem.originalAmount) {
 				this._convert(oItem);
@@ -706,7 +710,7 @@ sap.ui.define([
 		onToggleItem: function (oEvent) {
 			var oItem = this._itemOf(oEvent.getSource());
 			oItem.open = !oItem.open;
-			this._model().refresh();
+			this._model().refresh(true);
 		},
 
 		onRemoveItem: function (oEvent) {
@@ -737,7 +741,7 @@ sap.ui.define([
 			} else {
 				// "reason" and "edit": open the line to type in it
 				oItem.open = true;
-				this._model().refresh();
+				this._model().refresh(true);
 			}
 		},
 
@@ -913,16 +917,12 @@ sap.ui.define([
 			var oControl = oEvent.getSource();
 			var oMileage = oControl.getBindingContext("ex").getObject();
 			var sField = oControl.data("field");
-			var vValue = oMileage[sField];
+			var vValue = this._fieldValue(oControl);
 			if (sField === "milesCount") {
 				vValue = this._numberOrNull(vValue);
 			}
-			if (sField === "engineType") {
-				vValue = oControl.getSelectedKey();
-			}
-			if (sField === "tripDate") {
-				vValue = oControl.getValue() || null;
-			}
+			oMileage[sField] = vValue;
+
 			var oChanges = {};
 			oChanges[sField] = vValue;
 			this._changed("mileage", oMileage.ID, oChanges);

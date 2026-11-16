@@ -453,8 +453,13 @@ sap.ui.define([], function () {
 				fromDate: oFilters.fromDate || null,
 				toDate: oFilters.toDate || null
 			})).then(function (oJson) {
-				// The PDF arrives base64-encoded in "value"
-				var sBinary = atob(oJson.value);
+				// The PDF arrives base64-encoded in "value", in the URL-safe alphabet
+				// (- and _ for + and /), which atob only reads in the standard one
+				var sBase64 = String(oJson.value).replace(/-/g, "+").replace(/_/g, "/");
+				while (sBase64.length % 4) {
+					sBase64 += "=";
+				}
+				var sBinary = atob(sBase64);
 				var aBytes = new Uint8Array(sBinary.length);
 				for (var i = 0; i < sBinary.length; i++) {
 					aBytes[i] = sBinary.charCodeAt(i);
