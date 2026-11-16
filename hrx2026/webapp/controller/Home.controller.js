@@ -991,9 +991,21 @@ sap.ui.define([
 				SicknessService.getAbsences(this._sOrgId, oYear.from, oYear.to),
 				SicknessService.getTriggerReviews(this._sOrgId, oYear.startYear).catch(function () {
 					return [];
-				})
+				}),
+				this._pDashPeople
 			]).then(function (aResults) {
-				var iOpen = SicknessPolicy.triggers(aResults[0], oYear, aResults[1]).filter(function (oTrigger) {
+				// Only your own direct reports' sickness counts, unless you see everyone's
+				var oProfile = this._oProfile;
+				var mMyReports = {};
+				aResults[2].forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
+				var aAbsences = aResults[0].filter(function (oAbsence) {
+					return oProfile.seesAllSickness || mMyReports[oAbsence.EmpID];
+				});
+				var iOpen = SicknessPolicy.triggers(aAbsences, oYear, aResults[1]).filter(function (oTrigger) {
 					return oTrigger.status === "OPEN";
 				}).length;
 

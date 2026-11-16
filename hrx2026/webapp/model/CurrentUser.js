@@ -59,6 +59,14 @@ sap.ui.define([
 		"joe.barton@bluestonex.com"
 	];
 
+	// Sickness is private: managers see only their own direct reports' sickness. These
+	// people see everyone's (acting on it is still for the person's own manager).
+	var SICKNESS_SEE_ALL = [
+		"dan.barton@bluestonex.com",
+		"feroz.khan@bluestonex.com",
+		"joe.barton@bluestonex.com"
+	];
+
 	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
 	// test resources). Only on TDD: the live system (demo) never reads this list.
 	var TDD_ONLY_ADMINS = [
@@ -216,6 +224,7 @@ sap.ui.define([
 						siteID: "",
 						isManager: false,
 						isAdmin: false,
+						seesAllSickness: false,
 						hasPendingLeave: false
 					};
 					return oProfile;
@@ -250,6 +259,7 @@ sap.ui.define([
 						pic: oUser.Pic || "",
 						isManager: oUser.IsManager === "Y" || isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
+						seesAllSickness: SICKNESS_SEE_ALL.indexOf((sEmail || "").toLowerCase()) !== -1,
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -269,6 +279,7 @@ sap.ui.define([
 						siteID: "",
 						isManager: isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
+						seesAllSickness: SICKNESS_SEE_ALL.indexOf((sEmail || "").toLowerCase()) !== -1,
 						hasPendingLeave: false
 					};
 					return oProfile;

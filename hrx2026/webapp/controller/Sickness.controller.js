@@ -169,14 +169,18 @@ sap.ui.define([
 				this._mExpanded[oTrigger.EmpID] = !!oTrigger.expanded;
 			}, this);
 
+			// Sickness is private: only your own direct reports', unless you see everyone's
+			var bSeesAll = !!this._oProfile.seesAllSickness;
 			var aAbsences = (aRawAbsences || []).map(this._toAbsence, this).filter(function (oAbsence) {
-				return SicknessPolicy.inFiscalYear(oAbsence.StartDate, oYear);
+				return SicknessPolicy.inFiscalYear(oAbsence.StartDate, oYear) && (bSeesAll || oAbsence.canAct);
 			}).sort(function (a, b) {
 				return b.StartDate.localeCompare(a.StartDate);
 			});
 
 			var aAllTriggers = SicknessPolicy.triggers(aAbsences, oYear, aReviews).map(this._toTrigger, this);
-			var aRtw = (aRawRtw || []).map(this._toRtw, this);
+			var aRtw = (aRawRtw || []).map(this._toRtw, this).filter(function (oRtw) {
+				return bSeesAll || oRtw.canAct;
+			});
 
 			this._setAbsenceStatus(aAbsences, aRtw);
 
