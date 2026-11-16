@@ -162,12 +162,14 @@ sap.ui.define([
 					empID: oProfile.empID,
 					pic: oProfile.pic || "",
 					isManager: oProfile.isManager,
+					canSeeReporting: oProfile.canSeeReporting,
 					// The job title under the name; the employee ID is not shown there
 					// The employee number (e.g. BSXOSW0001) under the name; the job title until it has one
 					subtitle: oProfile.employeeNumber || oProfile.jobTitle || ""
 				});
 
 				this._showAdminNavigation(!!oProfile.isManager);
+				this._refreshStripVisibility();
 
 				// No bell on a phone, so nothing to work out for it.
 				if (Device.system.phone) {
@@ -458,6 +460,10 @@ sap.ui.define([
 			var aStrip = oModel.getProperty("/healthStrip") || [];
 
 			var oAction = mRouteToPageAction[this._sRoute];
+			// Refresh on the report is no use to someone who cannot see the report
+			if (this._sRoute === "timesheetreport" && !oModel.getProperty("/user/canSeeReporting")) {
+				oAction = null;
+			}
 
 			oModel.setProperty("/page/showStrip", this._sRoute === "home" && aStrip.length > 0);
 			oModel.setProperty("/page/action", oAction ? { text: this.getText(oAction.textKey), icon: oAction.icon } : null);

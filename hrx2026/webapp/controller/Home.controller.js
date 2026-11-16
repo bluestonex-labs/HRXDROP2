@@ -819,7 +819,7 @@ sap.ui.define([
 				this._loadCompliance(),
 				this._loadTriggers(),
 				this._loadDocsAwaiting(),
-				this._loadUtilisation()
+				this._oProfile.canSeeReporting ? this._loadUtilisation() : Promise.resolve()
 			]);
 		},
 

@@ -200,18 +200,29 @@
 			<VBox id="myLeaveCard" renderType="Bare" class="hrxLeaveTableCard">
 				<HBox renderType="Bare" class="hrxLeaveTableTop">
 					<Title text="{i18n>mlRequestsTitle}" level="H2" class="hrxLeaveCardTitle" />
-					<SegmentedButton
-						id="leaveStatusFilter"
-						selectedKey="{mlView>/statusFilter}"
-						selectionChange=".onStatusFilter"
-						class="hrxLeaveSeg">
-						<items>
-							<SegmentedButtonItem key="All" text="{i18n>mlTabAll}" />
-							<SegmentedButtonItem key="Requested" text="{i18n>mlTabRequested}" />
-							<SegmentedButtonItem key="Approved" text="{i18n>mlTabApproved}" />
-							<SegmentedButtonItem key="Rejected" text="{i18n>mlTabRejected}" />
-						</items>
-					</SegmentedButton>
+					<HBox alignItems="Center" renderType="Bare">
+						<Select
+							id="leaveYearFilter"
+							selectedKey="{mlView>/leaveYear}"
+							items="{path: 'mlView>/leaveYears', templateShareable: false}"
+							change=".onLeaveYearChange"
+							tooltip="{i18n>mlLeaveYearTooltip}"
+							class="sapUiSmallMarginEnd">
+							<core:Item key="{mlView>key}" text="{mlView>text}" />
+						</Select>
+						<SegmentedButton
+							id="leaveStatusFilter"
+							selectedKey="{mlView>/statusFilter}"
+							selectionChange=".onStatusFilter"
+							class="hrxLeaveSeg">
+							<items>
+								<SegmentedButtonItem key="All" text="{i18n>mlTabAll}" />
+								<SegmentedButtonItem key="Requested" text="{i18n>mlTabRequested}" />
+								<SegmentedButtonItem key="Approved" text="{i18n>mlTabApproved}" />
+								<SegmentedButtonItem key="Rejected" text="{i18n>mlTabRejected}" />
+							</items>
+						</SegmentedButton>
+					</HBox>
 				</HBox>
 
 				<!-- One row per request (a request can span several days). A request still

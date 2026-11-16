@@ -1,4 +1,6 @@
-sap.ui.define([], function () {
+sap.ui.define([
+	"sap/m/MessageBox"
+], function (MessageBox) {
 	"use strict";
 
 	/*
@@ -39,6 +41,37 @@ sap.ui.define([], function () {
 		var oError = new Error(sMessage);
 		oError.status = oResponse.status;
 		return oError;
+	}
+
+	var SESSION_EXPIRED_MESSAGE = "Your sign-in has timed out. Reload the page to sign in again.";
+	var bSessionExpiredShown = false;
+
+	/**
+	 * Once the sign-in has timed out the approuter answers every call with its sign-in
+	 * page instead of data, so every card on the page fails at once. Says so, once, and
+	 * offers to reload - which signs the user in again.
+	 * @param {Response} oResponse the answer
+	 * @param {string} sBody its text
+	 * @returns {boolean} true when the answer is the sign-in page rather than data
+	 */
+	function isSignInPage(oResponse, sBody) {
+		var sType = oResponse.headers.get("Content-Type") || "";
+		var bHtml = sType.indexOf("text/html") !== -1 || /^\s*</.test(sBody || "");
+		var bSignInPage = oResponse.status === 401 || (oResponse.ok && bHtml);
+		if (bSignInPage && !bSessionExpiredShown) {
+			bSessionExpiredShown = true;
+			MessageBox.warning(SESSION_EXPIRED_MESSAGE, {
+				actions: ["Reload", MessageBox.Action.CLOSE],
+				emphasizedAction: "Reload",
+				onClose: function (sAction) {
+					bSessionExpiredShown = false;
+					if (sAction === "Reload") {
+						window.location.reload();
+					}
+				}
+			});
+		}
+		return bSignInPage;
 	}
 
 	// The approuter guards /hrx against cross-site requests (xs-app.json, csrfProtection),
@@ -94,6 +127,11 @@ sap.ui.define([], function () {
 				});
 			}
 			return oResponse.text().then(function (sBody) {
+				if (isSignInPage(oResponse, sBody)) {
+					var oExpired = new Error(SESSION_EXPIRED_MESSAGE);
+					oExpired.status = 401;
+					throw oExpired;
+				}
 				if (!oResponse.ok) {
 					throw errorFrom(oResponse, sBody);
 				}

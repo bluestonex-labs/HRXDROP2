@@ -153,7 +153,7 @@ sap.ui.define([
 			return Promise.all([
 				TeamLeave.references(),
 				TeamLeave.assignedProjects().catch(function () {
-					// The project filter is not in the MVP; the page works without it.
+					// Without the projects the filter only offers "All projects"; the rest of the page still works.
 					return [];
 				})
 			]).then(function (aResults) {
@@ -339,10 +339,26 @@ sap.ui.define([
 		 * @returns {Array<object>} their requests still waiting, earliest first
 		 */
 		_pendingOf: function (sEmpId) {
+			// Only a person's own manager decides their leave, so nobody else sees it as waiting
+			if (!this._isMyReport(sEmpId)) {
+				return [];
+			}
 			return this._aPending.filter(function (oRequest) {
 				return oRequest.EmpID === sEmpId;
 			}).sort(function (a, b) {
 				return a.from.localeCompare(b.from);
+			});
+		},
+
+		/**
+		 * Leave is approved, rejected or cancelled only by the person's own manager.
+		 * @param {string} sEmpId an employee
+		 * @returns {boolean} true when they report directly to the signed-in user
+		 */
+		_isMyReport: function (sEmpId) {
+			var sMe = this.getModel("tcView").getProperty("/myEmpId");
+			return !!sMe && this._aCalendarPeople.some(function (oPerson) {
+				return oPerson.EmpID === sEmpId && oPerson.ManagerID === sMe;
 			});
 		},
 
@@ -482,8 +498,8 @@ sap.ui.define([
 				mInPeriod[oRequest.key] = true;
 			});
 			var aPendingElsewhere = this._aPending.filter(function (oRequest) {
-				return fnInScope(oRequest) && !mInPeriod[oRequest.key];
-			});
+				return fnInScope(oRequest) && !mInPeriod[oRequest.key] && this._isMyReport(oRequest.EmpID);
+			}, this);
 			var bAllPending = oLeaveView.status === "REQ" && !!oLeaveView.showAllPending;
 
 			var aInScope = bAllPending ? aPeriod.concat(aPendingElsewhere) : aPeriod;
@@ -508,6 +524,9 @@ sap.ui.define([
 				// What is waiting, soonest first; what is decided, latest first.
 				return oLeaveView.status === "REQ" ? a.from.localeCompare(b.from) : b.from.localeCompare(a.from);
 			});
+			aRows.forEach(function (oRequest) {
+				oRequest.canAct = this._isMyReport(oRequest.EmpID);
+			}, this);
 			oModel.setProperty("/rows", aRows);
 
 			var bMyTeam = this.getModel("tcView").getProperty("/team") === "mine";
@@ -826,7 +845,7 @@ sap.ui.define([
 		 * @param {sap.ui.core.Control} oAnchor what the pop-over opens beside
 		 */
 		_openRequest: function (oRequest, oAnchor) {
-			var bManager = this.getModel("tcView").getProperty("/isManager");
+			var bManager = this.getModel("tcView").getProperty("/isManager") && this._isMyReport(oRequest.EmpID);
 			var aPending = this._pendingOf(oRequest.EmpID);
 			var bUpcoming = oRequest.from > this._isoDate(new Date());
 

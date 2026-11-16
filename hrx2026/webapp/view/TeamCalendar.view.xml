@@ -111,7 +111,7 @@
 											<customData><core:CustomData key="state" value="{tl>status}" writeToDom="true" /></customData>
 										</Text>
 									</HBox>
-									<HBox justifyContent="End" visible="{= ${tl>status} === 'REQ' }" class="hrxTcRowActions">
+									<HBox justifyContent="End" visible="{= ${tl>status} === 'REQ' &amp;&amp; ${tl>canAct} }" class="hrxTcRowActions">
 										<Button text="{i18n>btnApprove}" icon="sap-icon://accept" press=".onApproveRow" class="hrxTcBtn hrxTcBtnApprove" />
 										<Button text="{i18n>btnReject}" icon="sap-icon://decline" press=".onRejectRow" class="hrxTcBtn hrxTcBtnReject" />
 									</HBox>
@@ -173,10 +173,7 @@
 							</VBox>
 
 							<VBox class="hrxTcFilter">
-								<HBox alignItems="Center" class="hrxTcFilterLabelRow">
-									<Label text="{i18n>tcProject}" labelFor="teamCalProject" class="hrxTcFilterLabel" />
-									<Text text="{i18n>tcNotInMvp}" class="hrxTcPill hrxTcNotMvp" />
-								</HBox>
+								<Label text="{i18n>tcProject}" labelFor="teamCalProject" class="hrxTcFilterLabel" />
 								<Select
 									id="teamCalProject"
 									selectedKey="{tcView>/project}"

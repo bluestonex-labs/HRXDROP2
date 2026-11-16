@@ -50,7 +50,7 @@
 					<Text text="{home>/dash/compliance/sub}" class="hrxHomeKpiSub" />
 					<Button text="{i18n>mgrViewTeam}" icon="sap-icon://arrow-right" iconFirst="false"
 						press=".onDashGo" class="hrxHomeBtn hrxHomeBtnGhost hrxHomeBtnSm hrxHomeBtnArrow hrxHomeKpiLink">
-						<customData><core:CustomData key="go" value="timesheetreport:sub" /></customData>
+						<customData><core:CustomData key="go" value="{= ${app>/user/canSeeReporting} ? 'timesheetreport:sub' : 'missingtimesheets' }" /></customData>
 					</Button>
 				</VBox>
 
@@ -142,8 +142,8 @@
 					<!-- Pending approvals: the manager's own team only (HrxLegacy pendingApproval) -->
 					<core:Fragment fragmentName="bsx.hrx.hrx2026.fragment.HomePendingApprovals" type="XML" />
 
-					<!-- Billable utilisation, financial year to date -->
-					<VBox renderType="Bare" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+					<!-- Billable utilisation, financial year to date - only for the people who see reporting -->
+					<VBox renderType="Bare" visible="{app>/user/canSeeReporting}" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
 						<HBox renderType="Bare" class="hrxHomeCardHead">
 							<Title text="{i18n>mgrUtilTitle}" level="H3" class="hrxHomeCardTitle" />
 							<HBox renderType="Bare" class="hrxHomeCardHeadEnd">

@@ -58,6 +58,9 @@ sap.ui.define([
 				saving: false,
 				currentEmail: "",
 				statusFilter: "All",
+				// The requests list shows one leave year (April to March), this one to start with
+				leaveYear: this._leaveYearStart(),
+				leaveYears: [],
 				kpis: this._emptyKpis(),
 				user: {}
 			}), "mlView");
@@ -120,6 +123,7 @@ sap.ui.define([
 		 */
 		_onRouteMatched: function () {
 			this.getModel("mlView").setProperty("/statusFilter", "All");
+			this.getModel("mlView").setProperty("/leaveYear", this._leaveYearStart());
 			this._resetRequestForm();
 
 			return CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
@@ -186,6 +190,18 @@ sap.ui.define([
 				oModel.setProperty("/availedLeaves", oData.availedLeaves || []);
 				oModel.setProperty("/bankHolidays", oData.bankHolidays || []);
 				oModel.setProperty("/requests", this._groupRequests(oData.availedLeaves || []));
+
+				// The leave years there are requests in, newest first, and always this one
+				var aYears = [this._leaveYearStart()];
+				oModel.getProperty("/requests").forEach(function (oRequest) {
+					var iYear = this._leaveYearOf(oRequest.Date);
+					if (aYears.indexOf(iYear) === -1) {
+						aYears.push(iYear);
+					}
+				}, this);
+				oViewModel.setProperty("/leaveYears", aYears.sort().reverse().map(function (iYear) {
+					return { key: iYear, text: this.getText("mlLeaveYear", [String(iYear), String(iYear + 1)]) };
+				}, this));
 
 				this._applyStatusFilter();
 				this._renderCalendar();
@@ -257,15 +273,21 @@ sap.ui.define([
 		},
 
 		/**
-		 * Narrows the requests table to the status chosen in the filter.
+		 * Narrows the requests table to the chosen leave year and status.
 		 */
 		_applyStatusFilter: function () {
 			var sStatus = this.getModel("mlView").getProperty("/statusFilter");
+			var iYear = Number(this.getModel("mlView").getProperty("/leaveYear"));
 			var aAll = this.getModel("ml").getProperty("/requests") || [];
 
 			this.getModel("ml").setProperty("/leaves", aAll.filter(function (oRequest) {
-				return sStatus === "All" || oRequest.Status === sStatus;
-			}));
+				return this._leaveYearOf(oRequest.Date) === iYear &&
+					(sStatus === "All" || oRequest.Status === sStatus);
+			}, this));
+		},
+
+		onLeaveYearChange: function () {
+			this._applyStatusFilter();
 		},
 
 		onStatusFilter: function (oEvent) {
@@ -1003,6 +1025,16 @@ sap.ui.define([
 		_leaveYearStart: function () {
 			var oToday = this._today();
 			return oToday.getMonth() < 3 ? oToday.getFullYear() - 1 : oToday.getFullYear();
+		},
+
+		/**
+		 * @param {string} sIsoDate e.g. "2025-02-13"
+		 * @returns {number} the first calendar year of the leave year it falls in (Feb 2025 is in 2024's)
+		 */
+		_leaveYearOf: function (sIsoDate) {
+			var iYear = Number(String(sIsoDate).slice(0, 4));
+			var iMonth = Number(String(sIsoDate).slice(5, 7));
+			return iMonth < 4 ? iYear - 1 : iYear;
 		},
 
 		/**

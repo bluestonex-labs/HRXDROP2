@@ -67,6 +67,24 @@ sap.ui.define([
 	// TDD's launchpad host starts with the subaccount name, e.g. bsx-tdd-qq8akzjn.launchpad...
 	var TDD_HOST_PREFIX = "bsx-tdd-";
 
+	// Timesheet reporting and Utilisation show billing, rates and costs, so only these
+	// people see them - other managers keep the rest of Admin.
+	var REPORTING_USERS = [
+		"dan.barton@bluestonex.com",
+		"tina.porter@bluestonex.com",
+		"tia.menhennet@bluestonex.com",
+		"vicky.williams@bluestonex.com",
+		"feroz.khan@bluestonex.com"
+	];
+
+	/**
+	 * @param {string} sEmail an email, in any case
+	 * @returns {boolean} true when that person may see Timesheet reporting and Utilisation
+	 */
+	function canSeeReporting(sEmail) {
+		return REPORTING_USERS.indexOf((sEmail || "").toLowerCase()) !== -1;
+	}
+
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
 	// left behind in a browser is cleared on start so it can never be read again.
 	var OLD_DEMO_ROLE_KEY = "hrx.demoRole";
@@ -117,6 +135,8 @@ sap.ui.define([
 	return {
 
 		isManagerException: isManagerException,
+
+		canSeeReporting: canSeeReporting,
 
 		/**
 		 * Only meaningful once {@link load} has resolved - before that, there is no
@@ -214,6 +234,7 @@ sap.ui.define([
 						initials: "",
 						siteID: "",
 						isManager: false,
+						canSeeReporting: false,
 						hasPendingLeave: false
 					};
 					return oProfile;
@@ -247,6 +268,7 @@ sap.ui.define([
 						jobTitle: oUser.JobTitle || "",
 						pic: oUser.Pic || "",
 						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
+						canSeeReporting: canSeeReporting(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -265,6 +287,7 @@ sap.ui.define([
 						initials: sEmail.charAt(0).toUpperCase(),
 						siteID: "",
 						isManager: isManagerException(sEmail),
+						canSeeReporting: canSeeReporting(sEmail),
 						hasPendingLeave: false
 					};
 					return oProfile;

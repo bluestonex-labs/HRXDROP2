@@ -399,18 +399,18 @@
 											<Text text="{mrLeave>DisplayDate}" />
 											<Text text="{mrLeave>DaysText}" />
 											<Text text="{mrLeave>LeaveType} · {mrLeave>Absence}" />
-											<!-- A request still waiting can be decided here (.icon-btn sm ok / no) -->
+											<!-- A request still waiting can be decided here, by the person's own manager only (.icon-btn sm ok / no) -->
 											<HBox renderType="Bare" class="hrxMrRowActs">
 												<Button
 													icon="sap-icon://accept"
 													tooltip="{i18n>mrLeaveApprove}"
-													visible="{= ${mrLeave>StatusID} === 'REQ' }"
+													visible="{= ${mrLeave>StatusID} === 'REQ' &amp;&amp; !!${app>/user/empID} &amp;&amp; ${mrDetail>/ManagerID} === ${app>/user/empID} }"
 													press=".onApproveLeave"
 													class="hrxMrIconBtn hrxMrIconBtnOk hrxMrIcoCheck" />
 												<Button
 													icon="sap-icon://decline"
 													tooltip="{i18n>mrLeaveReject}"
-													visible="{= ${mrLeave>StatusID} === 'REQ' }"
+													visible="{= ${mrLeave>StatusID} === 'REQ' &amp;&amp; !!${app>/user/empID} &amp;&amp; ${mrDetail>/ManagerID} === ${app>/user/empID} }"
 													press=".onRejectLeave"
 													class="hrxMrIconBtn hrxMrIconBtnNo hrxMrIcoClose" />
 												<ObjectStatus
