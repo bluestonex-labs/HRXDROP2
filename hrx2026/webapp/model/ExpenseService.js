@@ -453,16 +453,22 @@ sap.ui.define([], function () {
 				fromDate: oFilters.fromDate || null,
 				toDate: oFilters.toDate || null
 			})).then(function (oJson) {
-				// The PDF arrives base64-encoded in "value", in the URL-safe alphabet
-				// (- and _ for + and /), which atob only reads in the standard one
-				var sBase64 = String(oJson.value).replace(/-/g, "+").replace(/_/g, "/");
-				while (sBase64.length % 4) {
-					sBase64 += "=";
-				}
-				var sBinary = atob(sBase64);
-				var aBytes = new Uint8Array(sBinary.length);
-				for (var i = 0; i < sBinary.length; i++) {
-					aBytes[i] = sBinary.charCodeAt(i);
+				// The service answers either with the bytes as a Node buffer,
+				// { type: "Buffer", data: [...] }, or base64-encoded (URL-safe or not)
+				var vValue = oJson.value;
+				var aBytes;
+				if (vValue && Array.isArray(vValue.data)) {
+					aBytes = new Uint8Array(vValue.data);
+				} else {
+					var sBase64 = String(vValue).replace(/-/g, "+").replace(/_/g, "/");
+					while (sBase64.length % 4) {
+						sBase64 += "=";
+					}
+					var sBinary = atob(sBase64);
+					aBytes = new Uint8Array(sBinary.length);
+					for (var i = 0; i < sBinary.length; i++) {
+						aBytes[i] = sBinary.charCodeAt(i);
+					}
 				}
 				return new Blob([aBytes], { type: "application/pdf" });
 			});
