@@ -642,7 +642,9 @@ sap.ui.define([
 		 * @returns {string|null} its value, null when empty
 		 */
 		_fieldValue: function (oControl) {
-			var sValue = oControl.getSelectedKey ? oControl.getSelectedKey() : oControl.getValue();
+			// A Select gives its chosen key; an Input or DatePicker its text (an Input
+			// has a getSelectedKey too, for suggestions, so the type decides)
+			var sValue = oControl.isA("sap.m.Select") ? oControl.getSelectedKey() : oControl.getValue();
 			return sValue === "" ? null : sValue;
 		},
 
