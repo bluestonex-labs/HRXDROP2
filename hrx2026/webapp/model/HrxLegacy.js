@@ -1148,7 +1148,7 @@ sap.ui.define([
 				var CurrentUser = sap.ui.require("bsx/hrx/hrx2026/model/CurrentUser");
 				var bManager = !!oMe && (aUsers.some(function (o) {
 					return o.Manager_EmployeeID === oMe.EmployeeID;
-				}) || !!(CurrentUser && CurrentUser.isManagerException(oMe.WorkEmail)));
+				}) || !!(CurrentUser && CurrentUser.isAdmin(oMe.WorkEmail)));
 
 				var oResult = {
 					loggedinUser: oMe ? [{

@@ -61,7 +61,7 @@
         "tab": "assign"
       },
       "admin": true,
-      "reporting": true
+      "adminOnly": true
     },
     {
       "title": "Utilisation",
@@ -71,12 +71,13 @@
         "tab": "util"
       },
       "admin": true,
-      "reporting": true
+      "adminOnly": true
     },
     {
       "title": "Missing Timesheets",
       "subtitle": "Who has not booked their time",
       "route": "missingtimesheets",
+      "adminOnly": true,
       "admin": true
     },
     {
@@ -127,7 +128,8 @@
       "title": "Missing Timesheets",
       "subtitle": "Who has not booked their time",
       "icon": "sap-icon://alert",
-      "route": "missingtimesheets"
+      "route": "missingtimesheets",
+      "adminOnly": true
     },
     {
       "title": "Sickness",
@@ -140,7 +142,7 @@
       "subtitle": "Billing, days booked, submissions and utilisation",
       "icon": "sap-icon://business-objects-experience",
       "route": "timesheetreport",
-      "reporting": true
+      "adminOnly": true
     },
     {
       "title": "Documents",

@@ -816,10 +816,10 @@ sap.ui.define([
 
 			return Promise.all([
 				this._loadTeamToday(),
-				this._loadCompliance(),
+				this._oProfile.isAdmin ? this._loadCompliance() : Promise.resolve(),
 				this._loadTriggers(),
 				this._loadDocsAwaiting(),
-				this._oProfile.canSeeReporting ? this._loadUtilisation() : Promise.resolve()
+				this._oProfile.isAdmin ? this._loadUtilisation() : Promise.resolve()
 			]);
 		},
 

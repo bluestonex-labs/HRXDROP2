@@ -47,42 +47,38 @@ sap.ui.define([
 		return (oParameters[sName] && oParameters[sName].length && oParameters[sName][0]) || "";
 	}
 
-	// Dan, Tina, Tia and Vicky need everything a manager has, Admin and every app under
-	// it included, whether or not the team service flags them as managers (Tia and Vicky
-	// run resourcing and payroll without line reports of their own). They count as
-	// managers whatever the service says.
-	var MANAGER_EXCEPTIONS = [
+	// HR admins: they see every Admin page, including Timesheet reporting, Utilisation
+	// and Missing Timesheets, which show everyone's hours, billing and costs. Managers
+	// with direct reports only get Sickness, Documents and the Manage pages.
+	var ADMINS = [
 		"dan.barton@bluestonex.com",
 		"tina.porter@bluestonex.com",
 		"tia.menhennet@bluestonex.com",
-		"vicky.williams@bluestonex.com"
+		"vicky.williams@bluestonex.com",
+		"feroz.khan@bluestonex.com",
+		"joe.barton@bluestonex.com"
 	];
 
 	// TEMPORARY: David and Omkar need Admin on TDD for testing (SupportX against HRX,
 	// test resources). Only on TDD: the live system (demo) never reads this list.
-	var TDD_ONLY_MANAGER_EXCEPTIONS = [
+	var TDD_ONLY_ADMINS = [
 		"david.akilapa@bluestonex.com",
 		"omkar.gaikar@bluestonex.com"
 	];
 	// TDD's launchpad host starts with the subaccount name, e.g. bsx-tdd-qq8akzjn.launchpad...
 	var TDD_HOST_PREFIX = "bsx-tdd-";
 
-	// Timesheet reporting and Utilisation show billing, rates and costs, so only these
-	// people see them - other managers keep the rest of Admin.
-	var REPORTING_USERS = [
-		"dan.barton@bluestonex.com",
-		"tina.porter@bluestonex.com",
-		"tia.menhennet@bluestonex.com",
-		"vicky.williams@bluestonex.com",
-		"feroz.khan@bluestonex.com"
-	];
-
 	/**
 	 * @param {string} sEmail an email, in any case
-	 * @returns {boolean} true when that person may see Timesheet reporting and Utilisation
+	 * @returns {boolean} true when that person is an HR admin (and so also counts as a manager)
 	 */
-	function canSeeReporting(sEmail) {
-		return REPORTING_USERS.indexOf((sEmail || "").toLowerCase()) !== -1;
+	function isAdmin(sEmail) {
+		var sLowerEmail = (sEmail || "").toLowerCase();
+		if (ADMINS.indexOf(sLowerEmail) !== -1) {
+			return true;
+		}
+		var bOnTdd = window.location.hostname.indexOf(TDD_HOST_PREFIX) === 0;
+		return bOnTdd && TDD_ONLY_ADMINS.indexOf(sLowerEmail) !== -1;
 	}
 
 	// The browser key of the "View as (demo)" testing switch, now removed. A value
@@ -95,19 +91,6 @@ sap.ui.define([
 		} catch (oError) {
 			// storage blocked - nothing stored either
 		}
-	}
-
-	/**
-	 * @param {string} sEmail an email, in any case
-	 * @returns {boolean} true when that person is treated as a manager regardless of the service's flag
-	 */
-	function isManagerException(sEmail) {
-		var sLowerEmail = (sEmail || "").toLowerCase();
-		if (MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1) {
-			return true;
-		}
-		var bOnTdd = window.location.hostname.indexOf(TDD_HOST_PREFIX) === 0;
-		return bOnTdd && TDD_ONLY_MANAGER_EXCEPTIONS.indexOf(sLowerEmail) !== -1;
 	}
 
 	// A Business Application Studio workspace previews the app on a host of its own.
@@ -134,9 +117,7 @@ sap.ui.define([
 
 	return {
 
-		isManagerException: isManagerException,
-
-		canSeeReporting: canSeeReporting,
+		isAdmin: isAdmin,
 
 		/**
 		 * Only meaningful once {@link load} has resolved - before that, there is no
@@ -234,7 +215,7 @@ sap.ui.define([
 						initials: "",
 						siteID: "",
 						isManager: false,
-						canSeeReporting: false,
+						isAdmin: false,
 						hasPendingLeave: false
 					};
 					return oProfile;
@@ -267,8 +248,8 @@ sap.ui.define([
 						siteID: oUser.SiteID || "",
 						jobTitle: oUser.JobTitle || "",
 						pic: oUser.Pic || "",
-						isManager: oUser.IsManager === "Y" || isManagerException(sEmail),
-						canSeeReporting: canSeeReporting(sEmail),
+						isManager: oUser.IsManager === "Y" || isAdmin(sEmail),
+						isAdmin: isAdmin(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -286,8 +267,8 @@ sap.ui.define([
 						name: sEmail,
 						initials: sEmail.charAt(0).toUpperCase(),
 						siteID: "",
-						isManager: isManagerException(sEmail),
-						canSeeReporting: canSeeReporting(sEmail),
+						isManager: isAdmin(sEmail),
+						isAdmin: isAdmin(sEmail),
 						hasPendingLeave: false
 					};
 					return oProfile;

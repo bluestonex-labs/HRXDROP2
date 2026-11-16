@@ -7,7 +7,7 @@
 	displayBlock="true"
 	class="hrxMissingTimesheets">
 
-	<Page id="missingTimesheetsPage" showHeader="false" showSubHeader="{app>/user/isManager}" title="{i18n>mtTitle}" showNavButton="false" class="hrxPageContent">
+	<Page id="missingTimesheetsPage" showHeader="false" showSubHeader="{app>/user/isAdmin}" title="{i18n>mtTitle}" showNavButton="false" class="hrxPageContent">
 
 		<subHeader>
 			<OverflowToolbar id="missingTimesheetsToolbar" class="hrxFilterBar sapUiSmallMarginBottom">
@@ -56,16 +56,16 @@
 		</subHeader>
 
 		<content>
-			<!-- Manager rights come from the signed-in profile, so a direct link to this
-			     page lands on the notice, as on the other manager pages. -->
+			<!-- HR admins only (see model/CurrentUser.js), so a direct link to this page
+			     lands on the notice, as on Timesheet reporting. -->
 			<IllustratedMessage
-				visible="{= !${app>/user/isManager} }"
+				visible="{= !${app>/user/isAdmin} }"
 				illustrationType="sapIllus-UnableToLoad"
 				title="{i18n>mtTitle}"
-				description="{i18n>adminRestricted}" />
+				description="{i18n>hrAdminRestricted}" />
 
 			<layout:Grid
-				visible="{app>/user/isManager}"
+				visible="{app>/user/isAdmin}"
 				defaultSpan="XL4 L4 M4 S12"
 				hSpacing="1"
 				vSpacing="1"
@@ -97,7 +97,7 @@
 			</layout:Grid>
 
 			<Table
-				visible="{app>/user/isManager}"
+				visible="{app>/user/isAdmin}"
 				id="missingTimesheetTable"
 				items="{mt>/rows}"
 				busy="{mtView>/busy}"

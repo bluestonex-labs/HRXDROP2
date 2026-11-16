@@ -4,8 +4,9 @@ sap.ui.define([
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
 	"../model/HrxLegacy",
+	"../model/CurrentUser",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, MessageBox, HrxLegacy, formatter) {
+], function (Controller, Fragment, JSONModel, MessageBox, HrxLegacy, CurrentUser, formatter) {
 	"use strict";
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.MissingTimesheets", {
@@ -39,7 +40,12 @@ sap.ui.define([
 		 */
 		_onRouteMatched: function () {
 			this.getModel("mtView").setProperty("/weekStart", this._mondayOf(new Date()));
-			this._loadReport();
+			// Everyone's hours: only loaded for HR admins
+			CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
+				if (oProfile.isAdmin) {
+					this._loadReport();
+				}
+			}.bind(this));
 		},
 
 		/* =========================================================== */

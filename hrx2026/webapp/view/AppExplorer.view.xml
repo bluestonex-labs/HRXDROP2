@@ -29,7 +29,7 @@
 				renderType="Bare"
 				class="hrxAeGrid">
 				<GenericTile
-					visible="{= !${app>reporting} || !!${app>/user/canSeeReporting} }"
+					visible="{= !${app>adminOnly} || !!${app>/user/isAdmin} }"
 					header="{app>title}"
 					subheader="{app>subtitle}"
 					mode="HeaderMode"

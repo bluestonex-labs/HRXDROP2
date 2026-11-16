@@ -138,7 +138,7 @@ sap.ui.define([
 				this._oProfile = oProfile;
 				this._sOrgId = oProfile.orgId;
 
-				if (!oProfile.canSeeReporting) {
+				if (!oProfile.isAdmin) {
 					return;
 				}
 				if (!this.getModel("trView").getProperty("/period/from")) {
@@ -918,7 +918,7 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onRefresh: function () {
-			if (!this._oProfile || !this._oProfile.canSeeReporting) {
+			if (!this._oProfile || !this._oProfile.isAdmin) {
 				return;
 			}
 			this._setMonth();

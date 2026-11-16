@@ -85,7 +85,7 @@ sap.ui.define([
                     initials: "",
                     siteID: "",
                     isManager: false,
-                    canSeeReporting: false,
+                    isAdmin: false,
                     hasPendingLeave: false
                 };
             }.bind(this));

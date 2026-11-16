@@ -12,12 +12,12 @@
 	<Page id="timesheetReportPage" showHeader="false" title="{i18n>trTitle}" showNavButton="false" class="hrxPageContent">
 		<content>
 			<IllustratedMessage
-				visible="{= !${app>/user/canSeeReporting} }"
+				visible="{= !${app>/user/isAdmin} }"
 				illustrationType="sapIllus-UnableToLoad"
 				title="{i18n>trTitle}"
-				description="{i18n>reportingRestricted}" />
+				description="{i18n>hrAdminRestricted}" />
 
-			<VBox visible="{app>/user/canSeeReporting}" renderType="Bare" class="hrxTsBody">
+			<VBox visible="{app>/user/isAdmin}" renderType="Bare" class="hrxTsBody">
 
 				<!-- ── Filter bar: each label above its control, on one card ── -->
 				<HBox renderType="Bare" class="hrxTsFbar">
