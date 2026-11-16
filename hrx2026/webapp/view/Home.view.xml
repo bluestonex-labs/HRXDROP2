@@ -36,7 +36,7 @@
 					</Button>
 				</VBox>
 
-				<!-- Timesheet compliance: your own direct reports (everyone's for Dan, Feroz and Joe) -->
+				<!-- Timesheet compliance: your own direct reports (the whole team's for HR admins) -->
 				<VBox renderType="Bare" class="hrxHomeKpi" busy="{home>/dash/loadingCompliance}" busyIndicatorDelay="0">
 					<customData><core:CustomData key="state" value="{home>/dash/compliance/state}" writeToDom="true" /></customData>
 					<HBox renderType="Bare" class="hrxHomeKpiGlyph">

@@ -47,23 +47,15 @@ sap.ui.define([
 		return (oParameters[sName] && oParameters[sName].length && oParameters[sName][0]) || "";
 	}
 
-	// HR admins: they see every Admin page, including Timesheet reporting, Utilisation
-	// and Missing Timesheets, which show everyone's hours, billing and costs. Managers
-	// with direct reports only get Sickness, Documents and the Manage pages.
+	// HR admins: full access. They see every Admin page, including Timesheet reporting,
+	// Utilisation and Missing Timesheets, and the whole team's sickness and timesheet
+	// compliance. Managers with direct reports get Sickness, Documents and the Manage
+	// pages, for their own direct reports only.
 	var ADMINS = [
 		"dan.barton@bluestonex.com",
 		"tina.porter@bluestonex.com",
 		"tia.menhennet@bluestonex.com",
 		"vicky.williams@bluestonex.com",
-		"feroz.khan@bluestonex.com",
-		"joe.barton@bluestonex.com"
-	];
-
-	// Managers see only their own direct reports' sickness and timesheet compliance.
-	// These people see the whole team's (acting on sickness is still for the person's
-	// own manager).
-	var SEES_WHOLE_TEAM = [
-		"dan.barton@bluestonex.com",
 		"feroz.khan@bluestonex.com",
 		"joe.barton@bluestonex.com"
 	];
@@ -260,7 +252,7 @@ sap.ui.define([
 						pic: oUser.Pic || "",
 						isManager: oUser.IsManager === "Y" || isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
-						seesWholeTeam: SEES_WHOLE_TEAM.indexOf((sEmail || "").toLowerCase()) !== -1,
+						seesWholeTeam: isAdmin(sEmail),
 						hasPendingLeave: oUser.HasPendingLeaves === "Y"
 					};
 					return oProfile;
@@ -280,7 +272,7 @@ sap.ui.define([
 						siteID: "",
 						isManager: isAdmin(sEmail),
 						isAdmin: isAdmin(sEmail),
-						seesWholeTeam: SEES_WHOLE_TEAM.indexOf((sEmail || "").toLowerCase()) !== -1,
+						seesWholeTeam: isAdmin(sEmail),
 						hasPendingLeave: false
 					};
 					return oProfile;
