@@ -28,7 +28,7 @@
 						<!-- "timesheet", not "clipboard": the UI5 the launchpad serves (1.153) has no
 						     clipboard icon and then draws the row with no icon at all -->
 						<tnt:NavigationListItem key="timesheetreport" visible="{app>/user/isAdmin}" text="{i18n>navTimesheetReport}" icon="sap-icon://timesheet"/>
-						<tnt:NavigationListItem key="utilisation" visible="{app>/user/isAdmin}" text="{i18n>navUtilisation}" icon="sap-icon://line-chart"/>
+						<tnt:NavigationListItem key="utilisation" text="{i18n>navUtilisation}" icon="sap-icon://line-chart"/>
 						<tnt:NavigationListItem key="resources" text="{i18n>navManageResources}" icon="sap-icon://group"/>
 						<tnt:NavigationListItem key="clients" text="{i18n>navManageClients}" icon="sap-icon://building"/>
 						<tnt:NavigationListItem key="projects" text="{i18n>navManageProjects}" icon="sap-icon://suitcase"/>

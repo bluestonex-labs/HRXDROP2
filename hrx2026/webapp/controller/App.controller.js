@@ -401,6 +401,7 @@ sap.ui.define([
 			// Utilisation page: its own title, and no "Last refreshed" stamp.
 			var oQuery = (oEvent.getParameter("arguments") || {})["?query"] || {};
 			var bUtilisation = sRoute === "timesheetreport" && oQuery.tab === "util";
+			this._bUtilisation = bUtilisation;
 
 			// The app catalogue arrives asynchronously and replaces the whole model, so
 			// the title is written once that has landed. Setting it earlier leaves a
@@ -460,8 +461,10 @@ sap.ui.define([
 			var aStrip = oModel.getProperty("/healthStrip") || [];
 
 			var oAction = mRouteToPageAction[this._sRoute];
-			// Refresh on the report is no use to someone who cannot see the report
-			if (this._sRoute === "timesheetreport" && !oModel.getProperty("/user/isAdmin")) {
+			// Refresh is no use to someone who cannot see the page: Timesheet reporting is
+			// for HR admins, Utilisation for every manager
+			if (this._sRoute === "timesheetreport" && !oModel.getProperty("/user/isAdmin") &&
+				!(this._bUtilisation && oModel.getProperty("/user/isManager"))) {
 				oAction = null;
 			}
 

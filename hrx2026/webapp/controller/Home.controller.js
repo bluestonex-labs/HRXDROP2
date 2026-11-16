@@ -819,7 +819,7 @@ sap.ui.define([
 				this._loadCompliance(),
 				this._loadTriggers(),
 				this._loadDocsAwaiting(),
-				this._oProfile.isAdmin ? this._loadUtilisation() : Promise.resolve()
+				this._loadUtilisation()
 			]);
 		},
 
@@ -1096,10 +1096,21 @@ sap.ui.define([
 			oModel.setProperty("/dash/loadingUtil", true);
 			// Everybody, leavers included: someone who left this year still booked time in
 			// it, and without them here the card shows their employee ID instead of a name
+			var oProfile = this._oProfile;
+			var mMyReports = {};
 			return TimesheetReportService.loadPeople().then(function (aPeople) {
+				aPeople.forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
 				return TimesheetReportService.loadBookings(aPeople, this._sOrgId, oPeriod.from, oPeriod.to);
 			}.bind(this)).then(function (oResult) {
-				var aPeople = TimesheetReport.utilisation(oResult.bookings, oPeriod);
+				// Your own direct reports, unless you are an HR admin
+				var aBookings = oResult.bookings.filter(function (oBooking) {
+					return oProfile.isAdmin || mMyReports[oBooking.EmpID];
+				});
+				var aPeople = TimesheetReport.utilisation(aBookings, oPeriod);
 				var fBillable = 0;
 				var fTotal = 0;
 				var iBillers = 0;

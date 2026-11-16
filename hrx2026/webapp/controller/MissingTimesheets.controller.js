@@ -4,9 +4,10 @@ sap.ui.define([
 	"sap/ui/model/json/JSONModel",
 	"sap/m/MessageBox",
 	"../model/HrxLegacy",
+	"../model/HrxTime",
 	"../model/CurrentUser",
 	"../model/formatter"
-], function (Controller, Fragment, JSONModel, MessageBox, HrxLegacy, CurrentUser, formatter) {
+], function (Controller, Fragment, JSONModel, MessageBox, HrxLegacy, HrxTime, CurrentUser, formatter) {
 	"use strict";
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.MissingTimesheets", {
@@ -40,9 +41,10 @@ sap.ui.define([
 		 */
 		_onRouteMatched: function () {
 			this.getModel("mtView").setProperty("/weekStart", this._mondayOf(new Date()));
-			// Everyone's hours: only loaded for HR admins
+			// Managers see their own direct reports; HR admins see everyone
 			CurrentUser.ready(this.getOwnerComponent()).then(function (oProfile) {
-				if (oProfile.isAdmin) {
+				this._oProfile = oProfile;
+				if (oProfile.isManager) {
 					this._loadReport();
 				}
 			}.bind(this));
@@ -73,8 +75,21 @@ sap.ui.define([
 				formatter.date(oFirstDay), formatter.date(oLastDay)
 			]));
 
-			return HrxLegacy.missingTimesheet(this._isoDate(oFirstDay), this._isoDate(oLastDay)).then(function (aData) {
-				this.getModel("mt").setProperty("/all", (aData || []).map(this._toRow, this));
+			var oProfile = this._oProfile || {};
+			return Promise.all([
+				HrxLegacy.missingTimesheet(this._isoDate(oFirstDay), this._isoDate(oLastDay)),
+				HrxTime.people()
+			]).then(function (aResults) {
+				var mMyReports = {};
+				aResults[1].forEach(function (oPerson) {
+					if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+						mMyReports[oPerson.EmpID] = true;
+					}
+				});
+				var aRows = (aResults[0] || []).filter(function (oRow) {
+					return oProfile.isAdmin || mMyReports[oRow.UserID];
+				});
+				this.getModel("mt").setProperty("/all", aRows.map(this._toRow, this));
 				this._applyFilter();
 				oViewModel.setProperty("/busy", false);
 			}.bind(this)).catch(function (oError) {

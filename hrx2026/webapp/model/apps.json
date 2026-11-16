@@ -70,14 +70,12 @@
       "query": {
         "tab": "util"
       },
-      "admin": true,
-      "adminOnly": true
+      "admin": true
     },
     {
       "title": "Missing Timesheets",
       "subtitle": "Who has not booked their time",
       "route": "missingtimesheets",
-      "adminOnly": true,
       "admin": true
     },
     {
@@ -128,8 +126,7 @@
       "title": "Missing Timesheets",
       "subtitle": "Who has not booked their time",
       "icon": "sap-icon://alert",
-      "route": "missingtimesheets",
-      "adminOnly": true
+      "route": "missingtimesheets"
     },
     {
       "title": "Sickness",

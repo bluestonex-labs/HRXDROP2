@@ -142,8 +142,8 @@
 					<!-- Pending approvals: the manager's own team only (HrxLegacy pendingApproval) -->
 					<core:Fragment fragmentName="bsx.hrx.hrx2026.fragment.HomePendingApprovals" type="XML" />
 
-					<!-- Billable utilisation, financial year to date - HR admins only -->
-					<VBox renderType="Bare" visible="{app>/user/isAdmin}" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
+					<!-- Billable utilisation, financial year to date: your own direct reports (everyone's for HR admins) -->
+					<VBox renderType="Bare" class="hrxHomeCard hrxHomeUtilCard" busy="{home>/dash/loadingUtil}" busyIndicatorDelay="0">
 						<HBox renderType="Bare" class="hrxHomeCardHead">
 							<Title text="{i18n>mgrUtilTitle}" level="H3" class="hrxHomeCardTitle" />
 							<HBox renderType="Bare" class="hrxHomeCardHeadEnd">

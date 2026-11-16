@@ -52,6 +52,8 @@ sap.ui.define([
 			this.setModel(new JSONModel({
 				tab: "assign",
 				utilMode: false,
+				// Timesheet reporting is for HR admins; Utilisation for every manager
+				canSee: false,
 				loading: false,
 				weekLoading: false,
 				progressText: "",
@@ -138,7 +140,9 @@ sap.ui.define([
 				this._oProfile = oProfile;
 				this._sOrgId = oProfile.orgId;
 
-				if (!oProfile.isAdmin) {
+				var bCanSee = oProfile.isAdmin || (bUtil && oProfile.isManager);
+				oViewModel.setProperty("/canSee", bCanSee);
+				if (!bCanSee) {
 					return;
 				}
 				if (!this.getModel("trView").getProperty("/period/from")) {
@@ -223,6 +227,8 @@ sap.ui.define([
 			if (bForce || !this._pPeople) {
 				this._pPeople = TimesheetReportService.loadPeople(oModel, this._sOrgId);
 			}
+			// A manager who is not an HR admin sees only their own direct reports' time
+			var oProfile = this._oProfile;
 
 			return this._pPeople.then(function (aPeople) {
 				return TimesheetReportService.loadBookings(aPeople, this._sOrgId, sFrom, sTo, function (iDone, iOf) {
@@ -232,6 +238,23 @@ sap.ui.define([
 				}.bind(this));
 			}.bind(this)).then(function (oResult) {
 				if (iLoad !== this._iLoad) {
+					return;
+				}
+				return this._pPeople.then(function (aPeople) {
+					var mMyReports = {};
+					aPeople.forEach(function (oPerson) {
+						if (oProfile.empID && oPerson.ManagerID === oProfile.empID) {
+							mMyReports[oPerson.EmpID] = true;
+						}
+					});
+					return oProfile.isAdmin ? oResult : Object.assign({}, oResult, {
+						bookings: oResult.bookings.filter(function (oBooking) {
+							return mMyReports[oBooking.EmpID];
+						})
+					});
+				});
+			}.bind(this)).then(function (oResult) {
+				if (!oResult || iLoad !== this._iLoad) {
 					return;
 				}
 				this._oCache = { from: sFrom, to: sTo, bookings: oResult.bookings };
@@ -918,7 +941,7 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onRefresh: function () {
-			if (!this._oProfile || !this._oProfile.isAdmin) {
+			if (!this.getModel("trView").getProperty("/canSee")) {
 				return;
 			}
 			this._setMonth();
