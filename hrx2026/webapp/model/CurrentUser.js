@@ -47,11 +47,13 @@ sap.ui.define([
 		return (oParameters[sName] && oParameters[sName].length && oParameters[sName][0]) || "";
 	}
 
-	// Tia and Vicky run resourcing and payroll without line reports of their own, so
-	// the team service does not flag them as managers - but they need everything a
-	// manager has, Admin and every app under it included. They count as managers
-	// whatever the service says.
+	// Dan, Tina, Tia and Vicky need everything a manager has, Admin and every app under
+	// it included, whether or not the team service flags them as managers (Tia and Vicky
+	// run resourcing and payroll without line reports of their own). They count as
+	// managers whatever the service says.
 	var MANAGER_EXCEPTIONS = [
+		"dan.barton@bluestonex.com",
+		"tina.porter@bluestonex.com",
 		"tia.menhennet@bluestonex.com",
 		"vicky.williams@bluestonex.com"
 	];
