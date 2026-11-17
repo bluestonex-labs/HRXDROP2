@@ -126,6 +126,7 @@
 
 .hrxApp .hrxMrIcoSearch.sapUiIcon,
 .hrxApp .hrxMrIcoFilter .sapUiIcon,
+.hrxApp .hrxMrIcoReset .sapUiIcon,
 .hrxApp .hrxMrIcoPlus .sapUiIcon,
 .hrxApp .hrxMrIcoRefresh .sapUiIcon,
 .hrxApp .hrxMrIcoExpand .sapUiIcon,
@@ -143,6 +144,7 @@
 
 .hrxApp .hrxMrIcoSearch.sapUiIcon::before,
 .hrxApp .hrxMrIcoFilter .sapUiIcon::before,
+.hrxApp .hrxMrIcoReset .sapUiIcon::before,
 .hrxApp .hrxMrIcoPlus .sapUiIcon::before,
 .hrxApp .hrxMrIcoRefresh .sapUiIcon::before,
 .hrxApp .hrxMrIcoExpand .sapUiIcon::before,
@@ -154,6 +156,7 @@
 
 .hrxApp .hrxMrIcoSearch { --hrx-mr-icon: url("../../img/icons/resources-search.svg"); }
 .hrxApp .hrxMrIcoFilter { --hrx-mr-icon: url("../../img/icons/resources-filter.svg"); }
+.hrxApp .hrxMrIcoReset { --hrx-mr-icon: url("../../img/icons/filter-reset.svg"); }
 .hrxApp .hrxMrIcoPlus { --hrx-mr-icon: url("../../img/icons/resources-plus.svg"); }
 .hrxApp .hrxMrIcoRefresh { --hrx-mr-icon: url("../../img/icons/resources-refresh.svg"); }
 .hrxApp .hrxMrIcoExpand { --hrx-mr-icon: url("../../img/icons/resources-expand.svg"); }

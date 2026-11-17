@@ -548,6 +548,17 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
+		/**
+		 * Back to everyone: the search cleared and the filter as the page opens.
+		 */
+		onResetFilters: function () {
+			var oViewModel = this.getModel("mrView");
+			oViewModel.setProperty("/searchQuery", "");
+			oViewModel.setProperty("/filter", this._defaultFilter());
+			oViewModel.setProperty("/filterDraft", this._defaultFilter());
+			this._applyListFilters();
+		},
+
 		onRefresh: function () {
 			var sSelectedId = this.getModel("mrView").getProperty("/selectedId");
 			this._loadResources().then(function () {

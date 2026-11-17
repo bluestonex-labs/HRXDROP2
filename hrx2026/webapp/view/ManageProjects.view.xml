@@ -47,6 +47,12 @@
 					press=".onOpenFilter"
 					class="hrxMpIconBtn hrxMpIcoFilter" />
 				<Button
+					id="projectResetButton"
+					icon="sap-icon://reset"
+					tooltip="{i18n>resetFiltersTooltip}"
+					press=".onResetFilters"
+					class="hrxMpIconBtn hrxMpIcoReset" />
+				<Button
 					id="projectAddButton"
 					icon="sap-icon://add"
 					tooltip="{i18n>mpAddTooltip}"

@@ -403,6 +403,17 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
+		/**
+		 * Back to every project: the search cleared and the filter as the page opens.
+		 */
+		onResetFilters: function () {
+			var oViewModel = this.getModel("mpView");
+			oViewModel.setProperty("/searchQuery", "");
+			oViewModel.setProperty("/filter", this._defaultFilter());
+			oViewModel.setProperty("/filterDraft", this._defaultFilter());
+			this._applyListFilters();
+		},
+
 		onRefresh: function () {
 			var oViewModel = this.getModel("mpView");
 			var sProjectKey = oViewModel.getProperty("/selectedId");

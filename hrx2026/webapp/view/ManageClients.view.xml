@@ -44,6 +44,12 @@
 							width="auto"
 							class="hrxMcSearch" />
 						<Button
+							id="clientResetButton"
+							type="Transparent"
+							tooltip="{i18n>resetFiltersTooltip}"
+							press=".onResetFilters"
+							class="hrxMcIconBtn hrxMcIcoReset" />
+						<Button
 							id="clientAddButton"
 							type="Transparent"
 							tooltip="{i18n>mcAddTooltip}"

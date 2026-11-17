@@ -342,6 +342,7 @@
 
 .hrxManageClients .hrxMcIcoPlus { --hrx-mc-icon: url("../../img/icons/clients-plus.svg"); }
 .hrxManageClients .hrxMcIcoRefresh { --hrx-mc-icon: url("../../img/icons/clients-refresh.svg"); }
+.hrxManageClients .hrxMcIcoReset { --hrx-mc-icon: url("../../img/icons/filter-reset.svg"); }
 .hrxManageClients .hrxMcIcoExpand { --hrx-mc-icon: url("../../img/icons/clients-expand.svg"); }
 .hrxManageClients .hrxMcIcoClose { --hrx-mc-icon: url("../../img/icons/clients-x.svg"); }
 .hrxManageClients .hrxMcIcoEdit { --hrx-mc-icon: url("../../img/icons/clients-edit.svg"); }

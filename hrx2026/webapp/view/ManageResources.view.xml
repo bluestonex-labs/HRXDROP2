@@ -51,6 +51,12 @@
 					press=".onOpenFilter"
 					class="hrxMrIconBtn hrxMrIcoFilter" />
 				<Button
+					id="resourceResetButton"
+					icon="sap-icon://reset"
+					tooltip="{i18n>resetFiltersTooltip}"
+					press=".onResetFilters"
+					class="hrxMrIconBtn hrxMrIcoReset" />
+				<Button
 					id="resourceAddButton"
 					icon="sap-icon://add"
 					tooltip="{i18n>mrAddTooltip}"
