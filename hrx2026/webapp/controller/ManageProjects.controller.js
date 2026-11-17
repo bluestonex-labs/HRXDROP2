@@ -29,6 +29,13 @@ sap.ui.define([
 	// The project manager filter's choice for projects that have none
 	var NO_MANAGER = "-";
 
+	// Only these people can be chosen as a project's manager (HR decision).
+	var PROJECT_MANAGERS = [
+		"tina.porter@bluestonex.com",
+		"vicky.williams@bluestonex.com",
+		"tia.menhennet@bluestonex.com"
+	];
+
 
 	// Dates as the design writes them, e.g. "1 Apr 2020".
 	var DAY_FORMAT = DateFormat.getDateInstance({ pattern: "d MMM yyyy" });
@@ -118,7 +125,7 @@ sap.ui.define([
 				this._read("/ProjectTypes", { filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)] }),
 				this._read("/Priorities", { filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)] }),
 				this._read("/Resources", {
-					urlParameters: { "$select": "EmpID,FName,LName,IsActive,UserTypeKey" },
+					urlParameters: { "$select": "EmpID,FName,LName,IsActive,UserTypeKey,Email" },
 					filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
 				}),
 				this._read("/PredefinedBilling", { filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)] }),
@@ -161,6 +168,9 @@ sap.ui.define([
 				oModel.setProperty("/projectTypes", this._strip(aResults[1]));
 				oModel.setProperty("/priorities", this._strip(aResults[2]));
 				oModel.setProperty("/managers", aResources);
+				oModel.setProperty("/projectManagers", aResources.filter(function (oResource) {
+					return PROJECT_MANAGERS.indexOf((oResource.Email || "").toLowerCase()) !== -1;
+				}));
 				oModel.setProperty("/billing", this._strip(aResults[4]));
 				oModel.setProperty("/tasks", this._strip(aResults[5]).sort(function (a, b) {
 					return (a.TaskDesc || "").localeCompare(b.TaskDesc || "");
@@ -241,7 +251,17 @@ sap.ui.define([
 					filters: [new Filter("ProjectKey", FilterOperator.EQ, oKeys.ProjectKey)]
 				})
 			]).then(function (aResults) {
-				this.getModel("mpDetail").setData(this._toDetail(aResults[0], this._strip(aResults[1])));
+				var oDetail = this._toDetail(aResults[0], this._strip(aResults[1]));
+				// A project already managed by someone else keeps showing them until it is changed.
+				var aChoices = (this.getModel("mp").getProperty("/projectManagers") || []).slice();
+				var oCurrent = (this.getModel("mp").getProperty("/managers") || []).find(function (oResource) {
+					return oResource.EmpID === oDetail.ProjectManagerID;
+				});
+				if (oCurrent && aChoices.indexOf(oCurrent) === -1) {
+					aChoices.push(oCurrent);
+				}
+				oDetail.managerChoices = aChoices;
+				this.getModel("mpDetail").setData(oDetail);
 				oViewModel.setProperty("/detailBusy", false);
 				this._loadClientComponents(oKeys.ClientKey);
 			}.bind(this)).catch(function (oError) {

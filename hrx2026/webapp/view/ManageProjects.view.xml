@@ -241,11 +241,11 @@
 							<ComboBox
 								id="projectManager"
 								selectedKey="{mpDetail>/ProjectManagerID}"
-								items="{mp>/managers}"
+								items="{mpDetail>/managerChoices}"
 								width="100%"
 								placeholder="{i18n>mpFieldManagerPlaceholder}"
 								class="hrxMpInput hrxMpSelect">
-								<core:ListItem key="{mp>EmpID}" text="{mp>FullName}" />
+								<core:ListItem key="{mpDetail>EmpID}" text="{mpDetail>FullName}" />
 							</ComboBox>
 						</VBox>
 						<!-- Which of the client's components the project supports (from Manage Clients) -->
