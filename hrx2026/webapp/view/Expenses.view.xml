@@ -197,9 +197,20 @@
 						</VBox>
 						<HBox renderType="Bare" class="hrxExGeneral">
 							<VBox renderType="Bare">
+								<!-- The country follows the employee's site; it can be changed (UK or
+								     India) until the first line is added, as the lines are in its currency -->
 								<HBox renderType="Bare" class="hrxExKv">
 									<Label text="{i18n>exCountry}" />
-									<Text text="{ex>/claim/countryName}" />
+									<Select
+										selectedKey="{ex>/claim/country}"
+										visible="{= !${exView>/readOnly} &amp;&amp; ${ex>/claim/items}.length === 0 &amp;&amp; ${ex>/claim/mileageClaims}.length === 0 }"
+										change=".onCountryChange"
+										width="210px">
+										<core:Item key="UK" text="{i18n>eaUk}" />
+										<core:Item key="IN" text="{i18n>eaIndia}" />
+									</Select>
+									<Text text="{ex>/claim/countryName}"
+										visible="{= !!${exView>/readOnly} || ${ex>/claim/items}.length > 0 || ${ex>/claim/mileageClaims}.length > 0 }" />
 								</HBox>
 								<HBox renderType="Bare" class="hrxExKv">
 									<Label text="{i18n>exClaimPeriod}" required="true" />

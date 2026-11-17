@@ -515,6 +515,16 @@ sap.ui.define([], function () {
 			});
 		},
 
+		/**
+		 * The audit log: every submission, decision and settings change, newest first.
+		 * @returns {Promise<Array<object>>} the latest 200 entries
+		 */
+		auditLog: function () {
+			return send(APPROVAL_ROOT + "/AuditLogs" + query({ $orderby: "timestamp desc", $top: 200 })).then(function (oJson) {
+				return oJson.value;
+			});
+		},
+
 		/** @returns {Promise<Array<object>>} the employees an approver can be picked from */
 		employees: function () {
 			return send(APPROVAL_ROOT + "/Employees").then(function (oJson) {

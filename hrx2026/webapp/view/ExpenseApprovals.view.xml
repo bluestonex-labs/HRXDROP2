@@ -109,6 +109,7 @@
 							<Select selectedKey="{eaView>/dash/country}" change=".onDashboardChange">
 								<core:Item key="UK" text="{i18n>eaUk}" />
 								<core:Item key="IN" text="{i18n>eaIndia}" />
+								<core:Item key="ALL" text="{i18n>eaBoth}" />
 							</Select>
 						</VBox>
 					</HBox>
@@ -323,6 +324,34 @@
 											<Text text="{i18n>eaOneLevel}" visible="{= ${ea>country} !== 'UK' }" class="hrxExLineSub" />
 										</VBox>
 										<Button text="{i18n>eaSave}" type="Emphasized" press=".onSaveApprovers" class="hrxExPrimary" />
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</VBox>
+					<VBox renderType="Bare" class="hrxExCard">
+						<VBox renderType="Bare" class="hrxExCardHead">
+							<Title text="{i18n>eaAuditTitle}" level="H3" class="hrxExCardTitle" />
+							<Text text="{i18n>eaAuditHint}" class="hrxExCardHint" />
+						</VBox>
+						<Text text="{i18n>eaNoAudit}" visible="{= ${ea>/audit}.length === 0 }" class="hrxExNoRows" />
+						<Table items="{path: 'ea>/audit', templateShareable: false}" visible="{= ${ea>/audit}.length > 0 }"
+							growing="true" growingThreshold="25" class="hrxExTable">
+							<columns>
+								<Column width="16%"><Text text="{i18n>eaAuditWhen}" /></Column>
+								<Column width="20%"><Text text="{i18n>eaAuditWho}" /></Column>
+								<Column width="14%"><Text text="{i18n>eaAuditWhat}" /></Column>
+								<Column width="14%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaAuditOn}" /></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaAuditDetails}" /></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{ea>whenText}" />
+										<Text text="{ea>userId}" />
+										<Text text="{ea>action}" class="hrxExStrong" />
+										<Text text="{= ${ea>objectKey} || ${ea>objectType} }" />
+										<Text text="{ea>details}" />
 									</cells>
 								</ColumnListItem>
 							</items>

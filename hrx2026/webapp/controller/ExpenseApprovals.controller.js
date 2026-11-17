@@ -77,6 +77,7 @@ sap.ui.define([
 				policies: [],
 				approvers: [],
 				employees: [],
+				audit: [],
 				review: null,
 				journey: null
 			}), "ea");
@@ -279,41 +280,64 @@ sap.ui.define([
 
 		_loadDashboard: function () {
 			var oDash = this._viewModel().getProperty("/dash");
-			var sCurrency = oDash.country === "IN" ? "INR" : "GBP";
-			var sAmountKey = oDash.country === "IN" ? "inr" : "gbp";
+
+			/**
+			 * An amount row as text: in the country's currency, or with both countries
+			 * in both currencies (pounds and rupees can't be added together).
+			 * @param {object} oRow a row with gbp and inr
+			 * @returns {string} e.g. "£120.00" or "£120.00 · ₹4,000.00"
+			 */
+			var fnAmountText = function (oRow) {
+				if (oDash.country === "UK") {
+					return ExpenseClaims.money(oRow.gbp, "GBP");
+				}
+				if (oDash.country === "IN") {
+					return ExpenseClaims.money(oRow.inr, "INR");
+				}
+				return [
+					Number(oRow.gbp) ? ExpenseClaims.money(oRow.gbp, "GBP") : "",
+					Number(oRow.inr) ? ExpenseClaims.money(oRow.inr, "INR") : ""
+				].filter(Boolean).join(" · ");
+			};
 
 			return ExpenseService.dashboard(oDash.from, oDash.to, oDash.country).then(function (oStats) {
 				var fnCount = function (oCount) {
-					return oCount ? (oCount[oDash.country] !== undefined ? oCount[oDash.country] : oCount.total) || 0 : 0;
+					if (!oCount) {
+						return 0;
+					}
+					return (oDash.country === "ALL" ? oCount.total : oCount[oDash.country]) || 0;
 				};
+				// Bars are drawn against the largest amount in each currency
 				var fnBars = function (aRows, fnName) {
 					var aWithAmount = (aRows || []).filter(function (oRow) {
-						return Number(oRow[sAmountKey]) > 0;
+						return (oDash.country !== "IN" && Number(oRow.gbp) > 0) || (oDash.country !== "UK" && Number(oRow.inr) > 0);
 					});
-					var fLargest = Math.max.apply(null, [1].concat(aWithAmount.map(function (oRow) { return Number(oRow[sAmountKey]); })));
+					var fMaxGbp = Math.max.apply(null, [1].concat(aWithAmount.map(function (oRow) { return Number(oRow.gbp) || 0; })));
+					var fMaxInr = Math.max.apply(null, [1].concat(aWithAmount.map(function (oRow) { return Number(oRow.inr) || 0; })));
 					return aWithAmount.map(function (oRow) {
+						var fShareGbp = oDash.country === "IN" ? 0 : (Number(oRow.gbp) || 0) / fMaxGbp;
+						var fShareInr = oDash.country === "UK" ? 0 : (Number(oRow.inr) || 0) / fMaxInr;
 						return {
 							name: fnName(oRow),
-							amountText: ExpenseClaims.money(oRow[sAmountKey], sCurrency),
-							percent: Math.round(Number(oRow[sAmountKey]) / fLargest * 100)
+							amountText: fnAmountText(oRow),
+							percent: Math.round(Math.max(fShareGbp, fShareInr) * 100)
 						};
 					});
 				};
-				var aCategories = fnBars(oStats.spendByCategory, function (oRow) { return oRow.description || oRow.code; });
-				var fReimbursed = (oStats.spendByCategory || []).reduce(function (fSum, oRow) {
-					return fSum + (Number(oRow[sAmountKey]) || 0);
-				}, 0);
+				var oReimbursed = (oStats.spendByCategory || []).reduce(function (oSum, oRow) {
+					return { gbp: oSum.gbp + (Number(oRow.gbp) || 0), inr: oSum.inr + (Number(oRow.inr) || 0) };
+				}, { gbp: 0, inr: 0 });
 				var oViolation = oStats.violation || { rate: 0, flagged: 0, total: 0 };
 
 				this._model().setProperty("/dash", {
 					awaiting: fnCount(oStats.awaiting),
 					approved: fnCount(oStats.approved),
 					returned: fnCount(oStats.rejected),
-					reimbursedText: this._text("eaReimbursed", [ExpenseClaims.money(fReimbursed, sCurrency)]),
+					reimbursedText: this._text("eaReimbursed", [fnAmountText(oReimbursed) || ExpenseClaims.money(0, oDash.country === "IN" ? "INR" : "GBP")]),
 					violationRate: Number(oViolation.rate) || 0,
 					violationText: (Number(oViolation.rate) || 0) + "%",
 					violationSub: this._text("eaViolationSub", [oViolation.flagged || 0, oViolation.total || 0]),
-					categories: aCategories,
+					categories: fnBars(oStats.spendByCategory, function (oRow) { return oRow.description || oRow.code; }),
 					claimants: fnBars(oStats.topClaimants, function (oRow) { return oRow.name; }),
 					trend: (oStats.trend || []).map(function (oRow) {
 						var oFirst = new Date(oRow.month + "-01T00:00:00");
@@ -409,7 +433,10 @@ sap.ui.define([
 		/* ═════════════ Settings ═════════════ */
 
 		_loadSettings: function () {
-			return Promise.all([ExpenseService.policies(), ExpenseService.approvers(), ExpenseService.employees()]).then(function (aAnswers) {
+			return Promise.all([ExpenseService.policies(), ExpenseService.approvers(), ExpenseService.employees(), ExpenseService.auditLog()]).then(function (aAnswers) {
+				this._model().setProperty("/audit", aAnswers[3].map(function (oEntry) {
+					return Object.assign({}, oEntry, { whenText: displayDateTime(oEntry.timestamp) });
+				}));
 				this._model().setProperty("/policies", aAnswers[0].map(function (oPolicy) {
 					return Object.assign({}, oPolicy, {
 						countryName: COUNTRY_NAMES[oPolicy.country] || oPolicy.country,

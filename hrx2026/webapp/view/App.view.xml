@@ -18,6 +18,9 @@
 						<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
 						<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
 						<tnt:NavigationListItem key="expenses" text="{i18n>navExpenses}" icon="sap-icon://expense-report"/>
+						<!-- For expense approvers and expense admins (their expense role in BTP),
+						     who are not necessarily HRX managers; App.controller shows it -->
+						<tnt:NavigationListItem id="expenseApprovalsNavItem" key="expenseapprovals" text="{i18n>navExpenseApprovals}" icon="sap-icon://approvals" visible="false"/>
 						<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
 					</tnt:NavigationListGroup>
 					<!-- Managers only: the controller takes the group out for anybody else (a
@@ -25,7 +28,6 @@
 					<tnt:NavigationListGroup id="adminNavGroup" text="{i18n>navGroupAdmin}" hasExpander="false">
 						<tnt:NavigationListItem key="sickness" text="{i18n>navSickness}" icon="sap-icon://stethoscope"/>
 						<tnt:NavigationListItem key="documents" text="{i18n>navDocuments}" icon="sap-icon://folder-blank"/>
-						<tnt:NavigationListItem key="expenseapprovals" text="{i18n>navExpenseApprovals}" icon="sap-icon://approvals"/>
 						<!-- "timesheet", not "clipboard": the UI5 the launchpad serves (1.153) has no
 						     clipboard icon and then draws the row with no icon at all -->
 						<tnt:NavigationListItem key="timesheetreport" visible="{app>/user/isAdmin}" text="{i18n>navTimesheetReport}" icon="sap-icon://timesheet"/>

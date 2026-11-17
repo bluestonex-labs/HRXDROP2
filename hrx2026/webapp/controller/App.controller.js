@@ -7,8 +7,9 @@ sap.ui.define([
 	"../model/formatter",
 	"sap/ui/core/format/DateFormat",
 	"../model/Notifications",
-	"../model/NotificationService"
-], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService) {
+	"../model/NotificationService",
+	"../model/ExpenseService"
+], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService, ExpenseService) {
 	"use strict";
 
 	// The bell re-reads its sources at most this often while the user moves around
@@ -104,6 +105,12 @@ sap.ui.define([
 			this._updateNavToggleIcon(oToolPage.getSideExpanded());
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
+
+			// Expense approvals is for expense approvers and admins (their role in BTP),
+			// whether or not they are HRX managers
+			Promise.all([ExpenseService.canApprove(), ExpenseService.canAdminister()]).then(function (aRoles) {
+				this.byId("expenseApprovalsNavItem").setVisible(aRoles[0] || aRoles[1]);
+			}.bind(this));
 
 			// The health strip's pills are plain boxes; a click or Enter/Space on one
 			// opens the page it is about. Handled on the strip, as its pills are

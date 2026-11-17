@@ -150,7 +150,9 @@ sap.ui.define([
 				this._buildSummary();
 			}.bind(this)).catch(function (oError) {
 				this._pSetup = null;
-				oViewModel.setProperty("/error", this._text("exLoadError", [oError.message]));
+				// 401/403: the user has not been given an expense role in BTP yet
+				var bNoRole = oError.status === 401 || oError.status === 403;
+				oViewModel.setProperty("/error", bNoRole ? this._text("exNoAccess") : this._text("exLoadError", [oError.message]));
 			}.bind(this)).finally(function () {
 				oViewModel.setProperty("/busy", false);
 			});
@@ -602,6 +604,14 @@ sap.ui.define([
 			return this._pWrites.then(function () {
 				this._viewModel().setProperty("/savedText", this._text("exSaved"));
 			}.bind(this));
+		},
+
+		onCountryChange: function (oEvent) {
+			var oClaim = this._model().getProperty("/claim");
+			oClaim.country = oEvent.getSource().getSelectedKey();
+			oClaim.currency = ExpenseClaims.CURRENCY_OF_COUNTRY[oClaim.country];
+			this._changed("claim", oClaim.ID, { country: oClaim.country, currency: oClaim.currency });
+			this._decorate();
 		},
 
 		onClaimPeriodChange: function (oEvent) {
