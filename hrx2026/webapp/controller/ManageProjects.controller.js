@@ -414,11 +414,15 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
+		/**
+		 * Reloads the projects, with the search and filter back as the page opens.
+		 */
 		onRefresh: function () {
 			var oViewModel = this.getModel("mpView");
 			var sProjectKey = oViewModel.getProperty("/selectedId");
 			var sClientKey = oViewModel.getProperty("/selectedClientKey");
 
+			this.onResetFilters();
 			this._loadProjects().then(function () {
 				if (sProjectKey) {
 					this._showProject({ ProjectKey: sProjectKey, ClientKey: sClientKey });

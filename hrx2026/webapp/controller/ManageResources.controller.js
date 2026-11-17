@@ -559,8 +559,12 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
+		/**
+		 * Reloads the resources, with the search and filter back as the page opens.
+		 */
 		onRefresh: function () {
 			var sSelectedId = this.getModel("mrView").getProperty("/selectedId");
+			this.onResetFilters();
 			this._loadResources().then(function () {
 				if (sSelectedId) {
 					this._showResource(sSelectedId);
