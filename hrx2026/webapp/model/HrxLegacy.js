@@ -450,10 +450,6 @@ sap.ui.define([
 						TotBillableDays: oProject.TotBillableDays || "",
 						ClientDesc: (oProject.ClientID && oProject.ClientID.ClientName) || "",
 						ClientLocation: locationName(oProject.ClientID && oProject.ClientID.BaseSite, aSites),
-						PrimaryContactName: oProject.PrimaryContactName || "",
-						PrimaryContactEmail: oProject.PrimaryContactEmail || "",
-						SecondaryContactName: oProject.SecondaryContactName || "",
-						SecondaryContactEmail: oProject.SecondaryContactEmail || "",
 						ClientComponentID: oProject.ClientComponent_ID || ""
 					};
 				});
@@ -1323,10 +1319,16 @@ sap.ui.define([
 		remove: function (oBody) {
 			var sEmpId = oBody.EmpID;
 			var sEmp = Hrx.literal(sEmpId);
+			// Twenty at a time: one after another, a year of timesheet entries took
+			// minutes and the page looked frozen
 			var fnEach = function (aRows, fnStep) {
-				return aRows.reduce(function (pDone, oRow) {
+				var aBatches = [];
+				for (var i = 0; i < aRows.length; i += 20) {
+					aBatches.push(aRows.slice(i, i + 20));
+				}
+				return aBatches.reduce(function (pDone, aBatch) {
 					return pDone.then(function () {
-						return fnStep(oRow);
+						return Promise.all(aBatch.map(fnStep));
 					});
 				}, Promise.resolve());
 			};
@@ -1500,18 +1502,6 @@ sap.ui.define([
 		update: function (oBody) {
 			return Hrx.update("Projects(" + oBody.ProjectKey + ")", projectBody(oBody)).then(function () {
 				return HrxLegacyProjects.Areas.saveProjectAreas(oBody.ProjectKey, oBody.ProjectTask);
-			}).then(function () {
-				return ok({});
-			});
-		},
-
-		/** The client's primary and secondary contacts for the project (the service checks them). */
-		saveContacts: function (oBody) {
-			return Hrx.update("Projects(" + oBody.ProjectKey + ")", {
-				PrimaryContactName: oBody.PrimaryContactName || "",
-				PrimaryContactEmail: oBody.PrimaryContactEmail || "",
-				SecondaryContactName: oBody.SecondaryContactName || "",
-				SecondaryContactEmail: oBody.SecondaryContactEmail || ""
 			}).then(function () {
 				return ok({});
 			});

@@ -81,6 +81,8 @@ sap.ui.define([
 							EmpID: sEmpId,
 							Name: oPerson.Name,
 							Email: oPerson.Email,
+							// S staff, C contractor
+							UserType: oPerson.UserType || "",
 							ClientKey: oProject.ClientKey,
 							ClientDesc: oProject.ClientDesc,
 							ProjectKey: sProject,
@@ -117,6 +119,7 @@ sap.ui.define([
 						EmpID: aKey[0],
 						Name: oPerson.Name,
 						Email: oPerson.Email,
+						UserType: oPerson.UserType || "",
 						ClientKey: oProject.ClientKey,
 						ClientDesc: oProject.ClientDesc,
 						ProjectKey: aKey[1],

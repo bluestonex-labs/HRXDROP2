@@ -68,6 +68,20 @@
 							<core:Item key="{tr>key}" text="{tr>label}" />
 						</MultiComboBox>
 					</VBox>
+					<!-- Employees by default: Everyone includes contractors -->
+					<VBox renderType="Bare" class="hrxTsFg hrxTsFgType">
+						<Label text="{i18n>trPeopleType}" labelFor="trPeopleType" class="hrxTsFgLabel" />
+						<Select
+							id="trPeopleType"
+							width="100%"
+							selectedKey="{trView>/filters/userType}"
+							change=".onFilterChange"
+							class="hrxTsSelect">
+							<core:Item key="S" text="{i18n>trTypeEmployees}" />
+							<core:Item key="C" text="{i18n>trTypeContractors}" />
+							<core:Item key="ALL" text="{i18n>trTypeEveryone}" />
+						</Select>
+					</VBox>
 					<VBox renderType="Bare" class="hrxTsFg hrxTsFgPeriod">
 						<Label text="{i18n>trPeriod}" labelFor="trPeriod" class="hrxTsFgLabel" />
 						<!-- Read-only, as the design's field: a click anywhere on it opens the
@@ -133,17 +147,20 @@
 					</VBox>
 					<VBox renderType="Bare" visible="{trView>/utilMode}" class="hrxTsFg hrxTsFgShow">
 						<Label text="{i18n>trShow}" labelFor="trUtilShow" class="hrxTsFgLabel" />
-						<Select
+						<!-- Tick one or more: a person must meet every ticked one; none is everyone -->
+						<MultiComboBox
 							id="trUtilShow"
 							width="100%"
-							selectedKey="{trView>/util/show}"
-							change=".onUtilShow"
-							class="hrxTsSelect">
-							<core:Item key="all" text="{i18n>trShowEveryone}" />
+							placeholder="{trView>/util/showText}"
+							selectedKeys="{trView>/util/shows}"
+							selectionFinish=".onUtilShow"
+							class="hrxTsInput hrxTsMulti">
+							<core:Item key="incomplete" text="{i18n>trShowIncomplete}" />
 							<core:Item key="bill" text="{i18n>trShowBillable}" />
+							<core:Item key="nonbill" text="{i18n>trShowNonBillable}" />
 							<core:Item key="u50" text="{i18n>trShowUnder50}" />
 							<core:Item key="u80" text="{i18n>trShowUnder80}" />
-						</Select>
+						</MultiComboBox>
 					</VBox>
 				</HBox>
 
@@ -241,6 +258,14 @@
 									<core:Item key="bill" text="{i18n>trBillableOnly}" />
 									<core:Item key="int" text="{i18n>trInternalOnly}" />
 								</Select>
+								<Select
+									selectedKey="{trView>/assign/sort}"
+									change=".onAssignSearch"
+									tooltip="{i18n>trSortBy}"
+									class="hrxTsSelect hrxTsWork">
+									<core:Item key="total" text="{i18n>trSortBilledTotal}" />
+									<core:Item key="name" text="{i18n>trSortName}" />
+								</Select>
 								<Button text="{tr>/assign/expandText}" press=".onExpandAllAssign" class="hrxTsBtn" />
 							</HBox>
 						</HBox>
@@ -258,59 +283,86 @@
 								</HBox>
 								<Text text="{i18n>trNothing}" visible="{= ${tr>/assign/rows}.length === 0 }" class="hrxTsTblEmpty" />
 								<VBox id="trAssignList" renderType="Bare" items="{path: 'tr>/assign/rows', templateShareable: false}">
-									<VBox renderType="Bare" class="hrxTsAsg">
+									<!-- One row per person (most billed first by default); their assignments open under it -->
+									<VBox renderType="Bare" class="hrxTsAsgPerson">
 										<customData>
 											<core:CustomData key="key" value="{tr>key}" writeToDom="true" />
 											<core:CustomData key="open" value="{= ${tr>open} ? 'yes' : 'no' }" writeToDom="true" />
 										</customData>
-										<HBox renderType="Bare" class="hrxTsTr hrxTsAsgCols hrxTsAsgRow">
-											<!-- The chevron: the keyboard route to what a click on the row does. -->
+										<HBox renderType="Bare" class="hrxTsTr hrxTsAsgCols hrxTsAsgRow hrxTsAsgPersonRow">
 											<Button
 												type="Transparent"
-												tooltip="{i18n>trShowBookings}"
+												tooltip="{i18n>trShowProjects}"
 												press=".onToggleAssign"
 												class="hrxTsChev" />
 											<VBox renderType="Bare">
 												<Text text="{tr>Name}" class="hrxTsStrong" />
 												<Text text="{tr>bookingsText}" class="hrxTsSub" />
 											</VBox>
-											<VBox renderType="Bare">
-												<Text text="{tr>ClientDesc}" />
-												<Text text="{tr>projectLine}" class="hrxTsSub" />
-											</VBox>
-											<HBox renderType="Bare">
-												<Text text="{= ${tr>Billable} ? ${i18n>trBillable} : ${i18n>trInternal} }" class="hrxTsPill">
-													<customData>
-														<core:CustomData key="state" value="{= ${tr>Billable} ? 'ok' : 'neu' }" writeToDom="true" />
-													</customData>
-												</Text>
-											</HBox>
-											<Text text="{tr>rateText}" textAlign="End" class="hrxTsNum" />
+											<Text text="{tr>projectsText}" />
+											<Text text="{tr>billingText}" class="hrxTsSub" />
+											<Text text="" />
 											<Text text="{tr>monthText}" textAlign="End" class="hrxTsNum" />
 											<Text text="{tr>totalText}" textAlign="End" class="hrxTsNum hrxTsTotal">
 												<customData>
-													<core:CustomData key="priced" value="{= ${tr>total} !== null ? 'yes' : 'no' }" writeToDom="true" />
+													<core:CustomData key="priced" value="{= ${tr>priced} ? 'yes' : 'no' }" writeToDom="true" />
 												</customData>
 											</Text>
 										</HBox>
-
-										<!-- The assignment's time bookings, opened under its row. -->
-										<VBox renderType="Bare" visible="{tr>open}" class="hrxTsAsgSub">
-											<VBox renderType="Bare" class="hrxTsInner">
-												<HBox renderType="Bare" class="hrxTsTr hrxTsTh hrxTsLogCols">
-													<Text text="{i18n>trColDate}" />
-													<Text text="{i18n>trColHours}" textAlign="End" class="hrxTsNum" />
-													<Text text="{i18n>trColWork}" />
-												</HBox>
-												<VBox renderType="Bare" items="{path: 'tr>logs', templateShareable: false}">
-													<HBox renderType="Bare" class="hrxTsTr hrxTsLogCols">
-														<Text text="{tr>dateText}" />
-														<Text text="{tr>hoursText}" textAlign="End" class="hrxTsNum" />
-														<Text text="{tr>Comment}" />
+										<VBox renderType="Bare" visible="{tr>open}" items="{path: 'tr>projects', templateShareable: false}" class="hrxTsAsgProjects">
+											<VBox renderType="Bare" class="hrxTsAsg">
+												<customData>
+													<core:CustomData key="key" value="{tr>key}" writeToDom="true" />
+													<core:CustomData key="open" value="{= ${tr>open} ? 'yes' : 'no' }" writeToDom="true" />
+												</customData>
+												<HBox renderType="Bare" class="hrxTsTr hrxTsAsgCols hrxTsAsgRow">
+													<!-- The chevron: the keyboard route to what a click on the row does. -->
+													<Button
+														type="Transparent"
+														tooltip="{i18n>trShowBookings}"
+														press=".onToggleAssign"
+														class="hrxTsChev" />
+													<!-- Under the person: the assignment's bookings count -->
+													<Text text="{tr>bookingsText}" class="hrxTsSub" />
+													<VBox renderType="Bare">
+														<Text text="{tr>ClientDesc}" />
+														<Text text="{tr>projectLine}" class="hrxTsSub" />
+													</VBox>
+													<HBox renderType="Bare">
+														<Text text="{= ${tr>Billable} ? ${i18n>trBillable} : ${i18n>trInternal} }" class="hrxTsPill">
+															<customData>
+																<core:CustomData key="state" value="{= ${tr>Billable} ? 'ok' : 'neu' }" writeToDom="true" />
+															</customData>
+														</Text>
 													</HBox>
-												</VBox>
-												<VBox renderType="Bare" visible="{= ${tr>logs}.length === 0 }" class="hrxTsEmpty hrxTsEmptySmall">
-													<Text text="{i18n>trNoBookings}" class="hrxTsEmptyTitle" />
+													<Text text="{tr>rateText}" textAlign="End" class="hrxTsNum" />
+													<Text text="{tr>monthText}" textAlign="End" class="hrxTsNum" />
+													<Text text="{tr>totalText}" textAlign="End" class="hrxTsNum hrxTsTotal">
+														<customData>
+															<core:CustomData key="priced" value="{= ${tr>total} !== null ? 'yes' : 'no' }" writeToDom="true" />
+														</customData>
+													</Text>
+												</HBox>
+
+												<!-- The assignment's time bookings, opened under its row. -->
+												<VBox renderType="Bare" visible="{tr>open}" class="hrxTsAsgSub">
+													<VBox renderType="Bare" class="hrxTsInner">
+														<HBox renderType="Bare" class="hrxTsTr hrxTsTh hrxTsLogCols">
+															<Text text="{i18n>trColDate}" />
+															<Text text="{i18n>trColHours}" textAlign="End" class="hrxTsNum" />
+															<Text text="{i18n>trColWork}" />
+														</HBox>
+														<VBox renderType="Bare" items="{path: 'tr>logs', templateShareable: false}">
+															<HBox renderType="Bare" class="hrxTsTr hrxTsLogCols">
+																<Text text="{tr>dateText}" />
+																<Text text="{tr>hoursText}" textAlign="End" class="hrxTsNum" />
+																<Text text="{tr>Comment}" />
+															</HBox>
+														</VBox>
+														<VBox renderType="Bare" visible="{= ${tr>logs}.length === 0 }" class="hrxTsEmpty hrxTsEmptySmall">
+															<Text text="{i18n>trNoBookings}" class="hrxTsEmptyTitle" />
+														</VBox>
+													</VBox>
 												</VBox>
 											</VBox>
 										</VBox>

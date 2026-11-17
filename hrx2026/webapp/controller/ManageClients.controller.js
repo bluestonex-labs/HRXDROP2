@@ -285,8 +285,13 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
+
+		/**
+		 * Reloads the clients, with the search cleared.
+		 */
 		onRefresh: function () {
 			var sSelectedId = this.getModel("mcView").getProperty("/selectedId");
+			this.getModel("mcView").setProperty("/searchQuery", "");
 			this._loadClients().then(function () {
 				if (sSelectedId) {
 					this._showClient(sSelectedId);

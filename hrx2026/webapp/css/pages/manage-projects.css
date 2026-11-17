@@ -220,6 +220,7 @@
 }
 
 .hrxApp .hrxManageProjects .hrxMpIcoFilter { --hrx-mp-icon: url("../../img/icons/projects-filter.svg"); }
+.hrxApp .hrxManageProjects .hrxMpIcoReset { --hrx-mp-icon: url("../../img/icons/filter-reset.svg"); }
 .hrxApp .hrxManageProjects .hrxMpIcoPlus { --hrx-mp-icon: url("../../img/icons/projects-plus.svg"); }
 .hrxApp .hrxManageProjects .hrxMpIcoRefresh { --hrx-mp-icon: url("../../img/icons/projects-refresh.svg"); }
 .hrxApp .hrxManageProjects .hrxMpIcoExpand { --hrx-mp-icon: url("../../img/icons/projects-expand.svg"); }

@@ -26,7 +26,7 @@ sap.ui.define([
 		softwareCatalogue: { entitySet: "Softwares" },
 		clientApplications: { entitySet: "ClientApplications" },
 		projectAreas: { entitySet: "ProjectAreas" },
-		projectContacts: { entityType: "Projects", property: "PrimaryContactName" },
+		clientTeam: { entitySet: "ProjectClientTeam" },
 		projectComponent: { entityType: "Projects", property: "ClientComponent_ID" },
 		projectDocuments: { operation: "fetchProjectDocuments" },
 		reminders: { operation: "sendReminder" },

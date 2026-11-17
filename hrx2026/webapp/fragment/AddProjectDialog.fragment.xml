@@ -54,7 +54,7 @@
 					<ComboBox
 						id="newProjectManager"
 						selectedKey="{mpForm>/ProjectManagerID}"
-						items="{mp>/managers}"
+						items="{mp>/projectManagers}"
 						width="100%"
 						placeholder="{i18n>mpFieldManagerPlaceholder}"
 						class="hrxMpInput hrxMpSelect">
