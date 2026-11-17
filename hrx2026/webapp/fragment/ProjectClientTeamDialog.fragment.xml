@@ -1,0 +1,35 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!-- Who from the client's Support Team (Manage Clients) is on this project: tick to
+	     add, untick to take off. Saved by ManageProjects.onSaveClientTeam. -->
+	<Dialog
+		id="projectClientTeamDialog"
+		title="{i18n>mpClientTeamDialogTitle}"
+		contentWidth="480px"
+		busy="{mpView>/saving}"
+		busyIndicatorDelay="0"
+		class="hrxModal hrxMpDialog">
+		<content>
+			<Text text="{i18n>mpClientTeamDialogText}" class="hrxModalText sapUiSmallMarginBottom" />
+			<List
+				id="projectClientTeamList"
+				mode="MultiSelect"
+				includeItemInSelection="true"
+				items="{mpForm>/users}">
+				<StandardListItem
+					title="{mpForm>name}"
+					description="{mpForm>email}"
+					info="{= ${mpForm>isAdmin} ? ${i18n>mpClientAdmin} : (${mpForm>isActive} ? '' : ${i18n>mpClientUserInactive}) }"
+					selected="{mpForm>selected}" />
+			</List>
+		</content>
+		<beginButton>
+			<Button id="projectClientTeamSave" text="{i18n>mpSave}" type="Emphasized" press=".onSaveClientTeam" class="hrxModalBtn hrxModalBtnPrimary" />
+		</beginButton>
+		<endButton>
+			<Button id="projectClientTeamCancel" text="{i18n>mpCancel}" press=".onCancelClientTeam" class="hrxModalBtn hrxModalBtnGhost" />
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

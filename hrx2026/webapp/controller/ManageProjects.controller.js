@@ -29,7 +29,6 @@ sap.ui.define([
 	// The project manager filter's choice for projects that have none
 	var NO_MANAGER = "-";
 
-	var EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 	// Dates as the design writes them, e.g. "1 Apr 2020".
 	var DAY_FORMAT = DateFormat.getDateInstance({ pattern: "d MMM yyyy" });
@@ -277,19 +276,7 @@ sap.ui.define([
 				taskKeys: aProjectTasks.map(function (oTask) {
 					return oTask.TaskKey;
 				}),
-				projectTasks: aProjectTasks,
-				// The client's contacts, as the two rows of the Client contacts tab
-				contacts: [{
-					role: this.getText("mpPrimaryContact"),
-					name: oProject.PrimaryContactName || "",
-					email: oProject.PrimaryContactEmail || ""
-				}, {
-					role: this.getText("mpSecondaryContact"),
-					name: oProject.SecondaryContactName || "",
-					email: oProject.SecondaryContactEmail || ""
-				}],
-				hasContacts: !!(oProject.PrimaryContactName || oProject.PrimaryContactEmail ||
-					oProject.SecondaryContactName || oProject.SecondaryContactEmail)
+				projectTasks: aProjectTasks
 			};
 		},
 
@@ -347,6 +334,8 @@ sap.ui.define([
 					return this._loadAssignments(sProjectKey);
 				case "attachments":
 					return this._loadAttachments(sProjectKey);
+				case "contacts":
+					return this._loadClientTeam(sProjectKey, oViewModel.getProperty("/selectedClientKey"));
 				default:
 					return Promise.resolve();
 			}
@@ -868,90 +857,102 @@ sap.ui.define([
 		},
 
 		/* =========================================================== */
-		/* client contacts                                             */
+		/* client team                                                 */
 		/* =========================================================== */
 
-		onEditContacts: function () {
-			var aContacts = this.getModel("mpDetail").getProperty("/contacts");
-			this.getModel("mpForm").setData({
-				PrimaryContactName: aContacts[0].name,
-				PrimaryContactEmail: aContacts[0].email,
-				SecondaryContactName: aContacts[1].name,
-				SecondaryContactEmail: aContacts[1].email,
-				state: {}
-			});
-			this._openDialog("_pContactsDialog", "bsx.hrx.hrx2026.fragment.ProjectContactsDialog");
-		},
-
-		onCancelContacts: function () {
-			this._closeDialog("_pContactsDialog");
+		/**
+		 * The client's support users (Manage Clients › Support Team) who are on this
+		 * project's team: those are the people who see the project in SupportX.
+		 * @param {string} sProjectKey the project
+		 * @param {string} sClientKey the project's client
+		 * @returns {Promise} resolved once the tab is filled
+		 */
+		_loadClientTeam: function (sProjectKey, sClientKey) {
+			return this._withTabBusy(Promise.all([
+				Hrx.list("ProjectClientTeam", { $filter: "Project_ID eq " + Hrx.literal(sProjectKey) }),
+				Hrx.list("ClientUsers", { $filter: "Client_ID eq " + Hrx.literal(sClientKey), $orderby: "FirstName,LastName" })
+			]).then(function (aResults) {
+				var mOnTeam = {};
+				aResults[0].forEach(function (oRow) {
+					mOnTeam[oRow.ClientUser_ID] = oRow;
+				});
+				var aUsers = aResults[1].map(function (oUser) {
+					var oRow = mOnTeam[oUser.ID];
+					return {
+						ID: oUser.ID,
+						name: ((oUser.FirstName || "") + " " + (oUser.LastName || "")).trim(),
+						email: oUser.Email || "",
+						isAdmin: oUser.IsAdmin === true,
+						isActive: oUser.IsActive !== false,
+						teamRowId: oRow ? oRow.ID : "",
+						onTeam: !!oRow && oRow.IsActive !== false
+					};
+				});
+				this.getModel("mpTabs").setProperty("/clientUsers", aUsers);
+				this.getModel("mpTabs").setProperty("/team", aUsers.filter(function (oUser) {
+					return oUser.onTeam;
+				}));
+			}.bind(this)), "mpErrorClientTeam");
 		},
 
 		/**
-		 * Checks the contacts as the design asks - a primary needs a name and an email,
-		 * a secondary needs both or neither, every email must look like one - then
-		 * saves them to the project.
+		 * Opens the client's support users to tick who is on the project's team. Users
+		 * made inactive in Manage Clients are only listed while they are still on it.
 		 */
-		onSaveContacts: function () {
-			var oFormModel = this.getModel("mpForm");
-			var oForm = oFormModel.getData();
-			var sProjectKey = this.getModel("mpView").getProperty("/selectedId");
-			var oContacts = {
-				PrimaryContactName: (oForm.PrimaryContactName || "").trim(),
-				PrimaryContactEmail: (oForm.PrimaryContactEmail || "").trim(),
-				SecondaryContactName: (oForm.SecondaryContactName || "").trim(),
-				SecondaryContactEmail: (oForm.SecondaryContactEmail || "").trim()
-			};
+		onEditClientTeam: function () {
+			var aUsers = (this.getModel("mpTabs").getProperty("/clientUsers") || []).filter(function (oUser) {
+				return oUser.isActive || oUser.onTeam;
+			}).map(function (oUser) {
+				return Object.assign({}, oUser, { selected: oUser.onTeam });
+			});
+			this.getModel("mpForm").setData({
+				clientName: this.getModel("mpDetail").getProperty("/ClientDesc"),
+				users: aUsers
+			});
+			this._openDialog("_pClientTeamDialog", "bsx.hrx.hrx2026.fragment.ProjectClientTeamDialog");
+		},
 
-			var sProblem = this._contactsProblem(oContacts);
-			oFormModel.setProperty("/state", sProblem ? sProblem.fields.reduce(function (oState, sField) {
-				oState[sField] = "Error";
-				return oState;
-			}, {}) : {});
-			if (sProblem) {
-				Toast.error(this.getText(sProblem.textKey));
+		onCancelClientTeam: function () {
+			this._closeDialog("_pClientTeamDialog");
+		},
+
+		/**
+		 * Adds the newly ticked users to the project's team and takes off the ones no
+		 * longer ticked. Someone taken off earlier is switched back on rather than added
+		 * twice.
+		 */
+		onSaveClientTeam: function () {
+			var oViewModel = this.getModel("mpView");
+			var sProjectKey = oViewModel.getProperty("/selectedId");
+			var sClientKey = oViewModel.getProperty("/selectedClientKey");
+			var aChanges = [];
+
+			this.getModel("mpForm").getProperty("/users").forEach(function (oUser) {
+				if (oUser.selected && !oUser.onTeam) {
+					aChanges.push(oUser.teamRowId ?
+						Hrx.update("ProjectClientTeam(" + oUser.teamRowId + ")", { IsActive: true }) :
+						Hrx.create("ProjectClientTeam", { Project_ID: sProjectKey, ClientUser_ID: oUser.ID, IsActive: true }));
+				} else if (!oUser.selected && oUser.onTeam) {
+					aChanges.push(Hrx.remove("ProjectClientTeam(" + oUser.teamRowId + ")"));
+				}
+			});
+			if (!aChanges.length) {
+				this._closeDialog("_pClientTeamDialog");
 				return;
 			}
 
-			this._save(PROJECTS_SERVICE + "?cmd=saveContacts", Object.assign({ ProjectKey: sProjectKey }, oContacts),
-				"mpContactsSaved", "mpErrorContactsSave", "PUT").then(function () {
-					this._closeDialog("_pContactsDialog");
-					var oDetailModel = this.getModel("mpDetail");
-					oDetailModel.setProperty("/contacts/0/name", oContacts.PrimaryContactName);
-					oDetailModel.setProperty("/contacts/0/email", oContacts.PrimaryContactEmail);
-					oDetailModel.setProperty("/contacts/1/name", oContacts.SecondaryContactName);
-					oDetailModel.setProperty("/contacts/1/email", oContacts.SecondaryContactEmail);
-					oDetailModel.setProperty("/hasContacts", true);
-				}.bind(this)).catch(function () { /* reported by _save */ });
-		},
-
-		/**
-		 * The first thing wrong with the contacts, if anything.
-		 * @param {object} oContacts the four trimmed contact fields
-		 * @returns {object|null} { textKey, fields } naming the message and the fields to mark
-		 */
-		_contactsProblem: function (oContacts) {
-			if (!oContacts.PrimaryContactName || !oContacts.PrimaryContactEmail) {
-				return {
-					textKey: "mpContactsPrimaryRequired",
-					fields: ["PrimaryContactName", "PrimaryContactEmail"].filter(function (sField) {
-						return !oContacts[sField];
-					})
-				};
-			}
-			if (!EMAIL_PATTERN.test(oContacts.PrimaryContactEmail)) {
-				return { textKey: "mpContactsPrimaryEmail", fields: ["PrimaryContactEmail"] };
-			}
-			if (!!oContacts.SecondaryContactName !== !!oContacts.SecondaryContactEmail) {
-				return {
-					textKey: "mpContactsSecondaryBoth",
-					fields: [oContacts.SecondaryContactName ? "SecondaryContactEmail" : "SecondaryContactName"]
-				};
-			}
-			if (oContacts.SecondaryContactEmail && !EMAIL_PATTERN.test(oContacts.SecondaryContactEmail)) {
-				return { textKey: "mpContactsSecondaryEmail", fields: ["SecondaryContactEmail"] };
-			}
-			return null;
+			oViewModel.setProperty("/saving", true);
+			Promise.all(aChanges).then(function () {
+				oViewModel.setProperty("/saving", false);
+				this._closeDialog("_pClientTeamDialog");
+				MessageToast.show(this.getText("mpClientTeamSaved"));
+				return this._loadClientTeam(sProjectKey, sClientKey);
+			}.bind(this)).catch(function (oError) {
+				oViewModel.setProperty("/saving", false);
+				this._showError("mpErrorClientTeamSave", oError);
+				// Some changes may have gone through; show the team as it now is.
+				return this._loadClientTeam(sProjectKey, sClientKey);
+			}.bind(this));
 		},
 
 		/* =========================================================== */
@@ -1375,7 +1376,7 @@ sap.ui.define([
 		},
 
 		_emptyTabs: function () {
-			return { assignments: [], attachments: [] };
+			return { assignments: [], attachments: [], clientUsers: [], team: [] };
 		},
 
 		_resolveOrgId: function () {

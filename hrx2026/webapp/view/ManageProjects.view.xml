@@ -431,34 +431,51 @@
 					</ScrollContainer>
 				</VBox>
 
-				<!-- tab: the client's contacts for the project -->
+				<!-- tab: the client's team - which of the client's support users (Manage Clients ›
+				     Support Team) are on this project, and so see it in SupportX -->
 				<VBox renderType="Bare" visible="{= ${mpView>/selectedTab} === 'contacts' }">
 					<HBox renderType="Bare" class="hrxMpSectHead">
-						<Title text="{i18n>mpContactsTitle}" level="H3" class="hrxMpSectTitle" />
+						<Title text="{i18n>mpClientTeamTitle}" level="H3" class="hrxMpSectTitle" />
 						<Button
-							id="projectContactsButton"
-							text="{= ${mpDetail>/hasContacts} ? ${i18n>mpEditContacts} : ${i18n>mpAddContacts} }"
+							id="projectClientTeamButton"
+							text="{i18n>mpEditClientTeam}"
 							icon="sap-icon://edit"
-							enabled="{services>/projectContacts}"
-							press=".onEditContacts"
+							enabled="{= !!${services>/clientTeam} &amp;&amp; ${mpTabs>/clientUsers}.length > 0 }"
+							press=".onEditClientTeam"
 							class="hrxMpBtnGhost hrxMpBtnSm hrxMpIcoEdit" />
 					</HBox>
+					<MessageStrip
+						text="{i18n>mpClientTeamNoUsers}"
+						visible="{= !${mpView>/tabBusy} &amp;&amp; ${mpTabs>/clientUsers}.length === 0 }"
+						type="Information"
+						showIcon="true"
+						class="hrxMpStrip" />
 					<Table
-						id="projectContactsTable"
-						items="{mpDetail>/contacts}"
+						id="projectClientTeamTable"
+						items="{mpTabs>/team}"
+						busy="{mpView>/tabBusy}"
+						busyIndicatorDelay="0"
+						noDataText="{i18n>mpClientTeamEmpty}"
 						fixedLayout="false"
 						class="hrxMpTable">
 						<columns>
-							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColContact}" /></Column>
-							<Column><Text text="{i18n>mpColName}" /></Column>
-							<Column styleClass="hrxMpColLast"><Text text="{i18n>mpColEmail}" /></Column>
+							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColName}" /></Column>
+							<Column><Text text="{i18n>mpColEmail}" /></Column>
+							<Column styleClass="hrxMpColLast"><Text text="" /></Column>
 						</columns>
 						<items>
 							<ColumnListItem>
 								<cells>
-									<Text text="{mpDetail>role}" class="hrxMpStrong" />
-									<Text text="{= ${mpDetail>name} || '—' }" />
-									<Text text="{= ${mpDetail>email} || '—' }" />
+									<Text text="{mpTabs>name}" class="hrxMpStrong" />
+									<Text text="{= ${mpTabs>email} || '—' }" />
+									<HBox renderType="Bare" class="hrxMpPills">
+										<Text text="{i18n>mpClientAdmin}" visible="{mpTabs>isAdmin}" wrapping="false" class="hrxMpPill">
+											<customData><core:CustomData key="tone" value="info" writeToDom="true" /></customData>
+										</Text>
+										<Text text="{i18n>mpClientUserInactive}" visible="{= !${mpTabs>isActive} }" wrapping="false" class="hrxMpPill">
+											<customData><core:CustomData key="tone" value="neu" writeToDom="true" /></customData>
+										</Text>
+									</HBox>
 								</cells>
 							</ColumnListItem>
 						</items>
