@@ -37,6 +37,15 @@ sap.ui.define([
 	var STATE_KEYS = { Success: "ok", Warning: "warn", Error: "crit" };
 
 	var iso = SicknessPolicy.isoDate;
+
+	// Utilisation's Show choices and their texts
+	var SHOW_TEXT_KEYS = {
+		incomplete: "trShowIncomplete",
+		bill: "trShowBillable",
+		nonbill: "trShowNonBillable",
+		u50: "trShowUnder50",
+		u80: "trShowUnder80"
+	};
 	var parseDay = SicknessPolicy.parseDay;
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.TimesheetReport", {
@@ -66,7 +75,8 @@ sap.ui.define([
 				assign: { q: "", work: "all", sort: "total" },
 				// Who's submitted has a period of its own: a week, this one to start with
 				sub: { q: "", from: "", to: "", thisWeek: true, atLatest: true },
-				util: { show: "all", EmpIDs: [], peopleText: "" }
+				// Show: the ticked criteria, all of which a person must meet (none is everyone)
+				util: { shows: [], showText: "", EmpIDs: [], peopleText: "" }
 			}), "trView");
 
 			this.setModel(new JSONModel({
@@ -955,12 +965,17 @@ sap.ui.define([
 
 		_renderUtil: function () {
 			var oViewModel = this.getModel("trView");
-			var sShow = oViewModel.getProperty("/util/show");
+			var aShows = oViewModel.getProperty("/util/shows") || [];
+			var bIncomplete = aShows.indexOf("incomplete") !== -1;
 			var aEmpIDs = oViewModel.getProperty("/util/EmpIDs") || [];
 			var oPeriod = oViewModel.getProperty("/period");
 
+			// The field reads Everyone, the one choice, or how many are ticked
+			oViewModel.setProperty("/util/showText", !aShows.length ? this.getText("trShowEveryone") :
+				aShows.length === 1 ? this.getText(SHOW_TEXT_KEYS[aShows[0]]) : this.getText("trShowN", [aShows.length]));
+
 			// "Timesheets not complete" needs hours booked against hours due over the period
-			if (sShow === "incomplete" && !this._utilCompliance()) {
+			if (bIncomplete && !this._utilCompliance()) {
 				this._loadUtilCompliance();
 				return;
 			}
@@ -970,7 +985,7 @@ sap.ui.define([
 			// Utilisation page has its own Employee, Period and Show).
 			var aAllPeople = TimesheetReport.utilisation(this._ofType(this._oCache.bookings), oPeriod);
 			var mIncomplete = {};
-			if (sShow === "incomplete") {
+			if (bIncomplete) {
 				// People who booked nothing at all are not in the utilisation list, so
 				// they are added with nothing booked
 				var mListed = {};
@@ -989,11 +1004,28 @@ sap.ui.define([
 					}
 				}, this);
 			}
+			var mMeets = {
+				incomplete: function (oPerson) {
+					return !!mIncomplete[oPerson.EmpID];
+				},
+				bill: function (oPerson) {
+					return oPerson.billable > 0;
+				},
+				nonbill: function (oPerson) {
+					return !oPerson.billable;
+				},
+				u50: function (oPerson) {
+					return oPerson.pct < 50;
+				},
+				u80: function (oPerson) {
+					return oPerson.pct < 80;
+				}
+			};
 			var aPeople = aAllPeople.filter(function (oPerson) {
 				return (!aEmpIDs.length || aEmpIDs.indexOf(oPerson.EmpID) !== -1) &&
-					(sShow === "all" || (sShow === "incomplete" && mIncomplete[oPerson.EmpID]) ||
-					(sShow === "bill" && oPerson.billable > 0) || (sShow === "nonbill" && !oPerson.billable) ||
-					(sShow === "u50" && oPerson.pct < 50) || (sShow === "u80" && oPerson.pct < 80));
+					aShows.every(function (sShow) {
+						return mMeets[sShow](oPerson);
+					});
 			}).sort(function (a, b) {
 				// Highest utilisation first, as before
 				return (b.pct - a.pct) || a.Name.localeCompare(b.Name);
@@ -1114,7 +1146,7 @@ sap.ui.define([
 			this._mHiddenSlices = {};
 			oViewModel.setProperty("/assign", { q: "", work: "all", sort: "total" });
 			oViewModel.setProperty("/sub/q", "");
-			oViewModel.setProperty("/util/show", "all");
+			oViewModel.setProperty("/util/shows", []);
 			this._setYear(0);
 			this._setSubPeriod(this._monday(new Date()));
 			this._load(false);

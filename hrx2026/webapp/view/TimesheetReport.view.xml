@@ -147,19 +147,20 @@
 					</VBox>
 					<VBox renderType="Bare" visible="{trView>/utilMode}" class="hrxTsFg hrxTsFgShow">
 						<Label text="{i18n>trShow}" labelFor="trUtilShow" class="hrxTsFgLabel" />
-						<Select
+						<!-- Tick one or more: a person must meet every ticked one; none is everyone -->
+						<MultiComboBox
 							id="trUtilShow"
 							width="100%"
-							selectedKey="{trView>/util/show}"
-							change=".onUtilShow"
-							class="hrxTsSelect">
-							<core:Item key="all" text="{i18n>trShowEveryone}" />
+							placeholder="{trView>/util/showText}"
+							selectedKeys="{trView>/util/shows}"
+							selectionFinish=".onUtilShow"
+							class="hrxTsInput hrxTsMulti">
 							<core:Item key="incomplete" text="{i18n>trShowIncomplete}" />
 							<core:Item key="bill" text="{i18n>trShowBillable}" />
 							<core:Item key="nonbill" text="{i18n>trShowNonBillable}" />
 							<core:Item key="u50" text="{i18n>trShowUnder50}" />
 							<core:Item key="u80" text="{i18n>trShowUnder80}" />
-						</Select>
+						</MultiComboBox>
 					</VBox>
 				</HBox>
 
