@@ -285,20 +285,13 @@ sap.ui.define([
 			this._applyListFilters();
 		},
 
-		/**
-		 * Back to every client: the search cleared.
-		 */
-		onResetFilters: function () {
-			this.getModel("mcView").setProperty("/searchQuery", "");
-			this._applyListFilters();
-		},
 
 		/**
 		 * Reloads the clients, with the search cleared.
 		 */
 		onRefresh: function () {
 			var sSelectedId = this.getModel("mcView").getProperty("/selectedId");
-			this.onResetFilters();
+			this.getModel("mcView").setProperty("/searchQuery", "");
 			this._loadClients().then(function () {
 				if (sSelectedId) {
 					this._showClient(sSelectedId);
