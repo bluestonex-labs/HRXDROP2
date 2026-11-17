@@ -180,15 +180,15 @@
 						<HBox renderType="Bare" class="hrxMrGrid">
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldFirstName}" required="true" labelFor="resourceFirstName" />
-								<Input id="resourceFirstName" value="{mrDetail>/FName}" placeholder="{i18n>mrFieldFirstNamePlaceholder}" />
+								<Input editable="{mrView>/canEdit}" id="resourceFirstName" value="{mrDetail>/FName}" placeholder="{i18n>mrFieldFirstNamePlaceholder}" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldLastName}" labelFor="resourceLastName" />
-								<Input id="resourceLastName" value="{mrDetail>/LName}" placeholder="{i18n>mrFieldLastNamePlaceholder}" />
+								<Input editable="{mrView>/canEdit}" id="resourceLastName" value="{mrDetail>/LName}" placeholder="{i18n>mrFieldLastNamePlaceholder}" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldEmail}" required="true" labelFor="resourceEmail" />
-								<Input
+								<Input editable="{mrView>/canEdit}"
 									id="resourceEmail"
 									value="{mrDetail>/Email}"
 									type="Email"
@@ -197,12 +197,12 @@
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldMobile}" labelFor="resourceMobile" />
-								<Input id="resourceMobile" value="{mrDetail>/Mobile}" type="Tel" placeholder="{i18n>mrFieldMobilePlaceholder}" />
+								<Input editable="{mrView>/canEdit}" id="resourceMobile" value="{mrDetail>/Mobile}" type="Tel" placeholder="{i18n>mrFieldMobilePlaceholder}" />
 							</VBox>
 							<!-- Only while the HRX service has a job title to keep it in -->
 							<VBox renderType="Bare" class="hrxMrFld" visible="{services>/jobTitle}">
 								<Label text="{i18n>mrFieldJobTitle}" labelFor="resourceJobTitle" />
-								<Input
+								<Input editable="{mrView>/canEdit}"
 									id="resourceJobTitle"
 									value="{mrDetail>/JobTitle}"
 									maxLength="100"
@@ -210,7 +210,7 @@
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldLocation}" required="true" labelFor="resourceSite" />
-								<ComboBox
+								<ComboBox editable="{mrView>/canEdit}"
 									id="resourceSite"
 									width="100%"
 									selectedKey="{mrDetail>/BaseSiteKey}"
@@ -221,7 +221,7 @@
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldUserType}" required="true" labelFor="resourceUserType" />
-								<ComboBox
+								<ComboBox editable="{mrView>/canEdit}"
 									id="resourceUserType"
 									width="100%"
 									selectedKey="{mrDetail>/UserTypeKey}"
@@ -235,7 +235,7 @@
 								<Label text="{i18n>mrFieldPicture}" labelFor="resourcePictureUploader" />
 								<!-- (input[type=file]) the file button, then the chosen file's name -->
 								<HBox renderType="Bare" class="hrxMrFile">
-									<u:FileUploader
+									<u:FileUploader enabled="{mrView>/canEdit}"
 										id="resourcePictureUploader"
 										name="resourcePicture"
 										uploadUrl=""
@@ -256,7 +256,7 @@
 									<Link
 										text="{i18n>mrRemovePicture}"
 										press=".onRemovePicture"
-										visible="{= !!(${mrDetail>/NewPic} || ${mrDetail>/Pic}) }"
+										visible="{= ${mrView>/canEdit} &amp;&amp; !!(${mrDetail>/NewPic} || ${mrDetail>/Pic}) }"
 										class="hrxMrHintLink" />
 								</HBox>
 							</VBox>
@@ -268,7 +268,7 @@
 						<HBox renderType="Bare" class="hrxMrGrid">
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldManager}" labelFor="resourceManager" />
-								<ComboBox
+								<ComboBox editable="{mrView>/canEdit}"
 									id="resourceManager"
 									width="100%"
 									selectedKey="{mrDetail>/ManagerID}"
@@ -294,13 +294,13 @@
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldTargetUtilisation}" labelFor="resourceTargetUtilization" />
 								<HBox renderType="Bare" class="hrxMrSuffix">
-									<Input id="resourceTargetUtilization" value="{mrDetail>/TargetUtilization}" type="Number" />
+									<Input editable="{mrView>/canEdit}" id="resourceTargetUtilization" value="{mrDetail>/TargetUtilization}" type="Number" />
 									<Text text="{i18n>mrPercent}" class="hrxMrSuffixText" />
 								</HBox>
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldWeeklyTargetHours}" labelFor="resourceTargetHours" />
-								<MaskInput
+								<MaskInput editable="{mrView>/canEdit}"
 									id="resourceTargetHours"
 									value="{mrDetail>/TargetHrsPerWeek}"
 									mask="99:99"
@@ -310,18 +310,18 @@
 							<VBox renderType="Bare" class="hrxMrFld hrxMrSpan2">
 								<Label text="{i18n>mrFieldWorkSchedule}" />
 								<HBox renderType="Bare" class="hrxMrChips">
-									<ToggleButton id="resourceDayMo" text="{i18n>mrDayMo}" pressed="{mrDetail>/days/Mo}" class="hrxMrChip" />
-									<ToggleButton id="resourceDayTu" text="{i18n>mrDayTu}" pressed="{mrDetail>/days/Tu}" class="hrxMrChip" />
-									<ToggleButton id="resourceDayWe" text="{i18n>mrDayWe}" pressed="{mrDetail>/days/We}" class="hrxMrChip" />
-									<ToggleButton id="resourceDayTh" text="{i18n>mrDayTh}" pressed="{mrDetail>/days/Th}" class="hrxMrChip" />
-									<ToggleButton id="resourceDayFr" text="{i18n>mrDayFr}" pressed="{mrDetail>/days/Fr}" class="hrxMrChip" />
-									<ToggleButton id="resourceDaySa" text="{i18n>mrDaySa}" pressed="{mrDetail>/days/Sa}" class="hrxMrChip" />
-									<ToggleButton id="resourceDaySu" text="{i18n>mrDaySu}" pressed="{mrDetail>/days/Su}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDayMo" text="{i18n>mrDayMo}" pressed="{mrDetail>/days/Mo}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDayTu" text="{i18n>mrDayTu}" pressed="{mrDetail>/days/Tu}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDayWe" text="{i18n>mrDayWe}" pressed="{mrDetail>/days/We}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDayTh" text="{i18n>mrDayTh}" pressed="{mrDetail>/days/Th}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDayFr" text="{i18n>mrDayFr}" pressed="{mrDetail>/days/Fr}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDaySa" text="{i18n>mrDaySa}" pressed="{mrDetail>/days/Sa}" class="hrxMrChip" />
+									<ToggleButton enabled="{mrView>/canEdit}" id="resourceDaySu" text="{i18n>mrDaySu}" pressed="{mrDetail>/days/Su}" class="hrxMrChip" />
 								</HBox>
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldAnnualLeaveQuota}" labelFor="resourceLeaveQuota" />
-								<Input id="resourceLeaveQuota" value="{mrDetail>/AnnualLeaveQuota}" type="Number" />
+								<Input editable="{mrView>/canEdit}" id="resourceLeaveQuota" value="{mrDetail>/AnnualLeaveQuota}" type="Number" />
 							</VBox>
 						</HBox>
 					</IconTabFilter>
@@ -332,14 +332,14 @@
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldBonus}" labelFor="resourceBonus" />
 								<HBox renderType="Bare" class="hrxMrSuffix">
-									<Input id="resourceBonus" value="{mrDetail>/BonusPercent}" type="Number" />
+									<Input editable="{mrView>/canEdit}" id="resourceBonus" value="{mrDetail>/BonusPercent}" type="Number" />
 									<Text text="{i18n>mrPercent}" class="hrxMrSuffixText" />
 								</HBox>
 							</VBox>
 							<VBox renderType="Bare" class="hrxMrFld">
 								<Label text="{i18n>mrFieldPension}" labelFor="resourcePension" />
 								<HBox renderType="Bare" class="hrxMrSuffix">
-									<Input id="resourcePension" value="{mrDetail>/PensionRate}" type="Number" />
+									<Input editable="{mrView>/canEdit}" id="resourcePension" value="{mrDetail>/PensionRate}" type="Number" />
 									<Text text="{i18n>mrPercent}" class="hrxMrSuffixText" />
 								</HBox>
 							</VBox>
@@ -371,6 +371,7 @@
 								</HBox>
 								<Button
 									id="resourceBookLeaveButton"
+									visible="{mrView>/canEdit}"
 									text="{i18n>mrBookLeave}"
 									icon="sap-icon://appointment-2"
 									press=".onOpenBookLeave"
@@ -428,8 +429,15 @@
 			</IconTabBar>
 
 			<!-- Foot: Active / Inactive takes effect straight away; Delete asks first (and
-			     offers Make inactive instead); Save is for the form -->
-			<HBox renderType="Bare" class="hrxMrFoot">
+			     offers Make inactive instead); Save is for the form. Only for someone the
+			     user may change: an HR admin, or the person's own manager. -->
+			<MessageStrip
+				text="{i18n>mrViewOnly}"
+				type="Information"
+				showIcon="true"
+				visible="{= !${mrView>/canEdit} }"
+				class="sapUiTinyMargin" />
+			<HBox renderType="Bare" visible="{mrView>/canEdit}" class="hrxMrFoot">
 				<HBox renderType="Bare" class="hrxMrSwitchRow">
 					<Switch
 						id="resourceActive"

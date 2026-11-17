@@ -13,9 +13,8 @@ sap.ui.define([
 	"../model/TimesheetReport",
 	"../model/TimesheetReportService",
 	"../model/formatter",
-	"../model/Mail",
-	"../model/Reminders"
-], function (Controller, JSONModel, MessageBox, MessageToast, Text, HBox, VBox, Button, CustomData, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail, Reminders) {
+	"../model/Mail"
+], function (Controller, JSONModel, MessageBox, MessageToast, Text, HBox, VBox, Button, CustomData, CurrentUser, SicknessPolicy, TimesheetReport, TimesheetReportService, formatter, Mail) {
 	"use strict";
 
 	var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -58,11 +57,13 @@ sap.ui.define([
 				weekLoading: false,
 				progressText: "",
 				failedText: "",
-				filters: { ClientKeys: [], ProjectKeys: [], EmpIDs: [] },
+				// userType: S staff (employees, the default), C contractors, ALL everyone
+				filters: { ClientKeys: [], ProjectKeys: [], EmpIDs: [], userType: "S" },
 				period: {},
 				month: {},
 				drill: "",
-				assign: { q: "", work: "all" },
+				// Billing by assignment: one row per person, most billed first
+				assign: { q: "", work: "all", sort: "total" },
 				// Who's submitted has a period of its own: a week, this one to start with
 				sub: { q: "", from: "", to: "", thisWeek: true, atLatest: true },
 				util: { show: "all", EmpIDs: [], peopleText: "" }
@@ -97,7 +98,8 @@ sap.ui.define([
 					if (oTarget.closest(".sapMBtn") || oTarget.closest(".hrxTsAsgSub")) {
 						return;
 					}
-					var oRow = oTarget.closest(".hrxTsAsg");
+					// The nearest row clicked: a person, or one of their assignments
+					var oRow = oTarget.closest(".hrxTsAsg, .hrxTsAsgPerson");
 					if (oRow) {
 						this._toggleAssign(oRow.getAttribute("data-key"));
 					}
@@ -108,6 +110,33 @@ sap.ui.define([
 			// Listened for on the card rather than the chart: the chart's markup is swapped
 			// out whenever its data changes, and a listener on it went with it.
 			this.byId("trPieCard").addEventDelegate({
+				// Hovering a segment shows which customer (or project) it is
+				onmouseover: function (oEvent) {
+					var oWedge = oEvent.target.closest && oEvent.target.closest(".hrxTsDonut [data-label]");
+					var oWrap = oEvent.target.closest && oEvent.target.closest(".hrxTsDonutWrap");
+					var oTip = oWrap && oWrap.querySelector(".hrxTsDonutTip");
+					if (!oTip) {
+						return;
+					}
+					if (!oWedge) {
+						oTip.hidden = true;
+						return;
+					}
+					var oBox = oWrap.getBoundingClientRect();
+					var fX = oEvent.clientX - oBox.left;
+					oTip.textContent = oWedge.getAttribute("data-label");
+					oTip.hidden = false;
+					// Beside the pointer, on whichever side has room in the card
+					oTip.style.left = (fX + 12 + oTip.offsetWidth > oBox.width ? Math.max(0, fX - 12 - oTip.offsetWidth) : fX + 12) + "px";
+					oTip.style.top = (oEvent.clientY - oBox.top + 12) + "px";
+				},
+				onmouseout: function (oEvent) {
+					var oWrap = oEvent.target.closest && oEvent.target.closest(".hrxTsDonutWrap");
+					var oTip = oWrap && oWrap.querySelector(".hrxTsDonutTip");
+					if (oTip && !(oEvent.relatedTarget && oEvent.relatedTarget.closest && oEvent.relatedTarget.closest(".hrxTsDonut [data-label]"))) {
+						oTip.hidden = true;
+					}
+				},
 				onclick: function (oEvent) {
 					var oWedge = oEvent.target.closest && oEvent.target.closest(".hrxTsDonut [data-i]");
 					if (oWedge) {
@@ -247,12 +276,13 @@ sap.ui.define([
 							mMyReports[oPerson.EmpID] = true;
 						}
 					});
+					this._mMyReports = oProfile.isAdmin ? null : mMyReports;
 					return oProfile.isAdmin ? oResult : Object.assign({}, oResult, {
 						bookings: oResult.bookings.filter(function (oBooking) {
 							return mMyReports[oBooking.EmpID];
 						})
 					});
-				});
+				}.bind(this));
 			}.bind(this)).then(function (oResult) {
 				if (!oResult || iLoad !== this._iLoad) {
 					return;
@@ -392,7 +422,7 @@ sap.ui.define([
 		_renderOptions: function () {
 			var oViewModel = this.getModel("trView");
 			var oFilters = this._filterValues();
-			var aBookings = this._oCache.bookings;
+			var aBookings = this._ofType(this._oCache.bookings);
 			var sAll = this.getText("trAll");
 
 			var fnOptions = function (aList, sKey, sLabel) {
@@ -463,8 +493,19 @@ sap.ui.define([
 			};
 		},
 
+		/**
+		 * @param {Array<object>} aRows bookings, or Who's submitted rows (UserTypeKey)
+		 * @returns {Array<object>} those of the chosen staff type: employees, contractors or everyone
+		 */
+		_ofType: function (aRows) {
+			var sType = this.getModel("trView").getProperty("/filters/userType") || "ALL";
+			return aRows.filter(function (oRow) {
+				return sType === "ALL" || (oRow.UserType || oRow.UserTypeKey) === sType;
+			});
+		},
+
 		_filtered: function () {
-			return TimesheetReport.filter(this._oCache.bookings, this._filterValues());
+			return TimesheetReport.filter(this._ofType(this._oCache.bookings), this._filterValues());
 		},
 
 		_renderAssign: function () {
@@ -508,13 +549,46 @@ sap.ui.define([
 			var iBookings = aRows.reduce(function (iTotal, oRow) {
 				return iTotal + oRow.logs.length;
 			}, 0);
-			var bAllOpen = aRows.length > 0 && aRows.every(function (oRow) {
-				return oRow.open;
+
+			// One row per person, their assignments under it when opened
+			var mPeople = {};
+			var aPeople = [];
+			aRows.forEach(function (oRow) {
+				var oPerson = mPeople[oRow.EmpID];
+				if (!oPerson) {
+					oPerson = mPeople[oRow.EmpID] = { key: "person|" + oRow.EmpID, EmpID: oRow.EmpID, Name: oRow.Name,
+						Currency: oRow.Currency, projects: [], month: 0, total: 0, priced: false, billable: 0, logs: 0 };
+					aPeople.push(oPerson);
+				}
+				oPerson.projects.push(oRow);
+				oPerson.month += oRow.month || 0;
+				oPerson.total += oRow.total || 0;
+				oPerson.priced = oPerson.priced || oRow.total !== null;
+				oPerson.billable += oRow.Billable ? 1 : 0;
+				oPerson.logs += oRow.logs.length;
+			});
+			var bByTotal = oViewModel.getProperty("/assign/sort") !== "name";
+			aPeople.sort(function (a, b) {
+				return (bByTotal ? b.total - a.total : 0) || a.Name.localeCompare(b.Name);
+			});
+			aPeople.forEach(function (oPerson) {
+				var iProjects = oPerson.projects.length;
+				Object.assign(oPerson, {
+					open: !!this._mOpenAssign[oPerson.key],
+					projectsText: this.getText(iProjects === 1 ? "trOneAssignment" : "trAssignmentsN", [iProjects]),
+					bookingsText: oPerson.logs ? this.getText(oPerson.logs === 1 ? "trBooking" : "trBookings", [oPerson.logs]) : this.getText("trNoBookingsShort"),
+					billingText: this.getText("trBillableOfN", [oPerson.billable, iProjects]),
+					monthText: oPerson.priced ? this._money(oPerson.month, oPerson.Currency) : "—",
+					totalText: oPerson.priced ? this._money(oPerson.total, oPerson.Currency) : "—"
+				});
+			}, this);
+			var bAllOpen = aPeople.length > 0 && aPeople.every(function (oPerson) {
+				return oPerson.open;
 			});
 
 			this.getModel("tr").setProperty("/assign", {
-				rows: aRows,
-				hint: this.getText("trAssignHint", [aRows.length, iBookings]),
+				rows: aPeople,
+				hint: this.getText("trAssignPeopleHint", [aPeople.length, aRows.length, iBookings]),
 				expandText: this.getText(bAllOpen ? "trCollapseAll" : "trExpandAll"),
 				kpis: {
 					billable: aBillable.length,
@@ -640,6 +714,7 @@ sap.ui.define([
 				var fShare = oSlice.value / fTotal;
 				var iSlice = oSlice.index === undefined ? iIndex : oSlice.index;
 				var sAttributes = "data-i=\"" + iSlice + "\" class=\"hrxTsSeg" + (bDrill ? "" : " hrxTsSegActive") + "\"" +
+					" data-label=\"" + fnEscape(oSlice.label + " · " + oSlice.valueText + " days") + "\"" +
 					" fill=\"none\" stroke=\"" + oSlice.color + "\" stroke-width=\"13\"";
 				var sTitle = "<title>" + fnEscape(oSlice.label + ": " + oSlice.valueText + " days") + "</title>";
 				var sShape;
@@ -659,8 +734,9 @@ sap.ui.define([
 			var sCentre = "<text x=\"50\" y=\"49\" text-anchor=\"middle\" class=\"hrxTsDonutTotal\">" + fnEscape(this._num(fTotal)) + "</text>" +
 				"<text x=\"50\" y=\"62\" text-anchor=\"middle\" class=\"hrxTsDonutUnit\">" + fnEscape(this.getText("trDaysUnit").toUpperCase()) + "</text>";
 
+			// The hovered segment's name shows in a label beside the pointer
 			return "<div class=\"hrxTsDonutWrap\"><svg viewBox=\"0 0 100 100\" class=\"hrxTsDonut\" role=\"img\" aria-label=\"" +
-				fnEscape(sTitle) + "\">" + sTrack + sArcs + sCentre + "</svg></div>";
+				fnEscape(sTitle) + "\">" + sTrack + sArcs + sCentre + "</svg><div class=\"hrxTsDonutTip\" hidden></div></div>";
 		},
 
 		/**
@@ -833,7 +909,7 @@ sap.ui.define([
 			var oViewModel = this.getModel("trView");
 			var sQuery = (oViewModel.getProperty("/sub/q") || "").toLowerCase();
 
-			var aAll = (this._aWeek || []).map(function (oRow) {
+			var aAll = this._ofType(this._aWeek || []).map(function (oRow) {
 				var bNothingDue = oRow.expectedMinutes <= 0;
 				var bComplete = bNothingDue || oRow.bookedMinutes >= oRow.expectedMinutes;
 				var fPct = bNothingDue ? 100 : Math.min(100, oRow.bookedMinutes / oRow.expectedMinutes * 100);
@@ -881,14 +957,46 @@ sap.ui.define([
 			var oViewModel = this.getModel("trView");
 			var sShow = oViewModel.getProperty("/util/show");
 			var aEmpIDs = oViewModel.getProperty("/util/EmpIDs") || [];
+			var oPeriod = oViewModel.getProperty("/period");
+
+			// "Timesheets not complete" needs hours booked against hours due over the period
+			if (sShow === "incomplete" && !this._utilCompliance()) {
+				this._loadUtilCompliance();
+				return;
+			}
 
 			// Utilisation is a share of everything a person booked, so the customer,
 			// project and resource filters of Timesheet reporting do not apply here (the
 			// Utilisation page has its own Employee, Period and Show).
-			var aPeople = TimesheetReport.utilisation(this._oCache.bookings, oViewModel.getProperty("/period")).filter(function (oPerson) {
+			var aAllPeople = TimesheetReport.utilisation(this._ofType(this._oCache.bookings), oPeriod);
+			var mIncomplete = {};
+			if (sShow === "incomplete") {
+				// People who booked nothing at all are not in the utilisation list, so
+				// they are added with nothing booked
+				var mListed = {};
+				aAllPeople.forEach(function (oPerson) {
+					mListed[oPerson.EmpID] = true;
+				});
+				this._ofType(this._utilCompliance()).forEach(function (oRow) {
+					var bMine = !this._mMyReports || this._mMyReports[oRow.UserID];
+					if (!bMine || oRow.expectedMinutes <= 0 || oRow.bookedMinutes >= oRow.expectedMinutes) {
+						return;
+					}
+					mIncomplete[oRow.UserID] = true;
+					if (!mListed[oRow.UserID]) {
+						aAllPeople.push({ EmpID: oRow.UserID, Name: oRow.Name, billable: 0, total: 0, pct: 0,
+							projects: [], cost: null, margin: null, marginPct: null, Currency: "GBP" });
+					}
+				}, this);
+			}
+			var aPeople = aAllPeople.filter(function (oPerson) {
 				return (!aEmpIDs.length || aEmpIDs.indexOf(oPerson.EmpID) !== -1) &&
-					(sShow === "all" || (sShow === "bill" && oPerson.billable > 0) ||
+					(sShow === "all" || (sShow === "incomplete" && mIncomplete[oPerson.EmpID]) ||
+					(sShow === "bill" && oPerson.billable > 0) || (sShow === "nonbill" && !oPerson.billable) ||
 					(sShow === "u50" && oPerson.pct < 50) || (sShow === "u80" && oPerson.pct < 80));
+			}).sort(function (a, b) {
+				// Highest utilisation first, as before
+				return (b.pct - a.pct) || a.Name.localeCompare(b.Name);
 			});
 
 			var aChosen = this.getModel("tr").getProperty("/people").filter(function (oOption) {
@@ -1001,10 +1109,10 @@ sap.ui.define([
 
 		onClear: function () {
 			var oViewModel = this.getModel("trView");
-			oViewModel.setProperty("/filters", { ClientKeys: [], ProjectKeys: [], EmpIDs: [] });
+			oViewModel.setProperty("/filters", { ClientKeys: [], ProjectKeys: [], EmpIDs: [], userType: "S" });
 			oViewModel.setProperty("/drill", "");
 			this._mHiddenSlices = {};
-			oViewModel.setProperty("/assign", { q: "", work: "all" });
+			oViewModel.setProperty("/assign", { q: "", work: "all", sort: "total" });
 			oViewModel.setProperty("/sub/q", "");
 			oViewModel.setProperty("/util/show", "all");
 			this._setYear(0);
@@ -1040,13 +1148,17 @@ sap.ui.define([
 			this._renderAssign();
 		},
 
+		/**
+		 * Opens (or closes) every person's assignments; each assignment's bookings stay
+		 * as they were.
+		 */
 		onExpandAllAssign: function () {
-			var aRows = this.getModel("tr").getProperty("/assign/rows");
-			var bOpen = !aRows.every(function (oRow) {
-				return oRow.open;
+			var aPeople = this.getModel("tr").getProperty("/assign/rows");
+			var bOpen = !aPeople.every(function (oPerson) {
+				return oPerson.open;
 			});
-			aRows.forEach(function (oRow) {
-				this._mOpenAssign[oRow.key] = bOpen;
+			aPeople.forEach(function (oPerson) {
+				this._mOpenAssign[oPerson.key] = bOpen;
 			}, this);
 			this._renderAssign();
 		},
@@ -1118,20 +1230,28 @@ sap.ui.define([
 		 * draft in the admin's own mail app where it cannot send.
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 */
+		/**
+		 * Opens a reminder in Outlook, addressed to the person, there and then (opening
+		 * it from the click itself means the browser does not block the new tab).
+		 * @param {sap.ui.base.Event} oEvent the Remind button's press event
+		 */
 		onRemind: function (oEvent) {
 			var oRow = oEvent.getSource().getBindingContext("tr").getObject();
 			if (!oRow.Email) {
 				MessageBox.error(this.getText("trNoEmail", [oRow.Name]));
 				return;
 			}
-			var sSubject = this._remindSubject();
-			var sMessage = this.getText("trRemindBody", [oRow.Name.split(/\s+/)[0], this._weekText(),
-				this._hours(oRow.bookedMinutes), this._hours(oRow.expectedMinutes)]);
-			this._sendReminder([oRow], sSubject, sMessage, { to: oRow.Email, subject: sSubject, body: sMessage });
+			Mail.open({
+				to: oRow.Email,
+				subject: this._remindSubject(),
+				body: this.getText("trRemindBody", [oRow.Name.split(/\s+/)[0], this._weekText(),
+					this._hours(oRow.bookedMinutes), this._hours(oRow.expectedMinutes)])
+			});
 		},
 
 		/**
-		 * Reminds everybody under target (a draft has them all in BCC, so nobody sees the others).
+		 * Opens one reminder for everybody under target; the recipients can be checked
+		 * and changed before Outlook opens with them in To.
 		 */
 		onRemindAll: function () {
 			var aUnder = ((this._aWeek && this.getModel("tr").getProperty("/sub/rows")) || []).filter(function (oRow) {
@@ -1141,46 +1261,44 @@ sap.ui.define([
 				MessageToast.show(this.getText("trNoReminders"));
 				return;
 			}
-			var sSubject = this._remindSubject();
-			var sMessage = this.getText("trRemindAllBody", [this._weekText()]);
-			var sBcc = aUnder.map(function (oRow) {
-				return oRow.Email;
-			}).join(",");
-			this._sendReminder(aUnder, sSubject, sMessage, { bcc: sBcc, subject: sSubject, body: sMessage });
-		},
-
-		_sendReminder: function (aRows, sSubject, sMessage, oDraft) {
-			Reminders.send({
-				kind: "Timesheet",
-				employeeIds: aRows.map(function (oRow) {
-					return oRow.UserID;
-				}),
-				subject: sSubject,
-				message: sMessage,
-				draft: oDraft
-			}).then(function (oResult) {
-				if (oResult.outcome === "sent") {
-					this._reportReminders(oResult);
-				}
-			}.bind(this)).catch(function (oError) {
-				MessageBox.error(this.getText("reminderFailed", [oError.message]));
-			}.bind(this));
-		},
-
-		/**
-		 * Says how many reminders went, and who the service could not email.
-		 * @param {object} oResult Reminders.send's answer: sent, failed
-		 */
-		_reportReminders: function (oResult) {
-			if (oResult.failed.length) {
-				MessageBox.warning(this.getText("reminderPartlySent", [oResult.sent, oResult.failed.join(", ")]));
-				return;
-			}
-			MessageToast.show(this.getText("reminderSentCount", [oResult.sent]));
+			Mail.open({
+				bcc: aUnder.map(function (oRow) {
+					return oRow.Email;
+				}).join(","),
+				subject: this._remindSubject(),
+				body: this.getText("trRemindAllBody", [this._weekText()])
+			});
 		},
 
 		onUtilShow: function () {
 			this._renderUtil();
+		},
+
+		/**
+		 * @returns {Array<object>|null} hours booked against hours due for everyone over
+		 * the Utilisation period (up to today), once loaded for that period
+		 */
+		_utilCompliance: function () {
+			var oPeriod = this.getModel("trView").getProperty("/period");
+			var oHeld = this._oUtilCompliance;
+			return oHeld && oHeld.from === oPeriod.from && oHeld.to === oPeriod.to ? oHeld.rows : null;
+		},
+
+		_loadUtilCompliance: function () {
+			var oViewModel = this.getModel("trView");
+			var oPeriod = oViewModel.getProperty("/period");
+			var sToday = iso(new Date());
+			var sTo = oPeriod.to < sToday ? oPeriod.to : sToday;
+
+			oViewModel.setProperty("/loading", true);
+			TimesheetReportService.loadWeek(oPeriod.from, sTo).then(function (aRows) {
+				this._oUtilCompliance = { from: oPeriod.from, to: oPeriod.to, rows: aRows };
+				oViewModel.setProperty("/loading", false);
+				this._renderUtil();
+			}.bind(this)).catch(function (oError) {
+				oViewModel.setProperty("/loading", false);
+				this._showError("trErrorLoad", oError);
+			}.bind(this));
 		},
 
 		/* =========================================================== */

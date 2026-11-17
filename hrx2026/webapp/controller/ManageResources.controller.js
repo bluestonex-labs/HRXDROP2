@@ -65,6 +65,7 @@ sap.ui.define([
 				searchQuery: "",
 				selectedId: null,
 				selectedTab: "info",
+				canEdit: false,
 				filter: this._defaultFilter(),
 				filterDraft: this._defaultFilter()
 			}), "mrView");
@@ -285,6 +286,9 @@ sap.ui.define([
 
 			return this._read(Backend.keyPath("Resources", { EmpID: sEmpId })).then(function (oResource) {
 				this.getModel("mrDetail").setData(this._toDetail(oResource));
+				// HR admins change anyone; other managers only their own direct reports
+				var oUser = this.getOwnerComponent().getModel("app").getProperty("/user") || {};
+				oViewModel.setProperty("/canEdit", !!oUser.isAdmin || (!!oUser.empID && oResource.ManagerID === oUser.empID));
 				oViewModel.setProperty("/detailBusy", false);
 				this._resetPictureUploader();
 				this.byId("resourceEmail").setValueState("None");
