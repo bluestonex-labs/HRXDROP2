@@ -339,90 +339,96 @@
 							press=".onAddAssignment"
 							class="hrxMpBtnGhost hrxMpBtnSm hrxMpIcoUserPlus" />
 					</HBox>
-					<Table
-						id="projectAssignmentTable"
-						items="{mpTabs>/assignments}"
-						busy="{mpView>/tabBusy}"
-						busyIndicatorDelay="0"
-						noDataText="{i18n>mpNoAssignments}"
-						fixedLayout="false"
-						class="hrxMpTable">
-						<columns>
-							<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColResource}" /></Column>
-							<Column><Text text="{i18n>mpColAreas}" /></Column>
-							<Column visible="{= ${services>/supportLine} || ${services>/supportAdmin} }"><Text text="{i18n>mpColSupport}" /></Column>
-							<Column hAlign="End"><Text text="{i18n>mpColRate}" /></Column>
-							<Column hAlign="End"><Text text="{i18n>mpColCost}" /></Column>
-							<Column><Text text="{i18n>mpColStatus}" /></Column>
-							<Column hAlign="End" styleClass="hrxMpColLast"><Text text="" /></Column>
-						</columns>
-						<items>
-							<ColumnListItem>
-								<cells>
-									<Text text="{mpTabs>FullName}" class="hrxMpStrong" />
-									<Text text="{path: 'mpTabs>TaskAssigned', formatter: '.formatAreaList'}" />
-									<HBox renderType="Bare" class="hrxMpPills">
-										<Text text="—" visible="{= !${mpTabs>SupportLine} &amp;&amp; !${mpTabs>IsSupportAdmin} }" />
-										<Text
-											text="{path: 'mpTabs>SupportLine', formatter: '.formatSupportLine'}"
-											visible="{= !!${mpTabs>SupportLine} }"
-											wrapping="false"
-											class="hrxMpPill">
-											<customData>
-												<core:CustomData
-													key="tone"
-													value="{= ${mpTabs>SupportLine} === 'FIRST' ? 'info' : 'neu' }"
-													writeToDom="true" />
-											</customData>
-										</Text>
-										<Text
-											text="{i18n>mpSupportAdmin}"
-											visible="{= !!${mpTabs>IsSupportAdmin} }"
-											wrapping="false"
-											class="hrxMpPill">
-											<customData>
-												<core:CustomData key="tone" value="info" writeToDom="true" />
-											</customData>
-										</Text>
-									</HBox>
-									<Text text="{path: 'mpTabs>DayRate', formatter: '.formatPerDay'}" wrapping="false" />
-									<Text text="{path: 'mpTabs>DayCost', formatter: '.formatPerDay'}" wrapping="false" />
-									<HBox renderType="Bare">
-										<Text
-											text="{= ${mpTabs>IsActive} === 'Y' ? ${i18n>mpAssigned} : ${i18n>mpReleased} }"
-											wrapping="false"
-											class="hrxMpPill">
-											<customData>
-												<core:CustomData
-													key="tone"
-													value="{= ${mpTabs>IsActive} === 'Y' ? 'ok' : 'neu' }"
-													writeToDom="true" />
-											</customData>
-										</Text>
-									</HBox>
-									<HBox renderType="Bare" class="hrxMpRowActs">
-										<Button
-											icon="sap-icon://edit"
-											tooltip="{i18n>mpEditAssignment}"
-											press=".onEditAssignment"
-											class="hrxMpIconBtn hrxMpIcoEdit" />
-										<Button
-											text="{i18n>mpRelease}"
-											tooltip="{i18n>mpReleaseAssignment}"
-											press=".onReleaseAssignment"
-											visible="{= ${mpTabs>IsActive} === 'Y' }"
-											class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
-										<Button
-											text="{i18n>mpReassign}"
-											tooltip="{i18n>mpReassignAssignment}"
-											press=".onReassignAssignment"
-											visible="{= ${mpTabs>IsActive} !== 'Y' }"
-											class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
-									</HBox>
-								</cells>
-							</ColumnListItem>
-						</items>
-					</Table>
+					<!-- Scrolls sideways when the columns do not fit, rather than cutting them off -->
+					<ScrollContainer horizontal="true" vertical="false" width="100%">
+						<Table
+							id="projectAssignmentTable"
+							items="{mpTabs>/assignments}"
+							busy="{mpView>/tabBusy}"
+							busyIndicatorDelay="0"
+							noDataText="{i18n>mpNoAssignments}"
+							fixedLayout="false"
+							class="hrxMpTable">
+							<columns>
+								<Column styleClass="hrxMpColFirst"><Text text="{i18n>mpColResource}" /></Column>
+								<Column><Text text="{i18n>mpColAreas}" /></Column>
+								<Column visible="{= ${services>/supportLine} || ${services>/supportAdmin} }"><Text text="{i18n>mpColSupport}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>mpColDays}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>mpColRate}" /></Column>
+								<Column hAlign="End"><Text text="{i18n>mpColCost}" /></Column>
+								<Column><Text text="{i18n>mpColStatus}" /></Column>
+								<Column hAlign="End" styleClass="hrxMpColLast"><Text text="" /></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{mpTabs>FullName}" class="hrxMpStrong" />
+										<Text text="{path: 'mpTabs>TaskAssigned', formatter: '.formatAreaList'}" wrapping="false" />
+										<HBox renderType="Bare" class="hrxMpPills">
+											<Text text="—" visible="{= !${mpTabs>SupportLine} &amp;&amp; !${mpTabs>IsSupportAdmin} }" />
+											<Text
+												text="{path: 'mpTabs>SupportLine', formatter: '.formatSupportLine'}"
+												visible="{= !!${mpTabs>SupportLine} }"
+												wrapping="false"
+												class="hrxMpPill">
+												<customData>
+													<core:CustomData
+														key="tone"
+														value="{= ${mpTabs>SupportLine} === 'FIRST' ? 'info' : 'neu' }"
+														writeToDom="true" />
+												</customData>
+											</Text>
+											<Text
+												text="{i18n>mpSupportAdmin}"
+												visible="{= !!${mpTabs>IsSupportAdmin} }"
+												wrapping="false"
+												class="hrxMpPill">
+												<customData>
+													<core:CustomData key="tone" value="info" writeToDom="true" />
+												</customData>
+											</Text>
+										</HBox>
+										<Text text="{path: 'mpTabs>BillableDays', formatter: '.formatDays'}" wrapping="false" />
+										<Text text="{path: 'mpTabs>DayRate', formatter: '.formatPerDay'}" wrapping="false" />
+										<!-- Cost: the day rate times the assignment's billable days -->
+										<Text text="{parts: [{path: 'mpTabs>DayRate'}, {path: 'mpTabs>BillableDays'}], formatter: '.formatAssignmentCost'}" wrapping="false" />
+										<HBox renderType="Bare">
+											<Text
+												text="{= ${mpTabs>IsActive} === 'Y' ? ${i18n>mpAssigned} : ${i18n>mpReleased} }"
+												wrapping="false"
+												class="hrxMpPill">
+												<customData>
+													<core:CustomData
+														key="tone"
+														value="{= ${mpTabs>IsActive} === 'Y' ? 'ok' : 'neu' }"
+														writeToDom="true" />
+												</customData>
+											</Text>
+										</HBox>
+										<HBox renderType="Bare" class="hrxMpRowActs">
+											<Button
+												icon="sap-icon://edit"
+												tooltip="{i18n>mpEditAssignment}"
+												press=".onEditAssignment"
+												class="hrxMpIconBtn hrxMpIcoEdit" />
+											<Button
+												text="{i18n>mpRelease}"
+												tooltip="{i18n>mpReleaseAssignment}"
+												press=".onReleaseAssignment"
+												visible="{= ${mpTabs>IsActive} === 'Y' }"
+												class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
+											<Button
+												text="{i18n>mpReassign}"
+												tooltip="{i18n>mpReassignAssignment}"
+												press=".onReassignAssignment"
+												visible="{= ${mpTabs>IsActive} !== 'Y' }"
+												class="hrxMpBtnGhost hrxMpBtnSm hrxMpBtnRow" />
+										</HBox>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</ScrollContainer>
 				</VBox>
 
 				<!-- tab: the client's contacts for the project -->

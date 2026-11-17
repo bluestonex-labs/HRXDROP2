@@ -1091,6 +1091,30 @@ sap.ui.define([
 		 * @param {Array<object>} aAreas the areas a resource works in: [{ TaskDesc }]
 		 * @returns {string} their names, comma separated, or a dash when there are none
 		 */
+		/**
+		 * @param {string|number} vDays an assignment's billable days
+		 * @returns {string} the days, or a dash when none are set
+		 */
+		formatDays: function (vDays) {
+			var fDays = parseFloat(vDays);
+			return fDays ? String(fDays) : "—";
+		},
+
+		/**
+		 * An assignment's cost: its day rate times its billable days.
+		 * @param {string|number} vDayRate the day rate
+		 * @param {string|number} vDays the billable days
+		 * @returns {string} e.g. "£9,500", or a dash when either is missing
+		 */
+		formatAssignmentCost: function (vDayRate, vDays) {
+			var fRate = parseFloat(vDayRate);
+			var fDays = parseFloat(vDays);
+			if (!fRate || !fDays) {
+				return "—";
+			}
+			return formatter.money(fRate * fDays);
+		},
+
 		formatAreaList: function (aAreas) {
 			var aNames = (aAreas || []).map(function (oArea) {
 				return oArea.TaskDesc;
