@@ -238,32 +238,60 @@ sap.ui.define([
 
 		/* ═════════════ Summary ═════════════ */
 
+		/**
+		 * Amounts kept per currency, as text: the home currency first, others only when
+		 * there are any (a UK and an India claim can't be added together).
+		 * @param {object} oSums currency → amount, e.g. { GBP: 55.1, INR: 10391.57 }
+		 * @returns {string} e.g. "£55.10 · ₹10,391.57"
+		 */
+		_moneyByCurrency: function (oSums) {
+			var sHome = ExpenseClaims.CURRENCY_OF_COUNTRY[this._sCountry];
+			var aCurrencies = [sHome].concat(Object.keys(oSums).filter(function (sCurrency) {
+				return sCurrency !== sHome;
+			}));
+			var aTexts = aCurrencies.filter(function (sCurrency) {
+				return sCurrency === sHome || Number(oSums[sCurrency]) > 0;
+			}).map(function (sCurrency) {
+				return ExpenseClaims.money(oSums[sCurrency] || 0, sCurrency);
+			});
+			// Nothing at home but something abroad: leave out the home zero
+			if (aTexts.length > 1 && !(Number(oSums[sHome]) > 0)) {
+				aTexts.shift();
+			}
+			return aTexts.join(" \u00b7 ");
+		},
+
 		_buildSummary: function () {
 			var aClaims = this._model().getProperty("/claims");
-			var sCurrency = ExpenseClaims.CURRENCY_OF_COUNTRY[this._sCountry];
-			var oSummary = { approved: 0, nApproved: 0, pending: 0, nPending: 0, tax: 0, byType: {}, attentionRows: [] };
+			var oSummary = { approved: {}, nApproved: 0, pending: {}, nPending: 0, tax: {}, byType: {}, attentionRows: [] };
+			var fnAdd = function (oSums, sCurrency, fAmount) {
+				oSums[sCurrency] = (oSums[sCurrency] || 0) + (Number(fAmount) || 0);
+			};
 
 			aClaims.forEach(function (oClaim) {
 				var oTotals = ExpenseClaims.claimTotals(oClaim, this._taxRateFor(oClaim.country));
+				var sCurrency = oClaim.currency;
 				if (oClaim.status === "Approved") {
-					oSummary.approved += oTotals.total;
+					fnAdd(oSummary.approved, sCurrency, oTotals.total);
 					oSummary.nApproved++;
 				}
 				if (ExpenseClaims.isPending(oClaim.status)) {
-					oSummary.pending += oTotals.total;
+					fnAdd(oSummary.pending, sCurrency, oTotals.total);
 					oSummary.nPending++;
 				}
 				if (oClaim.status === "Approved" || ExpenseClaims.isPending(oClaim.status)) {
-					oSummary.tax += oTotals.tax;
+					fnAdd(oSummary.tax, sCurrency, oTotals.tax);
 				}
 				if (oClaim.status !== "Rejected") {
 					(oClaim.items || []).forEach(function (oItem) {
 						var sType = (this._mTypes[oItem.expenseType_code] || {}).description || this._text("exUntyped");
-						oSummary.byType[sType] = (oSummary.byType[sType] || 0) + (Number(oItem.grossAmount) || 0);
+						oSummary.byType[sType] = oSummary.byType[sType] || {};
+						fnAdd(oSummary.byType[sType], sCurrency, oItem.grossAmount);
 					}.bind(this));
 					(oClaim.mileageClaims || []).forEach(function (oMileage) {
 						var sMileage = this._text("exMileage");
-						oSummary.byType[sMileage] = (oSummary.byType[sMileage] || 0) + (Number(oMileage.totalAmount) || 0);
+						oSummary.byType[sMileage] = oSummary.byType[sMileage] || {};
+						fnAdd(oSummary.byType[sMileage], sCurrency, oMileage.totalAmount);
 					}.bind(this));
 				}
 				if (ExpenseClaims.isEditable(oClaim.status)) {
@@ -284,27 +312,40 @@ sap.ui.define([
 				}
 			}.bind(this));
 
-			var aTypes = Object.keys(oSummary.byType).sort(function (a, b) {
-				return oSummary.byType[b] - oSummary.byType[a];
+			// Each bar is drawn against the largest amount in its own currency
+			var aTypes = Object.keys(oSummary.byType);
+			var oLargest = {};
+			aTypes.forEach(function (sType) {
+				Object.keys(oSummary.byType[sType]).forEach(function (sCurrency) {
+					oLargest[sCurrency] = Math.max(oLargest[sCurrency] || 1, oSummary.byType[sType][sCurrency]);
+				});
 			});
-			var fLargest = Math.max.apply(null, [1].concat(aTypes.map(function (sType) { return oSummary.byType[sType]; })));
+			var fnShare = function (sType) {
+				var oSums = oSummary.byType[sType];
+				return Math.max.apply(null, Object.keys(oSums).map(function (sCurrency) {
+					return oSums[sCurrency] / oLargest[sCurrency];
+				}));
+			};
+			aTypes.sort(function (a, b) {
+				return fnShare(b) - fnShare(a);
+			});
 
 			this._model().setProperty("/summary", {
-				approvedText: ExpenseClaims.money(oSummary.approved, sCurrency),
+				approvedText: this._moneyByCurrency(oSummary.approved),
 				approvedSub: this._text(oSummary.nApproved === 1 ? "exOneClaim" : "exClaims", [oSummary.nApproved]),
-				pendingText: ExpenseClaims.money(oSummary.pending, sCurrency),
+				pendingText: this._moneyByCurrency(oSummary.pending),
 				pendingSub: this._text(oSummary.nPending === 1 ? "exOneClaim" : "exClaims", [oSummary.nPending]),
 				taxLabel: this._text(this._sCountry === "IN" ? "exKpiGst" : "exKpiVat"),
-				taxText: ExpenseClaims.money(oSummary.tax, sCurrency),
+				taxText: this._moneyByCurrency(oSummary.tax),
 				attention: oSummary.attentionRows.length,
 				attentionRows: oSummary.attentionRows,
 				byType: aTypes.map(function (sType) {
 					return {
 						type: sType,
-						amountText: ExpenseClaims.money(oSummary.byType[sType], sCurrency),
-						percent: Math.round(oSummary.byType[sType] / fLargest * 100)
+						amountText: this._moneyByCurrency(oSummary.byType[sType]),
+						percent: Math.round(fnShare(sType) * 100)
 					};
-				})
+				}.bind(this))
 			});
 		},
 
