@@ -48,10 +48,11 @@ execFileSync("sh", ["-c", "git archive HEAD | tar -x -C " + JSON.stringify(WORK)
 // 2. The deploy file: its own MTA, service instances, business service and archive.
 //    The HRX and expense XSUAA instances and the service URLs stay as they are.
 rewrite(path.join(WORK, "mta.yaml"), [
+	// uaa_HRX2026 first: "uaa_HRX2026-key" would otherwise be renamed twice
+	["uaa_HRX2026", "uaa_HRX2026PREVIEW"],
 	["ID: HRX2026", "ID: HRX2026PREVIEW"],
 	["HRX2026-", "HRX2026PREVIEW-"],
 	["HRX2026_", "HRX2026PREVIEW_"],
-	["uaa_HRX2026", "uaa_HRX2026PREVIEW"],
 	["hrx2026_HRX2026PREVIEW", "hrx2026preview_HRX2026PREVIEW"],
 	["hrx2026_uaa_HRX2026PREVIEW", "hrx2026preview_uaa_HRX2026PREVIEW"],
 	["sap.cloud.service: hrx2026", "sap.cloud.service: hrx2026preview"],
