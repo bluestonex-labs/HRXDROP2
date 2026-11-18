@@ -35,9 +35,9 @@ sap.ui.define([
 	// Internal bookings against this client never need a work description.
 	var NO_COMMENT_CLIENT = "BSXCL0000000000";
 
-	// Bluestonex itself: internal work is the only thing on a fresh timesheet, and
-	// client projects are put there by the user with "Add Project(s)".
-	var INTERNAL_CLIENT = "BSXCL0000000001";
+	// The one project on everyone's timesheet by default (if they're a resource on it),
+	// which can't be removed. Every other project is added with Add projects.
+	var PINNED_PROJECT = "bsx internal development";
 
 	// A closed month can still be corrected during the first few working days of the next one.
 	var GRACE_WORKING_DAYS = 3;
@@ -386,7 +386,7 @@ sap.ui.define([
 					readOnly: false,
 					// BlueStoneX's own projects are pinned to every sheet by _defaultRows
 					// and are not the user's to remove, so they cannot be selected.
-					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT && mActive[sProjectId],
+					deletable: !this._isPinned(oAssignment.ProjectDesc) && mActive[sProjectId],
 					released: !mActive[sProjectId],
 					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
@@ -455,9 +455,9 @@ sap.ui.define([
 				if (bBooked) {
 					return true;
 				}
-				var bWanted = oRow.ClientKey === INTERNAL_CLIENT || aKept.indexOf(oRow.ProjectID) !== -1;
+				var bWanted = this._isPinned(oRow.project) || aKept.indexOf(oRow.ProjectID) !== -1;
 				return bWanted && oRow.bookable && !oRow.released;
-			});
+			}, this);
 		},
 
 		/**
@@ -466,6 +466,14 @@ sap.ui.define([
 		 * @param {string} sKey one of the two keys
 		 * @returns {Array<string>} project IDs
 		 */
+		/**
+		 * @param {string} sProjectDesc a project's name
+		 * @returns {boolean} true for BSX Internal Development, always on the sheet
+		 */
+		_isPinned: function (sProjectDesc) {
+			return String(sProjectDesc || "").trim().toLowerCase() === PINNED_PROJECT;
+		},
+
 		_storedProjects: function (sKey) {
 			// Someone else's timesheet: their lists live in their own browser
 			if (this.getModel("tsView").getProperty("/readOnly")) {
@@ -1192,7 +1200,7 @@ sap.ui.define([
 					Billable: oAssignment.ProjectTypeText === "Billable",
 					Overbooked: false,
 					readOnly: false,
-					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
+					deletable: !this._isPinned(oAssignment.ProjectDesc),
 					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				});
