@@ -68,7 +68,13 @@ sap.ui.define([
 				saving: false,
 				weekStart: this._mondayOf(new Date()),
 				weekLabel: "",
+				// Whose timesheet is on screen: the user's own, or (HR admins only) someone
+				// else's, which is then read only
 				currentEmail: "",
+				readOnly: false,
+				viewingName: "",
+				isAdmin: false,
+				people: [],
 				userId: "",
 				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
@@ -107,6 +113,84 @@ sap.ui.define([
 			window.addEventListener("beforeunload", this._fnBeforeUnload);
 		},
 
+		/* =========================================================== */
+		/* viewing another person's timesheet (HR admins)              */
+		/* =========================================================== */
+
+		formatViewingOther: function (sName) {
+			return this.getText("tsViewingOther", [sName || ""]);
+		},
+
+		onOpenTimesheetMenu: function (oEvent) {
+			this.byId("timesheetMenu").openBy(oEvent.getSource());
+		},
+
+		/**
+		 * Lists everyone active to pick whose timesheet to look at.
+		 */
+		onViewOtherTimesheet: function () {
+			var oViewModel = this.getModel("tsView");
+			this._read("/Resources", {
+				urlParameters: { "$select": "EmpID,FName,LName,Email,IsActive" },
+				filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
+			}).then(function (oData) {
+				oViewModel.setProperty("/people", this._strip(oData).filter(function (oPerson) {
+					return oPerson.IsActive === "Y" && !!oPerson.Email && !CurrentUser.sameEmail(oPerson.Email, this._sUserEmail);
+				}, this).map(function (oPerson) {
+					return { Name: ((oPerson.FName || "") + " " + (oPerson.LName || "")).trim(), Email: oPerson.Email };
+				}).sort(function (a, b) {
+					return a.Name.localeCompare(b.Name);
+				}));
+				return this._openDialog("_pViewTimesheetDialog", "bsx.hrx.hrx2026.fragment.ViewTimesheetDialog");
+			}.bind(this)).catch(function (oError) {
+				this._showError("tsErrorPeople", oError);
+			}.bind(this));
+		},
+
+		onSearchTimesheetPeople: function (oEvent) {
+			var sQuery = (oEvent.getParameter("value") || "").trim();
+			oEvent.getSource().getBinding("items").filter(sQuery ? [new Filter({
+				filters: [
+					new Filter("Name", FilterOperator.Contains, sQuery),
+					new Filter("Email", FilterOperator.Contains, sQuery)
+				],
+				and: false
+			})] : []);
+		},
+
+		/**
+		 * Shows the chosen person's timesheet, read only. Anything of the user's own
+		 * still waiting to be saved goes first.
+		 * @param {sap.ui.base.Event} oEvent the dialog's confirm event
+		 */
+		onPickTimesheetPerson: function (oEvent) {
+			var oItem = oEvent.getParameter("selectedItem");
+			oEvent.getSource().getBinding("items").filter([]);
+			if (!oItem) {
+				return;
+			}
+			var oPerson = oItem.getBindingContext("tsView").getObject();
+			var oViewModel = this.getModel("tsView");
+			this._flushAutoSave().then(function () {
+				oViewModel.setProperty("/currentEmail", oPerson.Email);
+				oViewModel.setProperty("/viewingName", oPerson.Name);
+				oViewModel.setProperty("/readOnly", true);
+				return this._loadWeek();
+			}.bind(this));
+		},
+
+		onCancelTimesheetPerson: function (oEvent) {
+			oEvent.getSource().getBinding("items").filter([]);
+		},
+
+		onBackToMyTimesheet: function () {
+			var oViewModel = this.getModel("tsView");
+			oViewModel.setProperty("/currentEmail", this._sUserEmail);
+			oViewModel.setProperty("/viewingName", "");
+			oViewModel.setProperty("/readOnly", false);
+			this._loadWeek();
+		},
+
 		onExit: function () {
 			window.removeEventListener("beforeunload", this._fnBeforeUnload);
 			clearTimeout(this._iAutoSaveTimer);
@@ -131,8 +215,13 @@ sap.ui.define([
 					return undefined;
 				}
 
-				// Everybody sees only their own timesheet.
-				this.getModel("tsView").setProperty("/currentEmail", this._sUserEmail);
+				// Every visit opens the user's own timesheet. HR admins can then look at
+				// someone else's from the page's menu (onViewOtherTimesheet).
+				var oViewModel = this.getModel("tsView");
+				oViewModel.setProperty("/isAdmin", !!oProfile.isAdmin);
+				oViewModel.setProperty("/currentEmail", this._sUserEmail);
+				oViewModel.setProperty("/readOnly", false);
+				oViewModel.setProperty("/viewingName", "");
 
 				return this._loadWeek();
 			}.bind(this));
@@ -428,7 +517,8 @@ sap.ui.define([
 					// day the user's work schedule doesn't flag "Y". It used to lock on any
 					// leave at all, which left a half day's other half unbookable. With no
 					// weekly target to measure against, any leave still closes the day.
-					editable: this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
+					editable: !this.getModel("tsView").getProperty("/readOnly") &&
+						this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
 						!(mNonWorkingDates[sIsoDate] && mNonWorkingDates[sIsoDate] >= (iDayMinutes || mNonWorkingDates[sIsoDate]))
 				};
 			}, this);
@@ -927,6 +1017,9 @@ sap.ui.define([
 		 * Offers the assignments that are not on the timesheet yet.
 		 */
 		onOpenAddProjects: function () {
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return;
+			}
 			this._loadAvailable().then(function (bLoaded) {
 				if (bLoaded) {
 					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog");
@@ -1054,6 +1147,9 @@ sap.ui.define([
 		 * first; rows that were only added on screen simply disappear.
 		 */
 		onDeleteProjects: function () {
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return;
+			}
 			var oTable = this.byId("timesheetTable");
 			var aSelected = oTable ? oTable.getSelectedItems() : [];
 
@@ -1174,6 +1270,9 @@ sap.ui.define([
 		 * work description is rejected - managers rely on those to see what was worked on.
 		 */
 		onSave: function () {
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return;
+			}
 			// An auto-save may be sending some of the same bookings; wait for it, so a
 			// new booking is not created twice.
 			clearTimeout(this._iAutoSaveTimer);
@@ -1292,6 +1391,11 @@ sap.ui.define([
 		_changedCells: function () {
 			var aEntries = [];
 			var aWaiting = [];
+
+			// Only your own timesheet is ever saved
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return { entries: aEntries, waiting: aWaiting };
+			}
 
 			(this.getModel("ts").getProperty("/rows") || []).forEach(function (oRow) {
 				if (oRow.readOnly) {

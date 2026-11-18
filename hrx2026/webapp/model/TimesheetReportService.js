@@ -88,6 +88,8 @@ sap.ui.define([
 							ProjectKey: sProject,
 							ProjectDesc: oProject.ProjectDesc,
 							PONo: oProject.PONumber,
+							// Time booking Open or Closed, as set in Manage Projects
+							BookingOpen: oProject.IsTimeBookingAllowed !== false,
 							Billable: HrxTime.isBillable(oProject, oRate),
 							DayRate: oRate.DayRate,
 							DayCost: oRate.DayCost,
@@ -125,6 +127,7 @@ sap.ui.define([
 						ProjectKey: aKey[1],
 						ProjectDesc: oProject.ProjectDesc,
 						PONo: oProject.PONumber,
+						BookingOpen: oProject.IsTimeBookingAllowed !== false,
 						Billable: HrxTime.isBillable(oProject, mRates[sKey]),
 						DayRate: mRates[sKey].DayRate,
 						DayCost: mRates[sKey].DayCost,

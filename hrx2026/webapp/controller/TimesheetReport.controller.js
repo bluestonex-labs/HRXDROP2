@@ -758,7 +758,10 @@ sap.ui.define([
 		 */
 		_renderBreakdown: function () {
 			var oPeriod = this.getModel("trView").getProperty("/period");
-			var aFiltered = this._filtered();
+			// Only projects still open for booking: closed ones would muddy the breakdown
+			var aFiltered = this._filtered().filter(function (oBooking) {
+				return oBooking.BookingOpen;
+			});
 			var oBreak = TimesheetReport.breakdown(aFiltered, oPeriod);
 			var oTable = this.byId("trBreakTable");
 			var iProjects = 0;

@@ -57,7 +57,8 @@ sap.ui.define([
 		"tia.menhennet@bluestonex.com",
 		"vicky.williams@bluestonex.com",
 		"feroz.khan@bluestonex.com",
-		"joe.barton@bluestonex.com"
+		"joe.barton@bluestonex.com",
+		"carol.barton@bluestonex.com"
 	];
 
 	/**
