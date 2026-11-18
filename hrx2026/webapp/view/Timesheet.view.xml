@@ -146,14 +146,13 @@
 				<hrx:TimesheetTable
 					id="timesheetTable"
 					items="{path: 'ts>/rows', groupHeaderFactory: '.createGroupHeader'}"
-					mode="{= ${tsView>/readOnly} ? 'None' : 'MultiSelect' }"
+					mode="None"
 					busy="{= ${tsView>/busy} || ${tsView>/saving} }"
 					busyIndicatorDelay="0"
 					noDataText="{i18n>tsNoRows}"
 					alternateRowColors="false"
 					sticky="ColumnHeaders"
 					class="hrxTsTable"
-					selectionChange=".onSelectionChange"
 					updateFinished=".onTableUpdated">
 					<hrx:columns>
 						<!-- The seven days take an equal tenth of the width each, weekend included,

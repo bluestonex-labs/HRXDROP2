@@ -43,8 +43,10 @@ sap.ui.define([
 	var GRACE_WORKING_DAYS = 3;
 
 	// How long after the last change a booking is saved without pressing Save.
-	// Browser storage key (plus the user's email) for the projects they've added to their timesheet
+	// Browser storage keys (plus the user's email): the projects they've added to their
+	// timesheet, and the ones they've removed from it (hidden, their hours kept)
 	var KEPT_PROJECTS_KEY = "hrx.timesheet.keptProjects.";
+	var HIDDEN_PROJECTS_KEY = "hrx.timesheet.hiddenProjects.";
 	var AUTO_SAVE_DELAY_MS = 1500;
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.Timesheet", {
@@ -77,6 +79,7 @@ sap.ui.define([
 				viewingName: "",
 				isAdmin: false,
 				people: [],
+				removable: [],
 				userId: "",
 				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
@@ -433,13 +436,19 @@ sap.ui.define([
 		 * A week starts with internal work and the projects the user has added before -
 		 * a consultant is assigned to far more client projects than they book against
 		 * in any one week, so the rest are added on demand. Projects they've been
-		 * released from drop off. Anything already booked stays on the sheet regardless.
+		 * released from drop off. Anything already booked stays on the sheet, unless the
+		 * user removed the project with Delete.
 		 * @param {Array<object>} aRows every row the assignments produced
 		 * @returns {Array<object>} the rows to show by default
 		 */
 		_defaultRows: function (aRows) {
-			var aKept = this._keptProjects();
+			var aKept = this._storedProjects(KEPT_PROJECTS_KEY);
+			var aHidden = this._storedProjects(HIDDEN_PROJECTS_KEY);
 			return aRows.filter(function (oRow) {
+				// Removed from the sheet with Delete (booked hours and all) until added back
+				if (aHidden.indexOf(oRow.ProjectID) !== -1) {
+					return false;
+				}
 				var bBooked = oRow.days.some(function (oDay) {
 					return !!oDay.time;
 				});
@@ -452,36 +461,38 @@ sap.ui.define([
 		},
 
 		/**
-		 * The projects the user has added to their own timesheet, remembered in this
-		 * browser until they delete them (see _rememberProjects).
+		 * A list of project IDs remembered in this browser for the user's own timesheet:
+		 * the projects they've added (KEPT_PROJECTS_KEY) or removed (HIDDEN_PROJECTS_KEY).
+		 * @param {string} sKey one of the two keys
 		 * @returns {Array<string>} project IDs
 		 */
-		_keptProjects: function () {
-			// Someone else's timesheet: their list lives in their own browser
+		_storedProjects: function (sKey) {
+			// Someone else's timesheet: their lists live in their own browser
 			if (this.getModel("tsView").getProperty("/readOnly")) {
 				return [];
 			}
 			try {
-				return JSON.parse(window.localStorage.getItem(KEPT_PROJECTS_KEY + this._sUserEmail.toLowerCase()) || "[]");
+				return JSON.parse(window.localStorage.getItem(sKey + this._sUserEmail.toLowerCase()) || "[]");
 			} catch (oError) {
 				return [];
 			}
 		},
 
 		/**
-		 * Adds projects to, or takes them off, the user's remembered list.
+		 * Adds projects to, or takes them off, one of the user's remembered lists.
+		 * @param {string} sKey KEPT_PROJECTS_KEY or HIDDEN_PROJECTS_KEY
 		 * @param {Array<string>} aProjectIds project IDs
-		 * @param {boolean} bKeep true to remember them, false to forget them
+		 * @param {boolean} bAdd true to add them, false to take them off
 		 */
-		_rememberProjects: function (aProjectIds, bKeep) {
-			var aKept = this._keptProjects().filter(function (sId) {
+		_storeProjects: function (sKey, aProjectIds, bAdd) {
+			var aList = this._storedProjects(sKey).filter(function (sId) {
 				return aProjectIds.indexOf(sId) === -1;
 			});
 			try {
-				window.localStorage.setItem(KEPT_PROJECTS_KEY + this._sUserEmail.toLowerCase(),
-					JSON.stringify(bKeep ? aKept.concat(aProjectIds) : aKept));
+				window.localStorage.setItem(sKey + this._sUserEmail.toLowerCase(),
+					JSON.stringify(bAdd ? aList.concat(aProjectIds) : aList));
 			} catch (oError) {
-				// Private browsing can refuse storage; the project then just isn't remembered.
+				// Private browsing can refuse storage; the change then just isn't remembered.
 			}
 		},
 
@@ -950,10 +961,6 @@ sap.ui.define([
 		 * the select-all checkbox unticked even with every deletable row selected.
 		 * @param {sap.ui.base.Event} oEvent the selectionChange event
 		 */
-		onSelectionChange: function (oEvent) {
-			this.getModel("tsView").setProperty("/selectedCount", oEvent.getSource().getSelectedItems().length);
-		},
-
 		/**
 		 * Drops every tick in the grid and the count behind the Delete button.
 		 * selectionChange does not fire for a programmatic clear, so the count has to
@@ -1167,9 +1174,19 @@ sap.ui.define([
 			var aRows = this.getModel("ts").getProperty("/rows") || [];
 
 			// Added projects stay on the user's timesheet from week to week
-			this._rememberProjects(aAssignments.map(function (oAssignment) {
+			var aIds = aAssignments.map(function (oAssignment) {
 				return oAssignment.ProjectID;
-			}), true);
+			});
+			var aHidden = this._storedProjects(HIDDEN_PROJECTS_KEY);
+			this._storeProjects(KEPT_PROJECTS_KEY, aIds, true);
+			this._storeProjects(HIDDEN_PROJECTS_KEY, aIds, false);
+			// A project removed earlier may have hours booked: read the week again to show them
+			if (aIds.some(function (sId) {
+				return aHidden.indexOf(sId) !== -1;
+			})) {
+				this._loadWeek();
+				return;
+			}
 
 			aAssignments.forEach(function (oAssignment) {
 				aRows.push({
@@ -1209,37 +1226,48 @@ sap.ui.define([
 		 * Removes the selected rows. Anything already stored is deleted on the backend
 		 * first; rows that were only added on screen simply disappear.
 		 */
+		/**
+		 * Delete: pick projects to take off the timesheet. Their booked hours stay saved;
+		 * the project is only hidden until it's added back with Add projects.
+		 * BlueStoneX's own projects can't be removed.
+		 */
 		onDeleteProjects: function () {
-			if (this.getModel("tsView").getProperty("/readOnly")) {
+			var oViewModel = this.getModel("tsView");
+			if (oViewModel.getProperty("/readOnly")) {
 				return;
 			}
-			var oTable = this.byId("timesheetTable");
-			var aSelected = oTable ? oTable.getSelectedItems() : [];
-
-			if (!aSelected.length) {
-				Toast.error(this.getText("tsSelectRow"));
-				return;
-			}
-
-			var aRows = this.getModel("ts").getProperty("/rows") || [];
-			var aSelectedRows = aSelected.map(function (oItem) {
-				return oItem.getBindingContext("ts").getObject();
-			}).filter(function (oRow) {
-				// onSelectionChange already refuses these, so this only guards against a
-				// selection set some other way - but deleting one must never be possible.
-				return oRow.deletable !== false;
+			var aRemovable = (this.getModel("ts").getProperty("/rows") || []).filter(function (oRow) {
+				return !oRow.readOnly && oRow.deletable !== false;
 			});
-
-			if (!aSelectedRows.length) {
-				Toast.error(this.getText("tsRowNotDeletable"));
+			if (!aRemovable.length) {
+				Toast.error(this.getText("tsNothingToRemove"));
 				return;
 			}
-			var aNames = aSelectedRows.map(function (oRow) {
-				return oRow.project;
-			}).join(", ");
+			oViewModel.setProperty("/removable", aRemovable.map(function (oRow) {
+				return { ProjectID: oRow.ProjectID, project: oRow.project, ClientDesc: oRow.ClientDesc };
+			}));
+			this._openDialog("_pRemoveProjectsDialog", "bsx.hrx.hrx2026.fragment.RemoveTimesheetProjectsDialog");
+		},
 
-			this._confirmDelete(aNames, function () {
-				this._flushAutoSave().then(this._deleteRows.bind(this, aRows, aSelectedRows));
+		/**
+		 * Hides the chosen projects from the user's timesheet, saving any typed hours first.
+		 * @param {sap.ui.base.Event} oEvent the dialog's confirm event
+		 */
+		onConfirmRemoveProjects: function (oEvent) {
+			var aIds = (oEvent.getParameter("selectedItems") || []).map(function (oItem) {
+				return oItem.getBindingContext("tsView").getProperty("ProjectID");
+			});
+			if (!aIds.length) {
+				return;
+			}
+			this._flushAutoSave().then(function () {
+				this._storeProjects(KEPT_PROJECTS_KEY, aIds, false);
+				this._storeProjects(HIDDEN_PROJECTS_KEY, aIds, true);
+				this.getModel("ts").setProperty("/rows", (this.getModel("ts").getProperty("/rows") || []).filter(function (oRow) {
+					return aIds.indexOf(oRow.ProjectID) === -1;
+				}));
+				this._recalculate();
+				MessageToast.show(this.getText("tsRemovedFromSheet"));
 			}.bind(this));
 		},
 
@@ -1252,7 +1280,7 @@ sap.ui.define([
 		 */
 		_deleteRows: function (aRows, aSelectedRows) {
 			var aRecIds = [];
-			this._rememberProjects(aSelectedRows.map(function (oRow) {
+			this._storeProjects(KEPT_PROJECTS_KEY, aSelectedRows.map(function (oRow) {
 				return oRow.ProjectID;
 			}), false);
 			aSelectedRows.forEach(function (oRow) {

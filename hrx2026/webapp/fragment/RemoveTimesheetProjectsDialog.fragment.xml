@@ -1,0 +1,13 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<!-- Delete on My Timesheet: pick projects to take off the sheet. Booked hours stay
+	     saved; Add projects brings a project back. See Timesheet.onDeleteProjects. -->
+	<SelectDialog
+		title="{i18n>tsRemoveTitle}"
+		multiSelect="true"
+		rememberSelections="false"
+		confirmButtonText="{i18n>tsConfirmDeleteAction}"
+		items="{path: 'tsView>/removable', templateShareable: false}"
+		confirm=".onConfirmRemoveProjects">
+		<StandardListItem title="{tsView>project}" description="{tsView>ClientDesc}" />
+	</SelectDialog>
+</core:FragmentDefinition>
