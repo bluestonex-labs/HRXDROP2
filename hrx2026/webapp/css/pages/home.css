@@ -368,9 +368,10 @@
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 16px;
-	/* each column keeps its own height: a long list on one side no longer stretches
-	   the card on the other with empty space */
-	align-items: start;
+	/* Both columns are the same fixed height, so Team today ends level with the
+	   cards beside it; each list scrolls inside its own card instead of growing it. */
+	height: 560px;
+	align-items: stretch;
 	margin-bottom: 32px;
 }
 
@@ -379,18 +380,51 @@
 	flex-direction: column;
 	gap: 16px;
 	min-width: 0;
+	min-height: 0;
 }
 
-/* The two cards keep their own height; the stack never squeezes them */
-.hrxHomePage .hrxHomeDashStack > .hrxHomeCard {
-	flex-shrink: 0;
+/* Team today fills its column; its table takes what is left under the header */
+.hrxHomePage .hrxHomeDashGrid > .hrxHomeTeamCard.sapMFlexBox {
+	height: 100%;
+	min-height: 0;
+}
+
+/* Pending approvals takes what its rows need, up to half the column; past that
+   its rows scroll. Billable utilisation takes the rest, its people scrolling. */
+.hrxHomePage .hrxHomeDashStack > .hrxHomeApprCard.sapMFlexBox {
+	flex: 0 1 auto;
+	max-height: 50%;
+	min-height: 0;
+}
+
+.hrxHomePage .hrxHomeDashStack > .hrxHomeApprCard .hrxHomeApprRows {
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.hrxHomePage .hrxHomeDashStack > .hrxHomeUtilCard.sapMFlexBox {
+	flex: 1 1 0;
+	min-height: 0;
+}
+
+.hrxHomePage .hrxHomeUtilCard > .hrxHomeCardBody {
+	flex: 1 1 0;
+	min-height: 0;
+}
+
+.hrxHomePage .hrxHomeUtilCard .hrxHomeUtilList {
+	flex: 1 1 0;
+	min-height: 0;
+	max-height: none;
 }
 
 /* ── TEAM TODAY ───────────────────────────────────────────────────────────── */
 
 /* .tt-scroll: the table scrolls past 480px, its column headers staying put */
 .hrxHomePage .hrxHomeTeamScroll.sapMScrollCont {
-	max-height: 480px;
+	flex: 1 1 0;
+	min-height: 0;
+	/* overrides the height UI5 writes on the control's own element */
 	height: auto !important;
 }
 
@@ -1488,8 +1522,27 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
+	/* One column: each card takes its own height again, its list scrolling past a limit */
 	.hrxHomePage .hrxHomeDashGrid {
 		grid-template-columns: minmax(0, 1fr);
+		height: auto;
+	}
+
+	.hrxHomePage .hrxHomeTeamScroll.sapMScrollCont {
+		flex: none;
+		max-height: 480px;
+	}
+
+	.hrxHomePage .hrxHomeDashStack > .hrxHomeApprCard.sapMFlexBox,
+	.hrxHomePage .hrxHomeDashStack > .hrxHomeUtilCard.sapMFlexBox,
+	.hrxHomePage .hrxHomeUtilCard > .hrxHomeCardBody {
+		flex: none;
+		max-height: none;
+	}
+
+	.hrxHomePage .hrxHomeUtilCard .hrxHomeUtilList {
+		flex: none;
+		max-height: 360px;
 	}
 }
 
