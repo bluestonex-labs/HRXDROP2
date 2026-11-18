@@ -1,0 +1,109 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<!-- Reviewing one claim waiting for the approver's decision: who and what, every
+	     line with its receipt, the mileage, any policy warnings, then approve it or
+	     return it to the employee with a reason. -->
+	<Dialog
+		id="expenseReviewDialog"
+		title="{= ${i18n>eaReviewTitle} + ' ' + ${ea>/review/claimNumber} }"
+		contentWidth="960px"
+		resizable="true"
+		draggable="true"
+		class="hrxExpenses hrxExDialog">
+		<content>
+			<VBox renderType="Bare" class="hrxExDialogBody" busy="{eaView>/reviewBusy}" busyIndicatorDelay="0">
+				<HBox renderType="Bare" class="hrxExReviewHead">
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>eaColEmployee}" />
+						<Text text="{= ${ea>/review/employeeName} + (${ea>/review/employeeNumber} ? ' · ' + ${ea>/review/employeeNumber} : '') }" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>exClaimPeriod}" />
+						<Text text="{ea>/review/periodText}" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>eaColStage}" />
+						<Text text="{ea>/review/stageText}" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>exTotal}" />
+						<Text text="{ea>/review/totalText}" class="hrxExStrong" />
+						<Text text="{ea>/review/totalSub}" class="hrxExLineSub" />
+					</VBox>
+				</HBox>
+
+				<MessageStrip
+					text="{ea>/review/flagsText}"
+					type="Warning"
+					showIcon="true"
+					visible="{= !!${ea>/review/flagsText} }"
+					class="hrxExStrip" />
+
+				<Title text="{i18n>exItems}" level="H4" class="hrxExDialogSection" />
+				<Text text="{i18n>exNoItems}" visible="{= ${ea>/review/items}.length === 0 }" class="hrxExNoRows" />
+				<Table items="{path: 'ea>/review/items', templateShareable: false}" visible="{= ${ea>/review/items}.length > 0 }" class="hrxExTable">
+					<columns>
+						<Column width="12%"><Text text="{i18n>exDate}" /></Column>
+						<Column width="18%"><Text text="{i18n>exType}" /></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exReason}" /></Column>
+						<Column hAlign="End" width="12%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaNet}" /></Column>
+						<Column hAlign="End" width="11%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exColTax}" /></Column>
+						<Column hAlign="End" width="12%"><Text text="{i18n>exColAmount}" /></Column>
+						<Column width="11%"><Text text="{i18n>exColReceipt}" /></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{ea>dateText}" />
+								<VBox renderType="Bare">
+									<Text text="{ea>typeText}" />
+									<Text text="{ea>destination}" class="hrxExLineSub" />
+								</VBox>
+								<Text text="{ea>reasonForTrip}" />
+								<Text text="{ea>netText}" />
+								<Text text="{ea>taxText}" />
+								<VBox renderType="Bare">
+									<Text text="{ea>grossText}" class="hrxExStrong" />
+									<Text text="{ea>fxText}" visible="{= !!${ea>fxText} }" class="hrxExLineSub" />
+								</VBox>
+								<HBox renderType="Bare">
+									<Link text="{i18n>eaViewReceipt}" press=".onOpenReviewReceipt" visible="{= !!${ea>receiptAttached} }" />
+									<Text text="{i18n>eaNoReceipt}" visible="{= !${ea>receiptAttached} }" class="hrxExLineSub" />
+								</HBox>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<Title text="{i18n>exMileage}" level="H4" class="hrxExDialogSection" visible="{= ${ea>/review/mileageClaims}.length > 0 }" />
+				<Table items="{path: 'ea>/review/mileageClaims', templateShareable: false}" visible="{= ${ea>/review/mileageClaims}.length > 0 }" class="hrxExTable">
+					<columns>
+						<Column width="14%"><Text text="{i18n>exTripDate}" /></Column>
+						<Column><Text text="{i18n>exDestination}" /></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exReason}" /></Column>
+						<Column hAlign="End" width="12%"><Text text="{i18n>exMiles}" /></Column>
+						<Column hAlign="End" width="12%"><Text text="{i18n>exColAmount}" /></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{ea>dateText}" />
+								<Text text="{ea>destination}" />
+								<Text text="{ea>reasonForTrip}" />
+								<Text text="{ea>milesText}" />
+								<Text text="{ea>amountText}" class="hrxExStrong" />
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<Label text="{i18n>eaComment}" labelFor="reviewComment" class="hrxExDialogSection" />
+				<TextArea id="reviewComment" value="{eaView>/comment}" rows="3" width="100%" maxLength="500" placeholder="{i18n>eaCommentPlaceholder}" />
+			</VBox>
+		</content>
+		<buttons>
+			<Button text="{i18n>eaApprove}" type="Accept" icon="sap-icon://accept" press=".onApprove" />
+			<Button text="{i18n>eaReturn}" type="Reject" icon="sap-icon://undo" press=".onReturn" />
+			<Button text="{i18n>eaClose}" press=".onCloseReview" />
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

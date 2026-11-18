@@ -1,0 +1,242 @@
+<mvc:View
+	controllerName="bsx.hrx.hrx2026.controller.MobileExpenses"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	displayBlock="true"
+	height="100%">
+	<!-- Expenses on a phone. The models are the desktop page's own (ex, exView, see
+	     Expenses.controller); exView>/panel switches between the claims ("list" or
+	     "summary") and one claim ("claim"). Receipts are photographed with the camera
+	     and read into lines by the expense service. -->
+	<Page showHeader="false" enableScrolling="false" class="hrxMbPage hrxMbExpenses">
+		<content>
+			<VBox renderType="Bare" busy="{exView>/busy}" busyIndicatorDelay="0" class="hrxMbScreen">
+				<ScrollContainer vertical="true" horizontal="false" class="hrxMbContent">
+
+					<MessageStrip text="{exView>/error}" type="Error" showIcon="true" visible="{= !!${exView>/error} }" class="hrxMbExStrip"/>
+
+					<!-- ═════════ My claims ═════════ -->
+					<VBox renderType="Bare" visible="{= ${exView>/panel} !== 'claim' }">
+						<Button text="{i18n>exPhotographReceipt}" icon="sap-icon://camera" press=".onPhotographNewClaim" class="hrxMbBtn hrxMbBtnPrimary"/>
+						<Button text="{i18n>exNewClaimNoReceipt}" icon="sap-icon://add" press=".onCreateClaim" class="hrxMbBtn hrxMbBtnGhost"/>
+
+						<HBox renderType="Bare" class="hrxMbKpis">
+							<VBox renderType="Bare" class="hrxMbKpi hrxMbKpiOk">
+								<Text text="{i18n>exKpiApproved}" class="hrxMbKpiLabel"/>
+								<Text text="{ex>/summary/approvedText}" class="hrxMbKpiNum hrxMbExKpiMoney"/>
+							</VBox>
+							<VBox renderType="Bare" class="hrxMbKpi">
+								<Text text="{i18n>exKpiPending}" class="hrxMbKpiLabel"/>
+								<Text text="{ex>/summary/pendingText}" class="hrxMbKpiNum hrxMbExKpiMoney"/>
+							</VBox>
+						</HBox>
+
+						<Text text="{i18n>exListTitle}" class="hrxMbSectionTitle"/>
+						<VBox renderType="Bare" visible="{= ${ex>/rows}.length === 0 }" class="hrxMbCard">
+							<Text text="{i18n>exNoClaims}" class="hrxMbReqTitle"/>
+							<Text text="{i18n>exNoClaimsPhone}" class="hrxMbReqSub"/>
+						</VBox>
+						<VBox renderType="Bare" items="{path: 'ex>/rows', templateShareable: false}" class="hrxMbReqs">
+							<VBox renderType="Bare" class="hrxMbReq hrxMbExCard">
+								<HBox renderType="Bare" class="hrxMbRowB hrxMbReqTop">
+									<VBox renderType="Bare">
+										<Link text="{ex>numberText}" press=".onOpenClaimCard" class="hrxMbExCardLink"/>
+										<Text text="{ex>periodText}" class="hrxMbReqSub"/>
+									</VBox>
+									<VBox renderType="Bare" alignItems="End">
+										<Text text="{ex>totalText}" class="hrxMbExAmount"/>
+										<Text text="{ex>statusText}" class="hrxMbPill">
+											<customData><core:CustomData key="pill" value="{ex>statusPill}" writeToDom="true"/></customData>
+										</Text>
+									</VBox>
+								</HBox>
+							</VBox>
+						</VBox>
+					</VBox>
+
+					<!-- ═════════ One claim ═════════ -->
+					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'claim' }">
+						<HBox renderType="Bare" class="hrxMbRowB hrxMbExHead">
+							<Button icon="sap-icon://nav-back" tooltip="{i18n>exBack}" press=".onBack" class="hrxMbIconBtn"/>
+							<VBox renderType="Bare" class="hrxMbExHeadText">
+								<Text text="{= ${ex>/claim/claimNumber} || ${i18n>exNewClaim} }" class="hrxMbReqTitle"/>
+								<Text text="{exView>/savedText}" visible="{= !${exView>/readOnly} }" class="hrxMbReqSub"/>
+							</VBox>
+							<Text text="{ex>/claim/statusText}" class="hrxMbPill">
+								<customData><core:CustomData key="pill" value="{ex>/claim/statusPill}" writeToDom="true"/></customData>
+							</Text>
+						</HBox>
+
+						<MessageStrip text="{ex>/claim/banner}" type="{ex>/claim/bannerType}" showIcon="true" visible="{= !!${ex>/claim/banner} }" class="hrxMbExStrip"/>
+
+						<VBox renderType="Bare" class="hrxMbCard hrxMbExGeneral">
+							<Label text="{i18n>exClaimPeriod}" required="true" class="hrxMbLabel"/>
+							<DatePicker value="{ex>/claim/claimPeriod}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy"
+								editable="{= !${exView>/readOnly} }" change=".onClaimPeriodChange" width="100%"/>
+							<Label text="{i18n>exCountry}" class="hrxMbLabel"/>
+							<Select selectedKey="{ex>/claim/country}" change=".onCountryChange" width="100%"
+								visible="{= !${exView>/readOnly} &amp;&amp; ${ex>/claim/items}.length === 0 &amp;&amp; ${ex>/claim/mileageClaims}.length === 0 }">
+								<core:Item key="UK" text="{i18n>eaUk}"/>
+								<core:Item key="IN" text="{i18n>eaIndia}"/>
+							</Select>
+							<Text text="{= ${ex>/claim/countryName} + ' · ' + ${ex>/claim/currency} }"
+								visible="{= !!${exView>/readOnly} || ${ex>/claim/items}.length > 0 || ${ex>/claim/mileageClaims}.length > 0 }"/>
+						</VBox>
+
+						<!-- Receipts first: the camera, then the phone's own photos and files -->
+						<VBox renderType="Bare" visible="{= !${exView>/readOnly} }">
+							<Button text="{i18n>exPhotographReceipt}" icon="sap-icon://camera" press=".onPhotographReceipt" class="hrxMbBtn hrxMbBtnPrimary"/>
+							<HBox renderType="Bare" class="hrxMbExButtons">
+								<Button text="{i18n>exFromPhotos}" icon="sap-icon://attachment" press=".onPickReceipts" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+								<Button text="{i18n>exAddItem}" icon="sap-icon://add" press=".onAddItem" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+							</HBox>
+						</VBox>
+
+						<Text text="{ex>/claim/itemsHint}" class="hrxMbSectionTitle"/>
+						<VBox renderType="Bare" items="{path: 'ex>/claim/items', templateShareable: false}" class="hrxMbReqs">
+							<VBox renderType="Bare" class="hrxMbReq hrxMbExCard">
+								<HBox renderType="Bare" visible="{= !!${ex>reading} }" class="hrxMbExReading">
+									<BusyIndicator size="14px"/>
+									<Text text="{= ${i18n>exReading} + ' ' + ${ex>receiptFileName} + '…' }"/>
+								</HBox>
+
+								<HBox renderType="Bare" visible="{= !${ex>reading} }" class="hrxMbRowB hrxMbReqTop">
+									<VBox renderType="Bare" class="hrxMbExLineText">
+										<Link text="{ex>typeText}" press=".onToggleItem" class="hrxMbExCardLink"/>
+										<Text text="{ex>subText}" class="hrxMbReqSub"/>
+										<Text text="{ex>aiText}" visible="{= !!${ex>aiText} }" class="hrxMbExAi"/>
+									</VBox>
+									<VBox renderType="Bare" alignItems="End">
+										<Text text="{ex>grossText}" class="hrxMbExAmount"/>
+										<Text text="{ex>stateText}" visible="{= !!${ex>stateText} }" class="hrxMbPill">
+											<customData><core:CustomData key="pill" value="{ex>statePill}" writeToDom="true"/></customData>
+										</Text>
+									</VBox>
+								</HBox>
+
+								<!-- What to fix on this line -->
+								<VBox items="{path: 'ex>issues', templateShareable: false}" renderType="Bare" visible="{= !${ex>reading} }">
+									<VBox renderType="Bare" class="hrxMbExIssue">
+										<customData><core:CustomData key="need" value="{ex>need}" writeToDom="true"/></customData>
+										<Text text="{= ${ex>label} + ' — ' + ${ex>detail} }"/>
+										<HBox renderType="Bare" class="hrxMbExButtons">
+											<Button text="{ex>fixText}" visible="{= !!${ex>fix} &amp;&amp; !${exView>/readOnly} }" press=".onIssueFix" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+											<Button text="{ex>dismissText}" visible="{= !!${ex>dismissText} &amp;&amp; !${exView>/readOnly} }" press=".onIssueDismiss" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+										</HBox>
+									</VBox>
+								</VBox>
+
+								<!-- The whole line, to edit: tap the type to open it -->
+								<VBox renderType="Bare" visible="{= !!${ex>open} &amp;&amp; !${ex>reading} }" class="hrxMbExEdit">
+									<Label text="{i18n>exReason}" required="true" class="hrxMbLabel"/>
+									<Input value="{ex>reasonForTrip}" placeholder="{i18n>exReasonPlaceholder}" editable="{= !${exView>/readOnly} }"
+										valueState="{= ${exView>/showErrors} &amp;&amp; !${ex>reasonForTrip} ? 'Error' : 'None' }" liveChange=".onItemFieldChange">
+										<customData><core:CustomData key="field" value="reasonForTrip"/></customData>
+									</Input>
+									<Label text="{i18n>exType}" required="true" class="hrxMbLabel"/>
+									<Select selectedKey="{ex>expenseType_code}" forceSelection="false" editable="{= !${exView>/readOnly} }" width="100%"
+										items="{path: 'ex>/types', templateShareable: false}" change=".onItemFieldChange">
+										<core:Item key="{ex>code}" text="{ex>description}"/>
+										<customData><core:CustomData key="field" value="expenseType_code"/></customData>
+									</Select>
+									<Label text="{i18n>exDate}" required="true" class="hrxMbLabel"/>
+									<DatePicker value="{ex>expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" editable="{= !${exView>/readOnly} }"
+										change=".onItemFieldChange" width="100%">
+										<customData><core:CustomData key="field" value="expenseDate"/></customData>
+									</DatePicker>
+									<Label text="{i18n>exDestination}" class="hrxMbLabel"/>
+									<Input value="{ex>destination}" editable="{= !${exView>/readOnly} }" liveChange=".onItemFieldChange">
+										<customData><core:CustomData key="field" value="destination"/></customData>
+									</Input>
+									<Label text="{i18n>exPaidIn}" class="hrxMbLabel"/>
+									<Select selectedKey="{ex>paidCurrency}" editable="{= !${exView>/readOnly} }" width="100%"
+										items="{path: 'ex>/currencies', templateShareable: false}" change=".onItemCurrencyChange">
+										<core:Item key="{ex>code}" text="{ex>text}"/>
+									</Select>
+									<Label text="{= ${i18n>exForeignAmount} + ' (' + ${ex>paidCurrency} + ')' }" visible="{= ${ex>paidCurrency} !== ${ex>/claim/currency} }" class="hrxMbLabel"/>
+									<Input value="{ex>originalAmount}" type="Number" editable="{= !${exView>/readOnly} }" change=".onForeignAmountChange"
+										visible="{= ${ex>paidCurrency} !== ${ex>/claim/currency} }"/>
+									<Label text="{= ${i18n>exAmount} + ' (' + ${ex>/claim/currency} + ')' }" required="true" class="hrxMbLabel"/>
+									<Input value="{ex>grossAmount}" type="Number" editable="{= !${exView>/readOnly} }" liveChange=".onItemFieldChange">
+										<customData><core:CustomData key="field" value="grossAmount"/></customData>
+									</Input>
+									<Label text="{i18n>exTaxType}" class="hrxMbLabel"/>
+									<Select selectedKey="{ex>vatType}" editable="{= !${exView>/readOnly} }" width="100%"
+										items="{path: 'ex>/claim/taxTypes', templateShareable: false}" change=".onItemFieldChange">
+										<core:Item key="{ex>code}" text="{ex>text}"/>
+										<customData><core:CustomData key="field" value="vatType"/></customData>
+									</Select>
+									<Text text="{ex>splitText}" class="hrxMbReqSub"/>
+									<HBox renderType="Bare" class="hrxMbExButtons">
+										<Button text="{i18n>exAttachReceipt}" icon="sap-icon://camera" press=".onAttachReceipt"
+											visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} }" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+										<Button text="{i18n>exViewReceipt}" icon="sap-icon://show" press=".onOpenReceipt"
+											visible="{= !!${ex>receiptAttached} }" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+										<Button text="{i18n>exRemove}" icon="sap-icon://delete" press=".onRemoveItem"
+											visible="{= !${exView>/readOnly} }" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+									</HBox>
+								</VBox>
+							</VBox>
+						</VBox>
+
+						<!-- Mileage -->
+						<HBox renderType="Bare" class="hrxMbRowB">
+							<Text text="{ex>/claim/mileageHint}" class="hrxMbSectionTitle"/>
+							<Button text="{i18n>exAddMileage}" icon="sap-icon://add" press=".onAddMileage" visible="{= !${exView>/readOnly} }"
+								class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+						</HBox>
+						<VBox renderType="Bare" items="{path: 'ex>/claim/mileageClaims', templateShareable: false}" class="hrxMbReqs">
+							<VBox renderType="Bare" class="hrxMbReq hrxMbExCard hrxMbExEdit">
+								<HBox renderType="Bare" class="hrxMbRowB">
+									<Text text="{= ${ex>milesCount} ? ${ex>milesCount} + ' miles · ' + ${ex>rateText} : ${i18n>exMileage} }" class="hrxMbReqTitle"/>
+									<Text text="{ex>amountText}" class="hrxMbExAmount"/>
+								</HBox>
+								<Label text="{i18n>exTripDate}" required="true" class="hrxMbLabel"/>
+								<DatePicker value="{ex>tripDate}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" editable="{= !${exView>/readOnly} }"
+									change=".onMileageFieldChange" width="100%">
+									<customData><core:CustomData key="field" value="tripDate"/></customData>
+								</DatePicker>
+								<Label text="{i18n>exDestination}" required="true" class="hrxMbLabel"/>
+								<Input value="{ex>destination}" editable="{= !${exView>/readOnly} }" liveChange=".onMileageFieldChange">
+									<customData><core:CustomData key="field" value="destination"/></customData>
+								</Input>
+								<Label text="{i18n>exReason}" required="true" class="hrxMbLabel"/>
+								<Input value="{ex>reasonForTrip}" editable="{= !${exView>/readOnly} }" liveChange=".onMileageFieldChange">
+									<customData><core:CustomData key="field" value="reasonForTrip"/></customData>
+								</Input>
+								<Label text="{i18n>exEngine}" class="hrxMbLabel"/>
+								<Select selectedKey="{ex>engineType}" editable="{= !${exView>/readOnly} }" width="100%" change=".onMileageFieldChange">
+									<core:Item key="Petrol" text="{i18n>exEnginePetrol}"/>
+									<core:Item key="Diesel" text="{i18n>exEngineDiesel}"/>
+									<core:Item key="Hybrid" text="{i18n>exEngineHybrid}"/>
+									<core:Item key="Electric" text="{i18n>exEngineElectric}"/>
+									<customData><core:CustomData key="field" value="engineType"/></customData>
+								</Select>
+								<Label text="{i18n>exMiles}" required="true" class="hrxMbLabel"/>
+								<Input value="{ex>milesCount}" type="Number" editable="{= !${exView>/readOnly} }" liveChange=".onMileageFieldChange">
+									<customData><core:CustomData key="field" value="milesCount"/></customData>
+								</Input>
+								<Button text="{i18n>exRemove}" icon="sap-icon://delete" press=".onRemoveMileage" visible="{= !${exView>/readOnly} }"
+									class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+							</VBox>
+						</VBox>
+					</VBox>
+				</ScrollContainer>
+
+				<!-- The bar at the foot of a claim being edited: the total, what is left, Apply -->
+				<VBox renderType="Bare" visible="{= ${exView>/panel} === 'claim' &amp;&amp; !${exView>/readOnly} }" class="hrxMbActionBar hrxMbExBar">
+					<HBox renderType="Bare" class="hrxMbRowB">
+						<VBox renderType="Bare">
+							<Text text="{ex>/claim/totalText}" class="hrxMbExBarTotal"/>
+							<Text text="{ex>/claim/readyText}" class="hrxMbReqSub"/>
+						</VBox>
+						<Button text="{i18n>exDeleteDraft}" press=".onDeleteClaim" visible="{= ${ex>/claim/status} === 'Draft' }"
+							class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
+					</HBox>
+					<Button text="{i18n>exApply}" icon="sap-icon://accept" press=".onApply" class="hrxMbBtn hrxMbBtnPrimary"/>
+				</VBox>
+			</VBox>
+		</content>
+	</Page>
+</mvc:View>

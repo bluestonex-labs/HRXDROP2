@@ -301,6 +301,8 @@ body.hrxApp {
 .hrxApp .hrxToolPage [data-nav-key="explorer"] { --hrx-nav-icon: url("../img/nav/explorer.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="sickness"] { --hrx-nav-icon: url("../img/nav/sickness.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="documents"] { --hrx-nav-icon: url("../img/nav/documents.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="expenses"] { --hrx-nav-icon: url("../img/nav/expenses.svg"); }
+.hrxApp .hrxToolPage [data-nav-key="expenseapprovals"] { --hrx-nav-icon: url("../img/nav/expenseapprovals.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="timesheetreport"] { --hrx-nav-icon: url("../img/nav/timesheetreport.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="utilisation"] { --hrx-nav-icon: url("../img/nav/utilisation.svg"); }
 .hrxApp .hrxToolPage [data-nav-key="resources"] { --hrx-nav-icon: url("../img/nav/resources.svg"); }
