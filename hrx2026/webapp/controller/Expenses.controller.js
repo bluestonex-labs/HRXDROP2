@@ -214,6 +214,7 @@ sap.ui.define([
 					periodText: displayDate(oClaim.claimPeriod),
 					statusText: oStatus.text,
 					statusState: oStatus.state,
+					statusPill: ExpenseClaims.pillOf(oStatus.state),
 					netText: ExpenseClaims.money(oTotals.net, oClaim.currency),
 					taxText: ExpenseClaims.money(oTotals.tax, oClaim.currency),
 					totalText: ExpenseClaims.money(oTotals.total, oClaim.currency)
@@ -352,9 +353,17 @@ sap.ui.define([
 		/* ═════════════ Opening, creating and leaving a claim ═════════════ */
 
 		onCreateClaim: function () {
+			this._createClaim().catch(this._showError.bind(this));
+		},
+
+		/**
+		 * Starts a new claim as a draft, in the employee's country, and opens it.
+		 * @returns {Promise<object>} the new draft claim
+		 */
+		_createClaim: function () {
 			var oViewModel = this._viewModel();
 			oViewModel.setProperty("/busy", true);
-			ExpenseService.createClaim({
+			return ExpenseService.createClaim({
 				country: this._sCountry,
 				claimPeriod: ExpenseClaims.todayIso(),
 				currency: ExpenseClaims.CURRENCY_OF_COUNTRY[this._sCountry]
@@ -362,9 +371,28 @@ sap.ui.define([
 				oDraft.items = [];
 				oDraft.mileageClaims = [];
 				this._showClaim(oDraft, false, true);
-			}.bind(this)).catch(this._showError.bind(this)).finally(function () {
+				return oDraft;
+			}.bind(this)).finally(function () {
 				oViewModel.setProperty("/busy", false);
 			});
+		},
+
+		/**
+		 * Phone, on the claims list: photograph a receipt straight into a new claim.
+		 * The camera has to open as part of the tap itself, so the claim is created
+		 * once the photo has been taken.
+		 */
+		onPhotographNewClaim: function () {
+			this._pickFiles(false, function (aFiles) {
+				this._createClaim().then(function () {
+					this._readReceipts(aFiles);
+				}.bind(this)).catch(this._showError.bind(this));
+			}.bind(this), true);
+		},
+
+		/** Phone, in a claim: photograph a receipt; it is read into a new line. */
+		onPhotographReceipt: function () {
+			this._pickFiles(false, this._readReceipts.bind(this), true);
 		},
 
 		/**
@@ -489,6 +517,7 @@ sap.ui.define([
 
 			oClaim.statusText = oStatus.text;
 			oClaim.statusState = oStatus.state;
+			oClaim.statusPill = ExpenseClaims.pillOf(oStatus.state);
 			oClaim.countryName = COUNTRY_NAMES[oClaim.country] || oClaim.country;
 			oClaim.employeeName = oClaim.employeeName || this._oMe.fullName;
 			oClaim.employeeNumber = oClaim.employeeNumber || this._oMe.employeeNumber;
@@ -549,6 +578,7 @@ sap.ui.define([
 					oItem.stateText = this._text("exStateOk");
 					oItem.stateState = "Success";
 				}
+				oItem.statePill = ExpenseClaims.pillOf(oItem.stateState);
 			}.bind(this));
 
 			var oPolicy = this._mPolicies[oClaim.country] || {};
@@ -825,12 +855,19 @@ sap.ui.define([
 		 * Asks for files with the browser's own picker.
 		 * @param {boolean} bMultiple more than one file
 		 * @param {function} fnPicked called with the files
+		 * @param {boolean} [bCamera] take a photo with the camera instead (phones)
 		 */
-		_pickFiles: function (bMultiple, fnPicked) {
+		_pickFiles: function (bMultiple, fnPicked, bCamera) {
 			var oInput = document.createElement("input");
 			oInput.type = "file";
-			oInput.accept = "image/*,application/pdf";
 			oInput.multiple = bMultiple;
+			if (bCamera) {
+				// A phone opens its camera (the back one) instead of the file picker
+				oInput.accept = "image/*";
+				oInput.setAttribute("capture", "environment");
+			} else {
+				oInput.accept = "image/*,application/pdf";
+			}
 			oInput.addEventListener("change", function () {
 				if (oInput.files.length) {
 					fnPicked(Array.prototype.slice.call(oInput.files));
@@ -912,34 +949,18 @@ sap.ui.define([
 				fileForReading(oFile).then(function (oPrepared) {
 					return ExpenseService.readReceipt(oPrepared.base64, oPrepared.mimeType, oClaim.country);
 				}).then(function (oReading) {
-					var bForeign = !!oReading.isForeign;
-					var oNewItem = {
-						expenseDate: oReading.expenseDate || ExpenseClaims.todayIso(),
-						expenseType_code: oReading.matchedType || null,
-						destination: oReading.vendor || "",
-						grossAmount: Number(bForeign ? oReading.homeAmount : oReading.grossAmount) || null,
-						vatType: oReading.vatType || (bForeign ? "ZR" : "STD"),
-						originalAmount: bForeign ? Number(oReading.grossAmount) : null,
-						originalCurrency: bForeign ? oReading.currency : null,
-						fxRate: bForeign ? Number(oReading.fxRate) : null,
-						fxTargetCurrency: bForeign ? oClaim.currency : null,
-						notes: oReading.notes || null
-					};
+					// An itemised receipt becomes one line per printed line
+					var aLines = ExpenseClaims.linesFromReading(oReading, oClaim.currency);
 					return this._queueWrite(function () {
-						return ExpenseService.addItem(oClaim.ID, oNewItem);
-					}).then(function (oItem) {
-						return ExpenseService.putReceipt(oItem.ID, oFile, oFile.name).then(function () {
-							oItem.receiptAttached = true;
-							oItem.receiptFileName = oFile.name;
-							oItem.scanConfidence = oReading.confidence === null || oReading.confidence === undefined ? null : Number(oReading.confidence);
-							oItem.detectedType = oReading.matchedType || null;
-							return oItem;
-						});
+						return this._createReadLines(oClaim, aLines, oFile);
+					}.bind(this));
+				}.bind(this)).then(function (aItems) {
+					aItems.forEach(function (oItem) {
+						oItem.open = false;
+						oItem.dismissed = [];
 					});
-				}.bind(this)).then(function (oItem) {
-					oItem.open = false;
-					oItem.dismissed = [];
-					oClaim.items.splice(oClaim.items.indexOf(oPlaceholder), 1, oItem);
+					// The new lines take the "Reading…" row's place
+					Array.prototype.splice.apply(oClaim.items, [oClaim.items.indexOf(oPlaceholder), 1].concat(aItems));
 					this._decorate();
 				}.bind(this)).catch(function (oError) {
 					oClaim.items.splice(oClaim.items.indexOf(oPlaceholder), 1);
@@ -947,6 +968,55 @@ sap.ui.define([
 					MessageBox.warning(this._text("exReadError", [oFile.name, oError.message]));
 				}.bind(this));
 			}.bind(this));
+		},
+
+		/**
+		 * Creates the lines read from one receipt. Where it can, the photo goes up once,
+		 * onto the first line, and the service copies it to the others (shareReceipt),
+		 * so a phone on a slow connection uploads it only once. shareReceipt copies it
+		 * to every line of the claim without a receipt, so when another line is still
+		 * waiting for its own receipt, each new line gets the photo uploaded instead.
+		 * @param {object} oClaim the draft claim
+		 * @param {object[]} aLines from ExpenseClaims.linesFromReading
+		 * @param {File} oFile the receipt
+		 * @returns {Promise<object[]>} the created items
+		 */
+		_createReadLines: function (oClaim, aLines, oFile) {
+			var aItems = [];
+			var pCreated = Promise.resolve();
+			aLines.forEach(function (oLine) {
+				var oItem = Object.assign({}, oLine);
+				delete oItem.scanConfidence;
+				delete oItem.detectedType;
+				pCreated = pCreated.then(function () {
+					return ExpenseService.addItem(oClaim.ID, oItem);
+				}).then(function (oCreated) {
+					oCreated.scanConfidence = oLine.scanConfidence;
+					oCreated.detectedType = oLine.detectedType;
+					aItems.push(oCreated);
+				});
+			});
+			var bOthersWithout = oClaim.items.some(function (oOther) {
+				return !oOther.reading && !oOther.receiptAttached;
+			});
+			return pCreated.then(function () {
+				if (aItems.length > 1 && !bOthersWithout) {
+					return ExpenseService.putReceipt(aItems[0].ID, oFile, oFile.name).then(function () {
+						return ExpenseService.shareReceipt(oClaim.ID, aItems[0].ID);
+					});
+				}
+				return aItems.reduce(function (pUpload, oItem) {
+					return pUpload.then(function () {
+						return ExpenseService.putReceipt(oItem.ID, oFile, oFile.name);
+					});
+				}, Promise.resolve());
+			}).then(function () {
+				aItems.forEach(function (oItem) {
+					oItem.receiptAttached = true;
+					oItem.receiptFileName = oFile.name;
+				});
+				return aItems;
+			});
 		},
 
 		/* ═════════════ Mileage ═════════════ */

@@ -71,7 +71,7 @@ sap.ui.define([
 
 	// The only pages a phone has (Component._usePhoneTargets); any other route sends
 	// it back to Home.
-	var PHONE_ROUTES = ["home", "timesheet", "leave"];
+	var PHONE_ROUTES = ["home", "timesheet", "leave", "expenses"];
 
 	// Which nav row to light up for pages that have none of their own: Missing
 	// timesheets and the Admin page are opened from the App Explorer.

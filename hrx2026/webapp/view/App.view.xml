@@ -110,7 +110,7 @@
 						<FlexItemData growFactor="1" baseSize="0%"/>
 					</layoutData>
 				</NavContainer>
-				<!-- Phone only: the mobile design's tab bar - Home, Timesheet, Leave. -->
+				<!-- Phone only: the mobile design's tab bar - Home, Timesheet, Leave, and Expenses. -->
 				<HBox id="phoneTabs" visible="{device>/system/phone}" renderType="Bare" class="hrxPhoneTabs">
 					<Button text="{i18n>mbTabHome}" press=".onPhoneTab" class="hrxPhoneTab">
 						<customData>
@@ -128,6 +128,12 @@
 						<customData>
 							<core:CustomData key="tab" value="leave" writeToDom="true"/>
 							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'leave' ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+					</Button>
+					<Button text="{i18n>mbTabExpenses}" press=".onPhoneTab" class="hrxPhoneTab">
+						<customData>
+							<core:CustomData key="tab" value="expenses" writeToDom="true"/>
+							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'expenses' ? 'true' : 'false' }" writeToDom="true"/>
 						</customData>
 					</Button>
 				</HBox>

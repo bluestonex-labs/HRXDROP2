@@ -67,14 +67,34 @@ sap.ui.define([], function () {
 		return oResponse.status === 403 && sTokenHeader.toLowerCase() === "required";
 	}
 
+	// Just after the app is deployed, the launchpad (the managed approuter) can still be
+	// working from its cached copy of the app's routes (xs-app.json) for a few minutes.
+	// Until it has the new copy, /expense and /approval are not routes it knows, and it
+	// answers them from the app's own files with 404 "File not found". Such an answer
+	// is waited out and the request sent again, a few times, before giving up with a
+	// message that says what is happening.
+	var ROUTES_NOT_READY_RETRIES = 4;
+	var ROUTES_NOT_READY_WAIT_MS = 8000;
+
+	function isRoutesNotReady(oResponse, sBody) {
+		return oResponse.status === 404 && String(sBody).trim() === "File not found";
+	}
+
+	function wait(iMs) {
+		return new Promise(function (resolve) {
+			setTimeout(resolve, iMs);
+		});
+	}
+
 	/**
 	 * Sends a request and answers its JSON (or null for an empty answer).
 	 * @param {string} sUrl the full url
 	 * @param {object} [oInit] fetch options
 	 * @param {boolean} [bRetried] true on the second go after a fresh CSRF token
+	 * @param {number} [iRouteTries] how many times the routes were not ready yet
 	 * @returns {Promise<object|null>} the answer
 	 */
-	function send(sUrl, oInit, bRetried) {
+	function send(sUrl, oInit, bRetried, iRouteTries) {
 		var oOptions = Object.assign({ credentials: "same-origin" }, oInit);
 		oOptions.headers = Object.assign({ Accept: "application/json" }, oOptions.headers);
 		var bWrite = oOptions.method && oOptions.method !== "GET";
@@ -87,10 +107,21 @@ sap.ui.define([], function () {
 		}).then(function (oResponse) {
 			if (bWrite && !bRetried && isCsrfTokenExpired(oResponse)) {
 				return csrfToken(true).then(function () {
-					return send(sUrl, oInit, true);
+					return send(sUrl, oInit, true, iRouteTries);
 				});
 			}
 			return oResponse.text().then(function (sBody) {
+				if (isRoutesNotReady(oResponse, sBody)) {
+					var iTries = (iRouteTries || 0) + 1;
+					if (iTries <= ROUTES_NOT_READY_RETRIES) {
+						return wait(ROUTES_NOT_READY_WAIT_MS).then(function () {
+							return send(sUrl, oInit, bRetried, iTries);
+						});
+					}
+					var oNotReady = new Error("Expenses is being updated. Try again in a few minutes.");
+					oNotReady.status = 503;
+					throw oNotReady;
+				}
 				if (!oResponse.ok) {
 					throw errorFrom(oResponse, sBody);
 				}

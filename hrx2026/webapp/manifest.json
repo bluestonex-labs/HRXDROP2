@@ -248,6 +248,11 @@
           "viewLevel": 1,
           "viewId": "phoneLeave"
         },
+        "phoneExpenses": {
+          "viewName": "MobileExpenses",
+          "viewLevel": 1,
+          "viewId": "phoneExpenses"
+        },
         "home": {
           "viewName": "Home",
           "viewLevel": 1,

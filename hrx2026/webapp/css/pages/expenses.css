@@ -715,3 +715,124 @@
 		flex-wrap: wrap;
 	}
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Expenses on a phone (view/MobileExpenses.view.xml). The cards, buttons, pills and
+   action bar are the phone screens' own (css/pages/mobile.css); these are the few
+   parts only Expenses has.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.hrxApp .hrxPhone .hrxMbExpenses .hrxMbContent .sapMScrollContDiv,
+.hrxApp .hrxPhone .hrxMbExpenses .hrxMbContent > div {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbExStrip {
+	margin: 0;
+}
+
+/* Two amounts (pounds and rupees) can share a tile: a smaller figure that wraps */
+.hrxApp .hrxPhone .sapMText.hrxMbExKpiMoney {
+	font-size: 20px;
+	line-height: 1.2;
+	white-space: normal;
+}
+
+.hrxApp .hrxPhone .hrxMbExCard {
+	gap: 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbExCardLink.sapMLnk {
+	font-weight: 700;
+	font-size: 15px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExAmount {
+	font-weight: 800;
+	font-size: 15px;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	margin-bottom: 4px;
+}
+
+.hrxApp .hrxPhone .hrxMbExHead {
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbExHeadText {
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbExGeneral {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbExButtons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbExButtons > .sapMBtn {
+	flex: 1 1 auto;
+}
+
+.hrxApp .hrxPhone .hrxMbExReading {
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbExLineText {
+	min-width: 0;
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExAi {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+/* What to fix on a line: amber for the employee, grey for the approver to see */
+.hrxApp .hrxPhone .hrxMbExIssue {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px 12px;
+	margin-top: 6px;
+	border: 1px solid #F5D488;
+	border-radius: var(--radius-s);
+	background: var(--amber-soft);
+	font-size: 13px;
+}
+
+.hrxApp .hrxPhone .hrxMbExIssue[data-need="fyi"] {
+	border-color: var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxPhone .hrxMbExEdit {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbExEdit .sapMInputBase,
+.hrxApp .hrxPhone .hrxMbExEdit .sapMSlt {
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExBarTotal {
+	font-family: var(--disp);
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--ink);
+}

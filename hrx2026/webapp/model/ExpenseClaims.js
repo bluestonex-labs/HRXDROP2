@@ -25,6 +25,9 @@ sap.ui.define([], function () {
 	};
 
 	var CURRENCY_OF_COUNTRY = { UK: "GBP", IN: "INR" };
+
+	// The phone's pills are coloured by their own keys (css/pages/mobile.css hrxMbPill)
+	var PILL_OF_STATE = { None: "neu", Information: "info", Success: "ok", Warning: "warn", Error: "crit" };
 	var SYMBOL_OF_CURRENCY = { GBP: "£", INR: "₹", EUR: "€", USD: "$" };
 
 	// A scan read with less confidence than this asks the employee to check it
@@ -265,6 +268,55 @@ sap.ui.define([], function () {
 		return { toFix: iToFix, flagged: iFlagged, reading: iReading, empty: !aItems.length && !aMileage.length, firstToFix: sFirst };
 	}
 
+	/**
+	 * The expense lines a read receipt becomes, as the old My Expenses app made them
+	 * (its model/scanLines.js):
+	 *  - an itemised receipt (several printed lines that add up to no more than what
+	 *    was charged) becomes one line per printed line, each with its own type;
+	 *  - anything else becomes one line at the receipt total.
+	 * The AI reads printed lines in the receipt's own currency; abroad they are
+	 * converted at the receipt's rate, so each line's amount and its original amount
+	 * agree (the service checks that when the claim is saved).
+	 * @param {object} oReading the service's reading of the receipt (ReceiptDraft)
+	 * @param {string} sClaimCurrency the claim's currency, e.g. GBP
+	 * @returns {object[]} one item to create per line, plus scanConfidence and
+	 *   detectedType for the page's own checks
+	 */
+	function linesFromReading(oReading, sClaimCurrency) {
+		var bForeign = !!oReading.isForeign;
+		var fRate = Number(oReading.fxRate) || null;
+		var aPrinted = Array.isArray(oReading.lineItems) ? oReading.lineItems : [];
+		var bItemised = aPrinted.length > 1 && !oReading.lineItemsExceedTotal;
+
+		var fnLine = function (fReceiptAmount, fHomeAmount, sType, sNotes) {
+			return {
+				expenseDate: oReading.expenseDate || todayIso(),
+				expenseType_code: sType || null,
+				destination: oReading.vendor || "",
+				grossAmount: fHomeAmount === null || isNaN(fHomeAmount) ? null : round2(fHomeAmount),
+				vatType: oReading.vatType || (bForeign ? "ZR" : "STD"),
+				originalAmount: bForeign ? fReceiptAmount : null,
+				originalCurrency: bForeign ? oReading.currency : null,
+				fxRate: bForeign ? fRate : null,
+				fxTargetCurrency: bForeign ? sClaimCurrency : null,
+				notes: sNotes || null,
+				scanConfidence: oReading.confidence === null || oReading.confidence === undefined ? null : Number(oReading.confidence),
+				detectedType: sType || null
+			};
+		};
+
+		if (!bItemised) {
+			var fHome = Number(bForeign ? oReading.homeAmount : oReading.grossAmount);
+			return [fnLine(bForeign ? Number(oReading.grossAmount) : null, fHome, oReading.matchedType, oReading.notes)];
+		}
+		return aPrinted.map(function (oPrinted) {
+			var fAmount = Number(oPrinted.amount);
+			var fHomeLine = bForeign ? (fRate ? fAmount * fRate : null) : fAmount;
+			var sNotes = [oPrinted.description, oPrinted.notes].filter(Boolean).join(" · ");
+			return fnLine(bForeign ? fAmount : null, fHomeLine, oPrinted.matchedType, sNotes);
+		});
+	}
+
 	function isEditable(sStatus) {
 		return sStatus === "Draft" || sStatus === "Returned";
 	}
@@ -285,8 +337,17 @@ sap.ui.define([], function () {
 		missingMileageFields: missingMileageFields,
 		itemChecks: itemChecks,
 		readiness: readiness,
+		linesFromReading: linesFromReading,
 		isEditable: isEditable,
 		isPending: isPending,
+
+		/**
+		 * @param {string} sState a UI5 value state (None, Information, Success, Warning, Error)
+		 * @returns {string} the phone pill's colour key (neu, info, ok, warn, crit)
+		 */
+		pillOf: function (sState) {
+			return PILL_OF_STATE[sState] || "neu";
+		},
 
 		/** @returns {{text: string, state: string}} the status as shown, and its pill colour */
 		statusOf: function (sStatus) {
