@@ -12,6 +12,16 @@
 		busy="{tsView>/saving}"
 		busyIndicatorDelay="0"
 		class="hrxModal hrxModalWide hrxTsAddProjects">
+		<subHeader>
+			<Toolbar>
+				<SearchField
+					id="addProjectsSearch"
+					placeholder="{i18n>tsSearchProjects}"
+					liveChange=".onSearchAddProjects"
+					search=".onSearchAddProjects"
+					width="100%" />
+			</Toolbar>
+		</subHeader>
 		<content>
 			<Table
 				id="addProjectsTable"

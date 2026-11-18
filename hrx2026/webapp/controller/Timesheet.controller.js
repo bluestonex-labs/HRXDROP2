@@ -1088,7 +1088,11 @@ sap.ui.define([
 			}
 			this._loadAvailable().then(function (bLoaded) {
 				if (bLoaded) {
-					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog");
+					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog").then(function () {
+						// Every opening starts with the whole list
+						this.byId("addProjectsSearch").setValue("");
+						this.byId("addProjectsTable").getBinding("items").filter([]);
+					}.bind(this));
 				}
 			}.bind(this));
 		},
@@ -1143,6 +1147,15 @@ sap.ui.define([
 				this._showError("tsErrorAssignments", oError);
 				return false;
 			}.bind(this));
+		},
+
+		/**
+		 * Narrows Add projects to the projects whose name contains what was typed.
+		 * @param {sap.ui.base.Event} oEvent the search field's liveChange or search event
+		 */
+		onSearchAddProjects: function (oEvent) {
+			var sQuery = (oEvent.getParameter("newValue") || oEvent.getParameter("query") || "").trim();
+			this.byId("addProjectsTable").getBinding("items").filter(sQuery ? [new Filter("ProjectDesc", FilterOperator.Contains, sQuery)] : []);
 		},
 
 		onCancelAddProjects: function () {
