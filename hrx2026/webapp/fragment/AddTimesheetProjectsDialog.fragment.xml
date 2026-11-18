@@ -12,17 +12,14 @@
 		busy="{tsView>/saving}"
 		busyIndicatorDelay="0"
 		class="hrxModal hrxModalWide hrxTsAddProjects">
-		<subHeader>
-			<Toolbar>
+		<content>
+			<VBox class="sapUiSmallMarginTop sapUiSmallMarginBottom sapUiMediumMarginBeginEnd">
 				<SearchField
 					id="addProjectsSearch"
 					placeholder="{i18n>tsSearchProjects}"
 					liveChange=".onSearchAddProjects"
-					search=".onSearchAddProjects"
-					width="100%" />
-			</Toolbar>
-		</subHeader>
-		<content>
+					search=".onSearchAddProjects" />
+			</VBox>
 			<Table
 				id="addProjectsTable"
 				items="{ts>/available}"
