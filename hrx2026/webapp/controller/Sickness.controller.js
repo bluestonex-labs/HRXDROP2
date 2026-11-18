@@ -396,6 +396,15 @@ sap.ui.define([
 		/**
 		 * Opens or folds the All sickness card.
 		 */
+		/**
+		 * Filters All sickness to the employees whose name contains what was typed.
+		 * @param {sap.ui.base.Event} oEvent the search field's liveChange or search event
+		 */
+		onSearchAll: function (oEvent) {
+			var sQuery = (oEvent.getParameter("newValue") || oEvent.getParameter("query") || "").trim();
+			this.byId("sicknessTable").getBinding("items").filter(sQuery ? [new Filter("Name", FilterOperator.Contains, sQuery)] : []);
+		},
+
 		onToggleAll: function () {
 			var oViewModel = this.getModel("skView");
 			oViewModel.setProperty("/allExpanded", !oViewModel.getProperty("/allExpanded"));
