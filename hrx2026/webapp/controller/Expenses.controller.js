@@ -15,6 +15,9 @@ sap.ui.define([
 	// Changes are written to the claim's draft this long after the last keystroke
 	var SAVE_DELAY_MS = 700;
 
+	// While the launchpad is still updating after a deploy, the page loads again this often
+	var UPDATING_RETRY_MS = 20000;
+
 	// A photo is shrunk to this size before it is read, which keeps the upload small
 	// on a slow connection; the AI reads it just as well (same sizes as the old app).
 	var READ_MAX_PX = 1100;
@@ -152,7 +155,15 @@ sap.ui.define([
 				this._pSetup = null;
 				// 401/403: the user has not been given an expense role in BTP yet
 				var bNoRole = oError.status === 401 || oError.status === 403;
-				oViewModel.setProperty("/error", bNoRole ? this._text("exNoAccess") : this._text("exLoadError", [oError.message]));
+				if (oError.status === 503) {
+					// Just deployed: the launchpad is still updating its routes. Say so,
+					// and load again shortly without the user having to.
+					oViewModel.setProperty("/error", this._text("exUpdating"));
+					clearTimeout(this._iReloadTimer);
+					this._iReloadTimer = setTimeout(this._load.bind(this), UPDATING_RETRY_MS);
+				} else {
+					oViewModel.setProperty("/error", bNoRole ? this._text("exNoAccess") : this._text("exLoadError", [oError.message]));
+				}
 			}.bind(this)).finally(function () {
 				oViewModel.setProperty("/busy", false);
 			});

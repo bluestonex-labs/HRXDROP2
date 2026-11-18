@@ -17,6 +17,9 @@ sap.ui.define([
 
 	var COUNTRY_NAMES = { UK: "United Kingdom", IN: "India" };
 
+	// While the launchpad is still updating after a deploy, the page loads again this often
+	var UPDATING_RETRY_MS = 20000;
+
 	function displayDate(sIso) {
 		var oDate = sIso ? oIsoDate.parse(String(sIso).slice(0, 10)) : null;
 		return oDate ? oDisplayDate.format(oDate) : "";
@@ -145,6 +148,14 @@ sap.ui.define([
 		},
 
 		_showLoadError: function (oError) {
+			if (oError.status === 503) {
+				// Just deployed: the launchpad is still updating its routes. Say so, and
+				// load again shortly without the user having to.
+				this._viewModel().setProperty("/error", this._text("exUpdating"));
+				clearTimeout(this._iReloadTimer);
+				this._iReloadTimer = setTimeout(this._onRouteMatched.bind(this), UPDATING_RETRY_MS);
+				return;
+			}
 			this._viewModel().setProperty("/error", this._text("exLoadError", [oError.message]));
 		},
 
