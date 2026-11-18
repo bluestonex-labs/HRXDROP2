@@ -243,15 +243,15 @@
 								<HBox renderType="Bare" binding="{ts>days/0}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -261,19 +261,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/1}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -283,19 +284,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/2}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -305,19 +307,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/3}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -327,19 +330,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/4}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -349,19 +353,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/5}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -371,19 +376,20 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 								<HBox renderType="Bare" binding="{ts>days/6}" alignItems="Center" class="hrxTsTimeCell">
 									<Input
 										value="{ts>time}"
-										visible="{ts>editable}"
+										visible="{ts>bookable}"
+										editable="{ts>editable}"
 										change=".onTimeChange"
 										placeholder="{i18n>tsTimePlaceholder}"
 										class="hrxTsTimeInput" />
-									<Text text="{ts>time}" visible="{= !${ts>editable} }" class="hrxTsCellBox" />
 									<Button
 										icon="sap-icon://tabler/message-2"
 										tooltip="{parts: ['ts>comment', 'ts>commentRequired'], formatter: '.formatCommentTooltip'}"
-										visible="{= ${ts>editable} || (${tsView>/readOnly} &amp;&amp; !!${ts>comment}) }"
+										visible="{ts>bookable}"
 										press=".onOpenComment"
 										class="hrxTsCommentButton">
 										<customData>
@@ -393,6 +399,7 @@
 												writeToDom="true" />
 										</customData>
 									</Button>
+									<Text text="{ts>time}" visible="{= !${ts>bookable} }" class="hrxTsCellBox" />
 								</HBox>
 							</hrx:cells>
 						</hrx:TimesheetRow>

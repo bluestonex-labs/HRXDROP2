@@ -469,6 +469,7 @@ sap.ui.define([
 
 				// Nothing on a leave or bank holiday row is bookable.
 				oRow.days.forEach(function (oDay) {
+					oDay.bookable = false;
 					oDay.editable = false;
 				});
 
@@ -499,6 +500,13 @@ sap.ui.define([
 			return DAYS.map(function (oDay, iIndex) {
 				var oDate = aDates[iIndex];
 				var sIsoDate = this._isoDate(oDate);
+				// A project row's own cell is locked on any day that is fully covered by
+				// leave or a bank holiday, same as the dedicated absence rows, and on any
+				// day the user's work schedule doesn't flag "Y". It used to lock on any
+				// leave at all, which left a half day's other half unbookable. With no
+				// weekly target to measure against, any leave still closes the day.
+				var bBookable = this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
+					!(mNonWorkingDates[sIsoDate] && mNonWorkingDates[sIsoDate] >= (iDayMinutes || mNonWorkingDates[sIsoDate]));
 				return {
 					key: oDay.key,
 					date: sIsoDate,
@@ -512,14 +520,10 @@ sap.ui.define([
 					// button only shows red then, and goes green once one is added.
 					commentError: false,
 					working: this._isWorkingDay(oDay.schedule),
-					// A project row's own cell is locked on any day that is fully covered by
-					// leave or a bank holiday, same as the dedicated absence rows, and on any
-					// day the user's work schedule doesn't flag "Y". It used to lock on any
-					// leave at all, which left a half day's other half unbookable. With no
-					// weekly target to measure against, any leave still closes the day.
-					editable: !this.getModel("tsView").getProperty("/readOnly") &&
-						this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
-						!(mNonWorkingDates[sIsoDate] && mNonWorkingDates[sIsoDate] >= (iDayMinutes || mNonWorkingDates[sIsoDate]))
+					// bookable: the timesheet's owner could book this day. editable: and it
+					// is the user's own timesheet (someone else's is shown, but locked).
+					bookable: bBookable,
+					editable: bBookable && !this.getModel("tsView").getProperty("/readOnly")
 				};
 			}, this);
 		},
