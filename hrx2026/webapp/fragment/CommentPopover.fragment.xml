@@ -35,7 +35,7 @@
 		<endButton>
 			<Button
 				id="timesheetCommentCancel"
-				text="{i18n>tsCancel}"
+				text="{= ${tsComment>/editable} ? ${i18n>tsCancel} : ${i18n>tsClose} }"
 				press=".onCancelComment"
 				class="hrxModalBtn hrxModalBtnGhost" />
 		</endButton>
