@@ -1040,6 +1040,8 @@ sap.ui.define([
 						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, scheduleOf(oRequester), {}).forEach(function (oDay) {
 							aPending.push({
 								LeaveID: oLeave.ID,
+								// One leave request: its rows share a LeaveGrpID
+								RequestID: oLeave.LeaveGrpID || oLeave.ID,
 								RequesterID: oLeave.EmpID_EmployeeID,
 								RequesterName: fullName(oRequester),
 								RequesterEmail: lower(oRequester.WorkEmail),
@@ -1068,6 +1070,8 @@ sap.ui.define([
 						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, oSchedule, {}).forEach(function (oDay) {
 							aPending.push({
 								LeaveID: oLeave.ID,
+								// One leave request: its rows share a LeaveGrpID
+								RequestID: oLeave.LeaveGrpID || oLeave.ID,
 								RequesterID: oLeave.EmpID_EmployeeID,
 								RequesterName: fullName(oRequester),
 								RequesterEmail: oRequester ? lower(oRequester.WorkEmail) : "",

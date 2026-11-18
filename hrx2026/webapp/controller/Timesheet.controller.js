@@ -43,6 +43,8 @@ sap.ui.define([
 	var GRACE_WORKING_DAYS = 3;
 
 	// How long after the last change a booking is saved without pressing Save.
+	// Browser storage key (plus the user's email) for the projects they've added to their timesheet
+	var KEPT_PROJECTS_KEY = "hrx.timesheet.keptProjects.";
 	var AUTO_SAVE_DELAY_MS = 1500;
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.Timesheet", {
@@ -352,6 +354,12 @@ sap.ui.define([
 		 */
 		_buildRows: function (aAssignments, aDates) {
 			var mRows = {};
+			// Released from a project (Manage Projects): none of the person's assignment
+			// rows on it is still active.
+			var mActive = {};
+			aAssignments.forEach(function (oAssignment) {
+				mActive[oAssignment.ProjectID] = mActive[oAssignment.ProjectID] || oAssignment.IsActive !== "N";
+			});
 
 			aAssignments.forEach(function (oAssignment) {
 				var sProjectId = oAssignment.ProjectID;
@@ -375,10 +383,18 @@ sap.ui.define([
 					readOnly: false,
 					// BlueStoneX's own projects are pinned to every sheet by _defaultRows
 					// and are not the user's to remove, so they cannot be selected.
-					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
+					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT && mActive[sProjectId],
+					released: !mActive[sProjectId],
 					bookable: this._isBookable(oAssignment, aDates),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				};
+				// Time already booked on a project they've since been released from stays
+				// on the sheet, locked.
+				if (!mActive[sProjectId]) {
+					mRows[sProjectId].days.forEach(function (oDay) {
+						oDay.editable = false;
+					});
+				}
 			}, this);
 
 			// Time entries can arrive on any assignment row of the same project.
@@ -414,21 +430,59 @@ sap.ui.define([
 		},
 
 		/**
-		 * A week starts with internal work only - a consultant is assigned to far more
-		 * client projects than they book against in any one week, so the rest are added
-		 * on demand. Anything already booked stays on the sheet regardless.
+		 * A week starts with internal work and the projects the user has added before -
+		 * a consultant is assigned to far more client projects than they book against
+		 * in any one week, so the rest are added on demand. Projects they've been
+		 * released from drop off. Anything already booked stays on the sheet regardless.
 		 * @param {Array<object>} aRows every row the assignments produced
 		 * @returns {Array<object>} the rows to show by default
 		 */
 		_defaultRows: function (aRows) {
+			var aKept = this._keptProjects();
 			return aRows.filter(function (oRow) {
-				if (oRow.ClientKey === INTERNAL_CLIENT && oRow.bookable) {
-					return true;
-				}
-				return oRow.days.some(function (oDay) {
+				var bBooked = oRow.days.some(function (oDay) {
 					return !!oDay.time;
 				});
+				if (bBooked) {
+					return true;
+				}
+				var bWanted = oRow.ClientKey === INTERNAL_CLIENT || aKept.indexOf(oRow.ProjectID) !== -1;
+				return bWanted && oRow.bookable && !oRow.released;
 			});
+		},
+
+		/**
+		 * The projects the user has added to their own timesheet, remembered in this
+		 * browser until they delete them (see _rememberProjects).
+		 * @returns {Array<string>} project IDs
+		 */
+		_keptProjects: function () {
+			// Someone else's timesheet: their list lives in their own browser
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return [];
+			}
+			try {
+				return JSON.parse(window.localStorage.getItem(KEPT_PROJECTS_KEY + this._sUserEmail.toLowerCase()) || "[]");
+			} catch (oError) {
+				return [];
+			}
+		},
+
+		/**
+		 * Adds projects to, or takes them off, the user's remembered list.
+		 * @param {Array<string>} aProjectIds project IDs
+		 * @param {boolean} bKeep true to remember them, false to forget them
+		 */
+		_rememberProjects: function (aProjectIds, bKeep) {
+			var aKept = this._keptProjects().filter(function (sId) {
+				return aProjectIds.indexOf(sId) === -1;
+			});
+			try {
+				window.localStorage.setItem(KEPT_PROJECTS_KEY + this._sUserEmail.toLowerCase(),
+					JSON.stringify(bKeep ? aKept.concat(aProjectIds) : aKept));
+			} catch (oError) {
+				// Private browsing can refuse storage; the project then just isn't remembered.
+			}
 		},
 
 		/**
@@ -1112,6 +1166,11 @@ sap.ui.define([
 			var aDates = this._weekDates(formatter.toDate(this.getModel("tsView").getProperty("/weekStart")));
 			var aRows = this.getModel("ts").getProperty("/rows") || [];
 
+			// Added projects stay on the user's timesheet from week to week
+			this._rememberProjects(aAssignments.map(function (oAssignment) {
+				return oAssignment.ProjectID;
+			}), true);
+
 			aAssignments.forEach(function (oAssignment) {
 				aRows.push({
 					ProjectID: oAssignment.ProjectID,
@@ -1193,6 +1252,9 @@ sap.ui.define([
 		 */
 		_deleteRows: function (aRows, aSelectedRows) {
 			var aRecIds = [];
+			this._rememberProjects(aSelectedRows.map(function (oRow) {
+				return oRow.ProjectID;
+			}), false);
 			aSelectedRows.forEach(function (oRow) {
 				oRow.days.forEach(function (oDay) {
 					if (oDay.recId) {
