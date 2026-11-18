@@ -581,6 +581,10 @@ sap.ui.define([
 					DayRate: oRow.DayRate || "0",
 					EndDate: oRow.EndDate || null,
 					IsActive: yn(oRow.IsActive !== false && oProject.IsActive !== false),
+					// The project's own booking switch and dates, as set in Manage Projects
+					BookingOpen: yn(oProject.IsTimeBookingAllowed !== false),
+					ProjectStartDate: oProject.StartDate || null,
+					ProjectEndDate: oProject.EndDate || null,
 					StartDate: oRow.StartDate || null,
 					TotalCharge: oRow.TotalCharge || "",
 					TotalBilledMin: mAllTime[oRow.Project_ID] || 0,
