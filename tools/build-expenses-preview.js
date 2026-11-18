@@ -45,6 +45,10 @@ function filesUnder(sFolder) {
 // 1. The committed code, into the temporary folder
 execFileSync("sh", ["-c", "git archive HEAD | tar -x -C " + JSON.stringify(WORK)], { cwd: REPO });
 
+// The repository keeps a built copy of the normal app (resources/bsxhrxhrx2026.zip);
+// the preview must ship only its own
+fs.rmSync(path.join(WORK, "resources"), { recursive: true, force: true });
+
 // 2. The deploy file: its own MTA, service instances, business service and archive.
 //    The HRX and expense XSUAA instances and the service URLs stay as they are.
 rewrite(path.join(WORK, "mta.yaml"), [
