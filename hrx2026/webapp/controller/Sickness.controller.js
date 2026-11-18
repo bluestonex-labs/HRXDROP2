@@ -140,9 +140,9 @@ sap.ui.define([
 					this._mPeople[oPerson.EmpID] = oPerson;
 				}, this);
 
-				// Sickness is recorded only by the person's own manager
+				// Sickness is recorded by the person's own manager, or by an HR admin for anyone
 				this.getModel("sk").setProperty("/employees", aPeople.filter(function (oPerson) {
-					return oPerson.IsActive === "Y" && this._isMyReport(oPerson.EmpID);
+					return oPerson.IsActive === "Y" && this._canActFor(oPerson.EmpID);
 				}, this));
 			}.bind(this)).catch(function (oError) {
 				// Let the next visit try again.
@@ -306,7 +306,7 @@ sap.ui.define([
 				dismissed: false,
 				dismissedTooltip: "",
 				dismissedNote: "",
-				canAct: this._isMyReport(oRaw.EmpID)
+				canAct: this._canActFor(oRaw.EmpID)
 			};
 		},
 
@@ -334,14 +334,14 @@ sap.ui.define([
 				emailedText: sEmailedOn ?
 					this.getText("skEmailedOn", [this._rangeText(sEmailedOn, sEmailedOn)]) : this.getText("skEmailed"),
 				expanded: !!this._mExpanded[oTrigger.EmpID],
-				canAct: this._isMyReport(oTrigger.EmpID)
+				canAct: this._canActFor(oTrigger.EmpID)
 			});
 		},
 
 		_toRtw: function (oRaw) {
 			var oPerson = this._person(oRaw.EmpID);
 			var sName = oRaw.Name || (oPerson && oPerson.FullName) || oRaw.EmpID || "";
-			var bCanAct = this._isMyReport(oRaw.EmpID);
+			var bCanAct = this._canActFor(oRaw.EmpID);
 
 			return {
 				RtwID: oRaw.RtwID,
@@ -794,7 +794,17 @@ sap.ui.define([
 		},
 
 		/**
-		 * Only a person's own manager records, edits or acts on their sickness.
+		 * A person's sickness is recorded, edited and acted on by their own manager, or by
+		 * one of the HR admins (CurrentUser ADMINS) for anyone.
+		 * @param {string} sEmpId an employee
+		 * @returns {boolean} true when the signed-in user may act on their sickness
+		 */
+		_canActFor: function (sEmpId) {
+			return !!(this._oProfile && this._oProfile.isAdmin) || this._isMyReport(sEmpId);
+		},
+
+		/**
+		 * Whether the person reports directly to the signed-in user.
 		 * @param {string} sEmpId an employee
 		 * @returns {boolean} true when they report directly to the signed-in user
 		 */
