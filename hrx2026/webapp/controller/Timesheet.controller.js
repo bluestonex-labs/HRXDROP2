@@ -388,7 +388,7 @@ sap.ui.define([
 					// and are not the user's to remove, so they cannot be selected.
 					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT && mActive[sProjectId],
 					released: !mActive[sProjectId],
-					bookable: this._isBookable(oAssignment, aDates),
+					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				};
 				// Time already booked on a project they've since been released from stays
@@ -630,20 +630,13 @@ sap.ui.define([
 		 * @returns {boolean} true when the day may still be edited
 		 */
 		/**
-		 * Time can only be booked to a project that is open for booking in Manage Projects
-		 * and is running during the week shown (no end date means it is still running).
+		 * Time can be booked to a project while its booking is Open in Manage Projects,
+		 * in any week - its start and end dates don't limit it.
 		 * @param {object} oAssignment an assignment returned by the service
-		 * @param {Array<Date>} aDates the seven days of the week
-		 * @returns {boolean} whether the project can be booked to this week
+		 * @returns {boolean} whether the project can be booked
 		 */
-		_isBookable: function (oAssignment, aDates) {
-			var sWeekStart = this._isoDate(aDates[0]);
-			var sWeekEnd = this._isoDate(aDates[6]);
-			var sStart = String(oAssignment.ProjectStartDate || "").slice(0, 10);
-			var sEnd = String(oAssignment.ProjectEndDate || "").slice(0, 10);
-			return oAssignment.BookingOpen !== "N" &&
-				(!sStart || sStart <= sWeekEnd) &&
-				(!sEnd || sEnd >= sWeekStart);
+		_isBookable: function (oAssignment) {
+			return oAssignment.BookingOpen !== "N";
 		},
 
 		_isOpenForBooking: function (oDate) {
@@ -1125,7 +1118,7 @@ sap.ui.define([
 					}
 					// Only the assignment's own flag decides. A blank one counts as active,
 					// as it does in Manage Projects: only "N" marks an assignment closed.
-					if (oAssignment.IsActive === "N" || !this._isBookable(oAssignment, aDates)) {
+					if (oAssignment.IsActive === "N" || !this._isBookable(oAssignment)) {
 						return false;
 					}
 					mSeen[oAssignment.ProjectID] = true;
@@ -1200,7 +1193,7 @@ sap.ui.define([
 					Overbooked: false,
 					readOnly: false,
 					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
-					bookable: this._isBookable(oAssignment, aDates),
+					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				});
 			}, this);
