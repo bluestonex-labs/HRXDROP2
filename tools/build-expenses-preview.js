@@ -1,8 +1,8 @@
 // Builds the "HRX expenses preview" app: this branch's committed code as an app of its
 // own on TDD, so the expenses work can be tested while the team keeps deploying the
 // HRX app (HRX2026) from main. The preview has its own launchpad link and its own
-// app host, destination and XSUAA instances; it uses the same HRX and expense
-// services, so the same data.
+// app host and destination instances; it signs in through HRX2026's XSUAA instance
+// and uses the same HRX and expense services, so the same data.
 //
 //   node tools/build-expenses-preview.js
 //   cf target -o bsx-tdd -s TDD
@@ -63,8 +63,23 @@ rewrite(path.join(WORK, "mta.yaml"), [
 	["bsxhrxhrx2026", "bsxhrxhrx2026preview"]
 ]);
 
-// 3. Its own XSUAA application name (they are unique in the subaccount)
-rewrite(path.join(WORK, "xs-security.json"), [['"xsappname": "hrx2026"', '"xsappname": "hrx2026preview"']]);
+// 3. Sign-in: the normal HRX app's own XSUAA instance and key, used as they are.
+//    Passing the user's login on to the expense service carries their expense roles
+//    only when the login comes from an app they have been granted in BTP (its
+//    Token_Exchange role); HRX2026's is, a new instance would not be. The preview
+//    only uses the instance, so HRX2026's deploys from main do not affect it.
+rewrite(path.join(WORK, "mta.yaml"), [
+	["HRX2026PREVIEW-xsuaa-service", "HRX2026-xsuaa-service"],
+	["uaa_HRX2026PREVIEW-key", "uaa_HRX2026-key"],
+	[`  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: HRX2026-xsuaa-service
+    service-plan: application`, `  type: org.cloudfoundry.existing-service
+  parameters:
+    service-name: HRX2026-xsuaa-service`]
+]);
 
 // 4. Its own app id, archive and business service
 rewrite(path.join(WORK, "hrx2026", "ui5-deploy.yaml"), [
