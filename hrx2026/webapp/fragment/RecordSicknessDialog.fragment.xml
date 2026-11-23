@@ -39,6 +39,15 @@
 						change=".onRecordInput" />
 				</VBox>
 
+				<!-- Half a day: only when one day is picked, and only for a new absence -->
+				<VBox renderType="Bare" visible="{= ${skForm>/mode} !== 'edit' &amp;&amp; ${skForm>/singleDay} }" class="hrxSickField">
+					<Label text="{i18n>skFieldDuration}" labelFor="skDuration" class="hrxModalLabel" />
+					<Select id="skDuration" width="100%" selectedKey="{skForm>/DayTime}" change=".onRecordInput">
+						<core:Item key="Full Day" text="{i18n>skDurFull}" />
+						<core:Item key="AM" text="{i18n>skDurMorning}" />
+						<core:Item key="PM" text="{i18n>skDurAfternoon}" />
+					</Select>
+				</VBox>
 				<VBox renderType="Bare" class="hrxSickField">
 					<Label text="{i18n>skFieldReason}" required="true" labelFor="skReason" class="hrxModalLabel" />
 					<Input
