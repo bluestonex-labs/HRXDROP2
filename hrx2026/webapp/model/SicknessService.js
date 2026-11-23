@@ -336,14 +336,17 @@ sap.ui.define([
 					$filter: "StartDate le " + sTo + " and EndDate ge " + sFrom + " and Status_ID eq " + HrxTime.LEAVE_STATUS.approved,
 					$select: "EmpID_EmployeeID,StartDate,EndDate,LeaveCategoryId_ID"
 				}),
-				sickTypeId()
+				sickTypeId(),
+				HrxTime.ukSiteId()
 			]).then(function (aResults) {
 				var mDaysOff = {};
-				// A bank holiday with no site is for every site.
+				// A bank holiday with no site is for every site; someone with no office
+				// gets the UK office's.
 				aResults[0].forEach(function (oUser) {
 					var mOff = mDaysOff[oUser.EmployeeID] = {};
+					var sSiteId = oUser.BaseSite_ID || aResults[4];
 					aResults[1].forEach(function (oHoliday) {
-						if (!oHoliday.Site_ID || oHoliday.Site_ID === oUser.BaseSite_ID) {
+						if (!oHoliday.Site_ID || oHoliday.Site_ID === sSiteId) {
 							mOff[oHoliday.Date] = true;
 						}
 					});

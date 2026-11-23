@@ -8,14 +8,11 @@ sap.ui.define([
 	"sap/m/MessageToast",
 	"sap/m/MessageBox",
 	"sap/m/GroupHeaderListItem",
-	"sap/m/Dialog",
-	"sap/m/Button",
-	"sap/m/Text",
 	"../model/Backend",
 	"../model/CurrentUser",
 	"../model/formatter",
 	"../model/Toast"
-], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, GroupHeaderListItem, Dialog, Button, Text, Backend, CurrentUser, formatter, Toast) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, GroupHeaderListItem, Backend, CurrentUser, formatter, Toast) {
 	"use strict";
 
 	// Root path of the backend services - see xs-app.json (deployed) and ui5.yaml (local).
@@ -81,7 +78,6 @@ sap.ui.define([
 				people: [],
 				removable: [],
 				userId: "",
-				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
 					return { label: oDay.label, date: "", total: "" };
 				}),
@@ -276,7 +272,6 @@ sap.ui.define([
 			oViewModel.setProperty("/busy", true);
 			oViewModel.setProperty("/weekLabel", this._weekLabel(aDates[0], aDates[6]));
 			this._setAutoSaveStatus("");
-			oViewModel.setProperty("/selectedCount", 0);
 
 			return Promise.all([
 				this._getJson(TIMESHEET_SERVICE + "?cmd=fetch&" + new URLSearchParams({
@@ -962,18 +957,6 @@ sap.ui.define([
 		 * the select-all checkbox unticked even with every deletable row selected.
 		 * @param {sap.ui.base.Event} oEvent the selectionChange event
 		 */
-		/**
-		 * Drops every tick in the grid and the count behind the Delete button.
-		 * selectionChange does not fire for a programmatic clear, so the count has to
-		 * be put back by hand.
-		 */
-		_clearTableSelection: function () {
-			var oTable = this.byId("timesheetTable");
-			if (oTable) {
-				oTable.removeSelections(true);
-			}
-			this.getModel("tsView").setProperty("/selectedCount", 0);
-		},
 
 		/* =========================================================== */
 		/* client groups                                               */
@@ -1274,99 +1257,27 @@ sap.ui.define([
 			if (!aIds.length) {
 				return;
 			}
-			this._flushAutoSave().then(function () {
+			this._hideProjects(aIds).then(function () {
+				MessageToast.show(this.getText("tsRemovedFromSheet"));
+			}.bind(this));
+		},
+
+		/**
+		 * Takes projects off the user's timesheet, every week, until they're added back
+		 * with Add projects. Booked hours are kept. Anything typed is saved first.
+		 * Shared with the phone's Remove project (MobileTimesheet).
+		 * @param {Array<string>} aIds project IDs
+		 * @returns {Promise} resolved once the rows are gone
+		 */
+		_hideProjects: function (aIds) {
+			return this._flushAutoSave().then(function () {
 				this._storeProjects(KEPT_PROJECTS_KEY, aIds, false);
 				this._storeProjects(HIDDEN_PROJECTS_KEY, aIds, true);
 				this.getModel("ts").setProperty("/rows", (this.getModel("ts").getProperty("/rows") || []).filter(function (oRow) {
 					return aIds.indexOf(oRow.ProjectID) === -1;
 				}));
 				this._recalculate();
-				MessageToast.show(this.getText("tsRemovedFromSheet"));
 			}.bind(this));
-		},
-
-		/**
-		 * Removes the confirmed rows, through the service where they hold booked time.
-		 * Shared with the phone's Remove project (MobileTimesheet).
-		 * @param {Array<object>} aRows every row of the grid
-		 * @param {Array<object>} aSelectedRows the rows to remove
-		 * @returns {Promise} settles once the rows are gone (or the delete failed)
-		 */
-		_deleteRows: function (aRows, aSelectedRows) {
-			var aRecIds = [];
-			this._storeProjects(KEPT_PROJECTS_KEY, aSelectedRows.map(function (oRow) {
-				return oRow.ProjectID;
-			}), false);
-			aSelectedRows.forEach(function (oRow) {
-				oRow.days.forEach(function (oDay) {
-					if (oDay.recId) {
-						aRecIds.push({ RecID: oDay.recId });
-					}
-				});
-			});
-
-			var aRemaining = aRows.filter(function (oRow) {
-				return aSelectedRows.indexOf(oRow) === -1;
-			});
-
-			var fnFinish = function () {
-				this.getModel("ts").setProperty("/rows", aRemaining);
-				this._clearTableSelection();
-				this._recalculate();
-			}.bind(this);
-
-			if (!aRecIds.length) {
-				fnFinish();
-				return Promise.resolve();
-			}
-
-			// Rows carrying booked time go through the service and come back via
-			// _loadWeek. That rebuilds the rows but leaves the table's own
-			// selection behind, so the ticks - and the count that enables the
-			// Delete button - have to be cleared here as well, on the way out
-			// whether the delete succeeded or not.
-			return this._save(TIMESHEET_SERVICE + "?cmd=delete", {
-				OrgID: this._sOrgId,
-				UserID: this.getModel("tsView").getProperty("/userId"),
-				TimesheetListSet: aRecIds
-			}, "tsDeleted", "tsErrorDelete").then(function () {
-				return this._loadWeek();
-			}.bind(this)).catch(function () { /* reported by _save */ })
-				.then(this._clearTableSelection.bind(this));
-		},
-
-		/**
-		 * Asks before removing projects, in the design's modal with a red action
-		 * (the design's hrx.confirm).
-		 * @param {string} sNames the projects about to be removed
-		 * @param {function} fnConfirmed called once the user confirms
-		 */
-		_confirmDelete: function (sNames, fnConfirmed) {
-			var oDialog = new Dialog({
-				title: this.getText("tsConfirmDeleteTitle"),
-				content: [
-					new Text({ text: this.getText("tsConfirmDelete", [sNames]) }).addStyleClass("hrxModalText")
-				],
-				beginButton: new Button({
-					text: this.getText("tsConfirmDeleteAction"),
-					press: function () {
-						oDialog.close();
-						fnConfirmed();
-					}
-				}).addStyleClass("hrxModalBtn hrxModalBtnDanger"),
-				endButton: new Button({
-					text: this.getText("tsCancel"),
-					press: function () {
-						oDialog.close();
-					}
-				}).addStyleClass("hrxModalBtn hrxModalBtnGhost"),
-				afterClose: function () {
-					oDialog.destroy();
-				}
-			}).addStyleClass("hrxModal");
-
-			this.getView().addDependent(oDialog);
-			oDialog.open();
 		},
 
 		/* =========================================================== */

@@ -59,13 +59,10 @@ sap.ui.define([
 			return Timesheet.prototype._onRouteMatched.apply(this, arguments);
 		},
 
-		// The desktop grid's table, groups and selection do not exist here.
+		// The desktop grid's table and groups do not exist here.
 		_applyRowsGrouping: function () {},
 		_applyCollapsedGroups: function () {},
 		onTableUpdated: function () {},
-		_clearTableSelection: function () {
-			this.getModel("tsView").setProperty("/selectedCount", 0);
-		},
 
 		/**
 		 * Every change to the rows ends here (loading a week, a stepper, adding or
@@ -399,23 +396,16 @@ sap.ui.define([
 
 		onConfirmRemove: function () {
 			var oRow = this._oRemoveRow;
-			var bStored = oRow && oRow.days.some(function (oDay) {
-				return !!oDay.recId;
-			});
 
 			this.onCloseSheet();
 			if (!oRow) {
 				return;
 			}
 			this._oRemoveRow = null;
-			// As the desktop's Delete: anything waiting is saved first. A stored row
-			// reports through the service's own toast.
-			this._flushAutoSave().then(function () {
-				return this._deleteRows(this.getModel("ts").getProperty("/rows") || [], [oRow]);
-			}.bind(this)).then(function () {
-				if (!bStored) {
-					MessageToast.show(this.getText("mbProjectRemoved"));
-				}
+			// As the desktop's Delete: the project leaves the timesheet, its booked hours
+			// are kept, and Add projects brings it back.
+			this._hideProjects([oRow.ProjectID]).then(function () {
+				MessageToast.show(this.getText("mbProjectRemoved"));
 			}.bind(this));
 		},
 

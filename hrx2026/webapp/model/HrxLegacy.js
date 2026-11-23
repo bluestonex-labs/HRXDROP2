@@ -160,8 +160,13 @@ sap.ui.define([
 		},
 
 		bankHolidays: function (sFrom, sTo) {
-			return Hrx.list("BankHolidays", {
-				$filter: "Date ge " + sFrom + " and Date le " + sTo
+			return Promise.all([
+				Hrx.list("BankHolidays", { $filter: "Date ge " + sFrom + " and Date le " + sTo }),
+				HrxTime.ukSiteId()
+			]).then(function (aResults) {
+				// Kept with the list, for holidaysFor: someone with no office gets the UK's
+				aResults[0].ukSiteId = aResults[1];
+				return aResults[0];
 			});
 		},
 
@@ -253,7 +258,7 @@ sap.ui.define([
 	function holidaysFor(aHolidays, sSiteId) {
 		var mHolidays = {};
 		aHolidays.forEach(function (oHoliday) {
-			if (!oHoliday.Site_ID || !sSiteId || oHoliday.Site_ID === sSiteId) {
+			if (!oHoliday.Site_ID || oHoliday.Site_ID === (sSiteId || aHolidays.ukSiteId)) {
 				mHolidays[oHoliday.Date] = oHoliday;
 			}
 		});
