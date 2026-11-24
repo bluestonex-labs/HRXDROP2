@@ -581,10 +581,8 @@ sap.ui.define([
 					DayRate: oRow.DayRate || "0",
 					EndDate: oRow.EndDate || null,
 					IsActive: yn(oRow.IsActive !== false && oProject.IsActive !== false),
-					// The project's own booking switch and dates, as set in Manage Projects
+					// The project's own booking switch, as set in Manage Projects
 					BookingOpen: yn(oProject.IsTimeBookingAllowed !== false),
-					ProjectStartDate: oProject.StartDate || null,
-					ProjectEndDate: oProject.EndDate || null,
 					StartDate: oRow.StartDate || null,
 					TotalCharge: oRow.TotalCharge || "",
 					TotalBilledMin: mAllTime[oRow.Project_ID] || 0,
@@ -1040,6 +1038,8 @@ sap.ui.define([
 						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, scheduleOf(oRequester), {}).forEach(function (oDay) {
 							aPending.push({
 								LeaveID: oLeave.ID,
+								// One leave request: its rows share a LeaveGrpID
+								RequestID: oLeave.LeaveGrpID || oLeave.ID,
 								RequesterID: oLeave.EmpID_EmployeeID,
 								RequesterName: fullName(oRequester),
 								RequesterEmail: lower(oRequester.WorkEmail),
@@ -1068,6 +1068,8 @@ sap.ui.define([
 						leaveDays(oLeave, oLeave.StartDate, oLeave.EndDate, oSchedule, {}).forEach(function (oDay) {
 							aPending.push({
 								LeaveID: oLeave.ID,
+								// One leave request: its rows share a LeaveGrpID
+								RequestID: oLeave.LeaveGrpID || oLeave.ID,
 								RequesterID: oLeave.EmpID_EmployeeID,
 								RequesterName: fullName(oRequester),
 								RequesterEmail: oRequester ? lower(oRequester.WorkEmail) : "",

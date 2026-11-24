@@ -35,14 +35,18 @@ sap.ui.define([
 	// Internal bookings against this client never need a work description.
 	var NO_COMMENT_CLIENT = "BSXCL0000000000";
 
-	// Bluestonex itself: internal work is the only thing on a fresh timesheet, and
-	// client projects are put there by the user with "Add Project(s)".
-	var INTERNAL_CLIENT = "BSXCL0000000001";
+	// The one project on everyone's timesheet by default (if they're a resource on it),
+	// which can't be removed. Every other project is added with Add projects.
+	var PINNED_PROJECT = "bsx internal development";
 
 	// A closed month can still be corrected during the first few working days of the next one.
 	var GRACE_WORKING_DAYS = 3;
 
 	// How long after the last change a booking is saved without pressing Save.
+	// Browser storage keys (plus the user's email): the projects they've added to their
+	// timesheet, and the ones they've removed from it (hidden, their hours kept)
+	var KEPT_PROJECTS_KEY = "hrx.timesheet.keptProjects.";
+	var HIDDEN_PROJECTS_KEY = "hrx.timesheet.hiddenProjects.";
 	var AUTO_SAVE_DELAY_MS = 1500;
 
 	return Controller.extend("bsx.hrx.hrx2026.controller.Timesheet", {
@@ -68,7 +72,14 @@ sap.ui.define([
 				saving: false,
 				weekStart: this._mondayOf(new Date()),
 				weekLabel: "",
+				// Whose timesheet is on screen: the user's own, or (HR admins only) someone
+				// else's, which is then read only
 				currentEmail: "",
+				readOnly: false,
+				viewingName: "",
+				isAdmin: false,
+				people: [],
+				removable: [],
 				userId: "",
 				selectedCount: 0,
 				dayHeaders: DAYS.map(function (oDay) {
@@ -107,6 +118,84 @@ sap.ui.define([
 			window.addEventListener("beforeunload", this._fnBeforeUnload);
 		},
 
+		/* =========================================================== */
+		/* viewing another person's timesheet (HR admins)              */
+		/* =========================================================== */
+
+		formatViewingOther: function (sName) {
+			return this.getText("tsViewingOther", [sName || ""]);
+		},
+
+		onOpenTimesheetMenu: function (oEvent) {
+			this.byId("timesheetMenu").openBy(oEvent.getSource());
+		},
+
+		/**
+		 * Lists everyone active to pick whose timesheet to look at.
+		 */
+		onViewOtherTimesheet: function () {
+			var oViewModel = this.getModel("tsView");
+			this._read("/Resources", {
+				urlParameters: { "$select": "EmpID,FName,LName,Email,IsActive" },
+				filters: [new Filter("OrgID", FilterOperator.EQ, this._sOrgId)]
+			}).then(function (oData) {
+				oViewModel.setProperty("/people", this._strip(oData).filter(function (oPerson) {
+					return oPerson.IsActive === "Y" && !!oPerson.Email && !CurrentUser.sameEmail(oPerson.Email, this._sUserEmail);
+				}, this).map(function (oPerson) {
+					return { Name: ((oPerson.FName || "") + " " + (oPerson.LName || "")).trim(), Email: oPerson.Email };
+				}).sort(function (a, b) {
+					return a.Name.localeCompare(b.Name);
+				}));
+				return this._openDialog("_pViewTimesheetDialog", "bsx.hrx.hrx2026.fragment.ViewTimesheetDialog");
+			}.bind(this)).catch(function (oError) {
+				this._showError("tsErrorPeople", oError);
+			}.bind(this));
+		},
+
+		onSearchTimesheetPeople: function (oEvent) {
+			var sQuery = (oEvent.getParameter("value") || "").trim();
+			oEvent.getSource().getBinding("items").filter(sQuery ? [new Filter({
+				filters: [
+					new Filter("Name", FilterOperator.Contains, sQuery),
+					new Filter("Email", FilterOperator.Contains, sQuery)
+				],
+				and: false
+			})] : []);
+		},
+
+		/**
+		 * Shows the chosen person's timesheet, read only. Anything of the user's own
+		 * still waiting to be saved goes first.
+		 * @param {sap.ui.base.Event} oEvent the dialog's confirm event
+		 */
+		onPickTimesheetPerson: function (oEvent) {
+			var oItem = oEvent.getParameter("selectedItem");
+			oEvent.getSource().getBinding("items").filter([]);
+			if (!oItem) {
+				return;
+			}
+			var oPerson = oItem.getBindingContext("tsView").getObject();
+			var oViewModel = this.getModel("tsView");
+			this._flushAutoSave().then(function () {
+				oViewModel.setProperty("/currentEmail", oPerson.Email);
+				oViewModel.setProperty("/viewingName", oPerson.Name);
+				oViewModel.setProperty("/readOnly", true);
+				return this._loadWeek();
+			}.bind(this));
+		},
+
+		onCancelTimesheetPerson: function (oEvent) {
+			oEvent.getSource().getBinding("items").filter([]);
+		},
+
+		onBackToMyTimesheet: function () {
+			var oViewModel = this.getModel("tsView");
+			oViewModel.setProperty("/currentEmail", this._sUserEmail);
+			oViewModel.setProperty("/viewingName", "");
+			oViewModel.setProperty("/readOnly", false);
+			this._loadWeek();
+		},
+
 		onExit: function () {
 			window.removeEventListener("beforeunload", this._fnBeforeUnload);
 			clearTimeout(this._iAutoSaveTimer);
@@ -131,8 +220,13 @@ sap.ui.define([
 					return undefined;
 				}
 
-				// Everybody sees only their own timesheet.
-				this.getModel("tsView").setProperty("/currentEmail", this._sUserEmail);
+				// Every visit opens the user's own timesheet. HR admins can then look at
+				// someone else's from the page's menu (onViewOtherTimesheet).
+				var oViewModel = this.getModel("tsView");
+				oViewModel.setProperty("/isAdmin", !!oProfile.isAdmin);
+				oViewModel.setProperty("/currentEmail", this._sUserEmail);
+				oViewModel.setProperty("/readOnly", false);
+				oViewModel.setProperty("/viewingName", "");
 
 				return this._loadWeek();
 			}.bind(this));
@@ -263,6 +357,12 @@ sap.ui.define([
 		 */
 		_buildRows: function (aAssignments, aDates) {
 			var mRows = {};
+			// Released from a project (Manage Projects): none of the person's assignment
+			// rows on it is still active.
+			var mActive = {};
+			aAssignments.forEach(function (oAssignment) {
+				mActive[oAssignment.ProjectID] = mActive[oAssignment.ProjectID] || oAssignment.IsActive !== "N";
+			});
 
 			aAssignments.forEach(function (oAssignment) {
 				var sProjectId = oAssignment.ProjectID;
@@ -286,10 +386,18 @@ sap.ui.define([
 					readOnly: false,
 					// BlueStoneX's own projects are pinned to every sheet by _defaultRows
 					// and are not the user's to remove, so they cannot be selected.
-					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
-					bookable: this._isBookable(oAssignment, aDates),
+					deletable: !this._isPinned(oAssignment.ProjectDesc) && mActive[sProjectId],
+					released: !mActive[sProjectId],
+					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				};
+				// Time already booked on a project they've since been released from stays
+				// on the sheet, locked.
+				if (!mActive[sProjectId]) {
+					mRows[sProjectId].days.forEach(function (oDay) {
+						oDay.editable = false;
+					});
+				}
 			}, this);
 
 			// Time entries can arrive on any assignment row of the same project.
@@ -325,21 +433,75 @@ sap.ui.define([
 		},
 
 		/**
-		 * A week starts with internal work only - a consultant is assigned to far more
-		 * client projects than they book against in any one week, so the rest are added
-		 * on demand. Anything already booked stays on the sheet regardless.
+		 * A week starts with internal work and the projects the user has added before -
+		 * a consultant is assigned to far more client projects than they book against
+		 * in any one week, so the rest are added on demand. Projects they've been
+		 * released from drop off. Anything already booked stays on the sheet, unless the
+		 * user removed the project with Delete.
 		 * @param {Array<object>} aRows every row the assignments produced
 		 * @returns {Array<object>} the rows to show by default
 		 */
 		_defaultRows: function (aRows) {
+			var aKept = this._storedProjects(KEPT_PROJECTS_KEY);
+			var aHidden = this._storedProjects(HIDDEN_PROJECTS_KEY);
 			return aRows.filter(function (oRow) {
-				if (oRow.ClientKey === INTERNAL_CLIENT && oRow.bookable) {
-					return true;
+				// Removed from the sheet with Delete (booked hours and all) until added back
+				if (aHidden.indexOf(oRow.ProjectID) !== -1) {
+					return false;
 				}
-				return oRow.days.some(function (oDay) {
+				var bBooked = oRow.days.some(function (oDay) {
 					return !!oDay.time;
 				});
+				if (bBooked) {
+					return true;
+				}
+				var bWanted = this._isPinned(oRow.project) || aKept.indexOf(oRow.ProjectID) !== -1;
+				return bWanted && oRow.bookable && !oRow.released;
+			}, this);
+		},
+
+		/**
+		 * A list of project IDs remembered in this browser for the user's own timesheet:
+		 * the projects they've added (KEPT_PROJECTS_KEY) or removed (HIDDEN_PROJECTS_KEY).
+		 * @param {string} sKey one of the two keys
+		 * @returns {Array<string>} project IDs
+		 */
+		/**
+		 * @param {string} sProjectDesc a project's name
+		 * @returns {boolean} true for BSX Internal Development, always on the sheet
+		 */
+		_isPinned: function (sProjectDesc) {
+			return String(sProjectDesc || "").trim().toLowerCase() === PINNED_PROJECT;
+		},
+
+		_storedProjects: function (sKey) {
+			// Someone else's timesheet: their lists live in their own browser
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return [];
+			}
+			try {
+				return JSON.parse(window.localStorage.getItem(sKey + this._sUserEmail.toLowerCase()) || "[]");
+			} catch (oError) {
+				return [];
+			}
+		},
+
+		/**
+		 * Adds projects to, or takes them off, one of the user's remembered lists.
+		 * @param {string} sKey KEPT_PROJECTS_KEY or HIDDEN_PROJECTS_KEY
+		 * @param {Array<string>} aProjectIds project IDs
+		 * @param {boolean} bAdd true to add them, false to take them off
+		 */
+		_storeProjects: function (sKey, aProjectIds, bAdd) {
+			var aList = this._storedProjects(sKey).filter(function (sId) {
+				return aProjectIds.indexOf(sId) === -1;
 			});
+			try {
+				window.localStorage.setItem(sKey + this._sUserEmail.toLowerCase(),
+					JSON.stringify(bAdd ? aList.concat(aProjectIds) : aList));
+			} catch (oError) {
+				// Private browsing can refuse storage; the change then just isn't remembered.
+			}
 		},
 
 		/**
@@ -380,6 +542,7 @@ sap.ui.define([
 
 				// Nothing on a leave or bank holiday row is bookable.
 				oRow.days.forEach(function (oDay) {
+					oDay.bookable = false;
 					oDay.editable = false;
 				});
 
@@ -410,6 +573,13 @@ sap.ui.define([
 			return DAYS.map(function (oDay, iIndex) {
 				var oDate = aDates[iIndex];
 				var sIsoDate = this._isoDate(oDate);
+				// A project row's own cell is locked on any day that is fully covered by
+				// leave or a bank holiday, same as the dedicated absence rows, and on any
+				// day the user's work schedule doesn't flag "Y". It used to lock on any
+				// leave at all, which left a half day's other half unbookable. With no
+				// weekly target to measure against, any leave still closes the day.
+				var bBookable = this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
+					!(mNonWorkingDates[sIsoDate] && mNonWorkingDates[sIsoDate] >= (iDayMinutes || mNonWorkingDates[sIsoDate]));
 				return {
 					key: oDay.key,
 					date: sIsoDate,
@@ -423,13 +593,10 @@ sap.ui.define([
 					// button only shows red then, and goes green once one is added.
 					commentError: false,
 					working: this._isWorkingDay(oDay.schedule),
-					// A project row's own cell is locked on any day that is fully covered by
-					// leave or a bank holiday, same as the dedicated absence rows, and on any
-					// day the user's work schedule doesn't flag "Y". It used to lock on any
-					// leave at all, which left a half day's other half unbookable. With no
-					// weekly target to measure against, any leave still closes the day.
-					editable: this._isWorkingDay(oDay.schedule) && this._isOpenForBooking(oDate) &&
-						!(mNonWorkingDates[sIsoDate] && mNonWorkingDates[sIsoDate] >= (iDayMinutes || mNonWorkingDates[sIsoDate]))
+					// bookable: the timesheet's owner could book this day. editable: and it
+					// is the user's own timesheet (someone else's is shown, but locked).
+					bookable: bBookable,
+					editable: bBookable && !this.getModel("tsView").getProperty("/readOnly")
 				};
 			}, this);
 		},
@@ -471,20 +638,13 @@ sap.ui.define([
 		 * @returns {boolean} true when the day may still be edited
 		 */
 		/**
-		 * Time can only be booked to a project that is open for booking in Manage Projects
-		 * and is running during the week shown (no end date means it is still running).
+		 * Time can be booked to a project while its booking is Open in Manage Projects,
+		 * in any week - its start and end dates don't limit it.
 		 * @param {object} oAssignment an assignment returned by the service
-		 * @param {Array<Date>} aDates the seven days of the week
-		 * @returns {boolean} whether the project can be booked to this week
+		 * @returns {boolean} whether the project can be booked
 		 */
-		_isBookable: function (oAssignment, aDates) {
-			var sWeekStart = this._isoDate(aDates[0]);
-			var sWeekEnd = this._isoDate(aDates[6]);
-			var sStart = String(oAssignment.ProjectStartDate || "").slice(0, 10);
-			var sEnd = String(oAssignment.ProjectEndDate || "").slice(0, 10);
-			return oAssignment.BookingOpen !== "N" &&
-				(!sStart || sStart <= sWeekEnd) &&
-				(!sEnd || sEnd >= sWeekStart);
+		_isBookable: function (oAssignment) {
+			return oAssignment.BookingOpen !== "N";
 		},
 
 		_isOpenForBooking: function (oDate) {
@@ -802,10 +962,6 @@ sap.ui.define([
 		 * the select-all checkbox unticked even with every deletable row selected.
 		 * @param {sap.ui.base.Event} oEvent the selectionChange event
 		 */
-		onSelectionChange: function (oEvent) {
-			this.getModel("tsView").setProperty("/selectedCount", oEvent.getSource().getSelectedItems().length);
-		},
-
 		/**
 		 * Drops every tick in the grid and the count behind the Delete button.
 		 * selectionChange does not fire for a programmatic clear, so the count has to
@@ -927,9 +1083,16 @@ sap.ui.define([
 		 * Offers the assignments that are not on the timesheet yet.
 		 */
 		onOpenAddProjects: function () {
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return;
+			}
 			this._loadAvailable().then(function (bLoaded) {
 				if (bLoaded) {
-					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog");
+					this._openDialog("_pAddProjectsDialog", "bsx.hrx.hrx2026.fragment.AddTimesheetProjectsDialog").then(function () {
+						// Every opening starts with the whole list
+						this.byId("addProjectsSearch").setValue("");
+						this.byId("addProjectsTable").getBinding("items").filter([]);
+					}.bind(this));
 				}
 			}.bind(this));
 		},
@@ -967,7 +1130,7 @@ sap.ui.define([
 					}
 					// Only the assignment's own flag decides. A blank one counts as active,
 					// as it does in Manage Projects: only "N" marks an assignment closed.
-					if (oAssignment.IsActive === "N" || !this._isBookable(oAssignment, aDates)) {
+					if (oAssignment.IsActive === "N" || !this._isBookable(oAssignment)) {
 						return false;
 					}
 					mSeen[oAssignment.ProjectID] = true;
@@ -984,6 +1147,15 @@ sap.ui.define([
 				this._showError("tsErrorAssignments", oError);
 				return false;
 			}.bind(this));
+		},
+
+		/**
+		 * Narrows Add projects to the projects whose name contains what was typed.
+		 * @param {sap.ui.base.Event} oEvent the search field's liveChange or search event
+		 */
+		onSearchAddProjects: function (oEvent) {
+			var sQuery = (oEvent.getParameter("newValue") || oEvent.getParameter("query") || "").trim();
+			this.byId("addProjectsTable").getBinding("items").filter(sQuery ? [new Filter("ProjectDesc", FilterOperator.Contains, sQuery)] : []);
 		},
 
 		onCancelAddProjects: function () {
@@ -1015,6 +1187,21 @@ sap.ui.define([
 			var aDates = this._weekDates(formatter.toDate(this.getModel("tsView").getProperty("/weekStart")));
 			var aRows = this.getModel("ts").getProperty("/rows") || [];
 
+			// Added projects stay on the user's timesheet from week to week
+			var aIds = aAssignments.map(function (oAssignment) {
+				return oAssignment.ProjectID;
+			});
+			var aHidden = this._storedProjects(HIDDEN_PROJECTS_KEY);
+			this._storeProjects(KEPT_PROJECTS_KEY, aIds, true);
+			this._storeProjects(HIDDEN_PROJECTS_KEY, aIds, false);
+			// A project removed earlier may have hours booked: read the week again to show them
+			if (aIds.some(function (sId) {
+				return aHidden.indexOf(sId) !== -1;
+			})) {
+				this._loadWeek();
+				return;
+			}
+
 			aAssignments.forEach(function (oAssignment) {
 				aRows.push({
 					ProjectID: oAssignment.ProjectID,
@@ -1026,8 +1213,8 @@ sap.ui.define([
 					Billable: oAssignment.ProjectTypeText === "Billable",
 					Overbooked: false,
 					readOnly: false,
-					deletable: oAssignment.ClientKey !== INTERNAL_CLIENT,
-					bookable: this._isBookable(oAssignment, aDates),
+					deletable: !this._isPinned(oAssignment.ProjectDesc),
+					bookable: this._isBookable(oAssignment),
 					days: this._buildDays(aDates, oAssignment.ClientKey !== NO_COMMENT_CLIENT)
 				});
 			}, this);
@@ -1053,34 +1240,48 @@ sap.ui.define([
 		 * Removes the selected rows. Anything already stored is deleted on the backend
 		 * first; rows that were only added on screen simply disappear.
 		 */
+		/**
+		 * Delete: pick projects to take off the timesheet. Their booked hours stay saved;
+		 * the project is only hidden until it's added back with Add projects.
+		 * BlueStoneX's own projects can't be removed.
+		 */
 		onDeleteProjects: function () {
-			var oTable = this.byId("timesheetTable");
-			var aSelected = oTable ? oTable.getSelectedItems() : [];
-
-			if (!aSelected.length) {
-				Toast.error(this.getText("tsSelectRow"));
+			var oViewModel = this.getModel("tsView");
+			if (oViewModel.getProperty("/readOnly")) {
 				return;
 			}
-
-			var aRows = this.getModel("ts").getProperty("/rows") || [];
-			var aSelectedRows = aSelected.map(function (oItem) {
-				return oItem.getBindingContext("ts").getObject();
-			}).filter(function (oRow) {
-				// onSelectionChange already refuses these, so this only guards against a
-				// selection set some other way - but deleting one must never be possible.
-				return oRow.deletable !== false;
+			var aRemovable = (this.getModel("ts").getProperty("/rows") || []).filter(function (oRow) {
+				return !oRow.readOnly && oRow.deletable !== false;
 			});
-
-			if (!aSelectedRows.length) {
-				Toast.error(this.getText("tsRowNotDeletable"));
+			if (!aRemovable.length) {
+				Toast.error(this.getText("tsNothingToRemove"));
 				return;
 			}
-			var aNames = aSelectedRows.map(function (oRow) {
-				return oRow.project;
-			}).join(", ");
+			oViewModel.setProperty("/removable", aRemovable.map(function (oRow) {
+				return { ProjectID: oRow.ProjectID, project: oRow.project, ClientDesc: oRow.ClientDesc };
+			}));
+			this._openDialog("_pRemoveProjectsDialog", "bsx.hrx.hrx2026.fragment.RemoveTimesheetProjectsDialog");
+		},
 
-			this._confirmDelete(aNames, function () {
-				this._flushAutoSave().then(this._deleteRows.bind(this, aRows, aSelectedRows));
+		/**
+		 * Hides the chosen projects from the user's timesheet, saving any typed hours first.
+		 * @param {sap.ui.base.Event} oEvent the dialog's confirm event
+		 */
+		onConfirmRemoveProjects: function (oEvent) {
+			var aIds = (oEvent.getParameter("selectedItems") || []).map(function (oItem) {
+				return oItem.getBindingContext("tsView").getProperty("ProjectID");
+			});
+			if (!aIds.length) {
+				return;
+			}
+			this._flushAutoSave().then(function () {
+				this._storeProjects(KEPT_PROJECTS_KEY, aIds, false);
+				this._storeProjects(HIDDEN_PROJECTS_KEY, aIds, true);
+				this.getModel("ts").setProperty("/rows", (this.getModel("ts").getProperty("/rows") || []).filter(function (oRow) {
+					return aIds.indexOf(oRow.ProjectID) === -1;
+				}));
+				this._recalculate();
+				MessageToast.show(this.getText("tsRemovedFromSheet"));
 			}.bind(this));
 		},
 
@@ -1093,6 +1294,9 @@ sap.ui.define([
 		 */
 		_deleteRows: function (aRows, aSelectedRows) {
 			var aRecIds = [];
+			this._storeProjects(KEPT_PROJECTS_KEY, aSelectedRows.map(function (oRow) {
+				return oRow.ProjectID;
+			}), false);
 			aSelectedRows.forEach(function (oRow) {
 				oRow.days.forEach(function (oDay) {
 					if (oDay.recId) {
@@ -1174,6 +1378,9 @@ sap.ui.define([
 		 * work description is rejected - managers rely on those to see what was worked on.
 		 */
 		onSave: function () {
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return;
+			}
 			// An auto-save may be sending some of the same bookings; wait for it, so a
 			// new booking is not created twice.
 			clearTimeout(this._iAutoSaveTimer);
@@ -1292,6 +1499,11 @@ sap.ui.define([
 		_changedCells: function () {
 			var aEntries = [];
 			var aWaiting = [];
+
+			// Only your own timesheet is ever saved
+			if (this.getModel("tsView").getProperty("/readOnly")) {
+				return { entries: aEntries, waiting: aWaiting };
+			}
 
 			(this.getModel("ts").getProperty("/rows") || []).forEach(function (oRow) {
 				if (oRow.readOnly) {

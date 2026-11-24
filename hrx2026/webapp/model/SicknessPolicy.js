@@ -3,7 +3,9 @@ sap.ui.define([], function () {
 
 	// The attendance policy: three separate sickness absences inside one financial
 	// year raise a trigger. It counts instances, not days - a single fortnight off is
-	// one instance, three one-day absences are three.
+	// one instance, three one-day absences are three. Absences on consecutive working
+	// days are one instance however they were booked, so Friday then Monday is one,
+	// and so is Friday then Tuesday when the Monday was a bank holiday or booked off.
 	var TRIGGER_INSTANCES = 3;
 
 	// The financial year runs 1 April to 31 March. Months are zero based.
@@ -45,9 +47,48 @@ sap.ui.define([], function () {
 		return new Date(parseInt(aParts[0], 10), parseInt(aParts[1], 10) - 1, parseInt(aParts[2], 10));
 	}
 
+	/**
+	 * @param {string} sDay a calendar day, "yyyy-MM-dd"
+	 * @param {object} [mDaysOff] the person's other days off (bank holidays, booked leave)
+	 * @returns {string} the next day after it the person was due to work, "yyyy-MM-dd"
+	 */
+	function nextWorkingDay(sDay, mDaysOff) {
+		var oDay = parseDay(sDay);
+		do {
+			oDay.setDate(oDay.getDate() + 1);
+		} while (!DEFAULT_PATTERN[oDay.getDay()] || (mDaysOff && mDaysOff[isoDate(oDay)]));
+		return isoDate(oDay);
+	}
+
 	return {
 
 		TRIGGER_INSTANCES: TRIGGER_INSTANCES,
+
+		/**
+		 * How many separate instances of sickness a person's absences make. An absence
+		 * that starts on or before the next working day after the previous one ends
+		 * carries on the same instance: weekends, bank holidays and booked leave in
+		 * between do not break it.
+		 * @param {Array<object>} aAbsences one person's absences, StartDate and EndDate ("yyyy-MM-dd")
+		 * @param {object} [mDaysOff] that person's days off, from SicknessService.getDaysOff
+		 * @returns {number} the number of instances
+		 */
+		instancesOf: function (aAbsences, mDaysOff) {
+			var iInstances = 0;
+			var sRunEnd = "";
+			(aAbsences || []).slice().sort(function (a, b) {
+				return a.StartDate.localeCompare(b.StartDate);
+			}).forEach(function (oAbsence) {
+				var sEnd = oAbsence.EndDate || oAbsence.StartDate;
+				if (sRunEnd && oAbsence.StartDate <= nextWorkingDay(sRunEnd, mDaysOff)) {
+					sRunEnd = sEnd > sRunEnd ? sEnd : sRunEnd;
+					return;
+				}
+				iInstances++;
+				sRunEnd = sEnd;
+			});
+			return iInstances;
+		},
 
 		/**
 		 * @param {boolean} bFitNote true when a fit note came in with the absence
@@ -153,11 +194,12 @@ sap.ui.define([], function () {
 		 * @param {object} oYear a financial year from {@link fiscalYear}
 		 * @param {Array<object>} [aReviews] the actions logged against triggers, any number per
 		 * employee: EmpID, Status ("EMAILED"|"DISMISSED"), Note, InstanceCount and ReviewedOn
+		 * @param {object} [mDaysOff] by EmpID, each person's days off (SicknessService.getDaysOff)
 		 * @returns {Array<object>} one entry per triggered employee - EmpID, absences (newest
 		 * first), instances, days, status ("OPEN"|"DISMISSED"), note (the dismissal reason),
 		 * emailed and emailedOn - by name
 		 */
-		triggers: function (aAbsences, oYear, aReviews) {
+		triggers: function (aAbsences, oYear, aReviews, mDaysOff) {
 			var mByEmp = {};
 
 			(aAbsences || []).forEach(function (oAbsence) {
@@ -167,17 +209,18 @@ sap.ui.define([], function () {
 			}, this);
 
 			return Object.keys(mByEmp).filter(function (sEmpId) {
-				return mByEmp[sEmpId].length >= TRIGGER_INSTANCES;
-			}).map(function (sEmpId) {
+				return this.instancesOf(mByEmp[sEmpId], (mDaysOff || {})[sEmpId]) >= TRIGGER_INSTANCES;
+			}, this).map(function (sEmpId) {
 				var aList = mByEmp[sEmpId].slice().sort(function (a, b) {
 					return b.StartDate.localeCompare(a.StartDate);
 				});
+				var iInstances = this.instancesOf(aList, (mDaysOff || {})[sEmpId]);
 
 				// The latest action of a kind that still covers every instance.
 				var fnCurrent = function (sStatus) {
 					return (aReviews || []).filter(function (oReview) {
 						return oReview.EmpID === sEmpId && oReview.Status === sStatus &&
-							(parseInt(oReview.InstanceCount, 10) || 0) >= aList.length;
+							(parseInt(oReview.InstanceCount, 10) || 0) >= iInstances;
 					}).sort(function (a, b) {
 						return String(b.ReviewedOn || "").localeCompare(String(a.ReviewedOn || ""));
 					})[0] || null;
@@ -189,7 +232,7 @@ sap.ui.define([], function () {
 					EmpID: sEmpId,
 					Name: aList[0].Name || "",
 					absences: aList,
-					instances: aList.length,
+					instances: iInstances,
 					days: aList.reduce(function (fTotal, oAbsence) {
 						return fTotal + (parseFloat(oAbsence.Days) || 0);
 					}, 0),
@@ -198,7 +241,7 @@ sap.ui.define([], function () {
 					emailed: !!oEmail,
 					emailedOn: oEmail ? (oEmail.ReviewedOn || "") : ""
 				};
-			}).sort(function (a, b) {
+			}, this).sort(function (a, b) {
 				return a.Name.localeCompare(b.Name);
 			});
 		},

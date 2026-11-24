@@ -750,8 +750,9 @@ sap.ui.define([
 				var mByRequester = {};
 
 				(oData.leaveToApprove || []).forEach(function (oLeave) {
-					// A cancellation of approved leave is its own row, apart from new requests
-					var sKey = oLeave.RequesterID + (oLeave.IsCancellation ? "|cancel" : "");
+					// One card per leave request (or per cancellation of approved leave), even
+					// when one person has several waiting
+					var sKey = (oLeave.RequestID || oLeave.LeaveID) + (oLeave.IsCancellation ? "|cancel" : "");
 					var oGroup = mByRequester[sKey];
 					if (!oGroup) {
 						oGroup = mByRequester[sKey] = {
@@ -1015,7 +1016,8 @@ sap.ui.define([
 				SicknessService.getTriggerReviews(this._sOrgId, oYear.startYear).catch(function () {
 					return [];
 				}),
-				this._pDashPeople
+				this._pDashPeople,
+				SicknessService.getDaysOff(oYear.from, oYear.to)
 			]).then(function (aResults) {
 				// Only your own direct reports' sickness counts, unless you see everyone's
 				var oProfile = this._oProfile;
@@ -1028,7 +1030,7 @@ sap.ui.define([
 				var aAbsences = aResults[0].filter(function (oAbsence) {
 					return oProfile.seesWholeTeam || mMyReports[oAbsence.EmpID];
 				});
-				var iOpen = SicknessPolicy.triggers(aAbsences, oYear, aResults[1]).filter(function (oTrigger) {
+				var iOpen = SicknessPolicy.triggers(aAbsences, oYear, aResults[1], aResults[3]).filter(function (oTrigger) {
 					return oTrigger.status === "OPEN";
 				}).length;
 

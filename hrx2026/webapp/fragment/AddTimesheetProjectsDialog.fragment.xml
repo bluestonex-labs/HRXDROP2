@@ -13,6 +13,13 @@
 		busyIndicatorDelay="0"
 		class="hrxModal hrxModalWide hrxTsAddProjects">
 		<content>
+			<VBox class="sapUiSmallMarginTop sapUiSmallMarginBottom sapUiMediumMarginBeginEnd">
+				<SearchField
+					id="addProjectsSearch"
+					placeholder="{i18n>tsSearchProjects}"
+					liveChange=".onSearchAddProjects"
+					search=".onSearchAddProjects" />
+			</VBox>
 			<Table
 				id="addProjectsTable"
 				items="{ts>/available}"

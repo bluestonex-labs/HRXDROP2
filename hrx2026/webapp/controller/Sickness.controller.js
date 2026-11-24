@@ -91,14 +91,15 @@ sap.ui.define([
 				this._loadEmployees(),
 				SicknessService.getAbsences(this._sOrgId, oYear.from, oYear.to),
 				SicknessService.getTriggerReviews(this._sOrgId, oYear.startYear),
-				SicknessService.getReturnsToWork(this._sOrgId)
+				SicknessService.getReturnsToWork(this._sOrgId),
+				SicknessService.getDaysOff(oYear.from, oYear.to)
 			]).then(function (aResult) {
 				// Stepping through the years quickly can land answers out of order; only
 				// the latest request may fill the page.
 				if (iLoad !== this._iLoad) {
 					return;
 				}
-				this._build(aResult[1], aResult[2], aResult[3]);
+				this._build(aResult[1], aResult[2], aResult[3], aResult[4]);
 			}.bind(this)).catch(function (oError) {
 				if (iLoad === this._iLoad) {
 					this._build([], [], []);
@@ -159,8 +160,9 @@ sap.ui.define([
 		 * @param {Array<object>} aRawAbsences absences from the service
 		 * @param {Array<object>} aReviews trigger reviews from the service
 		 * @param {Array<object>} aRawRtw returns to work from the service
+		 * @param {object} [mDaysOff] by EmpID, each person's bank holidays and booked leave
 		 */
-		_build: function (aRawAbsences, aReviews, aRawRtw) {
+		_build: function (aRawAbsences, aReviews, aRawRtw, mDaysOff) {
 			var oViewModel = this.getModel("skView");
 			var oModel = this.getModel("sk");
 			var oYear = oViewModel.getProperty("/year");
@@ -177,7 +179,7 @@ sap.ui.define([
 				return b.StartDate.localeCompare(a.StartDate);
 			});
 
-			var aAllTriggers = SicknessPolicy.triggers(aAbsences, oYear, aReviews).map(this._toTrigger, this);
+			var aAllTriggers = SicknessPolicy.triggers(aAbsences, oYear, aReviews, mDaysOff).map(this._toTrigger, this);
 			var aRtw = (aRawRtw || []).map(this._toRtw, this).filter(function (oRtw) {
 				return bSeesAll || oRtw.canAct;
 			});
@@ -394,6 +396,15 @@ sap.ui.define([
 		/**
 		 * Opens or folds the All sickness card.
 		 */
+		/**
+		 * Filters All sickness to the employees whose name contains what was typed.
+		 * @param {sap.ui.base.Event} oEvent the search field's liveChange or search event
+		 */
+		onSearchAll: function (oEvent) {
+			var sQuery = (oEvent.getParameter("newValue") || oEvent.getParameter("query") || "").trim();
+			this.byId("sicknessTable").getBinding("items").filter(sQuery ? [new Filter("Name", FilterOperator.Contains, sQuery)] : []);
+		},
+
 		onToggleAll: function () {
 			var oViewModel = this.getModel("skView");
 			oViewModel.setProperty("/allExpanded", !oViewModel.getProperty("/allExpanded"));

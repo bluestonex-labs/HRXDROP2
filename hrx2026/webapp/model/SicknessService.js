@@ -1,8 +1,9 @@
 sap.ui.define([
 	"./Hrx",
 	"./HrxServices",
+	"./HrxTime",
 	"./SicknessPolicy"
-], function (Hrx, HrxServices, SicknessPolicy) {
+], function (Hrx, HrxServices, HrxTime, SicknessPolicy) {
 	"use strict";
 
 	/*
@@ -277,6 +278,47 @@ sap.ui.define([
 				}));
 			}).then(function () {
 				return sRtwId ? Hrx.remove("ReturnsToWork(" + sRtwId + ")") : null;
+			});
+		},
+
+		/**
+		 * The days each person was not due to work, apart from weekends: bank holidays at
+		 * their site and leave they had approved (sick leave aside). A run of sickness
+		 * carries on over these, as it does over a weekend.
+		 * @param {string} sFrom the first day, "yyyy-MM-dd"
+		 * @param {string} sTo the last day, "yyyy-MM-dd"
+		 * @returns {Promise<object>} by EmpID, the days off: { "yyyy-MM-dd": true }
+		 */
+		getDaysOff: function (sFrom, sTo) {
+			return Promise.all([
+				Hrx.list("Users", { $select: "EmployeeID,BaseSite_ID" }),
+				Hrx.list("BankHolidays", { $filter: "Date ge " + sFrom + " and Date le " + sTo, $select: "Date,Site_ID" }),
+				Hrx.list("Leaves", {
+					$filter: "StartDate le " + sTo + " and EndDate ge " + sFrom + " and Status_ID eq " + HrxTime.LEAVE_STATUS.approved,
+					$select: "EmpID_EmployeeID,StartDate,EndDate,LeaveCategoryId_ID"
+				}),
+				sickTypeId()
+			]).then(function (aResults) {
+				var mDaysOff = {};
+				// A bank holiday with no site is for every site.
+				aResults[0].forEach(function (oUser) {
+					var mOff = mDaysOff[oUser.EmployeeID] = {};
+					aResults[1].forEach(function (oHoliday) {
+						if (!oHoliday.Site_ID || oHoliday.Site_ID === oUser.BaseSite_ID) {
+							mOff[oHoliday.Date] = true;
+						}
+					});
+				});
+				aResults[2].forEach(function (oLeave) {
+					if (oLeave.LeaveCategoryId_ID === aResults[3]) {
+						return;
+					}
+					var mOff = mDaysOff[oLeave.EmpID_EmployeeID] = mDaysOff[oLeave.EmpID_EmployeeID] || {};
+					weekdays(oLeave.StartDate, oLeave.EndDate).forEach(function (sDay) {
+						mOff[sDay] = true;
+					});
+				});
+				return mDaysOff;
 			});
 		},
 

@@ -233,6 +233,15 @@
 							class="hrxSickAllToggle" />
 						<Text text="{skView>/allCount}" wrapping="false" class="hrxSickAllHint" />
 					</HBox>
+					<!-- Narrows the list to one employee, by name -->
+					<SearchField
+						id="sicknessSearch"
+						placeholder="{i18n>skSearchEmployee}"
+						visible="{skView>/allExpanded}"
+						liveChange=".onSearchAll"
+						search=".onSearchAll"
+						width="320px"
+						class="sapUiSmallMarginBegin sapUiSmallMarginBottom" />
 					<Table
 						id="sicknessTable"
 						items="{sk>/absences}"
