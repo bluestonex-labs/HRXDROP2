@@ -544,6 +544,24 @@ body.hrxApp {
 	background: var(--ice-deep) !important;
 }
 
+/* A page's own buttons sit side by side; a secondary one is the design's
+   .btn.ghost: white with a grey line and ink text. */
+.hrxApp .hrxTopBarButtons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hrxApp .hrxTopBar .hrxTopBarAction[data-kind="ghost"] .sapMBtnInner {
+	background: var(--surface) !important;
+	border-color: var(--line);
+	color: var(--ink) !important;
+}
+
+.hrxApp .hrxTopBar .hrxTopBarAction[data-kind="ghost"] .sapMBtnInner:hover {
+	background: var(--frost) !important;
+}
+
 .hrxApp .hrxTopBar .hrxTopBarAction .sapMBtnContent {
 	padding: 0;
 	font-family: var(--disp);

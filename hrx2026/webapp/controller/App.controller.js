@@ -407,6 +407,9 @@ sap.ui.define([
 			}
 
 			this._sRoute = sRoute;
+			// A page's own top bar buttons belong to that page; the new page sets its own
+			// (setTopBar), which lands after this.
+			this.getOwnerComponent().getModel("app").setProperty("/topBar", { stamp: "", buttons: [] });
 
 			// Timesheet reporting opened as Utilisation (?tab=util) is the design's
 			// Utilisation page: its own title, and no "Last refreshed" stamp.
@@ -509,6 +512,35 @@ sap.ui.define([
 				oController.onPageAction();
 			} else if (typeof oController.onRefresh === "function") {
 				oController.onRefresh();
+			}
+		},
+
+		/**
+		 * Puts a page's own buttons (and a short status text) in the top bar, for
+		 * everyone who can open the page. Called by the page itself, for example
+		 * Expenses: Refresh and Create on its list, "Saved just now" on a claim.
+		 * Leaving the route clears them (_onRouteMatched).
+		 * @param {string} sRoute the route the buttons belong to; ignored once the user has moved on
+		 * @param {{stamp: string, buttons: Array<{key: string, text: string, icon: string, primary: boolean}>}} oTopBar what to show
+		 */
+		setTopBar: function (sRoute, oTopBar) {
+			var oModel = this.getOwnerComponent().getModel("app");
+			oModel.dataLoaded().then(function () {
+				if (this._sRoute === sRoute) {
+					oModel.setProperty("/topBar", { stamp: oTopBar.stamp || "", buttons: oTopBar.buttons || [] });
+				}
+			}.bind(this));
+		},
+
+		/**
+		 * One of the page's own top bar buttons: the page on screen handles it.
+		 * @param {sap.ui.base.Event} oEvent the button's press event
+		 */
+		onTopBarButton: function (oEvent) {
+			var sKey = oEvent.getSource().getBindingContext("app").getProperty("key");
+			var oController = this._currentPageController();
+			if (oController && typeof oController.onTopBarButton === "function") {
+				oController.onTopBarButton(sKey);
 			}
 		},
 

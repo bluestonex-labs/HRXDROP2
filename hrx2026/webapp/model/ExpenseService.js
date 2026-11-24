@@ -404,6 +404,25 @@ sap.ui.define([], function () {
 		/* ---------------- Approval (/approval) ---------------- */
 
 		/** @returns {Promise<Array<object>>} the claims waiting for the user's decision */
+		/**
+		 * Who decides a claim at a step: the configured approver's full name (the
+		 * approval service's approverFor). Readable by every approver, unlike the
+		 * approver settings, which are for admins.
+		 * @param {string} sCountry UK or IN
+		 * @param {number} iLevel 1 (first approver) or 2 (second, UK only)
+		 * @returns {Promise<string>} the name, or "" when none is set
+		 */
+		approverName: function (sCountry, iLevel) {
+			return send(functionUrl(APPROVAL_ROOT, "approverFor", { country: sCountry, level: iLevel })).then(function (oJson) {
+				return (oJson && oJson.value) || "";
+			});
+		},
+
+		/** @returns {Promise<object>} the signed-in approver as the approval service sees them */
+		approverWhoAmI: function () {
+			return send(APPROVAL_ROOT + "/whoami()");
+		},
+
 		awaitingDecision: function () {
 			return send(APPROVAL_ROOT + "/Approvals" + query({ $orderby: "submittedAt" })).then(function (oJson) {
 				return oJson.value;

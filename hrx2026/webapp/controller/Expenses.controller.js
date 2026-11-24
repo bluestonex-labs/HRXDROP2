@@ -79,6 +79,7 @@ sap.ui.define([
 				busy: false,
 				error: "",
 				panel: "list",
+				itemMode: "lines",
 				readOnly: true,
 				showErrors: false,
 				savedText: "",
@@ -104,6 +105,62 @@ sap.ui.define([
 			this._mPendingChanges = {};
 
 			this.getOwnerComponent().getRouter().getRoute("expenses").attachPatternMatched(this._onRouteMatched, this);
+
+			// The top bar's buttons follow the panel, and on a claim it shows whether the
+			// claim is saved, as the design has them
+			this._viewModel().bindProperty("/panel").attachChange(this._publishTopBar, this);
+			// A new panel starts at its top, not where the last one was scrolled to
+			this._viewModel().bindProperty("/panel").attachChange(this._scrollToTop, this);
+			this._viewModel().bindProperty("/savedText").attachChange(this._publishTopBar, this);
+			this._viewModel().bindProperty("/readOnly").attachChange(this._publishTopBar, this);
+		},
+
+		/**
+		 * The top bar for the panel on screen (the design's renderTop): Refresh and
+		 * Create on My claims, Create on Summary, the saved state on a claim being edited.
+		 */
+		_publishTopBar: function () {
+			var oViewModel = this._viewModel();
+			var sPanel = oViewModel.getProperty("/panel");
+			var oRefresh = { key: "refresh", text: this._text("exRefresh"), icon: "sap-icon://refresh", primary: false };
+			var oCreate = { key: "create", text: this._text("exCreate"), icon: "sap-icon://add", primary: true };
+			var oTopBar = { stamp: "", buttons: [] };
+
+			if (sPanel === "list") {
+				oTopBar.buttons = [oRefresh, oCreate];
+			} else if (sPanel === "summary") {
+				oTopBar.buttons = [oCreate];
+			} else if (!oViewModel.getProperty("/readOnly")) {
+				oTopBar.stamp = oViewModel.getProperty("/savedText");
+			}
+
+			var oApp = this.getOwnerComponent().getRootControl().getController();
+			if (oApp && oApp.setTopBar) {
+				oApp.setTopBar("expenses", oTopBar);
+			}
+		},
+
+		/** Scrolls the page (or, on a phone, its scroll area) back to the top. */
+		_scrollToTop: function () {
+			var oDomRef = this.getView().getDomRef();
+			if (!oDomRef) {
+				return;
+			}
+			oDomRef.querySelectorAll(".sapMPageEnableScrolling, .hrxMbContent").forEach(function (oScroller) {
+				oScroller.scrollTop = 0;
+			});
+		},
+
+		/**
+		 * A press on one of this page's top bar buttons (App.controller onTopBarButton).
+		 * @param {string} sKey refresh or create
+		 */
+		onTopBarButton: function (sKey) {
+			if (sKey === "create") {
+				this.onCreateClaim();
+			} else if (sKey === "refresh") {
+				this._load();
+			}
 		},
 
 		_text: function (sKey, aArgs) {
@@ -120,6 +177,8 @@ sap.ui.define([
 
 		_onRouteMatched: function () {
 			this._viewModel().setProperty("/panel", "list");
+			// The shell has just cleared the top bar for the new route
+			this._publishTopBar();
 			this._load();
 		},
 
@@ -562,14 +621,20 @@ sap.ui.define([
 				oItem.typeText = oType ? oType.description : this._text("exChooseType");
 				oItem.subText = [displayDate(oItem.expenseDate), oItem.destination].filter(Boolean).join(" · ");
 				oItem.grossText = ExpenseClaims.money(oItem.grossAmount, oClaim.currency);
+				oItem.netText = ExpenseClaims.money(oSplit.net, oClaim.currency);
+				oItem.taxLineText = this._text("exTaxOf", [ExpenseClaims.money(oSplit.tax, oClaim.currency)]);
 				oItem.fxText = bForeign && oItem.originalAmount ? ExpenseClaims.money(oItem.originalAmount, oItem.originalCurrency) : "";
 				oItem.splitText = this._text("exSplit", [
 					ExpenseClaims.money(oSplit.net, oClaim.currency),
 					ExpenseClaims.money(oSplit.tax, oClaim.currency),
 					ExpenseClaims.money(oSplit.gross, oClaim.currency)
 				]);
-				oItem.aiText = oItem.scanConfidence !== undefined && oItem.scanConfidence !== null
-					? this._text("exReadFromReceipt", [Math.round(oItem.scanConfidence * 100)]) : "";
+				if (ExpenseClaims.isFromScreenshot(oItem)) {
+					oItem.aiText = this._text("exFromScreenshot");
+				} else {
+					oItem.aiText = oItem.scanConfidence !== undefined && oItem.scanConfidence !== null
+						? this._text("exReadFromReceipt", [Math.round(oItem.scanConfidence * 100)]) : "";
+				}
 
 				// What to fix shows on the line; once there is nothing to fix, the line
 				// says it is fine. Missing fields count once the employee tries to submit.
@@ -891,6 +956,23 @@ sap.ui.define([
 			this._pickFiles(true, this._readReceipts.bind(this));
 		},
 
+		/** Lines or Grid: how the claim's items are shown */
+		onItemModePress: function (oEvent) {
+			this._viewModel().setProperty("/itemMode", oEvent.getSource().data("mode"));
+		},
+
+		/** Screenshots from a banking app: each becomes a line, flagged as not a VAT receipt. */
+		onPickScreenshots: function () {
+			this._pickFiles(true, function (aFiles) {
+				var aImages = aFiles.filter(function (oFile) {
+					return /^image\//.test(oFile.type);
+				});
+				if (aImages.length) {
+					this._readReceipts(aImages, true);
+				}
+			}.bind(this));
+		},
+
 		onAttachReceipt: function (oEvent) {
 			var oItem = this._itemOf(oEvent.getSource());
 			this._pickFiles(false, function (aFiles) {
@@ -899,10 +981,17 @@ sap.ui.define([
 		},
 
 		_attachReceipt: function (oItem, oFile) {
+			// A real receipt replaces a banking screenshot: the line stops saying so
+			var bWasScreenshot = ExpenseClaims.isFromScreenshot(oItem);
+			var sNotes = bWasScreenshot
+				? oItem.notes.slice(ExpenseClaims.SCREENSHOT_NOTE.length).replace(/^ · /, "") || null : oItem.notes;
 			this._viewModel().setProperty("/savedText", this._text("exSaving"));
 			this._queueWrite(function () {
-				return ExpenseService.putReceipt(oItem.ID, oFile, oFile.name);
+				return ExpenseService.putReceipt(oItem.ID, oFile, oFile.name).then(function () {
+					return bWasScreenshot ? ExpenseService.updateItem(oItem.ID, { notes: sNotes }) : null;
+				});
 			}).then(function () {
+				oItem.notes = sNotes;
 				oItem.receiptAttached = true;
 				oItem.receiptFileName = oFile.name;
 				this._viewModel().setProperty("/savedText", this._text("exSaved"));
@@ -948,8 +1037,9 @@ sap.ui.define([
 		 * date, amount (converted to the claim's currency), type and destination it
 		 * found, with the receipt attached. The employee adds the reason.
 		 * @param {File[]} aFiles the receipts
+		 * @param {boolean} [bScreenshot] screenshots from a banking app rather than receipts
 		 */
-		_readReceipts: function (aFiles) {
+		_readReceipts: function (aFiles, bScreenshot) {
 			var oClaim = this._model().getProperty("/claim");
 
 			aFiles.forEach(function (oFile) {
@@ -961,7 +1051,7 @@ sap.ui.define([
 					return ExpenseService.readReceipt(oPrepared.base64, oPrepared.mimeType, oClaim.country);
 				}).then(function (oReading) {
 					// An itemised receipt becomes one line per printed line
-					var aLines = ExpenseClaims.linesFromReading(oReading, oClaim.currency);
+					var aLines = ExpenseClaims.linesFromReading(oReading, oClaim.currency, bScreenshot);
 					return this._queueWrite(function () {
 						return this._createReadLines(oClaim, aLines, oFile);
 					}.bind(this));

@@ -73,6 +73,7 @@ sap.ui.define([
 			}), "eaView");
 			this.getView().setModel(new JSONModel({
 				awaiting: [],
+				awaitingMine: 0,
 				history: [],
 				historyRows: [],
 				historyHint: "",
@@ -88,6 +89,35 @@ sap.ui.define([
 			this._mTypes = {};
 			this._aTaxTypes = [];
 			this.getOwnerComponent().getRouter().getRoute("expenseapprovals").attachPatternMatched(this._onRouteMatched, this);
+
+			// Download PDF sits in the top bar on the tabs that list claims, as Expenses'
+			// Refresh and Create do
+			this._viewModel().bindProperty("/tab").attachChange(this._publishTopBar, this);
+			this._viewModel().bindProperty("/canApprove").attachChange(this._publishTopBar, this);
+			this._viewModel().bindProperty("/canAdminister").attachChange(this._publishTopBar, this);
+		},
+
+		/** The top bar for the tab on screen: Download PDF on Awaiting decision and History. */
+		_publishTopBar: function () {
+			var oViewModel = this._viewModel();
+			var sTab = oViewModel.getProperty("/tab");
+			var bAllowed = oViewModel.getProperty("/canApprove") || oViewModel.getProperty("/canAdminister");
+			var aButtons = bAllowed && (sTab === "awaiting" || sTab === "history")
+				? [{ key: "pdf", text: this._text("eaDownloadPdf"), icon: "sap-icon://pdf-attachment", primary: false }] : [];
+			var oApp = this.getOwnerComponent().getRootControl().getController();
+			if (oApp && oApp.setTopBar) {
+				oApp.setTopBar("expenseapprovals", { stamp: "", buttons: aButtons });
+			}
+		},
+
+		/**
+		 * A press on one of this page's top bar buttons (App.controller onTopBarButton).
+		 * @param {string} sKey pdf
+		 */
+		onTopBarButton: function (sKey) {
+			if (sKey === "pdf") {
+				this.onDownloadPdf();
+			}
 		},
 
 		_text: function (sKey, aArgs) {
@@ -104,6 +134,8 @@ sap.ui.define([
 
 		_onRouteMatched: function () {
 			var oViewModel = this._viewModel();
+			// The shell has just cleared the top bar for the new route
+			this._publishTopBar();
 			oViewModel.setProperty("/busy", true);
 			oViewModel.setProperty("/error", "");
 
@@ -173,13 +205,54 @@ sap.ui.define([
 
 		_loadAwaiting: function () {
 			return ExpenseService.awaitingDecision().then(function (aClaims) {
-				this._model().setProperty("/awaiting", aClaims.map(function (oClaim) {
+				// The queue holds every claim waiting at any step. Each row says whose
+				// decision it is, and the signed-in approver's own come first.
+				var mSteps = {};
+				aClaims.forEach(function (oClaim) {
+					var iLevel = oClaim.status === "FirstApproved" ? 2 : 1;
+					mSteps[oClaim.country + iLevel] = { country: oClaim.country, level: iLevel };
+				});
+				var aSteps = Object.keys(mSteps).map(function (sKey) {
+					return mSteps[sKey];
+				});
+				return Promise.all([
+					ExpenseService.approverWhoAmI(),
+					Promise.all(aSteps.map(function (oStep) {
+						return ExpenseService.approverName(oStep.country, oStep.level).catch(function () {
+							return "";
+						});
+					}))
+				]).then(function (aAnswers) {
+					var sMe = (aAnswers[0] && aAnswers[0].fullName) || "";
+					var mDecider = {};
+					aSteps.forEach(function (oStep, iIndex) {
+						mDecider[oStep.country + oStep.level] = aAnswers[1][iIndex];
+					});
+					return aClaims.map(function (oClaim) {
+						var iLevel = oClaim.status === "FirstApproved" ? 2 : 1;
+						var sDecider = mDecider[oClaim.country + iLevel] || "";
+						var bMine = !!sDecider && sDecider === sMe;
+						return { claim: oClaim, decider: sDecider, mine: bMine };
+					});
+				});
+			}).then(function (aRows) {
+				aRows.sort(function (oA, oB) {
+					return Number(oB.mine) - Number(oA.mine);
+				});
+				this._model().setProperty("/awaitingMine", aRows.filter(function (oRow) {
+					return oRow.mine;
+				}).length);
+				this._model().setProperty("/awaiting", aRows.map(function (oRow) {
+					var oClaim = oRow.claim;
 					// The service joins a claim's policy warnings with " • "
 					var iFlags = oClaim.policyFlags ? oClaim.policyFlags.split(" • ").filter(Boolean).length : 0;
 					return Object.assign({}, oClaim, {
+						employeeName: oClaim.employeeName || oClaim.createdBy,
 						countryName: COUNTRY_NAMES[oClaim.country] || oClaim.country,
 						submittedText: displayDateTime(oClaim.submittedAt),
 						statusText: oClaim.status === "FirstApproved" ? this._text("eaSecondLevel") : this._text("eaFirstLevel"),
+						deciderText: oRow.mine ? this._text("eaDeciderYou") : oRow.decider || this._text("eaDeciderNone"),
+						mine: oRow.mine,
 						totalText: ExpenseClaims.money(oClaim.totalGross, oClaim.currency),
 						flagsText: iFlags ? this._text(iFlags === 1 ? "eaOneFlag" : "eaFlags", [iFlags]) : ""
 					});
@@ -197,7 +270,11 @@ sap.ui.define([
 				oDialog.open();
 				return ExpenseService.approvalClaim(oRow.ID);
 			}).then(function (oClaim) {
-				this._model().setProperty("/review", this._reviewModel(oClaim));
+				var oReview = this._reviewModel(oClaim);
+				// Only the approver for this step can decide; anyone else may look
+				oReview.mine = oRow.mine;
+				oReview.deciderText = oRow.deciderText;
+				this._model().setProperty("/review", oReview);
 			}.bind(this)).catch(function (oError) {
 				MessageBox.error(oError.message);
 			}).finally(function () {
@@ -213,6 +290,8 @@ sap.ui.define([
 			return {
 				ID: oClaim.ID,
 				claimNumber: oClaim.claimNumber,
+				country: oClaim.country,
+				status: oClaim.status,
 				employeeName: oClaim.employeeName || oClaim.createdBy,
 				employeeNumber: oClaim.employeeNumber,
 				periodText: displayDate(oClaim.claimPeriod),
@@ -248,7 +327,9 @@ sap.ui.define([
 
 		onApprove: function () {
 			var oReview = this._model().getProperty("/review");
-			this._decide(ExpenseService.approve(oReview.ID, this._viewModel().getProperty("/comment")), "eaApproved", oReview);
+			// A UK claim's first approval sends it on to the second approver
+			var bToSecond = oReview.country === "UK" && oReview.status === "Submitted";
+			this._decide(ExpenseService.approve(oReview.ID, this._viewModel().getProperty("/comment")), bToSecond ? "eaApprovedToSecond" : "eaApproved", oReview);
 		},
 
 		onReturn: function () {
@@ -365,6 +446,7 @@ sap.ui.define([
 				this._model().setProperty("/history", aClaims.map(function (oClaim) {
 					var oStatus = ExpenseClaims.statusOf(oClaim.status);
 					return Object.assign({}, oClaim, {
+						employeeName: oClaim.employeeName || oClaim.createdBy,
 						countryName: COUNTRY_NAMES[oClaim.country] || oClaim.country,
 						submittedText: displayDateTime(oClaim.submittedAt),
 						statusText: oStatus.text,
@@ -396,6 +478,8 @@ sap.ui.define([
 			var oClaim = oEvent.getParameter("listItem").getBindingContext("ea").getObject();
 			ExpenseService.claimJourney(oClaim.claimNumber).then(function (oJourney) {
 				oJourney.totalText = ExpenseClaims.money(oJourney.totalGross, oJourney.currency);
+				// No HRX name for the claimant: show the login they claimed with
+				oJourney.employeeName = oJourney.employeeName || oClaim.employeeName;
 				oJourney.events = (oJourney.events || []).map(function (oStep) {
 					return Object.assign({}, oStep, { byText: oStep.by || "", atText: displayDateTime(oStep.at) });
 				});
@@ -454,14 +538,39 @@ sap.ui.define([
 						currency: ExpenseClaims.CURRENCY_OF_COUNTRY[oPolicy.country]
 					});
 				}));
-				this._model().setProperty("/approvers", aAnswers[1].map(function (oRow) {
-					return Object.assign({}, oRow, { countryName: COUNTRY_NAMES[oRow.country] || oRow.country });
-				}));
-				this._model().setProperty("/employees", aAnswers[2].filter(function (oEmployee) {
+				var aEmployees = aAnswers[2].filter(function (oEmployee) {
 					return oEmployee.email && oEmployee.IsActive !== "N";
 				}).map(function (oEmployee) {
 					return { email: oEmployee.email, label: oEmployee.fullName + " (" + oEmployee.email + ")" };
-				}).sort(function (a, b) {
+				});
+				var mByEmail = {};
+				aEmployees.forEach(function (oEmployee) {
+					mByEmail[oEmployee.email.toLowerCase()] = oEmployee;
+				});
+				// Each approver set today shows in its box, even when HRX spells the email
+				// differently or no longer lists the person; otherwise the box looks empty
+				// although an approver is set
+				var fnShown = function (sEmail) {
+					if (!sEmail) {
+						return sEmail;
+					}
+					var oKnown = mByEmail[sEmail.toLowerCase()];
+					if (oKnown) {
+						return oKnown.email;
+					}
+					var oExtra = { email: sEmail, label: sEmail };
+					aEmployees.push(oExtra);
+					mByEmail[sEmail.toLowerCase()] = oExtra;
+					return sEmail;
+				};
+				this._model().setProperty("/approvers", aAnswers[1].map(function (oRow) {
+					return Object.assign({}, oRow, {
+						countryName: COUNTRY_NAMES[oRow.country] || oRow.country,
+						firstApprover: fnShown(oRow.firstApprover),
+						secondApprover: fnShown(oRow.secondApprover)
+					});
+				}));
+				this._model().setProperty("/employees", aEmployees.sort(function (a, b) {
 					return a.label.localeCompare(b.label);
 				}));
 			}.bind(this));

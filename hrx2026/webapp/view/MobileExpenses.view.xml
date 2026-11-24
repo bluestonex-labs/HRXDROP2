@@ -17,7 +17,7 @@
 					<MessageStrip text="{exView>/error}" type="Error" showIcon="true" visible="{= !!${exView>/error} }" class="hrxMbExStrip"/>
 
 					<!-- ═════════ My claims ═════════ -->
-					<VBox renderType="Bare" visible="{= ${exView>/panel} !== 'claim' }">
+					<VBox renderType="Bare" visible="{= ${exView>/panel} !== 'claim' }" class="hrxMbExStack">
 						<Button text="{i18n>exPhotographReceipt}" icon="sap-icon://camera" press=".onPhotographNewClaim" class="hrxMbBtn hrxMbBtnPrimary"/>
 						<Button text="{i18n>exNewClaimNoReceipt}" icon="sap-icon://add" press=".onCreateClaim" class="hrxMbBtn hrxMbBtnGhost"/>
 
@@ -56,7 +56,7 @@
 					</VBox>
 
 					<!-- ═════════ One claim ═════════ -->
-					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'claim' }">
+					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'claim' }" class="hrxMbExStack">
 						<HBox renderType="Bare" class="hrxMbRowB hrxMbExHead">
 							<Button icon="sap-icon://nav-back" tooltip="{i18n>exBack}" press=".onBack" class="hrxMbIconBtn"/>
 							<VBox renderType="Bare" class="hrxMbExHeadText">
@@ -85,7 +85,7 @@
 						</VBox>
 
 						<!-- Receipts first: the camera, then the phone's own photos and files -->
-						<VBox renderType="Bare" visible="{= !${exView>/readOnly} }">
+						<VBox renderType="Bare" visible="{= !${exView>/readOnly} }" class="hrxMbExStack hrxMbExStackTight">
 							<Button text="{i18n>exPhotographReceipt}" icon="sap-icon://camera" press=".onPhotographReceipt" class="hrxMbBtn hrxMbBtnPrimary"/>
 							<HBox renderType="Bare" class="hrxMbExButtons">
 								<Button text="{i18n>exFromPhotos}" icon="sap-icon://attachment" press=".onPickReceipts" class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
@@ -182,7 +182,7 @@
 
 						<!-- Mileage -->
 						<HBox renderType="Bare" class="hrxMbRowB">
-							<Text text="{ex>/claim/mileageHint}" class="hrxMbSectionTitle"/>
+							<Text text="{= ${i18n>exMileage} + ' · ' + ${ex>/claim/mileageHint} }" class="hrxMbSectionTitle"/>
 							<Button text="{i18n>exAddMileage}" icon="sap-icon://add" press=".onAddMileage" visible="{= !${exView>/readOnly} }"
 								class="hrxMbBtn hrxMbBtnGhost hrxMbBtnSmall"/>
 						</HBox>

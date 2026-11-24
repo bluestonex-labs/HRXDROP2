@@ -82,6 +82,23 @@
 							press=".onPageAction"
 							class="hrxTopBarAction"/>
 					</HBox>
+					<!-- A page's own top bar buttons, for everyone who can open the page
+					     (Expenses: Refresh and Create). The page publishes them through
+					     App.controller setTopBar; pressing one calls the page's onTopBarButton. -->
+					<HBox alignItems="Center" class="hrxTopBarActions" visible="{= !!${app>/topBar/stamp} || (${app>/topBar/buttons} || []).length > 0 }">
+						<Text text="{app>/topBar/stamp}" visible="{= !!${app>/topBar/stamp} }" class="hrxTopBarStamp"/>
+						<HBox renderType="Bare" items="{path: 'app>/topBar/buttons', templateShareable: false}" class="hrxTopBarButtons">
+							<Button
+								text="{app>text}"
+								icon="{app>icon}"
+								press=".onTopBarButton"
+								class="hrxTopBarAction">
+								<customData>
+									<core:CustomData key="kind" value="{= ${app>primary} ? 'primary' : 'ghost' }" writeToDom="true"/>
+								</customData>
+							</Button>
+						</HBox>
+					</HBox>
 				</HBox>
 
 				<!-- The signed-in user's own week at a glance; the home page fills it. Each

@@ -23,7 +23,7 @@
 
 				<HBox renderType="Bare" class="hrxExTabRow" visible="{= ${eaView>/canApprove} || ${eaView>/canAdminister} }">
 					<HBox renderType="Bare" class="hrxExTabs">
-						<Button text="{= ${i18n>eaTabAwaiting} + (${ea>/awaiting}.length ? ' (' + ${ea>/awaiting}.length + ')' : '') }" press=".onTabPress" visible="{eaView>/canApprove}" class="hrxExTab">
+						<Button text="{= ${i18n>eaTabAwaiting} + (${ea>/awaitingMine} ? ' (' + ${ea>/awaitingMine} + ')' : '') }" press=".onTabPress" visible="{eaView>/canApprove}" class="hrxExTab">
 							<customData>
 								<core:CustomData key="tab" value="awaiting" />
 								<core:CustomData key="on" value="{= ${eaView>/tab} === 'awaiting' ? 'yes' : 'no' }" writeToDom="true" />
@@ -48,8 +48,6 @@
 							</customData>
 						</Button>
 					</HBox>
-					<Button text="{i18n>eaDownloadPdf}" icon="sap-icon://pdf-attachment" press=".onDownloadPdf"
-						visible="{= ${eaView>/tab} === 'awaiting' || ${eaView>/tab} === 'history' }" class="hrxExGhost" />
 				</HBox>
 
 				<!-- ═════════ Awaiting decision ═════════ -->
@@ -67,8 +65,9 @@
 							<Column><Text text="{i18n>exColNumber}" /></Column>
 							<Column><Text text="{i18n>eaColEmployee}" /></Column>
 							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColCountry}" /></Column>
-							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
+							<Column width="150px" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
 							<Column><Text text="{i18n>eaColStage}" /></Column>
+							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColDecider}" /></Column>
 							<Column hAlign="End"><Text text="{i18n>exColTotal}" /></Column>
 							<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColFlags}" /></Column>
 							<Column hAlign="End" />
@@ -82,10 +81,11 @@
 										<Text text="{ea>employeeNumber}" class="hrxExLineSub" />
 									</VBox>
 									<Text text="{ea>countryName}" />
-									<Text text="{ea>submittedText}" />
-									<ObjectStatus text="{ea>statusText}" state="Information" inverted="true" class="hrxExPill" />
+									<Text text="{ea>submittedText}" wrapping="false" />
+									<ObjectStatus text="{ea>statusText}" state="Information" class="hrxExPill" />
+									<Text text="{ea>deciderText}" />
 									<Text text="{ea>totalText}" class="hrxExStrong" />
-									<ObjectStatus text="{ea>flagsText}" state="Warning" inverted="true" visible="{= !!${ea>flagsText} }" class="hrxExPill" />
+									<ObjectStatus text="{ea>flagsText}" state="Warning" visible="{= !!${ea>flagsText} }" class="hrxExPill" />
 									<Button text="{i18n>eaReview}" type="Emphasized" press=".onReview" class="hrxExPrimary" />
 								</cells>
 							</ColumnListItem>
@@ -248,18 +248,18 @@
 								<Column><Text text="{i18n>exColNumber}" /></Column>
 								<Column><Text text="{i18n>eaColEmployee}" /></Column>
 								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColCountry}" /></Column>
-								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
+								<Column width="150px" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>eaColSubmitted}" /></Column>
 								<Column><Text text="{i18n>exColStatus}" /></Column>
 								<Column hAlign="End"><Text text="{i18n>exColTotal}" /></Column>
 							</columns>
 							<items>
-								<ColumnListItem type="Navigation">
+								<ColumnListItem type="Active">
 									<cells>
 										<Text text="{ea>claimNumber}" class="hrxExStrong" />
 										<Text text="{ea>employeeName}" />
 										<Text text="{ea>countryName}" />
-										<Text text="{ea>submittedText}" />
-										<ObjectStatus text="{ea>statusText}" state="{ea>statusState}" inverted="true" class="hrxExPill" />
+										<Text text="{ea>submittedText}" wrapping="false" />
+										<ObjectStatus text="{ea>statusText}" state="{ea>statusState}" class="hrxExPill" />
 										<Text text="{ea>totalText}" class="hrxExStrong" />
 									</cells>
 								</ColumnListItem>

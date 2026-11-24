@@ -33,6 +33,14 @@ sap.ui.define([], function () {
 	// A scan read with less confidence than this asks the employee to check it
 	var LOW_CONFIDENCE = 0.8;
 
+	// A line read from a banking app screenshot starts its notes with this, so the
+	// page can say it is not a VAT receipt until a real receipt replaces it
+	var SCREENSHOT_NOTE = "Bank screenshot";
+
+	function isFromScreenshot(oItem) {
+		return !!oItem && typeof oItem.notes === "string" && oItem.notes.indexOf(SCREENSHOT_NOTE) === 0;
+	}
+
 	function round2(fValue) {
 		return Math.round((Number(fValue) + Number.EPSILON) * 100) / 100;
 	}
@@ -202,6 +210,15 @@ sap.ui.define([], function () {
 			aChecks.push({ status: "block", need: "you", label: "Date in the future", detail: "Check the expense date", fix: "edit", fixText: "Fix the date" });
 		}
 
+		// A banking app screenshot shows the payment, not the tax: ask for the receipt
+		if (isFromScreenshot(oItem)) {
+			addCheck({
+				key: "shot", status: "flag", need: "you", label: "Bank screenshot only",
+				detail: "Not a VAT receipt. Add an itemised receipt if you can",
+				fix: "attach", fixText: "Attach receipt", dismissText: "Keep the screenshot"
+			});
+		}
+
 		// Receipt: required for most types (blocking on the service)
 		if (oItem.receiptAttached) {
 			aChecks.push({ status: "ok", label: "Receipt attached", detail: oItem.receiptFileName || "" });
@@ -279,14 +296,16 @@ sap.ui.define([], function () {
 	 * agree (the service checks that when the claim is saved).
 	 * @param {object} oReading the service's reading of the receipt (ReceiptDraft)
 	 * @param {string} sClaimCurrency the claim's currency, e.g. GBP
+	 * @param {boolean} [bScreenshot] read from a banking app screenshot: always one
+	 *   line, its notes starting with SCREENSHOT_NOTE
 	 * @returns {object[]} one item to create per line, plus scanConfidence and
 	 *   detectedType for the page's own checks
 	 */
-	function linesFromReading(oReading, sClaimCurrency) {
+	function linesFromReading(oReading, sClaimCurrency, bScreenshot) {
 		var bForeign = !!oReading.isForeign;
 		var fRate = Number(oReading.fxRate) || null;
 		var aPrinted = Array.isArray(oReading.lineItems) ? oReading.lineItems : [];
-		var bItemised = aPrinted.length > 1 && !oReading.lineItemsExceedTotal;
+		var bItemised = !bScreenshot && aPrinted.length > 1 && !oReading.lineItemsExceedTotal;
 
 		var fnLine = function (fReceiptAmount, fHomeAmount, sType, sNotes) {
 			return {
@@ -307,7 +326,8 @@ sap.ui.define([], function () {
 
 		if (!bItemised) {
 			var fHome = Number(bForeign ? oReading.homeAmount : oReading.grossAmount);
-			return [fnLine(bForeign ? Number(oReading.grossAmount) : null, fHome, oReading.matchedType, oReading.notes)];
+			var sNotes = bScreenshot ? [SCREENSHOT_NOTE, oReading.notes].filter(Boolean).join(" · ") : oReading.notes;
+			return [fnLine(bForeign ? Number(oReading.grossAmount) : null, fHome, oReading.matchedType, sNotes)];
 		}
 		return aPrinted.map(function (oPrinted) {
 			var fAmount = Number(oPrinted.amount);
@@ -328,6 +348,8 @@ sap.ui.define([], function () {
 	return {
 		STATUS: STATUS,
 		CURRENCY_OF_COUNTRY: CURRENCY_OF_COUNTRY,
+		SCREENSHOT_NOTE: SCREENSHOT_NOTE,
+		isFromScreenshot: isFromScreenshot,
 		round2: round2,
 		todayIso: todayIso,
 		money: money,

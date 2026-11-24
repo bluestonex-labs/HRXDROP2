@@ -39,18 +39,17 @@
 								</customData>
 							</Button>
 						</HBox>
-						<Button text="{i18n>exCreate}" icon="sap-icon://add" type="Emphasized" press=".onCreateClaim" class="hrxExPrimary" />
 					</HBox>
 
 					<!-- My claims -->
 					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'list' }" class="hrxExStack">
 						<HBox renderType="Bare" class="hrxExFilters">
 							<VBox renderType="Bare" class="hrxExField">
-								<Label text="{i18n>exFilterFrom}" />
+								<Label text="{i18n>exFilterPeriodFrom}" />
 								<DatePicker value="{exView>/filters/from}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onFilterChange" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExField">
-								<Label text="{i18n>exFilterTo}" />
+								<Label text="{i18n>exFilterPeriodTo}" />
 								<DatePicker value="{exView>/filters/to}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onFilterChange" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExField">
@@ -90,11 +89,11 @@
 									<Column hAlign="End"><Text text="{i18n>exColTotal}" /></Column>
 								</columns>
 								<items>
-									<ColumnListItem type="Navigation">
+									<ColumnListItem type="Active">
 										<cells>
 											<Text text="{ex>numberText}" class="hrxExStrong" />
 											<Text text="{ex>periodText}" />
-											<ObjectStatus text="{ex>statusText}" state="{ex>statusState}" inverted="true" class="hrxExPill" />
+											<ObjectStatus text="{ex>statusText}" state="{ex>statusState}" class="hrxExPill" />
 											<Text text="{ex>netText}" />
 											<Text text="{ex>taxText}" />
 											<Text text="{ex>totalText}" class="hrxExStrong" />
@@ -110,22 +109,26 @@
 						<HBox renderType="Bare" class="hrxExKpis">
 							<VBox renderType="Bare" class="hrxExKpi">
 								<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>
+								<core:Icon src="sap-icon://tabler/circle-check" class="hrxExKpiGlyph" />
 								<Text text="{i18n>exKpiApproved}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/approvedText}" class="hrxExKpiValue" />
 								<Text text="{ex>/summary/approvedSub}" class="hrxExKpiSub" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExKpi">
+								<core:Icon src="sap-icon://pending" class="hrxExKpiGlyph" />
 								<Text text="{i18n>exKpiPending}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/pendingText}" class="hrxExKpiValue" />
 								<Text text="{ex>/summary/pendingSub}" class="hrxExKpiSub" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExKpi">
+								<core:Icon src="sap-icon://receipt" class="hrxExKpiGlyph" />
 								<Text text="{ex>/summary/taxLabel}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/taxText}" class="hrxExKpiValue" />
 								<Text text="{i18n>exKpiTaxSub}" class="hrxExKpiSub" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExKpi">
 								<customData><core:CustomData key="state" value="{= ${ex>/summary/attention} > 0 ? 'Warning' : 'Good' }" writeToDom="true" /></customData>
+								<core:Icon src="sap-icon://tabler/alert-triangle" class="hrxExKpiGlyph" />
 								<Text text="{i18n>exKpiAttention}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/attention}" class="hrxExKpiValue" />
 								<Text text="{i18n>exKpiAttentionSub}" class="hrxExKpiSub" />
@@ -179,8 +182,7 @@
 					<HBox renderType="Bare" class="hrxExHeadRow">
 						<Button text="{i18n>exBack}" icon="sap-icon://nav-back" press=".onBack" type="Transparent" class="hrxExGhost" />
 						<Text text="{= ${ex>/claim/claimNumber} ? ${i18n>exClaimTitle} + ' ' + ${ex>/claim/claimNumber} : ${i18n>exNewClaim} }" class="hrxExTitle" />
-						<ObjectStatus text="{ex>/claim/statusText}" state="{ex>/claim/statusState}" inverted="true" class="hrxExPill" />
-						<Text text="{exView>/savedText}" visible="{= !${exView>/readOnly} }" class="hrxExSaved" />
+						<ObjectStatus text="{ex>/claim/statusText}" state="{ex>/claim/statusState}" class="hrxExPill" />
 					</HBox>
 
 					<MessageStrip
@@ -248,9 +250,26 @@
 								<Title text="{i18n>exItems}" level="H3" class="hrxExCardTitle" />
 								<Text text="{ex>/claim/itemsHint}" class="hrxExCardHint" />
 							</VBox>
-							<HBox renderType="Bare" class="hrxExHeadButtons" visible="{= !${exView>/readOnly} }">
-								<Button text="{i18n>exAddFromReceipt}" icon="sap-icon://attachment" press=".onPickReceipts" class="hrxExGhost" />
-								<Button text="{i18n>exAddItem}" icon="sap-icon://add" type="Emphasized" press=".onAddItem" class="hrxExPrimary" />
+							<HBox renderType="Bare" class="hrxExHeadButtons">
+								<!-- Lines (one row per item, details on demand) or Grid (every field
+								     in a spreadsheet-style table), as the design offers both -->
+								<HBox renderType="Bare" class="hrxExSeg">
+									<Button text="{i18n>exModeLines}" press=".onItemModePress" type="Transparent">
+										<customData>
+											<core:CustomData key="mode" value="lines" />
+											<core:CustomData key="on" value="{= ${exView>/itemMode} !== 'grid' ? 'yes' : 'no' }" writeToDom="true" />
+										</customData>
+									</Button>
+									<Button text="{i18n>exModeGrid}" press=".onItemModePress" type="Transparent">
+										<customData>
+											<core:CustomData key="mode" value="grid" />
+											<core:CustomData key="on" value="{= ${exView>/itemMode} === 'grid' ? 'yes' : 'no' }" writeToDom="true" />
+										</customData>
+									</Button>
+								</HBox>
+								<Button text="{i18n>exFromScreenshotButton}" icon="sap-icon://iphone" press=".onPickScreenshots" visible="{= !${exView>/readOnly} }" class="hrxExGhost" />
+								<Button text="{i18n>exAddFromReceipt}" icon="sap-icon://attachment" press=".onPickReceipts" visible="{= !${exView>/readOnly} }" class="hrxExGhost" />
+								<Button text="{i18n>exAddItem}" icon="sap-icon://add" type="Emphasized" press=".onAddItem" visible="{= !${exView>/readOnly} }" class="hrxExPrimary" />
 							</HBox>
 						</HBox>
 
@@ -261,6 +280,8 @@
 							content="{= '&lt;div class=&quot;hrxExDropWrap&quot;&gt;&lt;div class=&quot;hrxExDrop&quot; data-drop=&quot;receipts&quot;&gt;&lt;span class=&quot;hrxExDropIcon&quot;&gt;&lt;/span&gt;&lt;div&gt;&lt;b&gt;' + ${i18n>exDropTitle} + '&lt;/b&gt;' + ${i18n>exDropText} + '&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;' }"
 							afterRendering=".onDropRendered" />
 
+						<!-- ═══ Lines ═══ -->
+						<VBox renderType="Bare" visible="{= ${exView>/itemMode} !== 'grid' }">
 						<HBox renderType="Bare" class="hrxExLineHead" visible="{= ${ex>/claim/items}.length > 0 }">
 							<Text text="{i18n>exColItem}" />
 							<Text text="{i18n>exColReason}" />
@@ -306,7 +327,7 @@
 										<Button icon="sap-icon://pdf-attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExHasReceipt" />
 										<Text text="—" visible="{= !${ex>receiptAttached} &amp;&amp; !!${exView>/readOnly} }" />
 									</HBox>
-									<ObjectStatus text="{ex>stateText}" state="{ex>stateState}" inverted="true" visible="{= !!${ex>stateText} }" class="hrxExPill" />
+									<ObjectStatus text="{ex>stateText}" state="{ex>stateState}" visible="{= !!${ex>stateText} }" class="hrxExPill" />
 									<HBox renderType="Bare" class="hrxExActs">
 										<Button icon="{= ${ex>open} ? 'sap-icon://slim-arrow-up' : 'sap-icon://slim-arrow-down' }" tooltip="{i18n>exDetails}" press=".onToggleItem" type="Transparent" />
 										<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} }" />
@@ -391,6 +412,80 @@
 								</VBox>
 							</VBox>
 						</VBox>
+						</VBox>
+
+						<!-- ═══ Grid: every field of every line in one table ═══ -->
+						<Table
+							items="{path: 'ex>/claim/items', templateShareable: false}"
+							visible="{= ${exView>/itemMode} === 'grid' }"
+							noDataText="{i18n>exNoItems}"
+							class="hrxExTable hrxExGrid">
+							<columns>
+								<Column width="12%"><Text text="{i18n>exDate}" /></Column>
+								<Column width="15%"><Text text="{i18n>exType}" /></Column>
+								<Column width="10%"><Text text="{i18n>exDestination}" /></Column>
+								<Column width="13%"><Text text="{i18n>exColReason}" /></Column>
+								<Column width="10%"><Text text="{i18n>exTaxType}" /></Column>
+								<Column width="8%"><Text text="{i18n>exColCurrency}" /></Column>
+								<Column width="8%" hAlign="End"><Text text="{i18n>exColGross}" /></Column>
+								<Column width="8%" hAlign="End"><Text text="{i18n>exColNetVat}" /></Column>
+								<Column width="9%"><Text text="{i18n>exColChecks}" /></Column>
+								<Column width="7%" />
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<DatePicker value="{ex>expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }"
+											valueState="{= ${exView>/showErrors} &amp;&amp; !${ex>expenseDate} ? 'Error' : 'None' }" change=".onItemFieldChange">
+											<customData><core:CustomData key="field" value="expenseDate" /></customData>
+										</DatePicker>
+										<VBox renderType="Bare">
+											<Select selectedKey="{ex>expenseType_code}" forceSelection="false" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" width="100%"
+												valueState="{= ${exView>/showErrors} &amp;&amp; !${ex>expenseType_code} ? 'Error' : 'None' }"
+												items="{path: 'ex>/types', templateShareable: false}" change=".onItemFieldChange">
+												<core:Item key="{ex>code}" text="{ex>description}" />
+												<customData><core:CustomData key="field" value="expenseType_code" /></customData>
+											</Select>
+											<Text text="{= ${ex>reading} ? ${i18n>exReading} + ' ' + ${ex>receiptFileName} + '…' : ${ex>aiText} }" visible="{= !!${ex>reading} || !!${ex>aiText} }" class="hrxExAi" />
+										</VBox>
+										<Input value="{ex>destination}" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" liveChange=".onItemFieldChange">
+											<customData><core:CustomData key="field" value="destination" /></customData>
+										</Input>
+										<Input value="{ex>reasonForTrip}" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }"
+											valueState="{= ${exView>/showErrors} &amp;&amp; !${ex>reasonForTrip} ? 'Error' : 'None' }" liveChange=".onItemFieldChange">
+											<customData><core:CustomData key="field" value="reasonForTrip" /></customData>
+										</Input>
+										<Select selectedKey="{ex>vatType}" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" width="100%"
+											items="{path: 'ex>/claim/taxTypes', templateShareable: false}" change=".onItemFieldChange">
+											<core:Item key="{ex>code}" text="{ex>text}" />
+											<customData><core:CustomData key="field" value="vatType" /></customData>
+										</Select>
+										<VBox renderType="Bare">
+											<Select selectedKey="{ex>paidCurrency}" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" width="100%"
+												items="{path: 'ex>/currencies', templateShareable: false}" change=".onItemCurrencyChange">
+												<core:Item key="{ex>code}" text="{ex>code}" />
+											</Select>
+											<Input value="{ex>originalAmount}" type="Number" placeholder="{i18n>exForeignAmount}" visible="{= !!${ex>paidCurrency} &amp;&amp; ${ex>paidCurrency} !== ${ex>/claim/currency} }"
+												editable="{= !${exView>/readOnly} }" change=".onForeignAmountChange" />
+										</VBox>
+										<Input value="{ex>grossAmount}" type="Number" textAlign="End" editable="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }"
+											valueState="{= ${exView>/showErrors} &amp;&amp; !(${ex>grossAmount} > 0) ? 'Error' : 'None' }" liveChange=".onItemFieldChange">
+											<customData><core:CustomData key="field" value="grossAmount" /></customData>
+										</Input>
+										<VBox renderType="Bare" class="hrxExAmount">
+											<Text text="{ex>netText}" />
+											<Text text="{ex>taxLineText}" class="hrxExLineSub" />
+										</VBox>
+										<ObjectStatus text="{ex>stateText}" state="{ex>stateState}" visible="{= !!${ex>stateText} }" class="hrxExPill" />
+										<HBox renderType="Bare" class="hrxExActs">
+											<Button icon="sap-icon://attachment" tooltip="{i18n>exAttachReceipt}" visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} &amp;&amp; !${ex>reading} }" press=".onAttachReceipt" type="Transparent" />
+											<Button icon="sap-icon://pdf-attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExHasReceipt" />
+											<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" />
+										</HBox>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
 					</VBox>
 
 					<!-- Mileage -->
@@ -402,8 +497,7 @@
 							</VBox>
 							<Button text="{i18n>exAddMileage}" icon="sap-icon://add" type="Emphasized" press=".onAddMileage" visible="{= !${exView>/readOnly} }" class="hrxExPrimary" />
 						</HBox>
-						<Text text="{i18n>exNoMileage}" visible="{= ${ex>/claim/mileageClaims}.length === 0 }" class="hrxExNoRows" />
-						<Table items="{path: 'ex>/claim/mileageClaims', templateShareable: false}" visible="{= ${ex>/claim/mileageClaims}.length > 0 }" class="hrxExTable hrxExMileTable">
+						<Table items="{path: 'ex>/claim/mileageClaims', templateShareable: false}" noDataText="{i18n>exNoMileage}" class="hrxExTable hrxExMileTable">
 							<columns>
 								<Column width="15%"><Text text="{i18n>exTripDate}" /></Column>
 								<Column width="18%"><Text text="{i18n>exDestination}" /></Column>

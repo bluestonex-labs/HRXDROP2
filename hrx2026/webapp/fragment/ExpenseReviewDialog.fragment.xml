@@ -96,13 +96,15 @@
 					</items>
 				</Table>
 
-				<Label text="{i18n>eaComment}" labelFor="reviewComment" class="hrxExDialogSection" />
-				<TextArea id="reviewComment" value="{eaView>/comment}" rows="3" width="100%" maxLength="500" placeholder="{i18n>eaCommentPlaceholder}" />
+				<MessageStrip text="{= ${i18n>eaNotYourStep}.replace('{0}', ${ea>/review/deciderText}) }" type="Information" showIcon="true"
+					visible="{= !${ea>/review/mine} &amp;&amp; !!${ea>/review/ID} }" class="hrxExDialogSection" />
+				<Label text="{i18n>eaComment}" labelFor="reviewComment" visible="{= !!${ea>/review/mine} }" class="hrxExDialogSection" />
+				<TextArea id="reviewComment" value="{eaView>/comment}" rows="3" width="100%" maxLength="500" placeholder="{i18n>eaCommentPlaceholder}" visible="{= !!${ea>/review/mine} }" />
 			</VBox>
 		</content>
 		<buttons>
-			<Button text="{i18n>eaApprove}" type="Accept" icon="sap-icon://accept" press=".onApprove" />
-			<Button text="{i18n>eaReturn}" type="Reject" icon="sap-icon://undo" press=".onReturn" />
+			<Button text="{i18n>eaApprove}" type="Accept" icon="sap-icon://accept" press=".onApprove" visible="{= !!${ea>/review/mine} }" />
+			<Button text="{i18n>eaReturn}" type="Reject" icon="sap-icon://undo" press=".onReturn" visible="{= !!${ea>/review/mine} }" />
 			<Button text="{i18n>eaClose}" press=".onCloseReview" />
 		</buttons>
 	</Dialog>
