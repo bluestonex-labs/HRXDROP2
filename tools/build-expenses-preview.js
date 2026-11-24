@@ -78,7 +78,11 @@ rewrite(path.join(WORK, "mta.yaml"), [
     service-name: HRX2026-xsuaa-service
     service-plan: application`, `  type: org.cloudfoundry.existing-service
   parameters:
-    service-name: HRX2026-xsuaa-service`]
+    service-name: HRX2026-xsuaa-service`],
+	// Rewrite the preview's destinations on every deploy. With "ignore", a destination
+	// that already exists keeps its old settings, so a change here (such as the sign-in
+	// key above) never reaches the launchpad.
+	["existing_destinations_policy: ignore", "existing_destinations_policy: update"]
 ]);
 
 // 4. Its own app id, archive and business service

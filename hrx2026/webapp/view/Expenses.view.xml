@@ -23,7 +23,7 @@
 					class="hrxExStrip" />
 
 				<!-- ═════════ My claims and Summary ═════════ -->
-				<VBox renderType="Bare" visible="{= ${exView>/panel} !== 'claim' }">
+				<VBox renderType="Bare" visible="{= ${exView>/panel} !== 'claim' }" class="hrxExStack">
 					<HBox renderType="Bare" class="hrxExTabRow">
 						<HBox renderType="Bare" class="hrxExTabs">
 							<Button text="{i18n>exTabClaims}" press=".onTabPress" class="hrxExTab">
@@ -43,7 +43,7 @@
 					</HBox>
 
 					<!-- My claims -->
-					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'list' }">
+					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'list' }" class="hrxExStack">
 						<HBox renderType="Bare" class="hrxExFilters">
 							<VBox renderType="Bare" class="hrxExField">
 								<Label text="{i18n>exFilterFrom}" />
@@ -106,7 +106,7 @@
 					</VBox>
 
 					<!-- Summary -->
-					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'summary' }">
+					<VBox renderType="Bare" visible="{= ${exView>/panel} === 'summary' }" class="hrxExStack">
 						<HBox renderType="Bare" class="hrxExKpis">
 							<VBox renderType="Bare" class="hrxExKpi">
 								<customData><core:CustomData key="state" value="Good" writeToDom="true" /></customData>

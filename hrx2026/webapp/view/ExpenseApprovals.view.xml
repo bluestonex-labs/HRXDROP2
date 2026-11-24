@@ -94,7 +94,7 @@
 				</VBox>
 
 				<!-- ═════════ Dashboard ═════════ -->
-				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'dashboard' }">
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'dashboard' &amp;&amp; (${eaView>/canApprove} || ${eaView>/canAdminister}) }" class="hrxExStack">
 					<HBox renderType="Bare" class="hrxExFilters">
 						<VBox renderType="Bare" class="hrxExField">
 							<Label text="{i18n>exFilterFrom}" />
@@ -207,7 +207,7 @@
 				</VBox>
 
 				<!-- ═════════ History ═════════ -->
-				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'history' }">
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'history' &amp;&amp; (${eaView>/canApprove} || ${eaView>/canAdminister}) }" class="hrxExStack">
 					<HBox renderType="Bare" class="hrxExFilters">
 						<VBox renderType="Bare" class="hrxExField">
 							<Label text="{i18n>exFilterFrom}" />
@@ -269,7 +269,7 @@
 				</VBox>
 
 				<!-- ═════════ Settings (Admin) ═════════ -->
-				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'settings' }">
+				<VBox renderType="Bare" visible="{= ${eaView>/tab} === 'settings' &amp;&amp; (${eaView>/canApprove} || ${eaView>/canAdminister}) }" class="hrxExStack">
 					<VBox renderType="Bare" class="hrxExCard">
 						<VBox renderType="Bare" class="hrxExCardHead">
 							<Title text="{i18n>eaPolicyTitle}" level="H3" class="hrxExCardTitle" />

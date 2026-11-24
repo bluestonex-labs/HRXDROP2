@@ -15,6 +15,13 @@
 	margin: 0;
 }
 
+/* A tab's sections (filters, tiles, cards) stacked with the same spacing as the page */
+.hrxExpenses .hrxExStack {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
 .hrxExpenses .sapMText.hrxExStrong {
 	font-weight: 700;
 	color: var(--ink);
