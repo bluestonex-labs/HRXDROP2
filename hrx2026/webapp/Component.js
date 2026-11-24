@@ -103,6 +103,16 @@ sap.ui.define([
                 this.getModel("services").setData(HrxServices.flags());
                 this.getRouter().initialize();
             }.bind(this));
+
+            // HRX has its own header and menu, so the launchpad's (Work Zone) header
+            // above it only duplicates them - hide it when HRX runs in the launchpad,
+            // as SupportX does. Outside a launchpad there is nothing to hide.
+            sap.ui.require(["sap/ushell/Container"], function (Container) {
+                var oRenderer = Container && Container.getRenderer("fiori2");
+                if (oRenderer && oRenderer.setHeaderVisibility) {
+                    oRenderer.setHeaderVisibility(false);
+                }
+            }, function () {});
         },
 
         /**
