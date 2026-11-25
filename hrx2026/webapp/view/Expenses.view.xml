@@ -237,9 +237,9 @@
 									<Label text="{i18n>exEmployee}" />
 									<Text text="{ex>/claim/employeeName}" />
 								</HBox>
-								<HBox renderType="Bare" class="hrxExKv">
+								<HBox renderType="Bare" class="hrxExKv" visible="{= !!${ex>/claim/employeeNumberText} }">
 									<Label text="{i18n>exEmployeeNumber}" />
-									<Text text="{ex>/claim/employeeNumber}" />
+									<Text text="{ex>/claim/employeeNumberText}" />
 								</HBox>
 								<HBox renderType="Bare" class="hrxExKv">
 									<Label text="{i18n>exSiteCurrency}" />

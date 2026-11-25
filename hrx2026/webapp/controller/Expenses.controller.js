@@ -591,6 +591,7 @@ sap.ui.define([
 			oClaim.countryName = COUNTRY_NAMES[oClaim.country] || oClaim.country;
 			oClaim.employeeName = oClaim.employeeName || this._oMe.fullName;
 			oClaim.employeeNumber = oClaim.employeeNumber || this._oMe.employeeNumber;
+			oClaim.employeeNumberText = ExpenseClaims.employeeNumberText(oClaim.employeeNumber);
 			oClaim.taxTypes = this._aTaxTypes.filter(function (oTaxType) {
 				return oTaxType.country === oClaim.country;
 			}).map(function (oTaxType) {

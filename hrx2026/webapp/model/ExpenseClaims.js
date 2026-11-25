@@ -345,6 +345,17 @@ sap.ui.define([], function () {
 		return sStatus === "Submitted" || sStatus === "FirstApproved";
 	}
 
+	/**
+	 * Some employee records carry the system's 32-character record key where the
+	 * employee number should be. That key means nothing to a person, so it is not shown.
+	 * @param {string} sNumber the employee number stored on the claim
+	 * @returns {string} the number, or "" when it is only a system key
+	 */
+	function employeeNumberText(sNumber) {
+		var bSystemKey = /^[0-9A-F]{32}$/i.test(sNumber || "");
+		return bSystemKey ? "" : (sNumber || "");
+	}
+
 	return {
 		STATUS: STATUS,
 		CURRENCY_OF_COUNTRY: CURRENCY_OF_COUNTRY,
@@ -362,6 +373,7 @@ sap.ui.define([], function () {
 		linesFromReading: linesFromReading,
 		isEditable: isEditable,
 		isPending: isPending,
+		employeeNumberText: employeeNumberText,
 
 		/**
 		 * @param {string} sState a UI5 value state (None, Information, Success, Warning, Error)

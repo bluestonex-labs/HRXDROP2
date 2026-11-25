@@ -78,7 +78,7 @@
 									<Text text="{ea>claimNumber}" class="hrxExStrong" />
 									<VBox renderType="Bare">
 										<Text text="{ea>employeeName}" />
-										<Text text="{ea>employeeNumber}" class="hrxExLineSub" />
+										<Text text="{ea>employeeNumber}" class="hrxExLineSub" visible="{= !!${ea>employeeNumber} }" />
 									</VBox>
 									<Text text="{ea>countryName}" />
 									<Text text="{ea>submittedText}" wrapping="false" />

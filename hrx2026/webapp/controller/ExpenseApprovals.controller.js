@@ -248,6 +248,7 @@ sap.ui.define([
 					var iFlags = oClaim.policyFlags ? oClaim.policyFlags.split(" • ").filter(Boolean).length : 0;
 					return Object.assign({}, oClaim, {
 						employeeName: oClaim.employeeName || oClaim.createdBy,
+						employeeNumber: ExpenseClaims.employeeNumberText(oClaim.employeeNumber),
 						countryName: COUNTRY_NAMES[oClaim.country] || oClaim.country,
 						submittedText: displayDateTime(oClaim.submittedAt),
 						statusText: oClaim.status === "FirstApproved" ? this._text("eaSecondLevel") : this._text("eaFirstLevel"),
@@ -293,7 +294,7 @@ sap.ui.define([
 				country: oClaim.country,
 				status: oClaim.status,
 				employeeName: oClaim.employeeName || oClaim.createdBy,
-				employeeNumber: oClaim.employeeNumber,
+				employeeNumber: ExpenseClaims.employeeNumberText(oClaim.employeeNumber),
 				periodText: displayDate(oClaim.claimPeriod),
 				stageText: oClaim.status === "FirstApproved" ? this._text("eaSecondLevel") : this._text("eaFirstLevel"),
 				totalText: ExpenseClaims.money(oClaim.totalGross, oClaim.currency),
