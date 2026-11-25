@@ -46,11 +46,11 @@
 						<HBox renderType="Bare" class="hrxExFilters">
 							<VBox renderType="Bare" class="hrxExField">
 								<Label text="{i18n>exFilterPeriodFrom}" />
-								<DatePicker value="{exView>/filters/from}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onFilterChange" />
+								<DatePicker value="{exView>/filters/from}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="{i18n>exDatePlaceholder}" change=".onFilterChange" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExField">
 								<Label text="{i18n>exFilterPeriodTo}" />
-								<DatePicker value="{exView>/filters/to}" valueFormat="yyyy-MM-dd" displayFormat="d MMM yyyy" change=".onFilterChange" />
+								<DatePicker value="{exView>/filters/to}" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" placeholder="{i18n>exDatePlaceholder}" change=".onFilterChange" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExField">
 								<Label text="{i18n>exFilterStatus}" />
@@ -78,8 +78,9 @@
 								items="{path: 'ex>/rows', templateShareable: false}"
 								visible="{= ${ex>/rows}.length > 0 }"
 								mode="None"
+								fixedLayout="false"
 								itemPress=".onOpenClaim"
-								class="hrxExTable">
+								class="hrxExTable hrxExClaimsTable">
 								<columns>
 									<Column><Text text="{i18n>exColNumber}" /></Column>
 									<Column><Text text="{i18n>exColPeriod}" /></Column>
@@ -115,13 +116,13 @@
 								<Text text="{ex>/summary/approvedSub}" class="hrxExKpiSub" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExKpi">
-								<core:Icon src="sap-icon://pending" class="hrxExKpiGlyph" />
+								<core:Icon src="sap-icon://tabler/hourglass" class="hrxExKpiGlyph" />
 								<Text text="{i18n>exKpiPending}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/pendingText}" class="hrxExKpiValue" />
 								<Text text="{ex>/summary/pendingSub}" class="hrxExKpiSub" />
 							</VBox>
 							<VBox renderType="Bare" class="hrxExKpi">
-								<core:Icon src="sap-icon://receipt" class="hrxExKpiGlyph" />
+								<core:Icon src="sap-icon://tabler/receipt-tax" class="hrxExKpiGlyph" />
 								<Text text="{ex>/summary/taxLabel}" class="hrxExKpiLabel" />
 								<Text text="{ex>/summary/taxText}" class="hrxExKpiValue" />
 								<Text text="{i18n>exKpiTaxSub}" class="hrxExKpiSub" />
@@ -142,7 +143,9 @@
 									<Text text="{i18n>exSpendByTypeHint}" class="hrxExCardHint" />
 								</HBox>
 								<VBox renderType="Bare" class="hrxExPadded">
-									<Text text="{i18n>exNoSpend}" visible="{= ${ex>/summary/byType}.length === 0 }" class="hrxExEmptyText" />
+									<VBox renderType="Bare" visible="{= ${ex>/summary/byType}.length === 0 }" class="hrxExEmpty">
+										<Text text="{i18n>exNoSpend}" class="hrxExEmptyTitle" />
+									</VBox>
 									<VBox items="{path: 'ex>/summary/byType', templateShareable: false}" renderType="Bare">
 										<VBox renderType="Bare" class="hrxExBarRow">
 											<HBox renderType="Bare" class="hrxExBarLabel">
@@ -160,7 +163,10 @@
 									<Text text="{i18n>exNeedsInputHint}" class="hrxExCardHint" />
 								</HBox>
 								<VBox renderType="Bare" class="hrxExPadded">
-									<Text text="{i18n>exNothingNeeded}" visible="{= ${ex>/summary/attentionRows}.length === 0 }" class="hrxExEmptyText" />
+									<VBox renderType="Bare" visible="{= ${ex>/summary/attentionRows}.length === 0 }" class="hrxExEmpty">
+										<Text text="{i18n>exNothingNeededTitle}" class="hrxExEmptyTitle" />
+										<Text text="{i18n>exNothingNeededText}" class="hrxExEmptyText" />
+									</VBox>
 									<VBox items="{path: 'ex>/summary/attentionRows', templateShareable: false}" renderType="Bare">
 										<HBox renderType="Bare" class="hrxExAttn">
 											<customData><core:CustomData key="claim" value="{ex>claimId}" /></customData>
@@ -180,7 +186,7 @@
 				<!-- ═════════ One claim ═════════ -->
 				<VBox renderType="Bare" visible="{= ${exView>/panel} === 'claim' }" class="hrxExClaim">
 					<HBox renderType="Bare" class="hrxExHeadRow">
-						<Button text="{i18n>exBack}" icon="sap-icon://nav-back" press=".onBack" type="Transparent" class="hrxExGhost" />
+						<Button text="{i18n>exBack}" icon="sap-icon://arrow-left" press=".onBack" type="Transparent" class="hrxExGhost hrxExSmall" />
 						<Text text="{= ${ex>/claim/claimNumber} ? ${i18n>exClaimTitle} + ' ' + ${ex>/claim/claimNumber} : ${i18n>exNewClaim} }" class="hrxExTitle" />
 						<ObjectStatus text="{ex>/claim/statusText}" state="{ex>/claim/statusState}" class="hrxExPill" />
 					</HBox>
@@ -320,17 +326,19 @@
 									</Input>
 									<VBox renderType="Bare" class="hrxExAmount">
 										<Text text="{ex>grossText}" class="hrxExStrong" />
-										<Text text="{ex>fxText}" visible="{= !!${ex>fxText} }" class="hrxExLineSub" />
+										<Text text="{ex>amountSubText}" class="hrxExAmountSub" />
 									</VBox>
-									<HBox renderType="Bare">
-										<Button icon="sap-icon://attachment" tooltip="{i18n>exAttachReceipt}" visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} }" press=".onAttachReceipt" type="Transparent" />
-										<Button icon="sap-icon://pdf-attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExHasReceipt" />
+									<!-- The design's paperclip: blue once a receipt is on the line (opens it),
+									     grey while there is none (attaches one) -->
+									<HBox renderType="Bare" class="hrxExActs">
+										<Button icon="sap-icon://attachment" tooltip="{i18n>exAttachReceipt}" visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} }" press=".onAttachReceipt" type="Transparent" class="hrxExIconBtn" />
+										<Button icon="sap-icon://attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExIconBtn hrxExIconBtnOn" />
 										<Text text="—" visible="{= !${ex>receiptAttached} &amp;&amp; !!${exView>/readOnly} }" />
 									</HBox>
 									<ObjectStatus text="{ex>stateText}" state="{ex>stateState}" visible="{= !!${ex>stateText} }" class="hrxExPill" />
 									<HBox renderType="Bare" class="hrxExActs">
-										<Button icon="{= ${ex>open} ? 'sap-icon://slim-arrow-up' : 'sap-icon://slim-arrow-down' }" tooltip="{i18n>exDetails}" press=".onToggleItem" type="Transparent" />
-										<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} }" />
+										<Button icon="{= ${ex>open} ? 'sap-icon://slim-arrow-up' : 'sap-icon://slim-arrow-down' }" tooltip="{i18n>exDetails}" press=".onToggleItem" type="Transparent" class="hrxExIconBtn" />
+										<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} }" class="hrxExIconBtn hrxExIconBtnDel" />
 									</HBox>
 								</HBox>
 
@@ -478,9 +486,9 @@
 										</VBox>
 										<ObjectStatus text="{ex>stateText}" state="{ex>stateState}" visible="{= !!${ex>stateText} }" class="hrxExPill" />
 										<HBox renderType="Bare" class="hrxExActs">
-											<Button icon="sap-icon://attachment" tooltip="{i18n>exAttachReceipt}" visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} &amp;&amp; !${ex>reading} }" press=".onAttachReceipt" type="Transparent" />
-											<Button icon="sap-icon://pdf-attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExHasReceipt" />
-											<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" />
+											<Button icon="sap-icon://attachment" tooltip="{i18n>exAttachReceipt}" visible="{= !${ex>receiptAttached} &amp;&amp; !${exView>/readOnly} &amp;&amp; !${ex>reading} }" press=".onAttachReceipt" type="Transparent" class="hrxExIconBtn" />
+											<Button icon="sap-icon://attachment" tooltip="{ex>receiptFileName}" visible="{= !!${ex>receiptAttached} }" press=".onOpenReceipt" type="Transparent" class="hrxExIconBtn hrxExIconBtnOn" />
+											<Button icon="sap-icon://delete" tooltip="{i18n>exRemove}" press=".onRemoveItem" type="Transparent" visible="{= !${exView>/readOnly} &amp;&amp; !${ex>reading} }" class="hrxExIconBtn hrxExIconBtnDel" />
 										</HBox>
 									</cells>
 								</ColumnListItem>
@@ -499,12 +507,12 @@
 						</HBox>
 						<Table items="{path: 'ex>/claim/mileageClaims', templateShareable: false}" noDataText="{i18n>exNoMileage}" class="hrxExTable hrxExMileTable">
 							<columns>
-								<Column width="15%"><Text text="{i18n>exTripDate}" /></Column>
-								<Column width="18%"><Text text="{i18n>exDestination}" /></Column>
-								<Column width="22%"><Text text="{i18n>exReason}" /></Column>
-								<Column width="12%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exEngine}" /></Column>
-								<Column width="10%" hAlign="End"><Text text="{i18n>exMiles}" /></Column>
-								<Column width="9%" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exRate}" /></Column>
+								<Column width="15%"><Label text="{i18n>exTripDate}" required="true" /></Column>
+								<Column width="18%"><Label text="{i18n>exDestination}" required="true" /></Column>
+								<Column width="22%"><Label text="{i18n>exReason}" required="true" /></Column>
+								<Column width="12%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exColEngineType}" /></Column>
+								<Column width="10%" hAlign="End"><Label text="{i18n>exMiles}" required="true" /></Column>
+								<Column width="9%" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>exColRatePerMile}" /></Column>
 								<Column width="10%" hAlign="End"><Text text="{i18n>exColAmount}" /></Column>
 								<Column width="4%" />
 							</columns>

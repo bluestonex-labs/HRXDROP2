@@ -622,8 +622,13 @@ sap.ui.define([
 				oItem.subText = [displayDate(oItem.expenseDate), oItem.destination].filter(Boolean).join(" · ");
 				oItem.grossText = ExpenseClaims.money(oItem.grossAmount, oClaim.currency);
 				oItem.netText = ExpenseClaims.money(oSplit.net, oClaim.currency);
-				oItem.taxLineText = this._text("exTaxOf", [ExpenseClaims.money(oSplit.tax, oClaim.currency)]);
+				oItem.taxLineText = this._text("exTaxOf", [
+					this._text(oClaim.country === "IN" ? "exGst" : "exVat"),
+					ExpenseClaims.money(oSplit.tax, oClaim.currency)
+				]);
 				oItem.fxText = bForeign && oItem.originalAmount ? ExpenseClaims.money(oItem.originalAmount, oItem.originalCurrency) : "";
+				// Under the amount, as the design has it: what was paid abroad, else the tax in it
+				oItem.amountSubText = oItem.fxText || oItem.taxLineText;
 				oItem.splitText = this._text("exSplit", [
 					ExpenseClaims.money(oSplit.net, oClaim.currency),
 					ExpenseClaims.money(oSplit.tax, oClaim.currency),
