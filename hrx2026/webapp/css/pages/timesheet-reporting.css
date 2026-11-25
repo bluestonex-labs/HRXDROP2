@@ -573,6 +573,11 @@
 	width: 150px !important;
 }
 
+/* "On billable work" keeps its label: the narrow toolbar would otherwise squeeze it away */
+.hrxTimesheetReport .hrxTsTools .hrxTsBillable {
+	flex: none;
+}
+
 .hrxTimesheetReport .hrxTsPadded {
 	display: block;
 	padding: 18px 20px;

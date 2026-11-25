@@ -147,6 +147,28 @@ sap.ui.define([
 		},
 
 		/**
+		 * Who is on billable work now: an active assignment (not released) on an active,
+		 * billable project whose time booking is Open.
+		 * @returns {Promise<object>} by EmpID, true
+		 */
+		loadBillableAssignees: function () {
+			return Hrx.list("UserToProject", {
+				$select: "Employee_EmployeeID,Project_ID,IsActive",
+				$expand: "Project($select=ID,ProjectType,IsActive,IsTimeBookingAllowed)"
+			}).then(function (aRows) {
+				var mBillable = {};
+				aRows.forEach(function (oRow) {
+					var oProject = oRow.Project || {};
+					if (oRow.IsActive !== false && oProject.IsActive !== false &&
+						oProject.IsTimeBookingAllowed !== false && HrxTime.isBillable(oProject)) {
+						mBillable[oRow.Employee_EmployeeID] = true;
+					}
+				});
+				return mBillable;
+			});
+		},
+
+		/**
 		 * Hours booked against hours expected for everyone, over a range.
 		 * @param {string} sFrom the first day, "yyyy-MM-dd"
 		 * @param {string} sTo the last day, "yyyy-MM-dd"
