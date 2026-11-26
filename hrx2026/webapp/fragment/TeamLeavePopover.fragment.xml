@@ -44,11 +44,11 @@
 						</HBox>
 						<Text
 							text="“{tcPop>/request/comments}”"
-							visible="{= !!${tcPop>/request/comments} }"
+							visible="{= ${tcPop>/seesNotes} &amp;&amp; !!${tcPop>/request/comments} }"
 							class="hrxTlPopNote" />
 						<Text
 							text="{parts: ['i18n>tlApproverNote', 'tcPop>/request/approverComments'], formatter: '.formatter.textWithValue'}"
-							visible="{= !!${tcPop>/request/approverComments} }"
+							visible="{= ${tcPop>/seesNotes} &amp;&amp; !!${tcPop>/request/approverComments} }"
 							class="hrxTlPopNote" />
 					</VBox>
 					<HBox visible="{tcPop>/canAct}" class="hrxTlPopFoot">

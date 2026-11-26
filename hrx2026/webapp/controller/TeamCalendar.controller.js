@@ -853,11 +853,16 @@ sap.ui.define([
 			var bManager = this.getModel("tcView").getProperty("/isManager") && this._isMyReport(oRequest.EmpID);
 			var aPending = this._pendingOf(oRequest.EmpID);
 			var bUpcoming = oRequest.from > this._isoDate(new Date());
+			// Leave comments are private: the employee's own comment and the manager's
+			// note show only to the employee, their own manager and the HR admins.
+			var bSeesNotes = oRequest.EmpID === this.getModel("tcView").getProperty("/myEmpId") ||
+				this._isMyReport(oRequest.EmpID) || !!(this._oProfile && this._oProfile.isAdmin);
 
 			this.getModel("tcPop").setData({
 				kind: "request",
 				saving: false,
 				request: oRequest,
+				seesNotes: bSeesNotes,
 				pending: aPending,
 				canAct: bManager && oRequest.status === "REQ",
 				allPendingText: this.getText("tlAllPendingFor", [aPending.length, oRequest.FirstName]),
