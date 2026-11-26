@@ -447,6 +447,9 @@ sap.ui.define([
 				Reason: "",
 				Notes: "",
 				FitNote: false,
+				// "Full Day", or "AM" / "PM" when one day is picked
+				DayTime: "Full Day",
+				singleDay: false,
 				Days: 0,
 				datesPicked: false,
 				daysText: this.getText("skPickDates"),
@@ -476,6 +479,8 @@ sap.ui.define([
 				Reason: oAbsence.Reason,
 				Notes: oAbsence.Notes,
 				FitNote: false,
+				DayTime: "Full Day",
+				singleDay: false,
 				Days: oAbsence.Days,
 				datesPicked: true,
 				daysText: "",
@@ -542,24 +547,99 @@ sap.ui.define([
 			oEmployee.setValueStateText(this.getText("skEmployeeUnknown"));
 
 			var iDays = oFrom ? SicknessPolicy.workingDays(oFrom, oTo, SicknessPolicy.workPattern(this._person(sEmpId))) : 0;
+			// A morning or afternoon can only be one day
+			var bSingleDay = !!oFrom && SicknessPolicy.isoDate(oFrom) === SicknessPolicy.isoDate(oTo);
+			if (!bSingleDay) {
+				oForm.setProperty("/DayTime", "Full Day");
+			}
+			var bHalf = iDays === 1 && oForm.getProperty("/DayTime") !== "Full Day";
 			var sDaysText = !oFrom ? this.getText("skPickDates") :
+				bHalf ? this.getText("skHalfDay") :
 				iDays ? this.getText(iDays === 1 ? "skWorkingDay" : "skWorkingDays", [iDays]) : this.getText("skNoWorkingDays");
 
 			oForm.setProperty("/EmpID", sEmpId);
-			oForm.setProperty("/Days", iDays);
+			oForm.setProperty("/singleDay", bSingleDay);
+			oForm.setProperty("/Days", bHalf ? 0.5 : iDays);
 			oForm.setProperty("/datesPicked", !!oFrom);
 			oForm.setProperty("/daysText", sDaysText);
 			oForm.setProperty("/canSave", !!sEmpId && iDays > 0 && !!String(this.byId("skReason").getValue()).trim());
 		},
 
+		/**
+		 * Record (or Save changes): first checks whether any of the days are already
+		 * recorded as sick, by anyone. If so, it lists them and asks before saving -
+		 * a morning already recorded doesn't stop the afternoon being added.
+		 */
 		onSaveRecord: function () {
 			var oForm = this.getModel("skForm");
 			var oDates = this.byId("skDates");
 			var oFrom = oDates.getDateValue();
 			var oTo = oDates.getSecondDateValue() || oFrom;
-			var iDays = oForm.getProperty("/Days");
+			var sNew = oForm.getProperty("/DayTime");
+			var sOwn = oForm.getProperty("/mode") === "edit" ? oForm.getProperty("/AbsenceID") : "";
 
 			oForm.setProperty("/saving", true);
+			SicknessService.getRecordedSickDays(oForm.getProperty("/EmpID"), SicknessPolicy.isoDate(oFrom), SicknessPolicy.isoDate(oTo)).then(function (aRecorded) {
+				var aClashes = aRecorded.filter(function (oDay) {
+					// The same half, or a full day on either side, is the same sickness again
+					return oDay.AbsenceID !== sOwn &&
+						(oDay.DayTime === "Full Day" || sNew === "Full Day" || oDay.DayTime === sNew);
+				});
+				if (!aClashes.length) {
+					this._saveRecord();
+					return;
+				}
+				var sLines = aClashes.map(function (oDay) {
+					return this.getText("skAlreadyRecordedLine", [
+						SicknessPolicy.parseDay(oDay.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }),
+						this.getText(oDay.DayTime === "AM" ? "skDurMorning" : oDay.DayTime === "PM" ? "skDurAfternoon" : "skDurFull").toLowerCase(),
+						this._recordedByName(oDay.createdBy),
+						oDay.createdAt ? this._rangeText(String(oDay.createdAt).slice(0, 10), String(oDay.createdAt).slice(0, 10)) : "?"
+					]);
+				}, this).join("\n");
+				var sAnyway = this.getText("skRecordAnyway");
+				MessageBox.warning(this.getText("skAlreadyRecorded", [sLines]), {
+					title: this.getText("skAlreadyRecordedTitle"),
+					actions: [sAnyway, MessageBox.Action.CANCEL],
+					emphasizedAction: MessageBox.Action.CANCEL,
+					onClose: function (sAction) {
+						if (sAction === sAnyway) {
+							this._saveRecord();
+						} else {
+							oForm.setProperty("/saving", false);
+						}
+					}.bind(this)
+				});
+			}.bind(this)).catch(function (oError) {
+				oForm.setProperty("/saving", false);
+				this._showError("skErrorRecord", oError);
+			}.bind(this));
+		},
+
+		/**
+		 * Who recorded a sick day, as a name: createdBy is an email or an employee ID.
+		 * @param {string} sCreatedBy the row's createdBy
+		 * @returns {string} their name, or what was stored when they aren't known
+		 */
+		_recordedByName: function (sCreatedBy) {
+			var sKey = String(sCreatedBy || "").toLowerCase();
+			var oPerson = Object.keys(this._mPeople || {}).map(function (sId) {
+				return this._mPeople[sId];
+			}, this).filter(function (oPeople) {
+				return String(oPeople.EmpID || "").toLowerCase() === sKey || String(oPeople.Email || "").toLowerCase() === sKey;
+			})[0];
+			return (oPerson && oPerson.FullName) || sCreatedBy || "?";
+		},
+
+		/**
+		 * Saves the record dialog: a new absence, or the changes to one.
+		 */
+		_saveRecord: function () {
+			var oForm = this.getModel("skForm");
+			var oDates = this.byId("skDates");
+			var oFrom = oDates.getDateValue();
+			var oTo = oDates.getSecondDateValue() || oFrom;
+			var iDays = oForm.getProperty("/Days");
 
 			if (oForm.getProperty("/mode") === "edit") {
 				SicknessService.updateAbsence(oForm.getProperty("/AbsenceID"), {
@@ -588,6 +668,7 @@ sap.ui.define([
 				Days: iDays,
 				Reason: oForm.getProperty("/Reason").trim(),
 				Notes: oForm.getProperty("/Notes").trim(),
+				DayTime: oForm.getProperty("/DayTime"),
 				FitNote: oForm.getProperty("/FitNote") ? "Y" : "N",
 				RecordedBy: this._oProfile.email,
 				RtwSteps: SicknessPolicy.rtwSteps(!!oForm.getProperty("/FitNote"))

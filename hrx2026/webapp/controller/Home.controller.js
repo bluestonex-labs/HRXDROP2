@@ -855,7 +855,8 @@ sap.ui.define([
 				Hrx.list("LeaveType"),
 				Hrx.list("Sites"),
 				Hrx.list("WorkSchedule"),
-				Hrx.list("BankHolidays", { $filter: "Date eq " + sToday, $select: "Date,Site_ID" })
+				Hrx.list("BankHolidays", { $filter: "Date eq " + sToday, $select: "Date,Site_ID" }),
+				HrxTime.ukSiteId()
 			]).then(function (aResults) {
 				var mTypes = {};
 				var mSites = {};
@@ -905,7 +906,7 @@ sap.ui.define([
 						oRow.statusState = "Information";
 						oRow.order = 0;
 						iOnLeave++;
-					} else if (mHolidays[oPerson.SiteID] || mHolidays["*"]) {
+					} else if (mHolidays[oPerson.SiteID || aResults[6]] || mHolidays["*"]) {
 						oRow.statusText = this.getText("mgrBankHoliday");
 						oRow.statusState = "None";
 						oRow.order = 1;

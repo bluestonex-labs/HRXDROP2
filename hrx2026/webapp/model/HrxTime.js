@@ -46,6 +46,23 @@ sap.ui.define([
 		},
 
 		/**
+		 * The office whose bank holidays apply to someone with no office (remote, or not
+		 * assigned): the UK office, Oswestry.
+		 * @returns {Promise<string>} that site's ID, or "" when there is no such site
+		 */
+		ukSiteId: function () {
+			if (!this._pUkSiteId) {
+				this._pUkSiteId = Hrx.list("Sites", { $select: "ID,SiteDesc" }).then(function (aSites) {
+					var oUk = aSites.filter(function (oSite) {
+						return /oswestry/i.test(oSite.SiteDesc || "");
+					})[0];
+					return oUk ? oUk.ID : "";
+				});
+			}
+			return this._pUkSiteId;
+		},
+
+		/**
 		 * @returns {Promise<Array<object>>} everybody: EmpID, FirstName, LastName, Name, Email, IsActive,
 		 * UserType, SiteID, ManagerID and weekMinutes (their weekly target)
 		 */
@@ -185,8 +202,10 @@ sap.ui.define([
 				Hrx.list("WorkSchedule"),
 				HrxTime.timeLog(sFrom, sTo),
 				HrxTime.leaves(sFrom, sTo),
-				Hrx.list("BankHolidays", { $filter: "Date ge " + sFrom + " and Date le " + sTo, $select: "Date,Site_ID" })
+				Hrx.list("BankHolidays", { $filter: "Date ge " + sFrom + " and Date le " + sTo, $select: "Date,Site_ID" }),
+				HrxTime.ukSiteId()
 			]).then(function (aResults) {
+				var sUkSiteId = aResults[5];
 				var mSchedules = {};
 				var mBooked = {};
 				var mLeave = {};
@@ -224,7 +243,7 @@ sap.ui.define([
 					var fLeave = 0;
 
 					aDays.forEach(function (oDay) {
-						if (!aWorks[oDay.weekday] || mHolidays[oPerson.SiteID + "|" + oDay.iso] || mHolidays["*|" + oDay.iso]) {
+						if (!aWorks[oDay.weekday] || mHolidays[(oPerson.SiteID || sUkSiteId) + "|" + oDay.iso] || mHolidays["*|" + oDay.iso]) {
 							return;
 						}
 						var fOff = mPersonLeave[oDay.iso] || 0;

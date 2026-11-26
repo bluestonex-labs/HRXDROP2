@@ -74,7 +74,7 @@ sap.ui.define([
 				// Billing by assignment: one row per person, most billed first
 				assign: { q: "", work: "all", sort: "total" },
 				// Who's submitted has a period of its own: a week, this one to start with
-				sub: { q: "", from: "", to: "", thisWeek: true, atLatest: true },
+				sub: { q: "", billableOnly: false, from: "", to: "", thisWeek: true, atLatest: true },
 				// Show: the ticked criteria, all of which a person must meet (none is everyone)
 				util: { shows: [], showText: "", EmpIDs: [], peopleText: "" }
 			}), "trView");
@@ -921,8 +921,12 @@ sap.ui.define([
 		_renderSubmitted: function () {
 			var oViewModel = this.getModel("trView");
 			var sQuery = (oViewModel.getProperty("/sub/q") || "").toLowerCase();
+			// "On billable work": only people with a current billable assignment
+			var mBillable = oViewModel.getProperty("/sub/billableOnly") ? (this._mBillable || {}) : null;
 
-			var aAll = this._ofType(this._aWeek || []).map(function (oRow) {
+			var aAll = this._ofType(this._aWeek || []).filter(function (oRow) {
+				return !mBillable || mBillable[oRow.UserID];
+			}).map(function (oRow) {
 				var bNothingDue = oRow.expectedMinutes <= 0;
 				var bComplete = bNothingDue || oRow.bookedMinutes >= oRow.expectedMinutes;
 				var fPct = bNothingDue ? 100 : Math.min(100, oRow.bookedMinutes / oRow.expectedMinutes * 100);
@@ -1149,6 +1153,7 @@ sap.ui.define([
 			this._mHiddenSlices = {};
 			oViewModel.setProperty("/assign", { q: "", work: "all", sort: "total" });
 			oViewModel.setProperty("/sub/q", "");
+			oViewModel.setProperty("/sub/billableOnly", false);
 			oViewModel.setProperty("/util/shows", []);
 			this._setYear(0);
 			this._setSubPeriod(this._monday(new Date()));
@@ -1248,6 +1253,27 @@ sap.ui.define([
 				this._mOpenCustomer[sKey] = bOpen;
 			}, this);
 			this._renderBreakdown();
+		},
+
+		/**
+		 * "On billable work" ticked or unticked: reads who is on billable work the first
+		 * time, then narrows All employees (and its figures) to them.
+		 */
+		onSubBillable: function () {
+			if (!this.getModel("trView").getProperty("/sub/billableOnly") || this._mBillable) {
+				this._renderSubmitted();
+				return;
+			}
+			this.getModel("trView").setProperty("/weekLoading", true);
+			TimesheetReportService.loadBillableAssignees().then(function (mBillable) {
+				this._mBillable = mBillable;
+				this._renderSubmitted();
+			}.bind(this)).catch(function (oError) {
+				this.getModel("trView").setProperty("/sub/billableOnly", false);
+				this._showError("trErrorBillable", oError);
+			}.bind(this)).then(function () {
+				this.getModel("trView").setProperty("/weekLoading", false);
+			}.bind(this));
 		},
 
 		onSubSearch: function () {

@@ -188,7 +188,8 @@ sap.ui.define([
 							NoOfDays: String(oAbsence.Days),
 							StartDate: sDate,
 							EndDate: sDate,
-							DayTime: "Full Day",
+							// "Full Day", or "AM" / "PM" for half of a single day
+							DayTime: oAbsence.DayTime || "Full Day",
 							ApprovalRequired: false,
 							ApproverID_EmployeeID: signedInEmpId(),
 							RequesterComments: sComment,
@@ -282,6 +283,44 @@ sap.ui.define([
 		},
 
 		/**
+		 * The sick days already recorded for one person between two dates, by anyone -
+		 * the person themselves in My Leave, their manager or an HR admin. Rejected and
+		 * cancelled sick leave doesn't count.
+		 * @param {string} sEmpId the employee
+		 * @param {string} sFrom the first day, "yyyy-MM-dd"
+		 * @param {string} sTo the last day, "yyyy-MM-dd"
+		 * @returns {Promise<Array<object>>} one entry per weekday recorded: date, DayTime
+		 * ("Full Day", "AM" or "PM"), AbsenceID (its LeaveGrpID or ID), createdBy, createdAt
+		 */
+		getRecordedSickDays: function (sEmpId, sFrom, sTo) {
+			return sickTypeId().then(function (sSickId) {
+				return Hrx.list("Leaves", {
+					$filter: "EmpID_EmployeeID eq " + Hrx.literal(sEmpId) + " and LeaveCategoryId_ID eq " + sSickId +
+						" and StartDate le " + sTo + " and EndDate ge " + sFrom,
+					$select: "ID,LeaveGrpID,StartDate,EndDate,DayTime,Status_ID,createdBy,createdAt"
+				});
+			}).then(function (aRows) {
+				var aDays = [];
+				aRows.filter(function (oRow) {
+					return !HrxTime.isRejected(oRow);
+				}).forEach(function (oRow) {
+					weekdays(oRow.StartDate, oRow.EndDate).forEach(function (sDate) {
+						if (sDate >= sFrom && sDate <= sTo) {
+							aDays.push({
+								date: sDate,
+								DayTime: /^(AM|PM)$/i.test(oRow.DayTime || "") ? oRow.DayTime.toUpperCase() : "Full Day",
+								AbsenceID: oRow.LeaveGrpID || oRow.ID,
+								createdBy: oRow.createdBy || "",
+								createdAt: oRow.createdAt || ""
+							});
+						}
+					});
+				});
+				return aDays;
+			});
+		},
+
+		/**
 		 * The days each person was not due to work, apart from weekends: bank holidays at
 		 * their site and leave they had approved (sick leave aside). A run of sickness
 		 * carries on over these, as it does over a weekend.
@@ -297,14 +336,17 @@ sap.ui.define([
 					$filter: "StartDate le " + sTo + " and EndDate ge " + sFrom + " and Status_ID eq " + HrxTime.LEAVE_STATUS.approved,
 					$select: "EmpID_EmployeeID,StartDate,EndDate,LeaveCategoryId_ID"
 				}),
-				sickTypeId()
+				sickTypeId(),
+				HrxTime.ukSiteId()
 			]).then(function (aResults) {
 				var mDaysOff = {};
-				// A bank holiday with no site is for every site.
+				// A bank holiday with no site is for every site; someone with no office
+				// gets the UK office's.
 				aResults[0].forEach(function (oUser) {
 					var mOff = mDaysOff[oUser.EmployeeID] = {};
+					var sSiteId = oUser.BaseSite_ID || aResults[4];
 					aResults[1].forEach(function (oHoliday) {
-						if (!oHoliday.Site_ID || oHoliday.Site_ID === oUser.BaseSite_ID) {
+						if (!oHoliday.Site_ID || oHoliday.Site_ID === sSiteId) {
 							mOff[oHoliday.Date] = true;
 						}
 					});
