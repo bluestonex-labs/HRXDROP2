@@ -1,0 +1,56 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<!-- One claim's journey, for the audit trail: who it was assigned to, every step it
+	     went through, and its receipts. -->
+	<Dialog
+		id="expenseJourneyDialog"
+		title="{= ${i18n>eaJourneyTitle} + ' ' + ${ea>/journey/claimNumber} }"
+		contentWidth="720px"
+		resizable="true"
+		draggable="true"
+		class="hrxExpenses hrxExDialog">
+		<content>
+			<VBox renderType="Bare" class="hrxExDialogBody">
+				<HBox renderType="Bare" class="hrxExReviewHead">
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>eaColEmployee}" />
+						<Text text="{ea>/journey/employeeName}" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>exTotal}" />
+						<Text text="{ea>/journey/totalText}" class="hrxExStrong" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv">
+						<Label text="{i18n>eaFirstApprover}" />
+						<Text text="{ea>/journey/assignedL1}" />
+					</VBox>
+					<VBox renderType="Bare" class="hrxExKv" visible="{= !!${ea>/journey/assignedL2} }">
+						<Label text="{i18n>eaSecondApprover}" />
+						<Text text="{ea>/journey/assignedL2}" />
+					</VBox>
+				</HBox>
+
+				<Title text="{i18n>eaJourneySteps}" level="H4" class="hrxExDialogSection" />
+				<VBox items="{path: 'ea>/journey/events', templateShareable: false}" renderType="Bare" class="hrxExJourney">
+					<HBox renderType="Bare" class="hrxExJourneyStep">
+						<VBox renderType="Bare">
+							<Text text="{ea>action}" class="hrxExStrong" />
+							<Text text="{= ${ea>byText} + ' · ' + ${ea>atText} }" class="hrxExLineSub" />
+							<Text text="{ea>note}" visible="{= !!${ea>note} }" />
+						</VBox>
+					</HBox>
+				</VBox>
+
+				<Title text="{i18n>eaJourneyReceipts}" level="H4" class="hrxExDialogSection" visible="{= ${ea>/journey/attachments}.length > 0 }" />
+				<VBox items="{path: 'ea>/journey/attachments', templateShareable: false}" renderType="Bare">
+					<HBox renderType="Bare" class="hrxExJourneyStep">
+						<Link text="{ea>fileName}" press=".onOpenJourneyReceipt" />
+						<Text text="{= ${ea>expenseType} + ' · ' + ${ea>grossText} }" class="hrxExLineSub" />
+					</HBox>
+				</VBox>
+			</VBox>
+		</content>
+		<buttons>
+			<Button text="{i18n>eaClose}" press=".onCloseJourney" />
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>
