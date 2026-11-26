@@ -7,9 +7,8 @@ sap.ui.define([
 	"../model/formatter",
 	"sap/ui/core/format/DateFormat",
 	"../model/Notifications",
-	"../model/NotificationService",
-	"../model/ExpenseService"
-], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService, ExpenseService) {
+	"../model/NotificationService"
+], function (Controller, Fragment, Device, Backend, CurrentUser, formatter, DateFormat, Notifications, NotificationService) {
 	"use strict";
 
 	// The bell re-reads its sources at most this often while the user moves around
@@ -26,11 +25,9 @@ sap.ui.define([
 		leave: "leave",
 		teamcal: "teamcal",
 		policies: "policies",
-		expenses: "expenses",
 		explorer: "explorer",
 		sickness: "sickness",
 		documents: "documents",
-		expenseapprovals: "expenseapprovals",
 		timesheetreport: "timesheetreport",
 		utilisation: "timesheetreport",
 		resources: "resources",
@@ -53,8 +50,6 @@ sap.ui.define([
 		timesheetreport: "navTimesheetReport",
 		policies: "navPolicies",
 		documents: "navDocuments",
-		expenses: "navExpenses",
-		expenseapprovals: "navExpenseApprovals",
 		explorer: "navAppExplorer",
 		admin: "navAdmin"
 	};
@@ -71,7 +66,7 @@ sap.ui.define([
 
 	// The only pages a phone has (Component._usePhoneTargets); any other route sends
 	// it back to Home.
-	var PHONE_ROUTES = ["home", "timesheet", "leave", "expenses"];
+	var PHONE_ROUTES = ["home", "timesheet", "leave"];
 
 	// Which nav row to light up for pages that have none of their own: Missing
 	// timesheets and the Admin page are opened from the App Explorer.
@@ -105,12 +100,6 @@ sap.ui.define([
 			this._updateNavToggleIcon(oToolPage.getSideExpanded());
 
 			this.getOwnerComponent().getRouter().attachRouteMatched(this._onRouteMatched, this);
-
-			// Expense approvals is for expense approvers and admins (their role in BTP),
-			// whether or not they are HRX managers
-			Promise.all([ExpenseService.canApprove(), ExpenseService.canAdminister()]).then(function (aRoles) {
-				this.byId("expenseApprovalsNavItem").setVisible(aRoles[0] || aRoles[1]);
-			}.bind(this));
 
 			// The health strip's pills are plain boxes; a click or Enter/Space on one
 			// opens the page it is about. Handled on the strip, as its pills are
@@ -407,9 +396,6 @@ sap.ui.define([
 			}
 
 			this._sRoute = sRoute;
-			// A page's own top bar buttons belong to that page; the new page sets its own
-			// (setTopBar), which lands after this.
-			this.getOwnerComponent().getModel("app").setProperty("/topBar", { stamp: "", buttons: [] });
 
 			// Timesheet reporting opened as Utilisation (?tab=util) is the design's
 			// Utilisation page: its own title, and no "Last refreshed" stamp.
@@ -512,35 +498,6 @@ sap.ui.define([
 				oController.onPageAction();
 			} else if (typeof oController.onRefresh === "function") {
 				oController.onRefresh();
-			}
-		},
-
-		/**
-		 * Puts a page's own buttons (and a short status text) in the top bar, for
-		 * everyone who can open the page. Called by the page itself, for example
-		 * Expenses: Refresh and Create on its list, "Saved just now" on a claim.
-		 * Leaving the route clears them (_onRouteMatched).
-		 * @param {string} sRoute the route the buttons belong to; ignored once the user has moved on
-		 * @param {{stamp: string, buttons: Array<{key: string, text: string, icon: string, primary: boolean}>}} oTopBar what to show
-		 */
-		setTopBar: function (sRoute, oTopBar) {
-			var oModel = this.getOwnerComponent().getModel("app");
-			oModel.dataLoaded().then(function () {
-				if (this._sRoute === sRoute) {
-					oModel.setProperty("/topBar", { stamp: oTopBar.stamp || "", buttons: oTopBar.buttons || [] });
-				}
-			}.bind(this));
-		},
-
-		/**
-		 * One of the page's own top bar buttons: the page on screen handles it.
-		 * @param {sap.ui.base.Event} oEvent the button's press event
-		 */
-		onTopBarButton: function (oEvent) {
-			var sKey = oEvent.getSource().getBindingContext("app").getProperty("key");
-			var oController = this._currentPageController();
-			if (oController && typeof oController.onTopBarButton === "function") {
-				oController.onTopBarButton(sKey);
 			}
 		},
 

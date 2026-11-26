@@ -124,7 +124,7 @@ sap.ui.define([
          * App.controller then puts Home's address in the URL as well.
          */
         _usePhoneTargets() {
-            const mPhoneTargets = { home: "phoneHome", timesheet: "phoneTimesheet", leave: "phoneLeave", expenses: "phoneExpenses" };
+            const mPhoneTargets = { home: "phoneHome", timesheet: "phoneTimesheet", leave: "phoneLeave" };
             const oRouting = this.getManifestObject().getJson()["sap.ui5"].routing;
 
             oRouting.routes.forEach((oRoute) => {

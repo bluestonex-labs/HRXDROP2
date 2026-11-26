@@ -20,10 +20,6 @@ modules:
     parameters:
       service-key:
         name: bsx-hrx-xsuaa-key
-  - name: expense-management-xsuaa
-    parameters:
-      service-key:
-        name: expense-management-xsuaa-key
   parameters:
     content:
       instance:
@@ -47,16 +43,6 @@ modules:
           TokenServiceInstanceName: bsx-hrx-xsuaa
           TokenServiceKeyName: bsx-hrx-xsuaa-key
           sap.cloud.service: hrx2026
-        # The expense service (bluestonex-labs/ExpenseService): xs-app.json routes
-        # /expense/* and /approval/* here. As for hrxservice, the user's token is
-        # exchanged with the expense service's own XSUAA instance.
-        - Name: expenseservice
-          Authentication: OAuth2UserTokenExchange
-          URL: https://bsx-tdd-tdd-expense-management-srv.cfapps.eu10.hana.ondemand.com
-          TokenServiceInstanceName: expense-management-xsuaa
-          TokenServiceKeyName: expense-management-xsuaa-key
-          sap.cloud.service: hrx2026
-          HTML5.Timeout: 60000
         existing_destinations_policy: ignore
   build-parameters:
     no-source: true
@@ -122,13 +108,6 @@ resources:
   type: org.cloudfoundry.existing-service
   parameters:
     service-name: bsx-hrx-xsuaa
-# XSUAA instance of the expense service (bluestonex-labs/ExpenseService, MTA
-# expense-management), deployed in the same space. Only used to exchange tokens for
-# the expenseservice destination.
-- name: expense-management-xsuaa
-  type: org.cloudfoundry.existing-service
-  parameters:
-    service-name: expense-management-xsuaa
 parameters:
   deploy_mode: html5-repo
   enable-parallel-deployments: true

@@ -134,9 +134,6 @@
           "uri": "css/pages/app-explorer.css"
         },
         {
-          "uri": "css/pages/expenses.css"
-        },
-        {
           "uri": "css/pages/mobile.css"
         }
       ]
@@ -223,16 +220,6 @@
           "name": "documents",
           "pattern": "documents",
           "target": "documents"
-        },
-        {
-          "name": "expenses",
-          "pattern": "expenses",
-          "target": "expenses"
-        },
-        {
-          "name": "expenseapprovals",
-          "pattern": "expenseapprovals",
-          "target": "expenseapprovals"
         }
       ],
       "targets": {
@@ -250,11 +237,6 @@
           "viewName": "MobileLeave",
           "viewLevel": 1,
           "viewId": "phoneLeave"
-        },
-        "phoneExpenses": {
-          "viewName": "MobileExpenses",
-          "viewLevel": 1,
-          "viewId": "phoneExpenses"
         },
         "home": {
           "viewName": "Home",
@@ -325,16 +307,6 @@
           "viewName": "Documents",
           "viewLevel": 1,
           "viewId": "documents"
-        },
-        "expenses": {
-          "viewName": "Expenses",
-          "viewLevel": 1,
-          "viewId": "expenses"
-        },
-        "expenseapprovals": {
-          "viewName": "ExpenseApprovals",
-          "viewLevel": 1,
-          "viewId": "expenseapprovals"
         },
         "notFound": {
           "viewName": "NotFound",

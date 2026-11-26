@@ -15,20 +15,6 @@
       "csrfProtection": true
     },
     {
-      "source": "^/expense/(.*)$",
-      "target": "/expense/$1",
-      "destination": "expenseservice",
-      "authenticationType": "xsuaa",
-      "csrfProtection": true
-    },
-    {
-      "source": "^/approval/(.*)$",
-      "target": "/approval/$1",
-      "destination": "expenseservice",
-      "authenticationType": "xsuaa",
-      "csrfProtection": true
-    },
-    {
       "source": "^/services/(.*)$",
       "target": "/services/$1",
       "destination": "bsxorgappsservices",

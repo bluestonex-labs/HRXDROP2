@@ -78,7 +78,7 @@
 /* The design's .tabbar: three tabs, the current one lit in ice */
 .hrxApp .hrxPhone .hrxPhoneTabs {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	flex-shrink: 0;
 	padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
 	background: var(--surface);
@@ -126,7 +126,6 @@
 .hrxApp .hrxPhone .hrxPhoneTab[data-tab="home"] { --hrx-tab-icon: url("../../img/nav/home.svg"); }
 .hrxApp .hrxPhone .hrxPhoneTab[data-tab="timesheet"] { --hrx-tab-icon: url("../../img/nav/timesheet.svg"); }
 .hrxApp .hrxPhone .hrxPhoneTab[data-tab="leave"] { --hrx-tab-icon: url("../../img/nav/leave.svg"); }
-.hrxApp .hrxPhone .hrxPhoneTab[data-tab="expenses"] { --hrx-tab-icon: url("../../img/nav/expenses.svg"); }
 
 .hrxApp .hrxPhone .hrxPhoneTab .sapMBtnContent {
 	font-family: var(--sans);
