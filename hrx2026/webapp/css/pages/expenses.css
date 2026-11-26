@@ -1,0 +1,1495 @@
+/* ═════════════════════════════════════════════════════════════════════════════
+   Expenses and Expense approvals (view/Expenses.view.xml, view/ExpenseApprovals.view.xml)
+   The design's Expenses page (cards, tabs, the compact item lines with their inline
+   issues, the sticky bar along the bottom); the approval page reuses the same parts.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.hrxExpenses .hrxExBody {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding-bottom: 8px;
+}
+
+.hrxExpenses .hrxExStrip {
+	margin: 0;
+}
+
+/* A tab's sections (filters, tiles, cards) stacked with the same spacing as the page */
+.hrxExpenses .hrxExStack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.hrxExpenses .sapMText.hrxExStrong {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+/* ── Tabs (as Timesheet reporting draws them) and the button beside them ── */
+
+.hrxExpenses .hrxExTabRow {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom: 1px solid var(--line);
+	margin-bottom: 2px;
+}
+
+.hrxExpenses .hrxExTabs {
+	display: flex;
+	gap: 4px;
+	/* Scroll sideways on a narrow screen, but never up and down: the active tab's
+	   underline sits 1px below the strip and would otherwise draw a scroll bar */
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.hrxExpenses .hrxExTab.sapMBtn {
+	position: relative;
+	height: auto;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExTab .sapMBtnInner {
+	height: auto;
+	padding: 12px 16px 10px;
+	border: none;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	font-family: var(--disp);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .hrxExTab .sapMBtnContent,
+.hrxExpenses .hrxExTab .sapMBtnContent > bdi {
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+}
+
+.hrxExpenses .hrxExTab[data-on="yes"] .sapMBtnInner {
+	color: var(--ice-deep);
+}
+
+.hrxExpenses .hrxExTab[data-on="yes"]::after {
+	content: "";
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: -1px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--ice);
+}
+
+.hrxExpenses .hrxExTabRow > .sapMBtn {
+	margin-bottom: 8px;
+}
+
+/* ── Buttons ── */
+
+.hrxExpenses .hrxExGhost .sapMBtnInner {
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExGhost.sapMBtn .sapMBtnInner:hover {
+	background: var(--frost);
+}
+
+.hrxExpenses .hrxExPrimary .sapMBtnInner {
+	border-radius: var(--radius-s);
+}
+
+/* ── Filters (.fbar) ── */
+
+.hrxExpenses .hrxExFilters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 14px;
+	padding: 14px 18px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.hrxExpenses .hrxExField {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	flex: 1 1 150px;
+	min-width: 150px;
+}
+
+.hrxExpenses .hrxExFieldGrow {
+	flex: 2 1 220px;
+}
+
+.hrxExpenses .hrxExField > .sapMLabel {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* The design's inputs: one 40px box, 1px line border, 11px radius, 13px text */
+.hrxExpenses .hrxExFilters .sapMInputBase,
+.hrxExpenses .hrxExFilters .sapMSlt,
+.hrxExpenses .hrxExFilters .sapMSF {
+	width: 100% !important;
+	height: 40px;
+	margin: 0;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExFilters .sapMInputBaseContentWrapper,
+.hrxExpenses .hrxExFilters .sapMSlt,
+.hrxExpenses .hrxExFilters .sapMSFF {
+	box-sizing: border-box;
+	height: 40px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxExpenses .hrxExFilters .sapMInputBaseContentWrapper:hover,
+.hrxExpenses .hrxExFilters .sapMSlt:hover,
+.hrxExpenses .hrxExFilters .sapMSFF:hover {
+	border-color: var(--line);
+	background: var(--surface);
+}
+
+/* Focused: the browser's blue ring, as the design's native inputs show it */
+.hrxExpenses .hrxExFilters .sapMFocus .sapMInputBaseContentWrapper,
+.hrxExpenses .hrxExFilters .sapMSltFocused,
+.hrxExpenses .hrxExFilters .sapMFocus .sapMSFF,
+.hrxExpenses .hrxExFilters .sapMSFF:focus-within {
+	border-color: var(--ice-deep, #1E86B5);
+	outline: 1px solid var(--ice-deep, #1E86B5);
+	outline-offset: 0;
+}
+
+.hrxExpenses .hrxExFilters .sapMFocus .sapMInputBaseContentWrapper::after,
+.hrxExpenses .hrxExFilters .sapMInputBaseContentWrapper::after,
+.hrxExpenses .hrxExFilters .sapMSltFocused::before,
+.hrxExpenses .hrxExFilters .sapMSF.sapMFocus .sapMSFF::after {
+	display: none;
+}
+
+.hrxExpenses .hrxExFilters .sapMInputBaseInner,
+.hrxExpenses .hrxExFilters .sapMSltLabel,
+.hrxExpenses .hrxExFilters .sapMSFI {
+	height: 38px;
+	line-height: 38px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExFilters .sapMInputBaseInner::placeholder,
+.hrxExpenses .hrxExFilters .sapMSFI::placeholder {
+	font-family: var(--sans) !important;
+	font-size: 13px !important;
+	font-style: normal !important;
+	color: #757575 !important;
+}
+
+.hrxExpenses .hrxExFilters .sapMInputBaseIconContainer,
+.hrxExpenses .hrxExFilters .sapMSltArrow {
+	height: 38px;
+	display: flex;
+	align-items: center;
+	color: var(--ink);
+}
+
+/* Search: the magnifier inside the box on the left, then the text */
+.hrxExpenses .hrxExFilters .sapMSFF {
+	display: flex;
+	align-items: center;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExFilters .sapMSFS {
+	order: -1;
+	flex: 0 0 auto;
+	width: 15px;
+	height: 15px;
+	min-width: 0;
+	margin: 0 0 0 12px;
+	padding: 0;
+	line-height: 15px;
+	font-size: 15px;
+	color: var(--txt-3);
+	background: none;
+	pointer-events: none;
+}
+
+.hrxExpenses .hrxExFilters .sapMSFI {
+	flex: 1 1 auto;
+	padding: 0 12px 0 9px;
+}
+
+.hrxExpenses .hrxExFilters .sapMSFR {
+	height: 38px;
+	line-height: 38px;
+}
+
+/* Clear: the design's small ghost button, sitting 6px above the field bottoms */
+.hrxExpenses .hrxExFilters .hrxExClear {
+	flex: 0 0 auto;
+	height: auto;
+	padding: 0;
+	margin-bottom: 6px;
+}
+
+.hrxExpenses .hrxExFilters .hrxExClear .sapMBtnInner {
+	height: 24px;
+	min-height: 0;
+	padding: 0 12px;
+}
+
+.hrxExpenses .hrxExFilters .hrxExClear .sapMBtnContent {
+	font-size: 10.5px;
+	line-height: 22px;
+}
+
+/* ── Cards (.card) ── */
+
+.hrxExpenses .hrxExCard {
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+	min-width: 0;
+}
+
+.hrxExpenses .hrxExCardHead {
+	padding: 14px 20px;
+	gap: 3px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxExpenses .hrxExCardHeadRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hrxExpenses .hrxExCardTitle .sapMTitle,
+.hrxExpenses .sapMTitle.hrxExCardTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxExpenses .sapMText.hrxExCardHint {
+	font-size: 11.5px;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExPadded {
+	padding: 18px 20px;
+}
+
+/* The design's empty state (.empty-state): a display-font title over a grey line */
+.hrxExpenses .hrxExEmpty {
+	align-items: center;
+	padding: 44px 24px;
+	gap: 6px;
+	text-align: center;
+}
+
+.hrxExpenses .hrxExPadded > .hrxExEmpty {
+	margin: -18px -20px;
+}
+
+.hrxExpenses .sapMText.hrxExEmptyTitle {
+	font-family: var(--disp);
+	font-size: 14px;
+	font-weight: 800;
+	text-transform: uppercase;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExEmpty > .sapMText.hrxExEmptyText {
+	max-width: 380px;
+	line-height: 1.5;
+}
+
+.hrxExpenses .sapMText.hrxExEmptyText,
+.hrxExpenses .sapMText.hrxExNoRows {
+	font-size: 12.5px;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExTable.sapMListTbl,
+.hrxExpenses .hrxExTable .sapMListTbl {
+	background: var(--surface);
+	border: none;
+}
+
+.hrxExpenses .hrxExTable .sapMListTblHeaderCell {
+	background: var(--frost);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+/* The claims list as the design's table: 31px header row, 44px rows, 18px cell
+   padding (20px at the outer edges), 13px text, columns sized by their content */
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeader {
+	border-bottom: 1px solid var(--line);
+}
+
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeaderCell {
+	height: 31px;
+	padding: 0 18px;
+	letter-spacing: .6px;
+	white-space: nowrap;
+}
+
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeaderCell .sapMText,
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeaderCell .sapMColumnHeader {
+	padding: 0;
+	font-size: 10px;
+	line-height: 12px;
+	font-weight: 600;
+	color: var(--txt-3);
+	letter-spacing: .6px;
+	text-transform: uppercase;
+}
+
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow {
+	height: 44px;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow:last-child {
+	border-bottom: none;
+}
+
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow .sapMListTblCell {
+	padding: 12px 18px;
+	vertical-align: middle;
+	font-size: 13px;
+}
+
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow .sapMListTblCell .sapMText {
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeaderCell:nth-child(2),
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow .sapMListTblCell:nth-child(2) {
+	padding-left: 20px;
+}
+
+.hrxExpenses .hrxExClaimsTable .sapMListTblHeaderCell:nth-last-child(2),
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow .sapMListTblCell:nth-last-child(2) {
+	padding-right: 20px;
+}
+
+.hrxExpenses .hrxExClaimsTable tbody .sapMListTblRow:hover,
+.hrxExpenses .hrxExClaimsTable .sapMLIBActive {
+	background: rgba(38, 170, 226, .05);
+}
+
+/* Status pills: the app's soft pills (css/style.css), on one line. A draft is a grey
+   pill rather than plain text. */
+.hrxExpenses .hrxExPill.sapMObjStatus {
+	white-space: nowrap;
+	line-height: 13px;
+	min-height: 0;
+}
+
+.hrxExpenses .hrxExClaimsTable .hrxExPill.sapMObjStatus {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.hrxExpenses .hrxExPill.sapMObjStatus .sapMObjStatusText {
+	white-space: nowrap;
+}
+
+.hrxExpenses .hrxExPill.sapMObjStatusNone {
+	background: #E7EAEE;
+	color: #6D6E72;
+	padding: 3px 10px;
+}
+
+/* ── Summary: KPI tiles and bars ── */
+
+.hrxExpenses .hrxExKpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.hrxExpenses .hrxExKpi {
+	padding: 18px 20px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-top: 2px solid var(--ice);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	min-width: 0;
+}
+
+.hrxExpenses .hrxExKpi[data-state="Good"] { border-top-color: var(--mint); }
+.hrxExpenses .hrxExKpi[data-state="Warning"] { border-top-color: var(--amber); }
+
+/* The tile's icon, top right in a tinted square (the design's .glyph) */
+.hrxExpenses .hrxExKpi {
+	position: relative;
+}
+
+.hrxExpenses .hrxExKpiGlyph.sapUiIcon {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	width: 34px;
+	height: 34px;
+	line-height: 34px;
+	border-radius: 10px;
+	font-size: 17px;
+	text-align: center;
+	color: var(--ice-deep);
+	background: var(--ice-glow);
+}
+
+.hrxExpenses .hrxExKpi[data-state="Good"] .hrxExKpiGlyph { color: var(--mint); background: var(--mint-soft); }
+.hrxExpenses .hrxExKpi[data-state="Warning"] .hrxExKpiGlyph { color: #92400E; background: var(--amber-soft); }
+
+/* Keep the label clear of the icon */
+.hrxExpenses .sapMText.hrxExKpiLabel {
+	padding-right: 44px;
+}
+
+.hrxExpenses .sapMText.hrxExKpiLabel {
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .sapMText.hrxExKpiValue {
+	font-family: var(--disp);
+	font-size: 36px;
+	font-weight: 800;
+	letter-spacing: -1px;
+	line-height: 1.05;
+	color: var(--ink);
+	margin-top: 4px;
+}
+
+.hrxExpenses .sapMText.hrxExKpiSub {
+	font-size: 12px;
+	color: var(--txt-3);
+	margin-top: 4px;
+}
+
+.hrxExpenses .hrxExGrid2 {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	gap: 18px;
+}
+
+.hrxExpenses .hrxExBarRow {
+	margin-bottom: 14px;
+}
+
+.hrxExpenses .hrxExBarLabel {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 13px;
+	margin-bottom: 5px;
+}
+
+.hrxExpenses .hrxExBarLabel > .sapMText {
+	font-size: 13px;
+	line-height: 15px;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExBarTrack {
+	height: 7px;
+	border-radius: 5px;
+	background: var(--line-soft);
+	overflow: hidden;
+}
+
+.hrxExpenses .hrxExBarFill {
+	height: 100%;
+	border-radius: 5px;
+	background: linear-gradient(90deg, var(--ice), #756EE5);
+}
+
+.hrxExpenses .hrxExAttn {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px 14px;
+	margin-bottom: 10px;
+	border-radius: var(--radius-s);
+	background: var(--amber-soft);
+	border: 1px solid #F5D488;
+}
+
+.hrxExpenses .hrxExAttnTitle.sapMLnk {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.hrxExpenses .sapMText.hrxExAttnIssue {
+	font-size: 12px;
+	color: #92400E;
+	margin-top: 2px;
+}
+
+/* ── One claim ── */
+
+.hrxExpenses .hrxExClaim {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.hrxExpenses .hrxExHeadRow {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.hrxExpenses .sapMText.hrxExTitle {
+	font-family: var(--disp);
+	font-size: 20px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: -.2px;
+	color: var(--ink);
+}
+
+.hrxExpenses .sapMText.hrxExSaved {
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExGeneral {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 28px;
+	padding: 20px 20px 22px;
+}
+
+.hrxExpenses .hrxExKv {
+	display: grid;
+	grid-template-columns: 150px 1fr;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+	font-size: 13.5px;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExKv:last-child {
+	margin-bottom: 0;
+}
+
+.hrxExpenses .hrxExKv > .sapMText {
+	font-size: 13.5px;
+	color: var(--ink);
+}
+
+/* The claim period: the design's 37px date box, at most 210px wide */
+.hrxExpenses .hrxExKv .sapMInputBase {
+	max-width: 210px;
+	height: 37px;
+	margin: 0;
+}
+
+.hrxExpenses .hrxExKv .sapMInputBaseContentWrapper {
+	box-sizing: border-box;
+	height: 37px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxExpenses .hrxExKv .sapMInputBaseContentWrapper::after {
+	display: none;
+}
+
+.hrxExpenses .hrxExKv .sapMFocus .sapMInputBaseContentWrapper {
+	border-color: var(--ice-deep);
+	outline: 1px solid var(--ice-deep);
+}
+
+.hrxExpenses .hrxExKv .sapMInputBaseInner {
+	height: 35px;
+	line-height: 35px;
+	padding: 0 12px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExKv .sapMInputBaseIconContainer {
+	height: 35px;
+	display: flex;
+	align-items: center;
+	color: var(--ink);
+}
+
+/* Back to claims: the design's small ghost button (.btn.ghost.sm) */
+.hrxExpenses .hrxExSmall.sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExSmall .sapMBtnInner {
+	box-sizing: border-box;
+	height: 28px;
+	min-height: 0;
+	padding: 0 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+	background: var(--surface);
+	color: var(--txt);
+}
+
+.hrxExpenses .hrxExSmall .sapMBtnInner:hover {
+	border-color: var(--ice);
+	background: var(--surface);
+}
+
+.hrxExpenses .hrxExSmall .sapMBtnContent,
+.hrxExpenses .hrxExSmall .sapMBtnIcon {
+	font-family: var(--disp);
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+	line-height: 26px;
+	color: var(--txt);
+}
+
+.hrxExpenses .hrxExSmall .sapMBtnIcon {
+	font-family: SAP-icons;
+	font-size: 12px;
+	width: auto;
+	margin: 0 6px 0 0;
+}
+
+.hrxExpenses .hrxExSmall .sapMBtnInner:hover .sapMBtnContent,
+.hrxExpenses .hrxExSmall .sapMBtnInner:hover .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+.hrxExpenses .hrxExKv > .sapMLabel {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .hrxExHeadButtons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* The drop zone */
+.hrxExpenses .hrxExDropWrap {
+	padding: 16px 20px 4px;
+}
+
+.hrxExpenses .hrxExDrop {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 18px;
+	border: 1.5px dashed var(--line);
+	border-radius: var(--radius-s);
+	background: var(--frost);
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--txt-2);
+	cursor: pointer;
+	transition: .15s;
+}
+
+.hrxExpenses .hrxExDrop b {
+	display: block;
+	font-size: 13.5px;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExDrop.hrxExDropOver {
+	border-color: var(--ice);
+	background: var(--ice-glow);
+}
+
+.hrxExpenses .hrxExDropIcon {
+	flex-shrink: 0;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	background: var(--surface) url("../../img/nav/expenses.svg") center / 20px no-repeat;
+	border: 1px solid var(--line);
+}
+
+/* Item lines: item, reason, amount, receipt, status, actions */
+.hrxExpenses .hrxExLineHead,
+.hrxExpenses .hrxExLineRow {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.35fr) 96px 72px 140px 70px;
+	gap: 14px;
+	align-items: start;
+	padding: 14px 20px;
+}
+
+.hrxExpenses .hrxExLineHead {
+	align-items: center;
+	padding-top: 9px;
+	padding-bottom: 9px;
+	background: var(--frost);
+}
+
+.hrxExpenses .hrxExLineHead > .sapMText {
+	font-size: 10px;
+	line-height: 12px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExLineRow > .sapMVBox:first-child {
+	padding-top: 1px;
+}
+
+.hrxExpenses .hrxExLineRow > .hrxExAmount {
+	padding-top: 2px;
+}
+
+.hrxExpenses .hrxExLineRow > .hrxExAmount > .hrxExStrong {
+	font-size: 14px;
+	font-weight: 800;
+}
+
+.hrxExpenses .hrxExLineRow > .hrxExPill {
+	justify-self: start;
+	margin-top: 5px;
+}
+
+/* The reason box: 33px, 9px radius; read-only it is plain text */
+.hrxExpenses .hrxExLineRow .sapMInputBase {
+	width: 100%;
+	height: 33px;
+	margin: 0;
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseContentWrapper {
+	box-sizing: border-box;
+	height: 33px;
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	background: var(--surface);
+	box-shadow: none;
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseContentWrapper::after {
+	display: none;
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseInner {
+	height: 31px;
+	line-height: 31px;
+	padding: 0 10px;
+	font-family: var(--sans);
+	font-size: 13px;
+	font-style: normal;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseInner::placeholder {
+	font-style: normal !important;
+	font-size: 13px !important;
+	color: #757575 !important;
+}
+
+.hrxExpenses .hrxExLineRow .sapMFocus .sapMInputBaseContentWrapper {
+	border-color: var(--ice-deep);
+	outline: 1px solid var(--ice-deep);
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseContentWrapperError {
+	border-color: var(--signal);
+	background: var(--signal-soft);
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseReadonly .sapMInputBaseContentWrapper,
+.hrxExpenses .hrxExGeneral .sapMInputBaseReadonly .sapMInputBaseContentWrapper {
+	border-color: transparent;
+	background: transparent;
+}
+
+.hrxExpenses .hrxExLineRow .sapMInputBaseReadonly .sapMInputBaseInner,
+.hrxExpenses .hrxExGeneral .sapMInputBaseReadonly .sapMInputBaseInner {
+	padding-left: 0;
+	text-overflow: ellipsis;
+}
+
+.hrxExpenses .hrxExGeneral .sapMInputBaseReadonly .sapMInputBaseIconContainer {
+	display: none;
+}
+
+.hrxExpenses .hrxExLine {
+	border-bottom: 1px solid var(--line);
+}
+
+.hrxExpenses .hrxExLine:last-child {
+	border-bottom: none;
+}
+
+.hrxExpenses .sapMText.hrxExLineName {
+	font-weight: 700;
+	font-size: 13.5px;
+	color: var(--ink);
+}
+
+.hrxExpenses .sapMText.hrxExLineSub {
+	font-size: 12px;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .sapMText.hrxExAi {
+	font-size: 10.5px;
+	font-weight: 700;
+	color: var(--ice-deep);
+	margin-top: 4px;
+}
+
+.hrxExpenses .hrxExAmount {
+	align-items: flex-end;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.hrxExpenses .hrxExActs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.hrxExpenses .hrxExLineRow > .hrxExActs:last-child {
+	justify-content: flex-end;
+}
+
+/* The design's small icon buttons (.icon-btn.sm): a 30px bordered square */
+.hrxExpenses .hrxExIconBtn.sapMBtn {
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	margin: 0;
+}
+
+.hrxExpenses .hrxExIconBtn .sapMBtnInner {
+	box-sizing: border-box;
+	width: 30px;
+	height: 30px;
+	min-width: 0;
+	padding: 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	color: var(--txt-2);
+	box-shadow: none;
+}
+
+.hrxExpenses .hrxExIconBtn .sapMBtnIcon {
+	width: 28px;
+	height: 28px;
+	line-height: 28px;
+	margin: 0;
+	font-size: 14px;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .hrxExIconBtn .sapMBtnInner:hover {
+	border-color: var(--ice);
+	background: var(--surface);
+}
+
+.hrxExpenses .hrxExIconBtn .sapMBtnInner:hover .sapMBtnIcon {
+	color: var(--ice-deep);
+}
+
+.hrxExpenses .hrxExIconBtnDel .sapMBtnInner:hover {
+	border-color: var(--signal);
+}
+
+.hrxExpenses .hrxExIconBtnDel .sapMBtnInner:hover .sapMBtnIcon {
+	color: var(--signal);
+}
+
+.hrxExpenses .sapMText.hrxExAmountSub {
+	margin-top: 3px;
+	font-size: 11px;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExReading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 15px 20px;
+	background: var(--frost);
+	font-size: 12.5px;
+	color: var(--txt-2);
+}
+
+/* What to fix on a line */
+.hrxExpenses .hrxExIssues {
+	padding: 0 20px;
+}
+
+.hrxExpenses .hrxExIssues:not(:empty) {
+	padding-bottom: 12px;
+}
+
+.hrxExpenses .hrxExIssue {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 12px;
+	margin-top: 6px;
+	border: 1px solid;
+	border-radius: var(--radius-s);
+}
+
+.hrxExpenses .hrxExIssue[data-need="you"] {
+	background: var(--amber-soft);
+	border-color: #F5D488;
+}
+
+.hrxExpenses .hrxExIssue[data-need="fyi"] {
+	background: var(--frost);
+	border-color: var(--line);
+}
+
+.hrxExpenses .sapMText.hrxExIssueText {
+	flex: 1;
+	min-width: 0;
+	font-size: 12.5px;
+	color: var(--ink);
+}
+
+.hrxExpenses .hrxExIssueActs {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.hrxExpenses .sapMText.hrxExIssueTag {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+/* The whole line, opened to edit */
+.hrxExpenses .hrxExEdit {
+	padding: 16px 20px 18px;
+	background: var(--frost);
+	border-top: 1px solid var(--line);
+}
+
+.hrxExpenses .hrxExFields {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+	gap: 12px 14px;
+	margin-bottom: 12px;
+}
+
+.hrxExpenses .hrxExF > .sapMLabel {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .hrxExSplit {
+	font-size: 12.5px;
+	color: var(--txt-2);
+	margin-bottom: 10px;
+}
+
+.hrxExpenses .hrxExCheck {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	margin-bottom: 6px;
+	border-radius: var(--radius-s);
+	font-size: 12.5px;
+}
+
+.hrxExpenses .hrxExCheck[data-status="ok"] { background: var(--mint-soft); }
+.hrxExpenses .hrxExCheck[data-status="info"] { background: var(--frost-2); }
+
+/* The bar along the bottom of a claim being edited (the design's .x-bar): the full
+   width of the page, held at the bottom of the screen even when the claim is short.
+   The page's scroll area is a column so the claim can fill its height; the bar's
+   negative margins undo the page's padding (26px 28px) and the body's 8px. */
+.hrxExpenses .hrxPageContent > section.sapMPageEnableScrolling {
+	display: flex;
+	flex-direction: column;
+}
+
+.hrxExpenses .hrxExBody {
+	flex: 1 0 auto;
+}
+
+.hrxExpenses .hrxExClaim {
+	display: flex;
+	flex-direction: column;
+	flex: 1 0 auto;
+}
+
+.hrxExpenses .hrxExBar {
+	position: sticky;
+	bottom: -34px;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	gap: 22px;
+	margin: auto -28px -34px;
+	padding: 12px 28px;
+	background: var(--surface);
+	border-top: 1px solid var(--line);
+	box-shadow: 0 -8px 22px rgba(14, 20, 24, .07);
+}
+
+.hrxExpenses .hrxExBarTotal {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	white-space: nowrap;
+}
+
+.hrxExpenses .sapMText.hrxExBarLabel {
+	font-size: 10.5px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	color: var(--txt-2);
+}
+
+.hrxExpenses .sapMText.hrxExBarAmount {
+	font-family: var(--disp);
+	font-size: 24px;
+	font-weight: 800;
+	letter-spacing: -.4px;
+	color: var(--ink);
+}
+
+.hrxExpenses .sapMText.hrxExBarSub {
+	font-size: 12px;
+	color: var(--txt-3);
+}
+
+.hrxExpenses .hrxExReady {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.hrxExpenses .sapMText.hrxExReadyPill {
+	padding: 6px 12px;
+	border-radius: 999px;
+	font-size: 12.5px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.hrxExpenses .hrxExReadyPill[data-state="fix"] { background: var(--amber-soft); color: #92400E; }
+.hrxExpenses .hrxExReadyPill[data-state="ok"] { background: var(--mint-soft); color: #0F7B4F; }
+.hrxExpenses .hrxExReadyPill[data-state="info"] { background: #E6F4FB; color: var(--ice-deep); }
+.hrxExpenses .hrxExReadyPill[data-state="wait"],
+.hrxExpenses .hrxExReadyPill[data-state="idle"] { background: var(--frost); color: var(--txt-2); font-weight: 600; }
+
+.hrxExpenses .hrxExBarActions {
+	display: flex;
+	gap: 10px;
+	margin-left: auto;
+}
+
+/* ── Approval dialogs ── */
+
+.hrxExDialog .hrxExDialogBody {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 16px 20px 20px;
+}
+
+.hrxExDialog .hrxExReviewHead {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.hrxExDialog .hrxExReviewHead .hrxExKv {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 3px;
+	margin: 0;
+}
+
+.hrxExDialog .hrxExDialogSection {
+	margin-top: 8px;
+}
+
+.hrxExDialog .hrxExJourneyStep {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	margin-bottom: 6px;
+	border-left: 3px solid var(--ice);
+	background: var(--frost);
+	border-radius: 0 var(--radius-s) var(--radius-s) 0;
+}
+
+/* ── Narrow screens ── */
+
+@media (max-width: 1100px) {
+	.hrxExpenses .hrxExKpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.hrxExpenses .hrxExGrid2,
+	.hrxExpenses .hrxExGeneral {
+		grid-template-columns: 1fr;
+	}
+	.hrxExpenses .hrxExLineHead {
+		display: none;
+	}
+	.hrxExpenses .hrxExLineRow {
+		grid-template-columns: minmax(0, 1fr) 110px 76px;
+	}
+	.hrxExpenses .hrxExBar {
+		flex-wrap: wrap;
+	}
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Expenses on a phone (view/MobileExpenses.view.xml). The cards, buttons, pills and
+   action bar are the phone screens' own (css/pages/mobile.css); these are the few
+   parts only Expenses has.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.hrxApp .hrxPhone .hrxMbExpenses .hrxMbContent .sapMScrollContDiv,
+.hrxApp .hrxPhone .hrxMbExpenses .hrxMbContent > div {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbExStrip {
+	margin: 0;
+}
+
+/* Two amounts (pounds and rupees) can share a tile: a smaller figure that wraps
+   between the amounts, never inside one */
+.hrxApp .hrxPhone .sapMText.hrxMbExKpiMoney {
+	font-size: 20px;
+	line-height: 1.2;
+	white-space: normal;
+	overflow-wrap: normal;
+	word-break: keep-all;
+}
+
+/* Expenses has two tiles, side by side and the same width */
+.hrxApp .hrxPhone .hrxMbExpenses .hrxMbKpis {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbExCard {
+	gap: 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbExCardLink.sapMLnk {
+	font-weight: 700;
+	font-size: 15px;
+	color: var(--ink);
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExAmount {
+	font-weight: 800;
+	font-size: 15px;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	margin-bottom: 4px;
+}
+
+.hrxApp .hrxPhone .hrxMbExHead {
+	align-items: center;
+	gap: 10px;
+}
+
+.hrxApp .hrxPhone .hrxMbExHeadText {
+	flex: 1;
+	min-width: 0;
+}
+
+.hrxApp .hrxPhone .hrxMbExGeneral {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 14px 16px 16px;
+}
+
+.hrxApp .hrxPhone .hrxMbExButtons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hrxApp .hrxPhone .hrxMbExButtons > .sapMBtn {
+	flex: 1 1 auto;
+}
+
+.hrxApp .hrxPhone .hrxMbExReading {
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--txt-2);
+}
+
+.hrxApp .hrxPhone .hrxMbExLineText {
+	min-width: 0;
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExAi {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ice-deep);
+}
+
+/* What to fix on a line: amber for the employee, grey for the approver to see */
+.hrxApp .hrxPhone .hrxMbExIssue {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px 12px;
+	margin-top: 6px;
+	border: 1px solid #F5D488;
+	border-radius: var(--radius-s);
+	background: var(--amber-soft);
+	font-size: 13px;
+}
+
+.hrxApp .hrxPhone .hrxMbExIssue[data-need="fyi"] {
+	border-color: var(--line);
+	background: var(--frost);
+}
+
+.hrxApp .hrxPhone .hrxMbExEdit {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.hrxApp .hrxPhone .hrxMbExEdit .sapMInputBase,
+.hrxApp .hrxPhone .hrxMbExEdit .sapMSlt {
+	width: 100%;
+}
+
+.hrxApp .hrxPhone .sapMText.hrxMbExBarTotal {
+	font-family: var(--disp);
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--ink);
+}
+
+/* An empty list of lines or mileage (the design's .tbl-empty) */
+.hrxExpenses .sapMText.hrxExNoRows {
+	display: block;
+	text-align: center;
+	color: var(--txt-3);
+	padding: 26px 20px;
+}
+
+/* A line's status is a pill the size of its text, not the width of its column */
+.hrxExpenses .hrxExLineRow > .hrxExPill.sapMObjStatus {
+	justify-self: start;
+	align-self: center;
+	width: max-content;
+}
+
+/* Lines / Grid switch (the design's .seg): two small capsules in a grey track */
+.hrxExpenses .hrxExSeg {
+	display: flex;
+	gap: 2px;
+	padding: 3px;
+	background: var(--frost);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-s);
+}
+
+.hrxExpenses .hrxExSeg .sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExSeg .sapMBtn .sapMBtnInner {
+	height: 24px;
+	min-height: 0;
+	padding: 0 14px;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--txt-2);
+	box-shadow: none;
+}
+
+.hrxExpenses .hrxExSeg .sapMBtn .sapMBtnContent {
+	font-size: 11px;
+	line-height: 24px;
+}
+
+/* The card head's buttons are the design's small buttons (.btn.sm): 32px, 10.5px text */
+.hrxExpenses .hrxExHeadButtons > .sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExHeadButtons > .sapMBtn .sapMBtnInner {
+	box-sizing: border-box;
+	height: 32px;
+	min-height: 0;
+	padding: 0 12px;
+}
+
+.hrxExpenses .hrxExHeadButtons > .sapMBtn .sapMBtnContent {
+	font-size: 10.5px;
+	line-height: 30px;
+}
+
+/* The sticky bar's buttons are the design's full-size buttons: 36px, 12px text */
+.hrxExpenses .hrxExBarActions > .sapMBtn {
+	height: auto;
+	padding: 0;
+}
+
+.hrxExpenses .hrxExBarActions > .sapMBtn .sapMBtnInner {
+	box-sizing: border-box;
+	height: 36px;
+	min-height: 0;
+	padding: 0 18px;
+}
+
+.hrxExpenses .hrxExBarActions > .sapMBtn .sapMBtnContent {
+	font-size: 12px;
+	line-height: 34px;
+}
+
+.hrxExpenses .hrxExSeg .sapMBtn[data-on="yes"] .sapMBtnInner {
+	background: var(--surface);
+	color: var(--ice-deep);
+	box-shadow: 0 1px 3px rgba(14, 20, 24, .12);
+}
+
+.hrxExpenses .hrxExHeadButtons {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+/* Grid: compact fields in each cell */
+.hrxExpenses .hrxExGrid .sapMListTblCell {
+	padding: 8px 6px;
+	vertical-align: top;
+}
+
+.hrxExpenses .hrxExGrid .sapMInputBase,
+.hrxExpenses .hrxExGrid .sapMSlt {
+	min-width: 0;
+}
+
+/* Phone: the buttons, tiles and cards of a panel spaced like the rest of the screen */
+.hrxApp .hrxPhone .hrxMbExStack {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.hrxApp .hrxPhone .hrxMbExStack.hrxMbExStackTight {
+	gap: 8px;
+}
+
+/* Column headings in the claim's tables, Labels included (the required ones carry
+   the design's star) */
+.hrxExpenses .hrxExTable .sapMListTblHeaderCell .sapMText,
+.hrxExpenses .hrxExTable .sapMListTblHeaderCell .sapMLabel {
+	font-size: 10px;
+	line-height: 12px;
+	font-weight: 600;
+	letter-spacing: .6px;
+	text-transform: uppercase;
+	color: var(--txt-3);
+}
+
+/* An empty table's one row (the design's .tbl-empty): grey, centred, 26px padding */
+.hrxExpenses .hrxExTable .sapMListNoData .sapMListTblCell,
+.hrxExpenses .hrxExTable .sapMListNoDataText {
+	padding: 26px 20px;
+	font-size: 13px;
+	color: var(--txt-3);
+	text-align: center;
+}

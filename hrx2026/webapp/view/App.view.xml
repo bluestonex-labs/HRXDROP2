@@ -8,8 +8,7 @@
 		</tnt:header>
 		<tnt:sideContent>
 			<!-- As the 15.10.26 design has it: Overview for everyone, then the admin
-			     pages listed straight in the rail, for managers only. The design's
-			     Expenses placeholder is left out until that app exists. -->
+			     pages listed straight in the rail, for managers only. -->
 			<tnt:SideNavigation id="sideNavigation" itemSelect=".onItemSelect">
 				<tnt:NavigationList selectedKey="home">
 					<tnt:NavigationListGroup text="{i18n>navGroupOverview}" hasExpander="false">
@@ -18,6 +17,10 @@
 						<tnt:NavigationListItem key="leave" text="{i18n>navLeave}" icon="sap-icon://calendar"/>
 						<tnt:NavigationListItem key="teamcal" text="{i18n>navTeamCalendar}" icon="sap-icon://appointment-2"/>
 						<tnt:NavigationListItem key="policies" text="{i18n>navPolicies}" icon="sap-icon://document-text"/>
+						<tnt:NavigationListItem key="expenses" text="{i18n>navExpenses}" icon="sap-icon://expense-report"/>
+						<!-- For expense approvers and expense admins (their expense role in BTP),
+						     who are not necessarily HRX managers; App.controller shows it -->
+						<tnt:NavigationListItem id="expenseApprovalsNavItem" key="expenseapprovals" text="{i18n>navExpenseApprovals}" icon="sap-icon://approvals" visible="false"/>
 						<tnt:NavigationListItem key="explorer" text="{i18n>navAppExplorer}" icon="sap-icon://grid"/>
 					</tnt:NavigationListGroup>
 					<!-- Managers only: the controller takes the group out for anybody else (a
@@ -79,6 +82,23 @@
 							press=".onPageAction"
 							class="hrxTopBarAction"/>
 					</HBox>
+					<!-- A page's own top bar buttons, for everyone who can open the page
+					     (Expenses: Refresh and Create). The page publishes them through
+					     App.controller setTopBar; pressing one calls the page's onTopBarButton. -->
+					<HBox alignItems="Center" class="hrxTopBarActions" visible="{= !!${app>/topBar/stamp} || (${app>/topBar/buttons} || []).length > 0 }">
+						<Text text="{app>/topBar/stamp}" visible="{= !!${app>/topBar/stamp} }" class="hrxTopBarStamp"/>
+						<HBox renderType="Bare" items="{path: 'app>/topBar/buttons', templateShareable: false}" class="hrxTopBarButtons">
+							<Button
+								text="{app>text}"
+								icon="{app>icon}"
+								press=".onTopBarButton"
+								class="hrxTopBarAction">
+								<customData>
+									<core:CustomData key="kind" value="{= ${app>primary} ? 'primary' : 'ghost' }" writeToDom="true"/>
+								</customData>
+							</Button>
+						</HBox>
+					</HBox>
 				</HBox>
 
 				<!-- The signed-in user's own week at a glance; the home page fills it. Each
@@ -107,7 +127,7 @@
 						<FlexItemData growFactor="1" baseSize="0%"/>
 					</layoutData>
 				</NavContainer>
-				<!-- Phone only: the mobile design's tab bar - Home, Timesheet, Leave. -->
+				<!-- Phone only: the mobile design's tab bar - Home, Timesheet, Leave, and Expenses. -->
 				<HBox id="phoneTabs" visible="{device>/system/phone}" renderType="Bare" class="hrxPhoneTabs">
 					<Button text="{i18n>mbTabHome}" press=".onPhoneTab" class="hrxPhoneTab">
 						<customData>
@@ -125,6 +145,12 @@
 						<customData>
 							<core:CustomData key="tab" value="leave" writeToDom="true"/>
 							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'leave' ? 'true' : 'false' }" writeToDom="true"/>
+						</customData>
+					</Button>
+					<Button text="{i18n>mbTabExpenses}" press=".onPhoneTab" class="hrxPhoneTab">
+						<customData>
+							<core:CustomData key="tab" value="expenses" writeToDom="true"/>
+							<core:CustomData key="on" value="{= ${app>/phoneTab} === 'expenses' ? 'true' : 'false' }" writeToDom="true"/>
 						</customData>
 					</Button>
 				</HBox>
