@@ -547,11 +547,13 @@
 								<Text text="{tr>/sub/hint}" class="hrxTsCardHint" />
 							</VBox>
 							<HBox renderType="Bare" class="hrxTsTools">
-								<CheckBox
-									text="{i18n>trOnBillable}"
-									selected="{trView>/sub/billableOnly}"
-									select=".onSubBillable"
-									class="hrxTsBillable" />
+								<HBox alignItems="Center" class="hrxTsBillable">
+									<Label text="{i18n>trOnBillable}" labelFor="subBillable" />
+									<CheckBox
+										id="subBillable"
+										selected="{trView>/sub/billableOnly}"
+										select=".onSubBillable" />
+								</HBox>
 								<Input
 									value="{trView>/sub/q}"
 									placeholder="{i18n>trSearch}"
