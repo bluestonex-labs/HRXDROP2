@@ -138,6 +138,18 @@ sap.ui.define([
 						return fTotal + (/^(AM|PM)$/i.test(o.DayTime || "") ? 0.5 :
 							SicknessPolicy.workingDays(SicknessPolicy.parseDay(o.StartDate), SicknessPolicy.parseDay(o.EndDate)));
 					}, 0);
+					// Which half of its first and last day the absence covers: it starts in the
+					// afternoon only when that day was a PM half day, and ends at lunchtime only
+					// when its last day was an AM half day.
+					var fnCovers = function (sDate, sHalf) {
+						return aDays.some(function (o) {
+							var sDayTime = String(o.DayTime || "").toUpperCase();
+							var bInRange = o.StartDate <= sDate && o.EndDate >= sDate;
+							return bInRange && (sDayTime === sHalf || (sDayTime !== "AM" && sDayTime !== "PM"));
+						});
+					};
+					var sStartHalf = fnCovers(sStart, "AM") ? "AM" : "PM";
+					var sEndHalf = fnCovers(sEnd, "PM") ? "PM" : "AM";
 					var aComment = String(oFirst.RequesterComments || "").split(NOTES_SEPARATOR);
 					// When the absence was recorded: the first of its rows to be saved.
 					var sRecordedOn = aDays.reduce(function (s, o) {
@@ -151,6 +163,8 @@ sap.ui.define([
 						Email: String(oEmployee.WorkEmail || "").toLowerCase(),
 						StartDate: sStart,
 						EndDate: sEnd,
+						StartHalf: sStartHalf,
+						EndHalf: sEndHalf,
 						Days: fDays,
 						Reason: aComment[0] || "",
 						Notes: aComment.slice(1).join(NOTES_SEPARATOR),
