@@ -6,6 +6,9 @@ sap.ui.define([], function () {
 	// one instance, three one-day absences are three. Absences on consecutive working
 	// days are one instance however they were booked, so Friday then Monday is one,
 	// and so is Friday then Tuesday when the Monday was a bank holiday or booked off.
+	// It goes by half days: any half day worked in between makes a new instance, so off
+	// one afternoon, in the next morning and off again that afternoon is two - while
+	// off one afternoon and the next morning, with no work between, is still one.
 	var TRIGGER_INSTANCES = 3;
 
 	// The financial year runs 1 April to 31 March. Months are zero based.
@@ -66,10 +69,12 @@ sap.ui.define([], function () {
 
 		/**
 		 * How many separate instances of sickness a person's absences make. An absence
-		 * that starts on or before the next working day after the previous one ends
-		 * carries on the same instance: weekends, bank holidays and booked leave in
-		 * between do not break it.
-		 * @param {Array<object>} aAbsences one person's absences, StartDate and EndDate ("yyyy-MM-dd")
+		 * that starts no later than the next half day the person was due to work after
+		 * the previous one ended carries on the same instance: weekends, bank holidays
+		 * and booked leave in between do not break it, a half day worked does.
+		 * @param {Array<object>} aAbsences one person's absences, StartDate and EndDate
+		 * ("yyyy-MM-dd"), StartHalf ("AM", or "PM" when it began after a morning worked)
+		 * and EndHalf ("PM", or "AM" when it ended before an afternoon worked)
 		 * @param {object} [mDaysOff] that person's days off, from SicknessService.getDaysOff
 		 * @returns {number} the number of instances
 		 */
@@ -85,13 +90,27 @@ sap.ui.define([], function () {
 		 * and oldest absence first within it
 		 */
 		instanceGroups: function (aAbsences, mDaysOff) {
+			// Each absence as half-day slots: "yyyy-MM-dd|AM" or "|PM", which sort in time
+			// order. An absence carries on the instance only when it starts no later than
+			// the next half day the person was due to work after the previous one ended -
+			// any half day worked in between makes it a new instance.
+			var fnStart = function (o) {
+				return o.StartDate + "|" + (o.StartHalf === "PM" ? "PM" : "AM");
+			};
+			var fnEnd = function (o) {
+				return (o.EndDate || o.StartDate) + "|" + (o.EndHalf === "AM" ? "AM" : "PM");
+			};
+			var fnNextSlot = function (sSlot) {
+				var aSlot = sSlot.split("|");
+				return aSlot[1] === "AM" ? aSlot[0] + "|PM" : nextWorkingDay(aSlot[0], mDaysOff) + "|AM";
+			};
 			var aGroups = [];
 			var sRunEnd = "";
 			(aAbsences || []).slice().sort(function (a, b) {
-				return a.StartDate.localeCompare(b.StartDate);
+				return fnStart(a).localeCompare(fnStart(b));
 			}).forEach(function (oAbsence) {
-				var sEnd = oAbsence.EndDate || oAbsence.StartDate;
-				if (sRunEnd && oAbsence.StartDate <= nextWorkingDay(sRunEnd, mDaysOff)) {
+				var sEnd = fnEnd(oAbsence);
+				if (sRunEnd && fnStart(oAbsence) <= fnNextSlot(sRunEnd)) {
 					aGroups[aGroups.length - 1].push(oAbsence);
 					sRunEnd = sEnd > sRunEnd ? sEnd : sRunEnd;
 					return;

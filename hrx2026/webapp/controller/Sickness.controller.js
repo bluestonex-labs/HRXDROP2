@@ -340,6 +340,10 @@ sap.ui.define([
 				initials: formatter.nameInitials(sName),
 				StartDate: sStart,
 				EndDate: sEnd,
+				// which half of the first and last day: a sickness that starts after a
+				// morning worked, or ends before an afternoon worked, is a new instance
+				StartHalf: oRaw.StartHalf || "AM",
+				EndHalf: oRaw.EndHalf || "PM",
 				Days: fDays,
 				Reason: oRaw.Reason || "",
 				Notes: oRaw.Notes || "",
