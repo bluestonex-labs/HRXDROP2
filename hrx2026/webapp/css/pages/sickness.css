@@ -974,3 +974,26 @@
 	line-height: 16px;
 	color: inherit;
 }
+
+/* ── ALL SICKNESS, PER EMPLOYEE ───────────────────────────────────────────── */
+
+/* the employee's row: chevron, picture and name on the left, the count on the right */
+.hrxSickness .hrxSickPersonRow {
+	padding: 10px 4px;
+}
+
+/* their instances, newest first, under the row */
+.hrxSickness .hrxSickInstances {
+	padding: 4px 0 6px 40px;
+}
+
+.hrxSickness .hrxSickInstance {
+	margin-top: 10px;
+}
+
+/* the count, readable at a glance */
+.hrxSickness .hrxSickPill.hrxSickCount.sapMText {
+	font-size: 13px;
+	line-height: 16px;
+	padding: 5px 12px;
+}

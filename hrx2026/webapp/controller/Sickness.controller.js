@@ -49,6 +49,7 @@ sap.ui.define([
 			// Which trigger histories are open, so a reload after an action does not
 			// fold away what the admin was looking at.
 			this._mExpanded = {};
+			this._mPeopleExpanded = {};
 			this._iLoad = 0;
 
 			this.getOwnerComponent().getRouter().getRoute("sickness")
@@ -212,7 +213,50 @@ sap.ui.define([
 			oViewModel.setProperty("/noTriggersText", this.getText(iDismissed ? "skNoOpenTriggers" : "skNoTriggers"));
 			oModel.setProperty("/rtw", aRtw);
 
-			oViewModel.setProperty("/allCount", this.getText(aAbsences.length === 1 ? "skAbsence" : "skAbsences", [aAbsences.length]));
+			// All sickness: one row per employee, most instances first (then most days
+			// off, then name), opening on their instances and each absence in them.
+			var mByEmp = {};
+			aAbsences.forEach(function (oAbsence) {
+				(mByEmp[oAbsence.EmpID] = mByEmp[oAbsence.EmpID] || []).push(oAbsence);
+			});
+			var aPeople = Object.keys(mByEmp).map(function (sEmpId) {
+				var aOwn = mByEmp[sEmpId];
+				var aGroups = SicknessPolicy.instanceGroups(aOwn, (mDaysOff || {})[sEmpId]);
+				var fDays = aOwn.reduce(function (fTotal, oAbsence) {
+					return fTotal + oAbsence.Days;
+				}, 0);
+				var oDismissed = aOwn.filter(function (oAbsence) {
+					return oAbsence.dismissed;
+				})[0];
+				return {
+					EmpID: sEmpId,
+					Name: aOwn[0].Name,
+					initials: aOwn[0].initials,
+					instances: aGroups.length,
+					days: fDays,
+					summary: this.getText(aGroups.length === 1 ? "skOneInstance" : "skInstances", [aGroups.length]) +
+						" · " + this._daysText(fDays),
+					dismissedNote: oDismissed ? oDismissed.dismissedTooltip : "",
+					expanded: !!this._mPeopleExpanded[sEmpId],
+					// newest instance first, as the absences are listed
+					instanceList: aGroups.map(function (aGroup, iIndex) {
+						var fGroupDays = aGroup.reduce(function (fTotal, oAbsence) {
+							return fTotal + oAbsence.Days;
+						}, 0);
+						return {
+							title: this.getText("skInstanceTitle", [iIndex + 1,
+								this._rangeText(aGroup[0].StartDate, aGroup[aGroup.length - 1].EndDate),
+								this._daysText(fGroupDays)]),
+							absences: aGroup.slice().reverse()
+						};
+					}, this).reverse()
+				};
+			}, this).sort(function (a, b) {
+				return (b.instances - a.instances) || (b.days - a.days) || a.Name.localeCompare(b.Name);
+			});
+			oModel.setProperty("/people", aPeople);
+
+			oViewModel.setProperty("/allCount", this.getText(aPeople.length === 1 ? "skOnePerson" : "skPeople", [aPeople.length]));
 
 			if (!SicknessService.isBound()) {
 				oViewModel.setProperty("/alert", { text: this.getText("skNotBoundStrip"), state: "info" });
@@ -301,6 +345,7 @@ sap.ui.define([
 				Notes: oRaw.Notes || "",
 				FitNote: oRaw.FitNote === "Y" || oRaw.FitNote === true,
 				RecordedOn: oRaw.RecordedOn || "",
+				recordedText: Backend.dayKey(oRaw.RecordedOn) ? this._rangeText(Backend.dayKey(oRaw.RecordedOn), Backend.dayKey(oRaw.RecordedOn)) : "",
 				statusText: "",
 				statusKind: "ok",
 				dateText: this._rangeText(sStart, sEnd),
@@ -394,17 +439,29 @@ sap.ui.define([
 		},
 
 		/**
-		 * Opens or folds the All sickness card.
-		 */
-		/**
 		 * Filters All sickness to the employees whose name contains what was typed.
 		 * @param {sap.ui.base.Event} oEvent the search field's liveChange or search event
 		 */
 		onSearchAll: function (oEvent) {
 			var sQuery = (oEvent.getParameter("newValue") || oEvent.getParameter("query") || "").trim();
-			this.byId("sicknessTable").getBinding("items").filter(sQuery ? [new Filter("Name", FilterOperator.Contains, sQuery)] : []);
+			this.byId("sicknessPeople").getBinding("items").filter(sQuery ? [new Filter("Name", FilterOperator.Contains, sQuery)] : []);
 		},
 
+		/**
+		 * Opens or folds one employee in All sickness, on their instances and absences.
+		 * @param {sap.ui.base.Event} oEvent the employee row's press event
+		 */
+		onTogglePerson: function (oEvent) {
+			var oContext = oEvent.getSource().getBindingContext("sk");
+			var bExpanded = !oContext.getProperty("expanded");
+
+			this.getModel("sk").setProperty("expanded", bExpanded, oContext);
+			this._mPeopleExpanded[oContext.getProperty("EmpID")] = bExpanded;
+		},
+
+		/**
+		 * Opens or folds the All sickness card.
+		 */
 		onToggleAll: function () {
 			var oViewModel = this.getModel("skView");
 			oViewModel.setProperty("/allExpanded", !oViewModel.getProperty("/allExpanded"));
@@ -428,6 +485,7 @@ sap.ui.define([
 			var iYear = Math.min(oViewModel.getProperty("/year/startYear") + iStep, iCurrent);
 
 			this._mExpanded = {};
+			this._mPeopleExpanded = {};
 			this.getModel("sk").setProperty("/triggers", []);
 			oViewModel.setProperty("/year", SicknessPolicy.fiscalYear(iYear));
 			oViewModel.setProperty("/isCurrentYear", iYear === iCurrent);
