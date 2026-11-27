@@ -242,64 +242,102 @@
 						search=".onSearchAll"
 						width="320px"
 						class="sapUiSmallMarginBegin sapUiSmallMarginBottom" />
-					<Table
-						id="sicknessTable"
-						items="{sk>/absences}"
+					<!-- One row per employee, most instances first; each opens on their instances
+					     and the absences recorded in each -->
+					<List
+						id="sicknessPeople"
+						items="{sk>/people}"
 						visible="{skView>/allExpanded}"
 						noDataText="{i18n>skNoAbsences}"
 						growing="true"
 						growingThreshold="50"
-						class="hrxSickTable hrxSickAllTable">
-						<columns>
-							<!-- the design's widths, narrowed to make room for edit and delete -->
-							<Column width="22%"><Text text="{i18n>skColEmployee}" /></Column>
-							<Column width="24%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDate}" /></Column>
-							<Column width="11%" hAlign="Center" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColDuration}" /></Column>
-							<Column width="16%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
-							<Column hAlign="End"><Text text="{i18n>skColStatus}" /></Column>
-							<!-- edit or delete an absence recorded by mistake -->
-							<Column width="88px" hAlign="End"><Text text="" /></Column>
-						</columns>
-						<items>
-							<ColumnListItem>
-								<cells>
+						showSeparators="Inner"
+						class="hrxSickPeople">
+						<CustomListItem type="Inactive">
+							<VBox renderType="Bare" class="hrxSickPersonRow">
+								<HBox alignItems="Center" justifyContent="SpaceBetween" renderType="Bare" class="hrxSickToggleRow">
+									<customData>
+										<core:CustomData key="open" value="{= ${sk>expanded} ? 'yes' : 'no' }" writeToDom="true" />
+									</customData>
 									<HBox alignItems="Center" renderType="Bare" class="hrxSickPerson">
+										<Button
+											icon="sap-icon://navigation-right-arrow"
+											type="Transparent"
+											tooltip="{sk>Name}"
+											press=".onTogglePerson"
+											class="hrxSickToggle" />
 										<Image src="{= ${pictures>/users}[${sk>EmpID}] || '' }" visible="{= !!${pictures>/users}[${sk>EmpID}] }" width="30px" height="30px" class="hrxAvatarPic" />
 										<Text text="{sk>initials}" wrapping="false" visible="{= !${pictures>/users}[${sk>EmpID}] }" class="hrxSickAvatar" />
 										<VBox renderType="Bare">
-											<Text text="{sk>Name}" class="hrxSickAllName" />
+											<Link text="{sk>Name}" press=".onTogglePerson" class="hrxSickAllName" />
 											<Text
 												text="{sk>dismissedNote}"
-												tooltip="{sk>dismissedTooltip}"
-												visible="{sk>dismissed}"
+												visible="{= !!${sk>dismissedNote} }"
 												maxLines="2"
 												class="hrxSickPersonSub" />
 										</VBox>
 									</HBox>
-									<Text text="{sk>dateText}" />
-									<Text text="{sk>durationText}" />
-									<Text text="{sk>Reason}" />
-									<Text text="{sk>statusText}" wrapping="false" class="hrxSickPill">
+									<Text text="{sk>summary}" wrapping="false" class="hrxSickPill hrxSickCount">
 										<customData>
-											<core:CustomData key="kind" value="{sk>statusKind}" writeToDom="true" />
+											<core:CustomData key="kind" value="info" writeToDom="true" />
 										</customData>
 									</Text>
-									<HBox justifyContent="End" visible="{sk>canAct}" renderType="Bare" class="hrxSickRowActs">
-										<Button
-											icon="sap-icon://edit"
-											type="Transparent"
-											tooltip="{i18n>skEdit}"
-											press=".onEditAbsence" />
-										<Button
-											icon="sap-icon://delete"
-											type="Transparent"
-											tooltip="{i18n>skDelete}"
-											press=".onDeleteAbsence" />
-									</HBox>
-								</cells>
-							</ColumnListItem>
-						</items>
-					</Table>
+								</HBox>
+
+								<VBox
+									items="{path: 'sk>instanceList', templateShareable: false}"
+									visible="{sk>expanded}"
+									renderType="Bare"
+									class="hrxSickInstances">
+									<VBox renderType="Bare" class="hrxSickInstance">
+										<Text text="{sk>title}" class="hrxSickLabel" />
+										<VBox renderType="Bare" class="hrxSickHistory">
+											<Table items="{path: 'sk>absences', templateShareable: false}" class="hrxSickTable">
+												<columns>
+													<Column width="20%"><Text text="{i18n>skColDate}" /></Column>
+													<Column width="11%" hAlign="Center"><Text text="{i18n>skColDuration}" /></Column>
+													<Column width="16%" minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColReason}" /></Column>
+													<Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>skColNotes}" /></Column>
+													<Column width="13%" minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>skColRecorded}" /></Column>
+													<Column width="12%" hAlign="End"><Text text="{i18n>skColStatus}" /></Column>
+													<!-- edit or delete an absence recorded by mistake -->
+													<Column width="88px" hAlign="End"><Text text="" /></Column>
+												</columns>
+												<items>
+													<ColumnListItem>
+														<cells>
+															<Text text="{sk>dateText}" />
+															<Text text="{sk>durationText}" />
+															<Text text="{sk>Reason}" />
+															<Text text="{sk>Notes}" maxLines="3" />
+															<Text text="{sk>recordedText}" />
+															<Text text="{sk>statusText}" wrapping="false" class="hrxSickPill">
+																<customData>
+																	<core:CustomData key="kind" value="{sk>statusKind}" writeToDom="true" />
+																</customData>
+															</Text>
+															<HBox justifyContent="End" visible="{sk>canAct}" renderType="Bare" class="hrxSickRowActs">
+																<Button
+																	icon="sap-icon://edit"
+																	type="Transparent"
+																	tooltip="{i18n>skEdit}"
+																	press=".onEditAbsence" />
+																<Button
+																	icon="sap-icon://delete"
+																	type="Transparent"
+																	tooltip="{i18n>skDelete}"
+																	press=".onDeleteAbsence" />
+															</HBox>
+														</cells>
+													</ColumnListItem>
+												</items>
+											</Table>
+										</VBox>
+									</VBox>
+								</VBox>
+							</VBox>
+						</CustomListItem>
+					</List>
 				</VBox>
 			</VBox>
 		</content>

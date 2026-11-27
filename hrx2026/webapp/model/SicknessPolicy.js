@@ -74,20 +74,32 @@ sap.ui.define([], function () {
 		 * @returns {number} the number of instances
 		 */
 		instancesOf: function (aAbsences, mDaysOff) {
-			var iInstances = 0;
+			return this.instanceGroups(aAbsences, mDaysOff).length;
+		},
+
+		/**
+		 * A person's absences grouped into instances, by the same rule as instancesOf.
+		 * @param {Array<object>} aAbsences one person's absences, StartDate and EndDate ("yyyy-MM-dd")
+		 * @param {object} [mDaysOff] that person's days off, from SicknessService.getDaysOff
+		 * @returns {Array<Array<object>>} each instance's absences, oldest instance first
+		 * and oldest absence first within it
+		 */
+		instanceGroups: function (aAbsences, mDaysOff) {
+			var aGroups = [];
 			var sRunEnd = "";
 			(aAbsences || []).slice().sort(function (a, b) {
 				return a.StartDate.localeCompare(b.StartDate);
 			}).forEach(function (oAbsence) {
 				var sEnd = oAbsence.EndDate || oAbsence.StartDate;
 				if (sRunEnd && oAbsence.StartDate <= nextWorkingDay(sRunEnd, mDaysOff)) {
+					aGroups[aGroups.length - 1].push(oAbsence);
 					sRunEnd = sEnd > sRunEnd ? sEnd : sRunEnd;
 					return;
 				}
-				iInstances++;
+				aGroups.push([oAbsence]);
 				sRunEnd = sEnd;
 			});
-			return iInstances;
+			return aGroups;
 		},
 
 		/**
